@@ -22,7 +22,7 @@ class AdminLoginController extends Controller
     {
         if (count(Admin::all())){
             if (Auth::guard('adminPanel')->user()){
-                return redirect('/admin/'.admin_route_prefix());
+                return redirect('/admin-old/'.admin_route_prefix());
             }else{
                 return view('back.auth.login');
             }
@@ -50,11 +50,11 @@ class AdminLoginController extends Controller
                 Admin::where('id', admin()->id)->update(['updated_at' => Carbon::now()->format('Y-m-d H:m:s')]);
                 $request->session()->regenerate();
                 $request->session()->put('auth.password_confirmed_at', time());
-                return redirect('/admin/'.admin_route_prefix());
+                return redirect('/admin-old/'.admin_route_prefix());
             }else{
                 Auth::guard('adminPanel')->logout();
                 session()->put('admin_login_error','حساب کاربری شما غیر فعال می باشد.');
-                return redirect('/admin/'.admin_route_prefix().'/login');
+                return redirect('/admin-old/'.admin_route_prefix().'/login');
             }
 
         }
@@ -66,6 +66,6 @@ class AdminLoginController extends Controller
     public function logout()
     {
         Auth::guard('adminPanel')->logout();
-        return redirect('/admin/'.admin_route_prefix().'/login');
+        return redirect('/admin-old/'.admin_route_prefix().'/login');
     }
 }

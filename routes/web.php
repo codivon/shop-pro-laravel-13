@@ -84,7 +84,7 @@ use App\Http\Controllers\Back\ReturnController;
 require __DIR__ . '/auth.php';
 Route::get('province/get-cities', [ProvinceController::class, 'getCities'])->name('provinces.get-cities');
 
-Route::group(['as' => 'admin.', 'prefix' => 'admin/' . admin_route_prefix()], function () {
+Route::group(['as' => 'admin.', 'prefix' => 'admin-old/' . admin_route_prefix()], function () {
 
     Route::get('login', [AdminLoginController::class, 'showLoginForm'])->name('login');
 
@@ -95,7 +95,7 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin/' . admin_route_prefix()], fu
 });
 
 // ------------------ Admin Part Routes
-Route::group(['as' => 'admin.', 'prefix' => 'admin/' . admin_route_prefix(), 'middleware' => ['Admin']], function () {
+Route::group(['as' => 'admin.', 'prefix' => 'admin-old/' . admin_route_prefix(), 'middleware' => ['Admin']], function () {
 
     // ------------------ MainController
     Route::get('/', [MainController::class, 'index'])->name('dashboard');

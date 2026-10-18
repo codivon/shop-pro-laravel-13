@@ -1,0 +1,33 @@
+{
+  "resources/admin-panel/css/admin.css": {
+    "file": "assets/admin-D_tKsdTu.css",
+    "src": "resources/admin-panel/css/admin.css",
+    "isEntry": true
+  },
+  "resources/admin-panel/fonts/Vazirmatn-Bold.woff2": {
+    "file": "assets/Vazirmatn-Bold-_OhAJEdh.woff2",
+    "src": "resources/admin-panel/fonts/Vazirmatn-Bold.woff2"
+  },
+  "resources/admin-panel/fonts/Vazirmatn-ExtraBold.woff2": {
+    "file": "assets/Vazirmatn-ExtraBold-DCjt2qDm.woff2",
+    "src": "resources/admin-panel/fonts/Vazirmatn-ExtraBold.woff2"
+  },
+  "resources/admin-panel/fonts/Vazirmatn-Medium.woff2": {
+    "file": "assets/Vazirmatn-Medium-D86t5Axy.woff2",
+    "src": "resources/admin-panel/fonts/Vazirmatn-Medium.woff2"
+  },
+  "resources/admin-panel/fonts/Vazirmatn-Regular.woff2": {
+    "file": "assets/Vazirmatn-Regular-CtGL0YI-.woff2",
+    "src": "resources/admin-panel/fonts/Vazirmatn-Regular.woff2"
+  },
+  "resources/admin-panel/fonts/Vazirmatn-SemiBold.woff2": {
+    "file": "assets/Vazirmatn-SemiBold-26ZP1ILp.woff2",
+    "src": "resources/admin-panel/fonts/Vazirmatn-SemiBold.woff2"
+  },
+  "resources/admin-panel/js/admin.js": {
+    "file": "assets/admin-BuWOjauF.js",
+    "name": "admin",
+    "src": "resources/admin-panel/js/admin.js",
+    "isEntry": true
+  }
+}

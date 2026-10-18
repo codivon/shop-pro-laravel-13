@@ -54,11 +54,11 @@ class BannerSeeder extends Seeder
                         }
 
                         Banner::create([
-                            'page' => $pageName,
+                            'pages' => [$pageName],
                             'link' => '#',
-                            'group' => $bannerGroup['group'],
+                            'groups' => [$bannerGroup['group']],
                             'published' => true,
-                            'place' => $bannerGroup['place'] ?? 'index_banners_place1', // استفاده از place تعریف شده در config
+                            'places' => [$bannerGroup['place'] ?? 'index_banners_place1'], // استفاده از place تعریف شده در config
                             'image' => str_replace('public', '', $image)
                         ]);
                     }

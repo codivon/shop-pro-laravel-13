@@ -54,10 +54,10 @@ class SliderSeeder extends Seeder
                         }
 
                         Slider::create([
-                            'page' =>$pageName,
+                            'pages' => [$pageName],
                             'link' => '#',
                             'title' => $sliderGroup['titles'][$i] ?? '',
-                            'group' => $sliderGroup['group'],
+                            'groups' => [$sliderGroup['group']],
                             'published' => true,
                             'image' => str_replace('public', '', $image),
                             'ordering' => $ordering++

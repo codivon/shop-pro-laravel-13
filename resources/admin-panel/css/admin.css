@@ -1,0 +1,301 @@
+/* ==========================================================================
+   پنل مدیریت جدید — استایل اصلی (Tailwind CSS 4)
+   تم روشن/تاریک | RTL | فونت وزیرمتن | انیمیشن‌ها
+   ========================================================================== */
+
+@import "tailwindcss";
+
+/* حالت تاریک کلاس‌محور (روی <html>) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* --------------------------------------------------------------------------
+   توکن‌های طراحی
+   -------------------------------------------------------------------------- */
+@theme {
+    --font-sans: "Vazirmatn", "Tahoma", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+
+    /* رنگ برند: زمردی */
+    --color-brand-50: #ecfdf5;
+    --color-brand-100: #d1fae5;
+    --color-brand-200: #a7f3d0;
+    --color-brand-300: #6ee7b7;
+    --color-brand-400: #34d399;
+    --color-brand-500: #10b981;
+    --color-brand-600: #059669;
+    --color-brand-700: #047857;
+    --color-brand-800: #065f46;
+    --color-brand-900: #064e3b;
+    --color-brand-950: #022c22;
+
+    /* سطوح روشن */
+    --color-surface: #ffffff;
+    --color-surface-2: #f6f7f8;
+    --color-surface-3: #eef0f2;
+    --color-line: #e5e8ec;
+    --color-ink: #1a2333;
+    --color-ink-2: #5b6472;
+    --color-ink-3: #8b93a1;
+
+    /* سطوح تاریک */
+    --color-night: #0d1219;
+    --color-night-2: #111827;
+    --color-night-3: #161f2e;
+    --color-night-line: #223047;
+    --color-night-ink: #e5eaf2;
+    --color-night-ink-2: #9aa7ba;
+
+    --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06);
+    --shadow-pop: 0 12px 32px -8px rgb(16 24 40 / 0.18);
+
+    --animate-fade-up: fade-up .45s cubic-bezier(.16,1,.3,1) both;
+    --animate-fade-in: fade-in .3s ease both;
+    --animate-scale-in: scale-in .22s cubic-bezier(.16,1,.3,1) both;
+    --animate-shimmer: shimmer 1.6s linear infinite;
+    --animate-pulse-dot: pulse-dot 1.8s ease-in-out infinite;
+
+    @keyframes fade-up {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: none; }
+    }
+    @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes scale-in {
+        from { opacity: 0; transform: scale(.96); }
+        to { opacity: 1; transform: none; }
+    }
+    @keyframes shimmer {
+        from { background-position: 200% 0; }
+        to { background-position: -200% 0; }
+    }
+    @keyframes pulse-dot {
+        0%, 100% { box-shadow: 0 0 0 0 rgb(16 185 129 / .5); }
+        50% { box-shadow: 0 0 0 5px rgb(16 185 129 / 0); }
+    }
+}
+
+/* --------------------------------------------------------------------------
+   پایه
+   -------------------------------------------------------------------------- */
+@font-face {
+    font-family: "Vazirmatn";
+    src: url("../fonts/Vazirmatn-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Vazirmatn";
+    src: url("../fonts/Vazirmatn-Medium.woff2") format("woff2");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Vazirmatn";
+    src: url("../fonts/Vazirmatn-SemiBold.woff2") format("woff2");
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Vazirmatn";
+    src: url("../fonts/Vazirmatn-Bold.woff2") format("woff2");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Vazirmatn";
+    src: url("../fonts/Vazirmatn-ExtraBold.woff2") format("woff2");
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+html {
+    font-family: var(--font-sans);
+    scrollbar-color: rgb(148 163 184 / .45) transparent;
+}
+
+/* مخفی‌سازی تا آماده شدن Alpine */
+[x-cloak] { display: none !important; }
+
+body {
+    @apply bg-surface-2 text-ink antialiased;
+}
+.dark body {
+    @apply bg-night text-night-ink;
+}
+
+/* اسکرول‌بار سفارشی */
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+    background: rgb(148 163 184 / .4);
+    border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover { background: rgb(148 163 184 / .7); }
+
+::selection {
+    background: var(--color-brand-500);
+    color: white;
+}
+
+/* اعداد فارسی */
+.fa-digits {
+    font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   کامپوننت‌های پرکاربرد
+   -------------------------------------------------------------------------- */
+@layer components {
+    .ap-card {
+        @apply rounded-2xl border border-line bg-surface shadow-card;
+    }
+    .dark .ap-card {
+        @apply border-night-line bg-night-2;
+    }
+
+    /* دکمه پایه — برای ترکیب، کلاس‌ها را در HTML ترکیب کنید (ap-btn ap-btn-primary) */
+    .ap-btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+               transition-all duration-200 select-none focus-visible:outline-2 focus-visible:outline-offset-2
+               focus-visible:outline-brand-500 disabled:opacity-50 disabled:pointer-events-none cursor-pointer;
+    }
+    .ap-btn-primary {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+               transition-all duration-200 select-none focus-visible:outline-2 focus-visible:outline-offset-2
+               focus-visible:outline-brand-500 disabled:opacity-50 disabled:pointer-events-none cursor-pointer
+               bg-brand-600 text-white hover:bg-brand-700 active:scale-[.98]
+               shadow-[0_6px_16px_-6px_rgb(5_150_105/.45)];
+    }
+    .ap-btn-ghost {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+               transition-all duration-200 select-none focus-visible:outline-2 focus-visible:outline-offset-2
+               focus-visible:outline-brand-500 disabled:opacity-50 disabled:pointer-events-none cursor-pointer
+               bg-transparent text-ink-2 hover:bg-surface-3 hover:text-ink;
+    }
+    .dark .ap-btn-ghost {
+        @apply text-night-ink-2 hover:bg-night-3 hover:text-night-ink;
+    }
+    .ap-btn-outline {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+               transition-all duration-200 select-none focus-visible:outline-2 focus-visible:outline-offset-2
+               focus-visible:outline-brand-500 disabled:opacity-50 disabled:pointer-events-none cursor-pointer
+               border border-line bg-surface text-ink hover:border-brand-500 hover:text-brand-700;
+    }
+    .dark .ap-btn-outline {
+        @apply border-night-line bg-night-2 text-night-ink hover:border-brand-500 hover:text-brand-400;
+    }
+
+    .ap-input {
+        @apply w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-ink
+               placeholder:text-ink-3 transition-all duration-200
+               focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15 focus:outline-none;
+    }
+    .dark .ap-input {
+        @apply border-night-line bg-night-3 text-night-ink placeholder:text-night-ink-2/60;
+    }
+
+    .ap-badge {
+        @apply inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-semibold;
+    }
+
+    .ap-kbd {
+        @apply rounded-md border border-line bg-surface-2 px-1.5 py-0.5 text-[10px] font-semibold text-ink-2;
+    }
+    .dark .ap-kbd {
+        @apply border-night-line bg-night-3 text-night-ink-2;
+    }
+
+    /* آیتم منوی سایدبار */
+    .ap-menu-link {
+        @apply flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink-2
+               transition-all duration-200 hover:bg-surface-3 hover:text-ink cursor-pointer;
+    }
+    .dark .ap-menu-link {
+        @apply text-night-ink-2 hover:bg-night-3 hover:text-night-ink;
+    }
+    .ap-menu-link.is-active {
+        @apply bg-brand-50 text-brand-700;
+    }
+    .dark .ap-menu-link.is-active {
+        @apply bg-brand-500/12 text-brand-400;
+    }
+
+    .ap-menu-title {
+        @apply px-3 pt-5 pb-1.5 text-[11px] font-bold tracking-wide text-ink-3;
+    }
+    .dark .ap-menu-title {
+        @apply text-night-ink-2/60;
+    }
+
+    /* اسکلت لودینگ */
+    .ap-skeleton {
+        @apply rounded-xl bg-linear-to-l from-surface-3 via-surface-2 to-surface-3;
+        background-size: 200% 100%;
+        animation: var(--animate-shimmer);
+    }
+    .dark .ap-skeleton {
+        @apply from-night-3 via-night-2 to-night-3;
+    }
+
+    .ap-stat-icon {
+        @apply flex size-11 items-center justify-center rounded-xl transition-transform duration-300;
+    }
+    .group:hover .ap-stat-icon {
+        transform: translateY(-2px) rotate(-4deg);
+    }
+
+    /* فوتر */
+    .ap-footer {
+        @apply mt-auto border-t border-line bg-surface;
+    }
+    .dark .ap-footer {
+        @apply border-night-line bg-night-2;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   ترنزیشن صفحه با wire:navigate (View Transitions API)
+   -------------------------------------------------------------------------- */
+@view-transition {
+    navigation: auto;
+}
+::view-transition-old(root) {
+    animation: 160ms cubic-bezier(.16,1,.3,1) both ap-vt-out;
+}
+::view-transition-new(root) {
+    animation: 220ms cubic-bezier(.16,1,.3,1) both ap-vt-in;
+}
+@keyframes ap-vt-out {
+    to { opacity: 0; transform: translateY(-6px); }
+}
+@keyframes ap-vt-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+}
+
+/* فلش آیتم بازشونده سایدبار */
+.ap-chevron {
+    transition: transform .25s cubic-bezier(.16,1,.3,1);
+}
+.ap-chevron.is-open {
+    transform: rotate(-90deg);
+}
+
+/* انیمیشن پله‌ای آیتم‌ها */
+.stagger > * {
+    animation: var(--animate-fade-up) both;
+}
+.stagger > *:nth-child(1) { animation-delay: .02s; }
+.stagger > *:nth-child(2) { animation-delay: .06s; }
+.stagger > *:nth-child(3) { animation-delay: .1s; }
+.stagger > *:nth-child(4) { animation-delay: .14s; }
+.stagger > *:nth-child(5) { animation-delay: .18s; }
+.stagger > *:nth-child(6) { animation-delay: .22s; }
+.stagger > *:nth-child(7) { animation-delay: .26s; }
+.stagger > *:nth-child(8) { animation-delay: .3s; }

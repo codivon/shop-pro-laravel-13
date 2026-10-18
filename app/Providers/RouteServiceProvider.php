@@ -48,6 +48,12 @@ class RouteServiceProvider extends ServiceProvider
                 ->namespace($this->namespace)
                 ->group(base_path('routes/web.php'));
 
+            /*
+            | پنل مدیریت جدید (Livewire) — فقط یک‌بار و خارج از حلقه‌ی locale ثبت می‌شود
+            */
+            Route::middleware('web')
+                ->group(base_path('routes/admin-panel.php'));
+
             foreach (config('app.locales') as $locale => $options) {
                 Route::middleware('web')
                     ->namespace($this->namespace)

@@ -35,6 +35,15 @@ class AppServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->singleton(PulseService::class, fn() => new PulseService());
+
+        // نما (views) پنل مدیریت جدید — admin-panel::*
+        $this->loadViewsFrom(resource_path('views/admin-panel'), 'admin-panel');
+
+        // کامپوننت‌های کلاسی و anonymous پنل جدید
+        $this->callAfterResolving('blade.compiler', function ($blade) {
+            $blade->componentNamespace('App\\View\\Components\\AdminPanel', 'admin-panel');
+            $blade->anonymousComponentPath(resource_path('views/admin-panel/components'), 'admin-panel');
+        });
     }
 
     /**
@@ -46,6 +55,9 @@ class AppServiceProvider extends ServiceProvider
     {
 
         Schema::defaultStringLength(191);
+
+        // مسیر build پنل جدید (خروجی Vite جدا از Mix)
+        \Illuminate\Support\Facades\Vite::useBuildDirectory('admin-panel');
 
         $this->loadTheme();
 
