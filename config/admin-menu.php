@@ -433,13 +433,13 @@ return [
                     'children' => [
                         [
                             'label' => 'لیست تخفیف‌ها',
-                            'route' => 'admin.discounts.index',
+                            'route' => 'np.discounts.index',
                             'permission' => 'discounts.index',
                             'icon' => 'list',
                         ],
                         [
                             'label' => 'تخفیف جدید',
-                            'route' => 'admin.discounts.create',
+                            'route' => 'np.discounts.create',
                             'permission' => 'discounts.create',
                             'icon' => 'plus',
                         ],
@@ -599,40 +599,40 @@ return [
                     'children' => [
                         [
                             'label' => 'همه مرجوعی‌ها',
-                            'route' => 'admin.returns.index',
+                            'route' => 'np.returns.index',
                             'permission' => 'returns.index',
                             'icon' => 'list',
                         ],
                         [
                             'label' => 'دلایل مرجوعی',
-                            'route' => 'admin.returns.reasons',
+                            'route' => 'np.returns.reasons',
                             'permission' => 'returns.reasons',
                             'icon' => 'clipboard-list',
                         ],
                         [
                             'label' => 'در انتظار بررسی',
-                            'route' => 'admin.returns.index',
+                            'route' => 'np.returns.index',
                             'permission' => 'returns.index',
                             'icon' => 'clock',
                             'params' => ['status' => 'pending'],
                         ],
                         [
                             'label' => 'تایید شده',
-                            'route' => 'admin.returns.index',
+                            'route' => 'np.returns.index',
                             'permission' => 'returns.index',
                             'icon' => 'check',
                             'params' => ['status' => 'approved'],
                         ],
                         [
                             'label' => 'تکمیل شده',
-                            'route' => 'admin.returns.index',
+                            'route' => 'np.returns.index',
                             'permission' => 'returns.index',
                             'icon' => 'check-check',
                             'params' => ['status' => 'completed'],
                         ],
                         [
                             'label' => 'رد شده',
-                            'route' => 'admin.returns.index',
+                            'route' => 'np.returns.index',
                             'permission' => 'returns.index',
                             'icon' => 'x',
                             'params' => ['status' => 'rejected'],
@@ -693,19 +693,19 @@ return [
                     'children' => [
                         [
                             'label' => 'لیست تراکنش‌ها',
-                            'route' => 'admin.transactions.index',
+                            'route' => 'np.transactions.index',
                             'permission' => 'payments.transactions.index',
                             'icon' => 'credit-card',
                         ],
                         [
                             'label' => 'تاریخچه کیف پول',
-                            'route' => 'admin.wallet-histories.index',
+                            'route' => 'np.wallet-histories.index',
                             'permission' => 'payments.wallet-histories.index',
                             'icon' => 'history',
                         ],
                         [
                             'label' => 'لیست کمیسیون فروشندگان',
-                            'route' => 'admin.transactions.seller_deposits',
+                            'route' => 'np.transactions.seller-deposits',
                             'permission' => 'payments.transactions.seller_deposit',
                             'icon' => 'coins',
                         ],
@@ -719,7 +719,7 @@ return [
                 ],
                 [
                     'label' => 'صف پرداخت سهم‌ها',
-                    'route' => 'admin.request-deposit.index',
+                    'route' => 'np.request-deposit.index',
                     'permission' => 'request_deposit',
                     'icon' => 'hourglass',
                 ],
@@ -807,13 +807,13 @@ return [
                     'children' => [
                         [
                             'label' => 'لیست کاربران',
-                            'route' => 'admin.users.index',
+                            'route' => 'np.users.index',
                             'permission' => 'users.index',
                             'icon' => 'list',
                         ],
                         [
                             'label' => 'کاربر جدید',
-                            'route' => 'admin.users.create',
+                            'route' => 'np.users.create',
                             'permission' => 'users.create',
                             'icon' => 'plus',
                         ],

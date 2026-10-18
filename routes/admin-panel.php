@@ -30,9 +30,29 @@ use App\Livewire\Admin\Sellers\Settings\SellerHero;
 use App\Livewire\Admin\Sellers\Settings\SellerCommission;
 use App\Livewire\Admin\Sellers\Settings\SellerQuestion;
 use App\Livewire\Admin\Sellers\Settings\SellerEcontract;
+use App\Livewire\Admin\Users\UserIndex;
+use App\Livewire\Admin\Users\UserForm;
+use App\Livewire\Admin\Users\UserShow;
+use App\Livewire\Admin\Users\UserViews;
+use App\Livewire\Admin\Users\UserNotifications;
+use App\Livewire\Admin\Finance\TransactionIndex;
+use App\Livewire\Admin\Finance\TransactionSellerDeposits;
+use App\Livewire\Admin\Finance\WalletHistoryIndex;
+use App\Livewire\Admin\Finance\WalletShow;
+use App\Livewire\Admin\Finance\WalletTransactionCreate;
+use App\Livewire\Admin\Finance\WalletHistoryShow;
+use App\Livewire\Admin\Finance\RequestDepositIndex;
+use App\Livewire\Admin\Finance\RequestDepositHistory;
+use App\Livewire\Admin\Returns\ReturnIndex;
+use App\Livewire\Admin\Returns\ReturnShow;
+use App\Livewire\Admin\Returns\ReturnReasons;
+use App\Livewire\Admin\Discounts\DiscountIndex;
+use App\Livewire\Admin\Discounts\DiscountForm;
 use App\Http\Controllers\AdminPanel\LogoutController;
 use App\Http\Controllers\Back\OrderController as LegacyOrderController;
 use App\Http\Controllers\Back\SellerControllers as LegacySellerController;
+use App\Http\Controllers\Back\UserController as LegacyUserController;
+use App\Http\Controllers\Back\RequestDepositAdmin as LegacyRequestDepositController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
@@ -117,8 +137,64 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
         Route::get('settings/seller-question', SellerQuestion::class)->name('settings.seller-question');
         Route::get('settings/seller-econtract', SellerEcontract::class)->name('settings.seller-econtract');
 
+        /*
+        |----------------------
+        | کاربران (فاز ۴)
+        |----------------------
+        | ترتیب مهم است: مسیرهای ثابت قبل از {user} تعریف شوند.
+        */
+        Route::get('users', UserIndex::class)->name('users.index');
+        Route::get('users/create', UserForm::class)->name('users.create');
+        Route::get('users/export/create', [LegacyUserController::class, 'export'])->name('users.export');
+        Route::get('users/{user}', UserShow::class)->name('users.show');
+        Route::get('users/{user}/edit', UserForm::class)->name('users.edit');
+        Route::get('users/{user}/views', UserViews::class)->name('users.views');
+        Route::get('users/{user}/notifications', UserNotifications::class)->name('users.notifications');
+
+        /*
+        |----------------------
+        | مالی / پرداخت (فاز ۴)
+        |----------------------
+        | ترتیب مهم است: مسیرهای ثابت قبل از {wallet} تعریف شوند.
+        */
+        Route::get('transactions', TransactionIndex::class)->name('transactions.index');
+        Route::get('transactions/seller-deposit', TransactionSellerDeposits::class)->name('transactions.seller-deposits');
+
+        Route::get('wallets/histories/{history}', WalletHistoryShow::class)->name('wallets.history');
+        Route::get('wallets/{wallet}', WalletShow::class)->name('wallets.show');
+        Route::get('wallets/{wallet}/create', WalletTransactionCreate::class)->name('wallets.create');
+
+        Route::get('wallet-histories', WalletHistoryIndex::class)->name('wallet-histories.index');
+
+        /*
+        |----------------------
+        | صف درخواست برداشت (فاز ۴)
+        |----------------------
+        */
+        Route::get('request-deposit', RequestDepositIndex::class)->name('request-deposit.index');
+        Route::get('request-deposit/histories/{history}', RequestDepositHistory::class)->name('request-deposit.history');
+        Route::get('request-deposit/export/create', [LegacyRequestDepositController::class, 'export'])->name('request-deposit.export');
+
+        /*
+        |----------------------
+        | مرجوعی (فاز ۴)
+        |----------------------
+        */
+        Route::get('returns/reasons', ReturnReasons::class)->name('returns.reasons');
+        Route::get('returns', ReturnIndex::class)->name('returns.index');
+        Route::get('returns/{returnRequest}', ReturnShow::class)->name('returns.show');
+
+        /*
+        |----------------------
+        | تخفیف‌ها (فاز ۴)
+        |----------------------
+        */
+        Route::get('discounts', DiscountIndex::class)->name('discounts.index');
+        Route::get('discounts/create', DiscountForm::class)->name('discounts.create');
+        Route::get('discounts/{discount}/edit', DiscountForm::class)->name('discounts.edit');
+
         // سایر بخش‌ها در فازهای بعدی اضافه می‌شوند:
-        // فاز ۴: کاربران / مالی / ...
+        // فاز ۵: تکسونومی / ...
 
     });
 });
