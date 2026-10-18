@@ -48,11 +48,29 @@ use App\Livewire\Admin\Returns\ReturnShow;
 use App\Livewire\Admin\Returns\ReturnReasons;
 use App\Livewire\Admin\Discounts\DiscountIndex;
 use App\Livewire\Admin\Discounts\DiscountForm;
+use App\Livewire\Admin\Taxonomy\CategoryTree;
+use App\Livewire\Admin\Taxonomy\CategoryForm;
+use App\Livewire\Admin\Taxonomy\BrandIndex;
+use App\Livewire\Admin\Taxonomy\BrandForm;
+use App\Livewire\Admin\Taxonomy\AttributeGroupIndex;
+use App\Livewire\Admin\Taxonomy\AttributeGroupAttributes;
+use App\Livewire\Admin\Taxonomy\AttributeForm;
+use App\Livewire\Admin\Taxonomy\SpecTypeIndex;
+use App\Livewire\Admin\Taxonomy\SpecTypeForm;
+use App\Livewire\Admin\Taxonomy\SizeTypeIndex;
+use App\Livewire\Admin\Taxonomy\SizeTypeForm;
+use App\Livewire\Admin\Taxonomy\SizeTypeValues;
+use App\Livewire\Admin\Taxonomy\FildIndex;
+use App\Livewire\Admin\Taxonomy\FildForm;
+use App\Livewire\Admin\Taxonomy\FilterIndex;
+use App\Livewire\Admin\Taxonomy\FilterForm;
+use App\Livewire\Admin\Taxonomy\TagIndex;
 use App\Http\Controllers\AdminPanel\LogoutController;
 use App\Http\Controllers\Back\OrderController as LegacyOrderController;
 use App\Http\Controllers\Back\SellerControllers as LegacySellerController;
 use App\Http\Controllers\Back\UserController as LegacyUserController;
 use App\Http\Controllers\Back\RequestDepositAdmin as LegacyRequestDepositController;
+use App\Http\Controllers\Back\TagController as LegacyTagController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
@@ -193,8 +211,44 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
         Route::get('discounts/create', DiscountForm::class)->name('discounts.create');
         Route::get('discounts/{discount}/edit', DiscountForm::class)->name('discounts.edit');
 
+        /*
+        |----------------------
+        | تکسونومی (فاز ۵)
+        |----------------------
+        | {category} با slug بایند می‌شود (Category::getRouteKeyName).
+        | ترتیب مهم است: مسیرهای ثابت قبل از {category} تعریف شوند.
+        */
+        Route::get('categories/product', CategoryTree::class)->name('categories.product');
+        Route::get('categories/post', CategoryTree::class)->defaults('type', 'postcat')->name('categories.post');
+        Route::get('categories/{category}/edit', CategoryForm::class)->name('categories.edit');
+
+        Route::get('brands', BrandIndex::class)->name('brands.index');
+        Route::get('brands/{brand}/edit', BrandForm::class)->name('brands.edit');
+
+        Route::get('attribute-groups', AttributeGroupIndex::class)->name('attribute-groups.index');
+        Route::get('attribute-groups/{attributeGroup}/attributes', AttributeGroupAttributes::class)->name('attribute-groups.attributes');
+        Route::get('attributes/create', AttributeForm::class)->name('attributes.create');
+        Route::get('attributes/{attribute}/edit', AttributeForm::class)->name('attributes.edit');
+
+        Route::get('spectypes', SpecTypeIndex::class)->name('spectypes.index');
+        Route::get('spectypes/{spectype}/edit', SpecTypeForm::class)->name('spectypes.edit');
+
+        Route::get('sizetypes', SizeTypeIndex::class)->name('sizetypes.index');
+        Route::get('sizetypes/{sizetype}/values', SizeTypeValues::class)->name('sizetypes.values');
+        Route::get('sizetypes/{sizetype}/edit', SizeTypeForm::class)->name('sizetypes.edit');
+
+        Route::get('filds', FildIndex::class)->name('filds.index');
+        Route::get('filds/{fild}/edit', FildForm::class)->name('filds.edit');
+
+        Route::get('filters', FilterIndex::class)->name('filters.index');
+        Route::get('filters/create', FilterForm::class)->name('filters.create');
+        Route::get('filters/{filter}/edit', FilterForm::class)->name('filters.edit');
+
+        Route::get('tags', TagIndex::class)->name('tags.index');
+        Route::get('tags/export', [LegacyTagController::class, 'export'])->name('tags.export');
+
         // سایر بخش‌ها در فازهای بعدی اضافه می‌شوند:
-        // فاز ۵: تکسونومی / ...
+        // فاز ۶: محتوا / ...
 
     });
 });

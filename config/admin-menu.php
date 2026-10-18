@@ -109,7 +109,7 @@ return [
                         ],
                         [
                             'label' => 'دسته‌بندی‌ها',
-                            'route' => 'admin.posts.categories.index',
+                            'route' => 'np.categories.post',
                             'permission' => 'posts.category',
                             'icon' => 'folder-tree',
                         ],
@@ -123,7 +123,7 @@ return [
                 ],
                 [
                     'label' => 'تگ‌ها',
-                    'route' => 'admin.tags.index',
+                    'route' => 'np.tags.index',
                     'permission' => 'tags',
                     'icon' => 'tags',
                 ],
@@ -313,19 +313,19 @@ return [
                         ],
                         [
                             'label' => 'دسته‌بندی محصولات',
-                            'route' => 'admin.products.categories.index',
+                            'route' => 'np.categories.product',
                             'permission' => 'products.category',
                             'icon' => 'folder-tree',
                         ],
                         [
                             'label' => 'سایزبندی محصولات',
-                            'route' => 'admin.sizetypes.index',
+                            'route' => 'np.sizetypes.index',
                             'permission' => 'products.sizetypes',
                             'icon' => 'ruler',
                         ],
                         [
                             'label' => 'انواع مشخصات',
-                            'route' => 'admin.spectypes.index',
+                            'route' => 'np.spectypes.index',
                             'permission' => 'products.spectypes',
                             'icon' => 'clipboard-list',
                         ],
@@ -353,13 +353,13 @@ return [
                             'children' => [
                                 [
                                     'label' => 'لیست برندها',
-                                    'route' => 'admin.brands.index',
+                                    'route' => 'np.brands.index',
                                     'permission' => 'products.brands',
                                     'icon' => 'list',
                                 ],
                                 [
                                     'label' => 'برند جدید',
-                                    'route' => 'admin.brands.create',
+                                    'route' => 'np.brands.index',
                                     'permission' => 'products.brands',
                                     'icon' => 'plus',
                                 ],
@@ -371,19 +371,19 @@ return [
                             'children' => [
                                 [
                                     'label' => 'گروه‌های ویژگی',
-                                    'route' => 'admin.attributeGroups.index',
+                                    'route' => 'np.attribute-groups.index',
                                     'permission' => 'attributes.groups.index',
                                     'icon' => 'list',
                                 ],
                                 [
                                     'label' => 'گروه ویژگی جدید',
-                                    'route' => 'admin.attributeGroups.create',
+                                    'route' => 'np.attribute-groups.index',
                                     'permission' => 'attributes.groups.create',
                                     'icon' => 'plus',
                                 ],
                                 [
                                     'label' => 'ویژگی جدید',
-                                    'route' => 'admin.attributes.create',
+                                    'route' => 'np.attributes.create',
                                     'permission' => 'attributes.create',
                                     'icon' => 'plus',
                                 ],
@@ -395,13 +395,13 @@ return [
                             'children' => [
                                 [
                                     'label' => 'لیست فیلترها',
-                                    'route' => 'admin.filters.index',
+                                    'route' => 'np.filters.index',
                                     'permission' => 'filters.index',
                                     'icon' => 'list',
                                 ],
                                 [
                                     'label' => 'فیلتر جدید',
-                                    'route' => 'admin.filters.create',
+                                    'route' => 'np.filters.create',
                                     'permission' => 'filters.create',
                                     'icon' => 'plus',
                                 ],
@@ -963,7 +963,7 @@ return [
                     'children' => [
                         [
                             'label' => 'فیلدهای اختصاصی',
-                            'route' => 'admin.filds.index',
+                            'route' => 'np.filds.index',
                             'permission' => 'filds.index',
                             'icon' => 'database',
                         ],
