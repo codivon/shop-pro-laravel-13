@@ -59,6 +59,10 @@ class AppServiceProvider extends ServiceProvider
         // مسیر build پنل جدید (خروجی Vite جدا از Mix)
         \Illuminate\Support\Facades\Vite::useBuildDirectory('admin-panel');
 
+        // تعیین گارد پیش‌فرض بر اساس نشست فعال — به‌ویژه برای endpoint آپدیت Livewire
+        // تا ‎@can و auth() در رندر مجدد کامپوننت‌ها (adminPanel/seller/web) درست کار کنند
+        \Illuminate\Support\Facades\Route::pushMiddlewareToGroup('web', \App\Http\Middleware\ResolveDefaultGuard::class);
+
         $this->loadTheme();
 
         if (application_installed()) {

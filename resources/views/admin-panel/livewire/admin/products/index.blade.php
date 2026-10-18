@@ -101,10 +101,10 @@
     </div>
 
     {{-- نوار انتخاب گروهی --}}
-    <div x-show="selected.length > 0" x-cloak
+    <div x-show="$wire.selected.length > 0" x-cloak
          class="sticky top-20 z-20 flex items-center justify-between gap-3 rounded-2xl border border-brand-200 bg-brand-50/95 px-4 py-2.5 shadow-card backdrop-blur dark:border-brand-500/25 dark:bg-brand-950/80">
         <span class="text-[13px] font-bold text-brand-800 dark:text-brand-300">
-            <span class="fa-digits" x-text="ApFormat.faDigits(selected.length)"></span> محصول انتخاب شده
+            <span class="fa-digits" x-text="ApFormat.faDigits($wire.selected.length)"></span> محصول انتخاب شده
         </span>
         <button type="button" wire:click="$set('confirmingBulkDelete', true)"
                 class="ap-btn !px-3 !py-1.5 text-[13px] bg-red-600 text-white hover:bg-red-700">
@@ -285,6 +285,8 @@
                     @foreach ($this->products->onEachSide(1)->toArray()['links'] as $link)
                         @if ($link['label'] === '...')
                             <span class="px-2 text-xs text-ink-3">…</span>
+                        @elseif (! is_numeric(trim($link['label'])))
+                            {{-- دکمه‌های قبلی/بعدی بالاتر مدیریت شده‌اند --}}
                         @elseif ($link['active'])
                             <span class="fa-digits flex size-8 items-center justify-center rounded-lg bg-brand-600 text-[13px] font-bold text-white">{{ $link['label'] }}</span>
                         @else
@@ -353,7 +355,7 @@
             </div>
             <h3 class="text-base font-bold">حذف گروهی محصولات</h3>
             <p class="mt-1.5 text-[13px] leading-6 text-ink-2 dark:text-night-ink-2">
-                <span class="fa-digits font-bold" x-text="ApFormat.faDigits(selected.length)"></span> محصول انتخاب شده است. حذف غیرقابل بازگشت است.
+                <span class="fa-digits font-bold" x-text="ApFormat.faDigits($wire.selected.length)"></span> محصول انتخاب شده است. حذف غیرقابل بازگشت است.
             </p>
             <div class="mt-5 flex gap-2.5">
                 <button type="button" wire:click="bulkDelete" wire:loading.attr="disabled"

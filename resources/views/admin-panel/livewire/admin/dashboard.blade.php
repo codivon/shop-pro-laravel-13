@@ -106,7 +106,7 @@
                     <x-admin-panel::icon name="shopping-cart" class="size-4.5 text-brand-600 dark:text-brand-400" />
                     <h3 class="text-sm font-bold">آخرین سفارشات</h3>
                 </div>
-                <a href="{{ route('admin.orders.index') }}"
+                <a href="{{ route('np.orders.index') }}" wire:navigate
                    class="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold text-brand-700 transition-colors hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10">
                     مشاهده همه
                     <x-admin-panel::icon name="chevron-left" class="size-3.5" />

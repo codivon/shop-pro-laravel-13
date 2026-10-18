@@ -561,33 +561,33 @@ return [
                     'children' => [
                         [
                             'label' => 'همه سفارشات',
-                            'route' => 'admin.orders.index',
+                            'route' => 'np.orders.index',
                             'permission' => 'orders.index',
                             'icon' => 'list',
                         ],
                         [
                             'label' => 'سفارشات جدید',
-                            'route' => 'admin.orders.index',
+                            'route' => 'np.orders.index',
                             'permission' => 'orders.index',
                             'icon' => 'circle-dot',
                             'params' => ['status' => 'paid', 'shipping_status' => 'pending'],
                         ],
                         [
                             'label' => 'سفارشات پرداخت شده',
-                            'route' => 'admin.orders.index',
+                            'route' => 'np.orders.index',
                             'permission' => 'orders.index',
                             'icon' => 'circle-check',
                             'params' => ['status' => 'paid'],
                         ],
                         [
                             'label' => 'سفارشات کنسل شده',
-                            'route' => 'admin.orders.notCompleted',
+                            'route' => 'np.orders.not-completed',
                             'permission' => 'orders.index',
                             'icon' => 'circle-x',
                         ],
                         [
                             'label' => 'ثبت سفارش جدید',
-                            'route' => 'admin.orders.create',
+                            'route' => 'np.orders.create',
                             'permission' => 'orders.create',
                             'icon' => 'plus',
                         ],
