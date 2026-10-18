@@ -6,6 +6,58 @@
 
     <form wire:submit="save" class="space-y-6" x-on:keydown.enter.prevent>
 
+        {{-- دریافت از دیجی‌کالا (فقط ایجاد) --}}
+        @if (! $isEditing)
+            <div class="ap-card p-4 sm:p-5" x-data="{ open: false }">
+                <button type="button" class="flex w-full items-center justify-between text-start" x-on:click="open = !open">
+                    <span class="flex items-center gap-2 text-sm font-bold">
+                        <span class="flex size-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-500/12 dark:text-rose-400">
+                            <x-admin-panel::icon name="download" class="size-4.5" />
+                        </span>
+                        دریافت محصول از دیجی‌کالا
+                    </span>
+                    <span class="ap-chevron" :class="open ? 'is-open' : ''">
+                        <x-admin-panel::icon name="chevron-left" class="size-4 text-ink-3" />
+                    </span>
+                </button>
+
+                <div x-show="open" x-cloak
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
+                     class="pt-4">
+                    <p class="mb-3 text-xs leading-5 text-ink-2 dark:text-night-ink-2">
+                        کد محصول دیجی‌کالا را از انتهای آدرس صفحه محصول وارد کنید (مثال: dkp-12345678 → ۱۲۳۴۵۶۷۸).
+                        عنوان، قیمت‌ها با رنگ‌ها، تصاویر، مشخصات فنی، برند و سئو به صورت خودکار پر می‌شود.
+                    </p>
+                    <div class="flex flex-wrap items-start gap-2">
+                        <div class="min-w-48 flex-1">
+                            <input type="text" wire:model="scraperSiteCode" inputmode="numeric"
+                                   placeholder="کد محصول (dkp)" class="ap-input fa-digits" aria-label="کد محصول دیجی‌کالا">
+                            @error('scraperSiteCode') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                        <button type="button" wire:click="fetchFromSite" wire:loading.attr="disabled"
+                                class="ap-btn-primary !py-2">
+                            <span wire:loading.remove wire:target="fetchFromSite" class="flex items-center gap-2">
+                                <x-admin-panel::icon name="cloud-download" class="size-4" />
+                                دریافت اطلاعات
+                            </span>
+                            <span wire:loading wire:target="fetchFromSite" class="flex items-center gap-2">
+                                <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"/></svg>
+                                در حال دریافت…
+                            </span>
+                        </button>
+                    </div>
+
+                    @if (count($scraperImages))
+                        <p class="mt-3 flex items-center gap-2 text-xs font-semibold text-brand-700 dark:text-brand-400">
+                            <x-admin-panel::icon name="check-circle" class="size-4" />
+                            <span class="fa-digits">{{ count($scraperImages) }}</span> تصویر دانلود شد و پس از ذخیره به گالری اضافه می‌شود.
+                        </p>
+                    @endif
+                </div>
+            </div>
+        @endif
+
         {{-- هدر --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-2.5">

@@ -17,6 +17,7 @@ use App\Models\Tag;
 use App\Models\Warehouse;
 use Cviebrock\EloquentSluggable\Services\SlugService;
 use App\Services\AdminPanel\ProductPersistence;
+use App\Services\AdminPanel\ProductScraper;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -101,8 +102,17 @@ class ProductForm extends Component
 
     public bool $isEditing = false;
 
-    /** برای فرم با محصولات فیزیکی، فروشنده ممکن است در هر تنوع تعیین شود */
+    /** فروشنده ممکن است در هر تنوع تعیین شود */
     public bool $multiVendor = false;
+
+    /* ------------------------------ دریافت از دیجی‌کالا ------------------------------ */
+
+    public string $scraperSiteCode = '';
+
+    /** تصاویر دانلودشده از دیجی‌کالا (نام فایل‌ها در public/uploads/tmp) */
+    public array $scraperImages = [];
+
+    public ?string $scraperBaseImage = null;
 
     /* ============================ Mount ============================ */
 
@@ -674,6 +684,83 @@ class ProductForm extends Component
         }
     }
 
+    /* ============================ دریافت از دیجی‌کالا ============================ */
+
+    public function fetchFromSite(ProductScraper $scraper): void
+    {
+        $this->validateOnly('scraperSiteCode', ['scraperSiteCode' => 'required|numeric']);
+
+        if ($this->getErrorBag()->has('scraperSiteCode')) {
+            return;
+        }
+
+        $result = $scraper->fetchDigikala($this->scraperSiteCode, true);
+
+        if (! empty($result['error'])) {
+            $this->addError('scraperSiteCode', 'خطا در دریافت محصول: ' . $result['error']);
+
+            return;
+        }
+
+        // اعمال داده‌ها روی فرم
+        if (! empty($result['title'])) {
+            $this->title = $result['title'];
+        }
+
+        if (! empty($result['metaTitle'])) {
+            $this->meta_title = $result['metaTitle'];
+            $this->slug = SlugService::createSlug(Product::class, 'slug', $this->meta_title);
+        }
+
+        if (! empty($result['metaDescription'])) {
+            $this->meta_description = $result['metaDescription'];
+        }
+
+        if (! empty($result['categoryId'])) {
+            $this->category_id = $result['categoryId'];
+        }
+
+        if (! empty($result['brandName'])) {
+            $this->brand = $result['brandName'];
+        }
+
+        if (! empty($result['weight'])) {
+            $this->weight = $result['weight'];
+        }
+
+        if (! empty($result['descriptionHtml'])) {
+            $this->description = $result['descriptionHtml'];
+            // ویرایشگر CKEditor با محتوای جدید مقداردهی شود
+            $this->dispatch('ap-set-description');
+        }
+
+        if (! empty($result['specGroups'])) {
+            $this->specificationGroup = $result['specGroups'];
+
+            if (! $this->spec_type) {
+                $this->spec_type = 'دریافتی از دیجی‌کالا';
+            }
+        }
+
+        if (! empty($result['variantRows'])) {
+            $this->prices = [];
+
+            foreach ($result['variantRows'] as $row) {
+                $this->prices[] = array_merge($this->blankPriceRow(), [
+                    'price' => (string) $row['price'],
+                    'attributes' => array_map('strval', $row['attributes']),
+                ]);
+            }
+        }
+
+        if (! empty($result['galleryFiles'])) {
+            $this->scraperImages = $result['galleryFiles'];
+            $this->scraperBaseImage = $result['baseImage'];
+        }
+
+        $this->dispatch('toast', message: 'محصول از دیجی‌کالا دریافت شد. لطفا اطلاعات را بازبینی و انبار را انتخاب کنید.', type: 'success');
+    }
+
     /* ============================ ذخیره ============================ */
 
     public function save(ProductPersistence $persistence)
@@ -741,6 +828,9 @@ class ProductForm extends Component
         $persistence->updateProductLabels($product, $this->labels);
         $persistence->updateProductSizes($product, $this->sizes);
         $persistence->updateProductAbilityScore($product, $this->abilityScores);
+
+        // پاکسازی تصاویر موقت دیجی‌کالا (در صورت دریافت از سایت)
+        $this->cleanupScraperFiles();
 
         // برچسب‌ها (tags) — در Livewire ناظر TaggableObserver از request نمی‌خواند، پس دستی همگام می‌کنیم
         $product->tags()->sync(addTags($this->tags));
@@ -836,6 +926,9 @@ class ProductForm extends Component
         $persistence->updateProductLabels($product, $this->labels);
         $persistence->updateProductSizes($product, $this->sizes);
         $persistence->updateProductAbilityScore($product, $this->abilityScores);
+
+        // پاکسازی تصاویر موقت دیجی‌کالا (در صورت دریافت از سایت)
+        $this->cleanupScraperFiles();
 
         $product->tags()->sync(addTags($this->tags));
 
@@ -1005,11 +1098,51 @@ class ProductForm extends Component
     }
 
     /**
-     * گالری نهایی: مسیرهای موجود + فایل‌های جدید (به ترتیب)
+     * گالری نهایی: مسیرهای موجود + تصاویر دیجی‌کالا (از public/uploads/tmp) + فایل‌های جدید (به ترتیب)
      */
     protected function mergedGallery(): array
     {
-        return array_merge($this->existingGallery, $this->gallery);
+        $gallery = $this->existingGallery;
+
+        // تصاویر دانلودشده از دیجی‌کالا → UploadedFile از public/uploads/tmp
+        foreach ($this->scraperImages as $fileName) {
+            $path = public_path('uploads/tmp/' . $fileName);
+
+            if (file_exists($path)) {
+                $gallery[] = new \Illuminate\Http\UploadedFile(
+                    $path,
+                    $fileName,
+                    mime_content_type($path) ?: 'image/webp',
+                    null,
+                    true
+                );
+            }
+        }
+
+        return array_merge($gallery, $this->gallery);
+    }
+
+    /**
+     * پاکسازی فایل‌های موقت دیجی‌کالا بعد از ذخیره
+     */
+    protected function cleanupScraperFiles(): void
+    {
+        foreach ($this->scraperImages as $fileName) {
+            $path = public_path('uploads/tmp/' . $fileName);
+            if (file_exists($path)) {
+                @unlink($path);
+            }
+        }
+
+        if ($this->scraperBaseImage) {
+            $path = public_path('uploads/tmp/' . $this->scraperBaseImage);
+            if (file_exists($path)) {
+                @unlink($path);
+            }
+        }
+
+        $this->scraperImages = [];
+        $this->scraperBaseImage = null;
     }
 
     /**

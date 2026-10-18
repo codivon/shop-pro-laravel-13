@@ -208,6 +208,13 @@ window.ApEditor = {
 document.addEventListener('DOMContentLoaded', () => ApEditor.init());
 document.addEventListener('livewire:navigated', () => ApEditor.init());
 
+/* همگام‌سازی محتوای CKEditor پس از دریافت محصول از دیجی‌کالا */
+window.Livewire?.hook('message.processed', ({ component }) => {
+    if (component.effects?.dispatches?.some((d) => d.name === 'ap-set-description') && window.ApEditor?.instance) {
+        window.ApEditor.instance.setData(component.description || '');
+    }
+});
+
 /* ------------------------------------------------------------------
  | ECharts — راه‌انداز نمودارها (فارسی/RTL)
  | <div data-chart="..." data-options="JSON"> — مقدار «fn:name» به فرمت‌کننده تبدیل می‌شود
