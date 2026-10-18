@@ -65,6 +65,30 @@ use App\Livewire\Admin\Taxonomy\FildForm;
 use App\Livewire\Admin\Taxonomy\FilterIndex;
 use App\Livewire\Admin\Taxonomy\FilterForm;
 use App\Livewire\Admin\Taxonomy\TagIndex;
+use App\Livewire\Admin\Posts\PostIndex;
+use App\Livewire\Admin\Posts\PostForm;
+use App\Livewire\Admin\Pages\PageIndex;
+use App\Livewire\Admin\Pages\PageForm;
+use App\Livewire\Admin\Menus\MenuManager;
+use App\Livewire\Admin\Links\LinkIndex;
+use App\Livewire\Admin\Links\LinkGroups;
+use App\Livewire\Admin\Sliders\SliderIndex;
+use App\Livewire\Admin\Sliders\SliderForm;
+use App\Livewire\Admin\Banners\BannerIndex;
+use App\Livewire\Admin\Banners\BannerForm;
+use App\Livewire\Admin\Faqs\FaqIndex;
+use App\Livewire\Admin\Comments\CommentsIndex;
+use App\Livewire\Admin\Reviews\ReviewIndex;
+use App\Livewire\Admin\StockNotify\StockNotifyIndex;
+use App\Livewire\Admin\Forms\FormIndex;
+use App\Livewire\Admin\Forms\FormBuilder;
+use App\Livewire\Admin\Forms\FormSubmissions;
+use App\Livewire\Admin\Widgets\WidgetIndex;
+use App\Livewire\Admin\Widgets\WidgetForm;
+use App\Livewire\Admin\Widgets\PostWidgetIndex;
+use App\Livewire\Admin\Widgets\PostWidgetForm;
+use App\Livewire\Admin\Settings\FloatingWidget;
+use App\Http\Controllers\Back\FormController as LegacyFormController;
 use App\Http\Controllers\AdminPanel\LogoutController;
 use App\Http\Controllers\Back\OrderController as LegacyOrderController;
 use App\Http\Controllers\Back\SellerControllers as LegacySellerController;
@@ -247,8 +271,102 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
         Route::get('tags', TagIndex::class)->name('tags.index');
         Route::get('tags/export', [LegacyTagController::class, 'export'])->name('tags.export');
 
+        /*
+        |----------------------
+        | وبلاگ (فاز ۶)
+        |----------------------
+        | {post} با slug بایند می‌شود (Post::getRouteKeyName).
+        */
+        Route::get('posts', PostIndex::class)->name('posts.index');
+        Route::get('posts/create', PostForm::class)->name('posts.create');
+        Route::get('posts/{post}/edit', PostForm::class)->name('posts.edit');
+
+        /*
+        |----------------------
+        | صفحات (فاز ۶)
+        |----------------------
+        | {page} با slug بایند می‌شود (Page::getRouteKeyName).
+        */
+        Route::get('pages', PageIndex::class)->name('pages.index');
+        Route::get('pages/create', PageForm::class)->name('pages.create');
+        Route::get('pages/{page}/edit', PageForm::class)->name('pages.edit');
+
+        /*
+        |----------------------
+        | منوها و لینک‌ها (فاز ۶)
+        |----------------------
+        */
+        Route::get('menus', MenuManager::class)->name('menus.index');
+        Route::get('links', LinkIndex::class)->name('links.index');
+        Route::get('links/groups', LinkGroups::class)->name('links.groups');
+
+        /*
+        |----------------------
+        | اسلایدرها و بنرها (فاز ۶)
+        |----------------------
+        | بایند با id (بدون getRouteKeyName اختصاصی).
+        */
+        Route::get('sliders', SliderIndex::class)->name('sliders.index');
+        Route::get('sliders/create', SliderForm::class)->name('sliders.create');
+        Route::get('sliders/{slider}/edit', SliderForm::class)->name('sliders.edit');
+
+        Route::get('banners', BannerIndex::class)->name('banners.index');
+        Route::get('banners/create', BannerForm::class)->name('banners.create');
+        Route::get('banners/{banner}/edit', BannerForm::class)->name('banners.edit');
+
+        /*
+        |----------------------
+        | سوالات متداول (فاز ۶)
+        |----------------------
+        */
+        Route::get('faqs', FaqIndex::class)->name('faqs.index');
+
+        /*
+        |----------------------
+        | دیدگاه‌ها / نظرات (فاز ۶)
+        |----------------------
+        | هر دو روت از یک کامپوننت با prop type استفاده می‌کنند.
+        */
+        Route::get('comments/index/products', CommentsIndex::class)->name('comments.products');
+        Route::get('comments/index/posts', CommentsIndex::class)->defaults('type', 'post')->name('comments.posts');
+        Route::get('reviews', ReviewIndex::class)->name('reviews.index');
+        Route::get('stock-notifies', StockNotifyIndex::class)->name('stock-notifies.index');
+
+        /*
+        |----------------------
+        | فرم‌ساز (فاز ۶)
+        |----------------------
+        | {form} و {widget} با id بایند می‌شوند.
+        | پیش‌نمایش فرم از کنترلر قدیمی استفاده می‌کند (نمای مستقل).
+        */
+        Route::get('forms', FormIndex::class)->name('forms.index');
+        Route::get('forms/create', FormBuilder::class)->name('forms.create');
+        Route::get('forms/{form}/submissions', FormSubmissions::class)->name('forms.submissions');
+        Route::get('forms/{form}/preview', [LegacyFormController::class, 'preview'])->name('forms.preview');
+        Route::get('forms/{form}/edit', FormBuilder::class)->name('forms.edit');
+
+        /*
+        |----------------------
+        | ابزارک‌ها (فاز ۶)
+        |----------------------
+        */
+        Route::get('widgets', WidgetIndex::class)->name('widgets.index');
+        Route::get('widgets/create', WidgetForm::class)->name('widgets.create');
+        Route::get('widgets/{widget}/edit', WidgetForm::class)->name('widgets.edit');
+
+        Route::get('posts-widgets', PostWidgetIndex::class)->name('posts-widgets.index');
+        Route::get('posts-widgets/create', PostWidgetForm::class)->name('posts-widgets.create');
+        Route::get('posts-widgets/{widget}/edit', PostWidgetForm::class)->name('posts-widgets.edit');
+
+        /*
+        |----------------------
+        | ویجت شناور (فاز ۶)
+        |----------------------
+        */
+        Route::get('settings/floating-widget', FloatingWidget::class)->name('settings.floating-widget');
+
         // سایر بخش‌ها در فازهای بعدی اضافه می‌شوند:
-        // فاز ۶: محتوا / ...
+        // فاز ۷: پشتیبانی/سیستم / ...
 
     });
 });

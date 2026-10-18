@@ -97,13 +97,13 @@ return [
                     'children' => [
                         [
                             'label' => 'لیست مطالب',
-                            'route' => 'admin.posts.index',
+                            'route' => 'np.posts.index',
                             'permission' => 'posts.index',
                             'icon' => 'list',
                         ],
                         [
                             'label' => 'نوشته جدید',
-                            'route' => 'admin.posts.create',
+                            'route' => 'np.posts.create',
                             'permission' => 'posts.create',
                             'icon' => 'plus',
                         ],
@@ -117,7 +117,7 @@ return [
                 ],
                 [
                     'label' => 'دیدگاه‌ها',
-                    'route' => 'admin.comments.posts',
+                    'route' => 'np.comments.posts',
                     'permission' => 'posts.comments',
                     'icon' => 'message-square',
                 ],
@@ -139,13 +139,13 @@ return [
                     'children' => [
                         [
                             'label' => 'لیست صفحات',
-                            'route' => 'admin.pages.index',
+                            'route' => 'np.pages.index',
                             'permission' => 'pages.index',
                             'icon' => 'list',
                         ],
                         [
                             'label' => 'صفحه جدید',
-                            'route' => 'admin.pages.create',
+                            'route' => 'np.pages.create',
                             'permission' => 'pages.create',
                             'icon' => 'plus',
                         ],
@@ -187,13 +187,13 @@ return [
                         ],
                         [
                             'label' => 'ویجت‌های صفحه اصلی',
-                            'route' => 'admin.widgets.index',
+                            'route' => 'np.widgets.index',
                             'permission' => 'themes.settings',
                             'icon' => 'layout-panel-top',
                         ],
                         [
                             'label' => 'ویجت‌های وبلاگ',
-                            'route' => 'admin.posts-widgets.index',
+                            'route' => 'np.posts-widgets.index',
                             'permission' => 'themes.settings',
                             'icon' => 'layout-panel-left',
                         ],
@@ -205,13 +205,13 @@ return [
                     'children' => [
                         [
                             'label' => 'لیست اسلایدرها',
-                            'route' => 'admin.sliders.index',
+                            'route' => 'np.sliders.index',
                             'permission' => 'sliders.index',
                             'icon' => 'list',
                         ],
                         [
                             'label' => 'اسلایدر جدید',
-                            'route' => 'admin.sliders.create',
+                            'route' => 'np.sliders.create',
                             'permission' => 'sliders.create',
                             'icon' => 'plus',
                         ],
@@ -223,13 +223,13 @@ return [
                     'children' => [
                         [
                             'label' => 'لیست بنرها',
-                            'route' => 'admin.banners.index',
+                            'route' => 'np.banners.index',
                             'permission' => 'banners.index',
                             'icon' => 'list',
                         ],
                         [
                             'label' => 'بنر جدید',
-                            'route' => 'admin.banners.create',
+                            'route' => 'np.banners.create',
                             'permission' => 'banners.create',
                             'icon' => 'plus',
                         ],
@@ -241,19 +241,19 @@ return [
                     'children' => [
                         [
                             'label' => 'لیست لینک‌ها',
-                            'route' => 'admin.links.index',
+                            'route' => 'np.links.index',
                             'permission' => 'links.index',
                             'icon' => 'list',
                         ],
                         [
                             'label' => 'لینک جدید',
-                            'route' => 'admin.links.create',
+                            'route' => 'np.links.create',
                             'permission' => 'links.create',
                             'icon' => 'plus',
                         ],
                         [
                             'label' => 'گروه‌های لینک',
-                            'route' => 'admin.links.groups.index',
+                            'route' => 'np.links.groups',
                             'permission' => 'links.groups',
                             'icon' => 'folder',
                         ],
@@ -261,7 +261,7 @@ return [
                 ],
                 [
                     'label' => 'منوها',
-                    'route' => 'admin.menus.index',
+                    'route' => 'np.menus.index',
                     'permission' => 'menus',
                     'icon' => 'menu',
                 ],
@@ -331,7 +331,7 @@ return [
                         ],
                         [
                             'label' => 'اطلاع‌رسانی موجودی',
-                            'route' => 'admin.stock-notifies.index',
+                            'route' => 'np.stock-notifies.index',
                             'permission' => 'products.stock-notify',
                             'icon' => 'bell-ring',
                         ],
@@ -415,13 +415,13 @@ return [
                     'children' => [
                         [
                             'label' => 'پرسش و پاسخ محصولات',
-                            'route' => 'admin.comments.products',
+                            'route' => 'np.comments.products',
                             'permission' => 'products.comments',
                             'icon' => 'help-circle',
                         ],
                         [
                             'label' => 'دیدگاه‌ها',
-                            'route' => 'admin.reviews.index',
+                            'route' => 'np.reviews.index',
                             'permission' => 'products.reviews',
                             'icon' => 'star',
                         ],
@@ -765,13 +765,13 @@ return [
                     'children' => [
                         [
                             'label' => 'لیست فرم‌ها',
-                            'route' => 'admin.forms.index',
+                            'route' => 'np.forms.index',
                             'permission' => 'forms.index',
                             'icon' => 'list',
                         ],
                         [
                             'label' => 'فرم جدید',
-                            'route' => 'admin.forms.create',
+                            'route' => 'np.forms.create',
                             'permission' => 'forms.create',
                             'icon' => 'plus',
                         ],
@@ -785,7 +785,7 @@ return [
                 ],
                 [
                     'label' => 'سوالات متداول',
-                    'route' => 'admin.faqs.index',
+                    'route' => 'np.faqs.index',
                     'permission' => 'faqs',
                     'icon' => 'circle-help',
                 ],
@@ -951,7 +951,7 @@ return [
                         ],
                         [
                             'label' => 'ویجت شناور',
-                            'route' => 'admin.settings.floating-widget.index',
+                            'route' => 'np.settings.floating-widget',
                             'permission' => 'settings.floating-widget',
                             'icon' => 'panel-bottom',
                         ],
