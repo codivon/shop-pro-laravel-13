@@ -1,7 +1,7 @@
 # 📋 گزارش پیشرفت توسعه پنل مدیریت جدید — ADMIN PANEL PROGRESS
 
 > **این فایل حافظه‌ی پروژه است.** اگر کانتکست/حافظه‌ی ایجنت پاک شد، با خواندن همین فایل + `PROJECT_ANALYSIS.md` + `/home/z/my-project/worklog.md` کار دقیقاً از همین‌جا ادامه پیدا می‌کند.
-> آخرین به‌روزرسانی: **پایان فاز ۴ (کاربران/مالی/مرجوعی/تخفیف) — فاز بعدی: ۵ (تکسونومی)**
+> آخرین به‌روزرسانی: **پایان فاز ۵ (تکسونومی) — فاز بعدی: ۶ (محتوا)**
 
 ---
 
@@ -63,7 +63,7 @@
 | **۲** | ماژول سفارشات (لیست/نمایش/آیتم/ایجاد/ناتمام/اکسل/چاپ/برچسب/عملیات گروهی) | ✅ | `2e78a2ad` |
 | **۳** | **فروشندگان**: لیست/نمایش+ویرایش (۷ تب)/محصولات/تنوع‌ها/سفارشات/بازدیدها/اعلان‌ها + ۴ صفحه تنظیمات فروشندگی | ✅ | `e30df7c9` |
 | **۴** | **کاربران/مالی**: users (لیست/فرم/نمایش/اعلان/بازدید/اکسل)، تراکنش‌ها، کمیسیون فروشندگان، تاریخچه کیف پول، شارژ/برداشت، صف برداشت (unpay-refund)، مرجوعی‌ها (workflow کامل + موتور بازگشت وجه)، دلایل مرجوعی، تخفیف‌ها (فرم کامل با چیپ‌پیکر) | ✅ | `6a0d3e32` |
-| ۵ | تکسونومی: دسته‌بندی‌ها، برندها، اتریبیوت‌ها، گروه اتریبیوت، نوع اسپک، سایز، فیلدها، فیلترها، تگ‌ها | ⬜ | — |
+| **۵** | **تکسونومی**: درخت دسته‌بندی‌ها (محصول/وبلاگ) + فرم ویرایش، برندها، گروه ویژگی‌ها + ویژگی‌ها، نوع مشخصات، راهنمای سایز (ماتریس مقادیر)، فیلدهای اختصاصی، فیلترها، تگ‌ها | ✅ | `559a5de3` |
 | ۶ | محتوا: پست‌ها، برگه‌ها، منوها، اسلایدرها، بنرها، لینک‌ها، سوالات متداول، فرم‌ها، ویجت‌ها، story | ⬜ | — |
 | ۷ | پشتیبانی/سیستم: تیکت‌ها، پیام‌ها، تماس، خبرنامه، اعلان‌های سراسری، لاگ فعالیت، بکاپ، پکیج‌ها/بازار، تنظیمات، کلیدهای API، ادمین‌ها/نقش‌ها/دسترسی‌ها، sessionها، Pulse، توسعه‌دهنده، نصب‌کننده، ایمپورت، جستجو، آمار، robots، ریدایرکت‌ها، واحد پول، تعطیلات، استان/شهر، انبارها، روش ارسال/تعرفه، SMS/Bale، تم‌ها | ⬜ | — |
 | ۸ | پرداخت نهایی: QA، منوی کامل، انیمیشن‌ها، بهینه‌سازی، همگام‌سازی با پنل قدیمی | ⬜ | — |
@@ -172,7 +172,32 @@
 
 ---
 
-## ۸) الگوها (Conventions) برای همه فازهای بعدی
+## ۸) فاز ۵ — تکسونومی ✅ (کامیت `559a5de3`)
+
+**۳ ایجنت موازی** (5-a categories / 5-b brands+attributes+spectypes / 5-c sizetypes+filds+filters+tags) → ۳۵ فایل + AttributeForm extended by coordinator (create mode).
+
+- **CategoryTree** (productcat+postcat) — رندر بازگشتی، ایجاد inline با SlugService، حذف شاخه با پاک‌سازی فرزندان (allChildCategories شامل خودِ ریشه)، مرتب‌سازی ↑↓ + دراپ‌داون پدر (جایگزین drag&drop قدیمی — انحراف مستند)، create با ordering=max+1
+- **CategoryForm** — پورت ۱:۱ update (متا/سئو، filter_type+filter_id، commission فقط productcat، published، تصویر + background_image هرکدام از input خودش — باگ قدیمی رفع)
+- **BrandIndex/Form** — unique name+slug، الگوی ذخیره تصویر storeAs همان قدیمی، حذف portable با صفر کردن products.brand_id
+- **AttributeGroupIndex** — inline create + مودال ویرایش + ↑↓ ترتیب؛ **AttributeGroupAttributes** — لیست هر گروه با چیپ رنگ
+- **AttributeForm** — create+edit دوتایی (value فقط برای گروه رنگی)
+- **SpecTypeForm** — ریپیتر تودرتو گروه→مشخصه با firstOrCreate + پیوت orderings (پورت دقیق)
+- **SizeTypeIndex/Form/Values** — ریپیتر سایز، update با حذف whereNotIn، **ماتریس مقادیر گروه×سایز + لاگ spatie activity دقیق**
+- **FildIndex/Form** — belongs_to=blogs (باگ قدیمی posts→500 در MySQL strict رفع)، select_options reactive
+- **FilterForm** — ریپیتر filterable مورف (static_filter/attributeGroup/specification + separator) پورت add_filterable، قید تک‌فیلتر فروشنده
+- **TagIndex** — آمار ۴ کارته، مودال جزئیات (usage_details + taggables grouped)، bulk delete، CSV با روته قدیمی
+
+### تله‌های فاز ۵:
+- `{category}` و `{brand}` با **slug** بایند می‌شوند (getRouteKeyName)؛ بقیه مدل‌های تکسونومی id
+- مسیرهای ثابت (`categories/product`, `categories/post`) قبل از `{category}` تعریف شوند
+- Category بدون $casts — published دستی بولی شود؛ allChildCategories شامل خودِ ریشه است
+- مشخصات/گروه مشخصات ستون lang ندارند (برندها/گروه ویژگی/spec_type دارند)
+- Livewire 4 نام‌های رزروشده: computed `attributes()` ممنوع → `attributesList()`؛ `hydrateGroups` ممنوع → `loadGroups()`
+- اندیسیک ویوها به روت‌هایی که هنوز ثبت نشده‌اند → همیشه route:list را قبل از تست مرورگر چک کن
+
+---
+
+## ۹) الگوها (Conventions) برای همه فازهای بعدی
 
 1. کلاس: `app/Livewire/Admin/<Module>/<Name>.php` — `#[Title('...')]`, `WithPagination`, `public int $perPage = 15`, فیلترها با `#[Url(as:'...', except:'')]`
 2. ویو: `resources/views/admin-panel/livewire/admin/<module>/<page>.blade.php` + `->layout('admin-panel::layout')`
@@ -187,10 +212,10 @@
 
 ---
 
-## ۹) وضعیت گیت و ادامه کار
+## ۱۰) وضعیت گیت و ادامه کار
 
 - برنچ کاری: **`docs/project-analysis`** (پوش به origin با توکن — remote آماده است)
-- تاریخچه: `54519067` (تحلیل) ← `d35be321` (فاز ۰) ← `ae45ec97` (فاز ۱) ← `71255a9e` (اسکرپر) ← `2e78a2ad` (فاز ۲) ← `e30df7c9` (فاز ۳) ← `6a0d3e32` (فاز ۴ — کاربران/مالی/مرجوعی/تخفیف)
+- تاریخچه: `54519067` (تحلیل) ← `d35be321` (فاز ۰) ← `ae45ec97` (فاز ۱) ← `71255a9e` (اسکرپر) ← `2e78a2ad` (فاز ۲) ← `e30df7c9` (فاز ۳) ← `6a0d3e32` (فاز ۴) ← `559a5de3` (فاز ۵ — تکسونومی)
 - **چک‌لیست ازسرگیری** (اگر حافظه پاک شد):
   1. این فایل + `PROJECT_ANALYSIS.md` + `/home/z/my-project/worklog.md` را بخوان
   2. `git log --oneline -8` و `git status` را چک کن
