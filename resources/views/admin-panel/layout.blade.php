@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', 'داشبورد') | پنل مدیریت {{ option('info_site_title', config('app.name')) }}</title>
+    <title>@yield('title', $title ?? 'داشبورد') | پنل مدیریت {{ option('info_site_title', config('app.name')) }}</title>
 
     @vite(['resources/admin-panel/css/admin.css', 'resources/admin-panel/js/admin.js'])
     @livewireStyles

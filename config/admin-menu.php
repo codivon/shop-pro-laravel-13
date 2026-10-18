@@ -494,19 +494,19 @@ return [
                     'children' => [
                         [
                             'label' => 'لیست فروشندگان',
-                            'route' => 'admin.sellers.index',
+                            'route' => 'np.sellers.index',
                             'permission' => 'sellers.index',
                             'icon' => 'list',
                         ],
                         [
                             'label' => 'محصولات فروشندگان',
-                            'route' => 'admin.sellers.products',
+                            'route' => 'np.sellers.products',
                             'permission' => 'sellers.products',
                             'icon' => 'package-2',
                         ],
                         [
                             'label' => 'سفارشات فروشندگان',
-                            'route' => 'admin.sellers.orders',
+                            'route' => 'np.sellers.orders',
                             'permission' => 'sellers.orders',
                             'icon' => 'receipt',
                         ],
@@ -519,25 +519,25 @@ return [
                     'children' => [
                         [
                             'label' => 'چرا ما',
-                            'route' => 'admin.settings.seller-hero',
+                            'route' => 'np.settings.seller-hero',
                             'permission' => null,
                             'icon' => 'sparkles',
                         ],
                         [
                             'label' => 'نمایش میزان کمیسیون',
-                            'route' => 'admin.settings.seller-commission',
+                            'route' => 'np.settings.seller-commission',
                             'permission' => null,
                             'icon' => 'percent',
                         ],
                         [
                             'label' => 'سوالات پر تکرار',
-                            'route' => 'admin.settings.seller-question',
+                            'route' => 'np.settings.seller-question',
                             'permission' => null,
                             'icon' => 'message-circle-question',
                         ],
                         [
                             'label' => 'قرارداد الکترونیک',
-                            'route' => 'admin.settings.seller-econtract',
+                            'route' => 'np.settings.seller-econtract',
                             'permission' => null,
                             'icon' => 'file-signature',
                         ],
