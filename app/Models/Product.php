@@ -107,7 +107,7 @@ class Product extends Model
     {
         return $this->hasOne(Price::class)
             ->where('stock', '>', 0)
-            ->orderByRaw('if((discount_expire_at is null or date(discount_expire_at) > "' . now()->format('Y-m-d H:i:s') . '"), discount_price, regular_price)');
+            ->orderByRaw('CASE WHEN (discount_expire_at is null or date(discount_expire_at) > "' . now()->format('Y-m-d H:i:s') . '") THEN discount_price ELSE regular_price END');
     }
 /*    public function lowestPrice()
     {

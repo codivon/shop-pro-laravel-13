@@ -45,6 +45,16 @@
     <x-admin-panel::toasts />
 </div>
 
+@if (session('np-toast'))
+    @php $npToast = session('np-toast') @endphp
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            window.ApToast?.{{ in_array($npToast['type'] ?? '', ['success', 'error', 'info']) ? $npToast['type'] : 'info' }}(
+                {{ json_encode($npToast['message'] ?? '') }});
+        });
+    </script>
+@endif
+
 @livewireScripts
 @stack('scripts')
 </body>

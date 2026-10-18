@@ -301,13 +301,13 @@ return [
                     'children' => [
                         [
                             'label' => 'لیست محصولات',
-                            'route' => 'admin.products.index',
+                            'route' => 'np.products.index',
                             'permission' => 'products.index',
                             'icon' => 'list',
                         ],
                         [
                             'label' => 'محصول جدید',
-                            'route' => 'admin.products.create',
+                            'route' => 'np.products.create',
                             'permission' => 'products.create',
                             'icon' => 'plus',
                         ],

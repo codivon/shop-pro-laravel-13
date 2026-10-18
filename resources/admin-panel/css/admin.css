@@ -233,6 +233,15 @@ body {
         @apply text-night-ink-2/60;
     }
 
+    /* تب‌های فرم محصول */
+    .ap-tab {
+        @apply relative -mb-px flex items-center gap-1.5 rounded-t-xl border-b-2 border-transparent px-3.5 py-2.5 text-[13px] font-semibold text-ink-2
+               transition-colors hover:bg-surface-3 dark:text-night-ink-2 dark:hover:bg-night-3;
+    }
+    .ap-tab.is-active {
+        @apply border-brand-500 bg-surface text-brand-700 dark:bg-night-2 dark:text-brand-400;
+    }
+
     /* اسکلت لودینگ */
     .ap-skeleton {
         @apply rounded-xl bg-linear-to-l from-surface-3 via-surface-2 to-surface-3;

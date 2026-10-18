@@ -6,7 +6,7 @@
         try {
             $url = route($item['route'], $item['params'] ?? []);
             if (str_starts_with($item['route'], 'np.')) {
-                $isActive = request()->fullUrlIs($url . '*') || rtrim(request()->url(), '/') === rtrim($url, '/');
+                $isActive = request()->routeIs($item['route']);
             }
         } catch (\Throwable $e) {
             $url = '#';

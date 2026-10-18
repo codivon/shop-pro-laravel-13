@@ -82,6 +82,21 @@
         </div>
     </section>
 
+    {{-- نمودار فروش ۳۰ روز اخیر — Apache ECharts --}}
+    <section class="ap-card overflow-hidden">
+        <header class="flex items-center justify-between border-b border-line px-5 py-4 dark:border-night-line">
+            <div class="flex items-center gap-2.5">
+                <x-admin-panel::icon name="file-chart-column" class="size-4.5 text-brand-600 dark:text-brand-400" />
+                <h3 class="text-sm font-bold">روند فروش ۳۰ روز اخیر</h3>
+            </div>
+            <div class="flex items-center gap-3 text-[11px] font-semibold">
+                <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-brand-500"></span>فروش (تومان)</span>
+                <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-sky-500"></span>تعداد سفارش</span>
+            </div>
+        </header>
+        <div data-chart="sales" data-options="{{ json_encode($salesOptions) }}" class="h-80 w-full"></div>
+    </section>
+
     <div class="grid grid-cols-1 gap-6 xl:grid-cols-5">
 
         {{-- آخرین سفارشات --}}
@@ -127,29 +142,38 @@
             </div>
         </section>
 
-        {{-- دسترسی سریع + جای نمودار (فاز ۱) --}}
+        {{-- وضعیت سفارشات + دسترسی سریع --}}
         <section class="space-y-6 xl:col-span-2">
-            <div class="ap-card flex h-72 flex-col items-center justify-center gap-3 p-6 text-center">
-                <span class="flex size-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
-                    <x-admin-panel::icon name="file-chart-column" class="size-7" />
-                </span>
-                <h3 class="text-sm font-bold">نمودارهای فروش و بازدید</h3>
-                <p class="max-w-60 text-xs leading-5 text-ink-3 dark:text-night-ink-2">
-                    نمودارهای پیشرفته و فارسی‌سازی‌شده در فاز ۱ به این بخش اضافه می‌شوند.
-                </p>
-                <span class="ap-badge bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-400">فاز ۱ — داشبورد کامل</span>
+            <div class="ap-card overflow-hidden">
+                <header class="flex items-center justify-between border-b border-line px-5 py-4 dark:border-night-line">
+                    <div class="flex items-center gap-2.5">
+                        <x-admin-panel::icon name="chart-pie" class="size-4.5 text-sky-600 dark:text-sky-400" />
+                        <h3 class="text-sm font-bold">وضعیت سفارشات</h3>
+                    </div>
+                </header>
+                <div data-chart="status" data-options="{{ json_encode($statusOptions) }}" class="h-64 w-full"></div>
             </div>
+
+            @if (count($topProducts))
+                <div class="ap-card overflow-hidden">
+                    <header class="flex items-center gap-2.5 border-b border-line px-5 py-4 dark:border-night-line">
+                        <x-admin-panel::icon name="trophy" class="size-4.5 text-amber-600 dark:text-amber-400" />
+                        <h3 class="text-sm font-bold">پرفروش‌ترین محصولات (۳۰ روز)</h3>
+                    </header>
+                    <div data-chart="topProducts" data-options="{{ json_encode($topProductsOptions) }}" class="h-56 w-full px-2"></div>
+                </div>
+            @endif
 
             <div class="ap-card p-5">
                 <h3 class="mb-4 text-sm font-bold">دسترسی سریع</h3>
                 <div class="grid grid-cols-2 gap-2.5">
-                    <a href="{{ route('admin.products.create') }}" class="ap-menu-link bg-surface-2 dark:bg-night-3">
+                    <a href="{{ route('np.products.create') }}" wire:navigate class="ap-menu-link bg-surface-2 dark:bg-night-3">
                         <x-admin-panel::icon name="box" class="size-4.5 text-brand-600 dark:text-brand-400" />
                         <span>محصول جدید</span>
                     </a>
-                    <a href="{{ route('admin.orders.index') }}" class="ap-menu-link bg-surface-2 dark:bg-night-3">
-                        <x-admin-panel::icon name="shopping-cart" class="size-4.5 text-sky-600 dark:text-sky-400" />
-                        <span>سفارشات</span>
+                    <a href="{{ route('np.products.index') }}" wire:navigate class="ap-menu-link bg-surface-2 dark:bg-night-3">
+                        <x-admin-panel::icon name="shopping-bag" class="size-4.5 text-sky-600 dark:text-sky-400" />
+                        <span>محصولات</span>
                     </a>
                     <a href="{{ route('admin.sellers.index') }}" class="ap-menu-link bg-surface-2 dark:bg-night-3">
                         <x-admin-panel::icon name="store" class="size-4.5 text-rose-600 dark:text-rose-400" />

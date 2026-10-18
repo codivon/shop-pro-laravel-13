@@ -23,5 +23,10 @@
         "pusher-js": "^7.0.2",
         "tailwindcss": "^4.1.14",
         "vite": "^6.3.5"
+    },
+    "dependencies": {
+        "@majidh1/jalalidatepicker": "^1.0.0",
+        "ckeditor5": "^49.0.0",
+        "echarts": "^6.1.0"
     }
 }

@@ -1,5 +1,7 @@
-{{-- Toast های پنل جدید (Alpine) --}}
-<div x-data="apToast" class="pointer-events-none fixed bottom-4 start-4 z-[70] flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-2"
+{{-- Toast های پنل جدید (Alpine) — رویداد ap-toast (JS) و toast (dispatch لایووایر) --}}
+<div x-data="apToast"
+     x-on:toast.window="ApToast.show($event.detail.message ?? '', { type: $event.detail.type ?? 'info' })"
+     class="pointer-events-none fixed bottom-4 start-4 z-[70] flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-2"
      aria-live="polite" aria-atomic="true">
     <template x-for="toast in items" :key="toast.id">
         <div x-show="toast.visible"
