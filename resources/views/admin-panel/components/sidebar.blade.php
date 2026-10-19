@@ -38,7 +38,7 @@
     </div>
 
     {{-- آیتم‌های منو --}}
-    <nav class="flex-1 overflow-y-auto overflow-x-hidden px-3 pb-6 pt-1">
+    <nav x-ref="nav" x-on:scroll.passive="saveScroll()" class="flex-1 overflow-y-auto overflow-x-hidden px-3 pb-6 pt-1">
         @foreach ($menu as $group)
             @php
                 // فیلتر آیتم‌ها بر اساس دسترسی
@@ -52,9 +52,22 @@
 
                 if ($visibleItems->isEmpty()) continue;
 
-                // آیا این گروه آیتم فعال دارد؟ (برای باز بودن پیش‌فرض)
-                $hasActive = $visibleItems->contains(fn ($i) => str_starts_with(($i['route'] ?? ''), 'np.')
-                    && request()->routeIs($i['route']));
+                // آیا این گروه آیتم فعال دارد؟ (شامل زیرمنوها — برای باز بودن آکاردئون)
+                $apRouteActive = function ($routeName): bool {
+                    if (!str_starts_with((string) $routeName, 'np.')) return false;
+                    if (request()->routeIs($routeName)) return true;
+                    // صفحات لیست برای create/edit/show خودشان هم فعال باشند
+                    if (str_ends_with($routeName, '.index')) {
+                        $base = substr($routeName, 0, -6);
+                        return request()->routeIs([$base.'.create', $base.'.edit', $base.'.show', $base.'.form']);
+                    }
+                    return false;
+                };
+
+                $hasActive = $visibleItems->contains(function ($i) use ($apRouteActive) {
+                    if ($apRouteActive($i['route'] ?? '')) return true;
+                    return collect($i['children'] ?? [])->contains(fn ($c) => $apRouteActive($c['route'] ?? ''));
+                });
 
                 $groupText = $group['title'] . ' ' . $visibleItems->map(function ($i) {
                     return $i['label'] . ' ' . collect($i['children'] ?? [])->pluck('label')->implode(' ');

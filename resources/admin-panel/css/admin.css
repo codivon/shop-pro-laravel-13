@@ -308,3 +308,88 @@ body {
 .stagger > *:nth-child(6) { animation-delay: .22s; }
 .stagger > *:nth-child(7) { animation-delay: .26s; }
 .stagger > *:nth-child(8) { animation-delay: .3s; }
+
+/* --------------------------------------------------------------------------
+   CKEditor full — ارتفاع، فونت، لایه‌بندی (z-index) و تم تاریک ویرایشگر
+   نکته: «:root:root» برای بردن بر تعریف‌های :root خود CKEditor (ترتیب لود مهم نیست)
+   -------------------------------------------------------------------------- */
+.ck-editor__editable_inline {
+    min-height: 500px;
+    font-family: var(--font-sans);
+}
+
+:root:root {
+    /* فونت محتوای ویرایشگر = فونت پنل (وزیرمتن) */
+    --ck-content-font-family: var(--font-sans);
+
+    /* پنل‌های بازشوی ویرایشگر: زیر سایدبار (z-50) و توست‌ها (z-70)، بالای هدر چسبان (z-30) */
+    --ck-z-panel: 35;
+    --ck-z-dialog: 60;
+    --ck-z-modal: 60;
+
+    /* رنگ تأکیدی ویرایشگر هم‌رنگ برند پنل (زمردی) */
+    --ck-color-base-action: #059669;
+    --ck-color-base-action-hover: #047857;
+    --ck-color-base-focus: #059669;
+    --ck-color-base-active: #059669;
+    --ck-color-base-action-muted: #d1fae5;
+    --ck-focus-border-color: #059669;
+}
+
+:root:root.dark {
+    /* ویرایشگر در تم تاریک (متغیرهای سطح پنل) */
+    --ck-color-base-background: #111827;
+    --ck-color-base-foreground: #161f2e;
+    --ck-color-base-border: #223047;
+    --ck-color-base-border-light: #1b2637;
+    --ck-color-base-text: #e5eaf2;
+    --ck-color-base-text-light: #9aa7ba;
+    --ck-color-base-hover: #1b2637;
+    --ck-color-base-hover-strong: #223047;
+    --ck-color-base-selected: #14312a;
+    --ck-color-base-selected-hover: #1a3d34;
+    --ck-color-base-action-muted: #064e3b;
+    --ck-color-base-focus-shadow: rgba(16, 185, 129, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   Widget Builder (فاز ۹-ه) — ویجت‌ساز تمام‌صفحه با پیش‌نمایش زنده
+   -------------------------------------------------------------------------- */
+
+/* اسکرول‌بار ظریف پنل ابزارک‌ها و مودال‌ها */
+.ap-builder-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(148 163 184 / .45) transparent;
+}
+.ap-builder-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.ap-builder-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.ap-builder-scroll::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: rgb(148 163 184 / .45);
+}
+.ap-builder-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgb(100 116 139 / .65);
+}
+.dark .ap-builder-scroll {
+    scrollbar-color: rgb(71 85 105 / .6) transparent;
+}
+.dark .ap-builder-scroll::-webkit-scrollbar-thumb {
+    background: rgb(71 85 105 / .6);
+}
+
+/* قاب پیش‌نمایش: جدا شدن نرم هنگام تعویض دستگاه + جلوگیری از فلاش سفید پس‌زمینه */
+.ap-builder-frame {
+    transition-property: max-width;
+    transition-duration: .3s;
+    transition-timing-function: cubic-bezier(.16, 1, .3, 1);
+}
+
+/* آیتم درگ‌شونده در حال کشیده شدن */
+.ap-builder-panel [draggable="true"]:active {
+    cursor: grabbing;
+}

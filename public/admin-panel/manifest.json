@@ -5,8 +5,14 @@
     "src": "node_modules/ckeditor5/dist/ckeditor5.js",
     "isDynamicEntry": true
   },
+  "node_modules/ckeditor5/dist/translations/fa.js": {
+    "file": "assets/fa-Bf_Hfm6D.js",
+    "name": "fa",
+    "src": "node_modules/ckeditor5/dist/translations/fa.js",
+    "isDynamicEntry": true
+  },
   "resources/admin-panel/css/admin.css": {
-    "file": "assets/admin-VCpJJI8O.css",
+    "file": "assets/admin-DObaVntH.css",
     "src": "resources/admin-panel/css/admin.css",
     "isEntry": true
   },
@@ -31,12 +37,13 @@
     "src": "resources/admin-panel/fonts/Vazirmatn-SemiBold.woff2"
   },
   "resources/admin-panel/js/admin.js": {
-    "file": "assets/admin-DwUC9r7C.js",
+    "file": "assets/admin-CtwAQt-j.js",
     "name": "admin",
     "src": "resources/admin-panel/js/admin.js",
     "isEntry": true,
     "dynamicImports": [
-      "node_modules/ckeditor5/dist/ckeditor5.js"
+      "node_modules/ckeditor5/dist/ckeditor5.js",
+      "node_modules/ckeditor5/dist/translations/fa.js"
     ],
     "css": [
       "assets/admin-i68tjOG4.css"

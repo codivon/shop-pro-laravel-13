@@ -186,8 +186,8 @@ return [
                             'icon' => 'settings-2',
                         ],
                         [
-                            'label' => 'ویجت‌های صفحه اصلی',
-                            'route' => 'np.widgets.index',
+                            'label' => 'ویجت‌ساز صفحه اصلی',
+                            'route' => 'np.widgets.builder',
                             'permission' => 'themes.settings',
                             'icon' => 'layout-panel-top',
                         ],

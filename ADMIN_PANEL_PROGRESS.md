@@ -306,3 +306,28 @@
 - بعد از ریست سندباکس: `bun install --frozen-lockfile` (۱۰۷۷ پکیج) قبل از بیلد Vite لازم است
 - بیلد نهایی: `bunx vite build --config vite.admin.config.mjs` → ۱۱.۴۵s، CSS نهایی `admin-VCpJJI8O.css`
 - **پروژه پنل ادمین تکمیل شد** — همه ۶۸ کنترلر Back پوشش داده شدند (Story خالی بود؛ InstallController عمداً قدیمی ماند؛ file-manager iframe محتوای قدیمی)
+
+---
+
+## ۱۲) فاز ۹ — بازخوردهای کاربر (۸ قابلیت) ✅
+
+| # | درخواست | راه‌حل | وضعیت |
+|---|---|---|---|
+| ۱ | تم ذخیره نمی‌شد | `EncryptCookies::$except` خالی بود — کوکی `admin-theme` را exclude کردیم (کوکی خام JS سمت سرور decrypt نمی‌شد) | ✅ مرورگر: reload → dark می‌ماند |
+| ۲ | CKEditor کامل مثل قدیم | ۵۵ پلاگین (فونت/رنگ/هایلایت/کد/بالانویس/جدول کامل/تصویر+آپلود/ایموجی/سورس/شوبلاک/فول‌اسکرین/HTML-embed/special chars/page break/find&replace/…) + UI فارسی + provider آپارات + آداپتر آپلود → `np.media.upload` + WordCount | ✅ 12/12 |
+| ۳ | منوی فعال + اسکرول | `$hasActive` زیرمنوها + variantهای create/edit/show؛ `apSidebar.restorePosition` (scroll به آیتم فعال، sessionStorage) | ✅ navScrollTop=228 + active درست |
+| ۴ | داشبورد پر | ۱۲ کارت + ۴ نمودار + ۶ لیست + میانبرها — همه Cache::remember(60)، لینک‌های gated | ✅ 53/53 |
+| ۵ | درگ‌انددراپ دسته‌ها | هندل درگ + before/after/inside با بازخورد بصری + `moveNode` سرور (ضد-حلقه) — دکمه‌های ↑↓ حفظ شد | ✅ 41/41 + درگ واقعی مرورگر |
+| ۶ | تمایز زیرشاخه‌ها | tint سه سطحی + وزن فونت نزولی + خط نقطه‌چین برند + پرفیکس └ | ✅ |
+| ۷ | گالری ویجت/فرم صفحات | مودال پورت قدیم: جستجو + چیپ + ۱۸ ویجت + [form-1] + فرم‌های واقعی؛ کپی + درج در کرسر CKEditor | ✅ 34/34 + درج واقعی |
+| ۸ | ویجت‌ساز مدرن زنده | **WidgetBuilder تمام‌صفحه**: iframe پیش‌نمایش واقعی سایت + پنل ابزارک با درگ ترتیب + افزودن کارت‌محور (بدون سلکت) + فرم تنظیمات inline + ذخیره → رفرش زنده پیش‌نمایش + سوییچ دستگاه + هایلایت postMessage + بازطراحی قالب‌ها/ابزارک‌ها | ✅ 65/65 + end-to-end مرورگر |
+
+### تله‌های جدید فاز ۹
+1. `EncryptCookies` همه کوکی‌های set-شده سمت کلاینت را می‌شکند — هر کوکی JS جدید باید exclude شود
+2. `$var` blade داخل `:class="..."` بدون `{{ }}` برای Alpine literal می‌ماند → خطای «not defined» و شکستن اسکوپ Alpine (در builder رخ داد)
+3. در Livewire 4 تست: `Testable` متد `getStatusCode()` ندارد → `assertSuccessful()` در try/catch
+4. auto-open بعد از create + openEditor تگر-کلوز = double-toggle باگ UX — سوییچ بهتر از تگر وقتی auto-open هست
+5. مدل بدون casts: `=== false` روی ستون integer می‌خورد؛ `is_active` را boolean cast شد
+6. SQLite FK cascade خاموش است — حذف وابسته‌ها صریح انجام شود
+7. تریت‌های آماری/فایل‌ها: دیسک default این پروژه `local` با root=`public/uploads` است (storeAs → /uploads/...)
+8. تریت قدیمی لاگ ابزارک: دستی «ویرایش کرد» + خودکار Observer — تفکیک با description like

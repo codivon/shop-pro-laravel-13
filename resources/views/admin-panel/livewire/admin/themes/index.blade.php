@@ -1,10 +1,13 @@
-{{-- لیست قالب‌ها — پورت back/themes/index.blade.php (فاز ۷-ج۴) --}}
+{{-- لیست قالب‌ها — پورت back/themes/index.blade.php (فاز ۷-ج۴) — بازطراحی مدرن فاز ۹-ه (کامپوننت ThemeIndex دست‌نخورده) --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-7xl space-y-5">
 
     {{-- سربرگ --}}
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3">
-            <span class="flex size-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
+            <span class="flex size-11 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-500/25">
                 <x-admin-panel::icon name="layout-template" class="size-6" />
             </span>
             <div>
@@ -25,47 +28,79 @@
     </div>
 
     @if (count($themes))
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
             @foreach ($themes as $theme)
                 @continue(!$theme['config'])
                 @php
                     $isActive = ($this->currentTheme['name'] ?? null) === $theme['name'];
+                    $previewImage = ! empty($theme['config']['asset_path']) && ! empty($theme['config']['demo']['image'])
+                        ? asset($theme['config']['asset_path'] . $theme['config']['demo']['image'])
+                        : null;
                 @endphp
-                <div class="ap-card overflow-hidden {{ $isActive ? 'ring-2 ring-brand-500' : '' }}">
-                    <div class="aspect-video w-full overflow-hidden bg-surface-2 dark:bg-night-3">
-                        <img src="{{ asset($theme['config']['asset_path'] . $theme['config']['demo']['image']) }}"
-                             alt="{{ $theme['config']['demo']['name'] }}"
-                             class="size-full object-cover"
-                             onerror="this.style.display='none'">
-                    </div>
-                    <div class="p-4">
-                        <div class="flex items-center justify-between gap-2">
-                            <h3 class="text-sm font-bold">{{ $theme['config']['demo']['name'] }}</h3>
-                            @if ($isActive)
-                                <span class="ap-badge bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-400">
-                                    <x-admin-panel::icon name="check" class="size-3" />
-                                    قالب فعال
+                <div wire:key="theme-{{ $theme['name'] }}"
+                     class="ap-card group relative overflow-hidden p-0 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-950/10 dark:hover:shadow-black/40 {{ $isActive ? 'ring-2 ring-brand-500 ring-offset-2 ring-offset-surface dark:ring-offset-night-1' : '' }}">
+                    {{-- پیش‌نمایش قالب --}}
+                    <div class="relative aspect-video w-full overflow-hidden bg-surface-2 dark:bg-night-3">
+                        @if ($previewImage)
+                            <img src="{{ $previewImage }}" alt="{{ $theme['config']['demo']['name'] ?? $theme['name'] }}"
+                                 class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                 onerror="this.classList.add('hidden'); this.nextElementSibling?.classList.remove('hidden');">
+                            <span class="absolute inset-0 hidden place-items-center text-ink-3 dark:text-night-ink-2">
+                                <x-admin-panel::icon name="image" class="size-12" />
+                            </span>
+                        @else
+                            {{-- placeholder گرادیانی با آیکون palette --}}
+                            <span class="absolute inset-0 grid place-items-center bg-linear-to-br from-brand-50 via-surface-2 to-brand-100 text-brand-500/70 dark:from-night-3 dark:via-night-2 dark:to-night-3 dark:text-brand-400/50">
+                                <x-admin-panel::icon name="layers" class="size-14" />
+                            </span>
+                        @endif
+
+                        {{-- بج فعال با pulse --}}
+                        @if ($isActive)
+                            <span class="absolute top-3 start-3 inline-flex items-center gap-1.5 rounded-full bg-brand-500 px-2.5 py-1 text-[11px] font-bold text-white shadow-lg shadow-brand-500/40">
+                                <span class="relative flex size-2">
+                                    <span class="absolute inline-flex size-full animate-ping rounded-full bg-white opacity-75"></span>
+                                    <span class="relative inline-flex size-2 rounded-full bg-white"></span>
                                 </span>
-                            @endif
+                                قالب فعال
+                            </span>
+                        @endif
+                    </div>
+
+                    {{-- بدنه --}}
+                    <div class="p-4">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                                <h3 class="truncate text-sm font-bold">{{ $theme['config']['demo']['name'] ?? $theme['name'] }}</h3>
+                                <p class="ltr mt-0.5 text-[11px] text-ink-3 dark:text-night-ink-2">{{ $theme['name'] }}</p>
+                            </div>
+                            <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-ink-3 transition-colors group-hover:bg-brand-50 group-hover:text-brand-600 dark:bg-night-3 dark:text-night-ink-2 dark:group-hover:bg-brand-500/10 dark:group-hover:text-brand-400">
+                                <x-admin-panel::icon name="package" class="size-4.5" />
+                            </span>
                         </div>
-                        <p class="mt-1 text-xs leading-5 text-ink-3 dark:text-night-ink-2">{{ $theme['config']['demo']['description'] }}</p>
-                        <p class="ltr mt-1 text-[11px] text-ink-3 dark:text-night-ink-2">{{ $theme['name'] }}</p>
+                        <p class="mt-2 line-clamp-2 min-h-10 text-xs leading-5 text-ink-3 dark:text-night-ink-2">{{ $theme['config']['demo']['description'] ?? '' }}</p>
 
                         @unless ($isActive)
-                            <div class="mt-3 flex items-center justify-between gap-2">
+                            <div class="mt-3.5 flex items-center gap-2 border-t border-line pt-3.5 dark:border-night-line">
                                 <button type="button" wire:click="activate({{ \Illuminate\Support\Js::from($theme['name'])->toHtml() }})"
                                         wire:loading.attr="disabled" wire:target="activate"
-                                        class="ap-btn !py-1.5 !text-xs">
+                                        class="ap-btn !py-2 !text-xs">
                                     <x-admin-panel::icon name="check-circle" class="size-3.5" />
                                     تنظیم به عنوان قالب
                                 </button>
                                 @can('themes.delete')
                                     <button type="button" wire:click="confirmDelete({{ \Illuminate\Support\Js::from($theme['name'])->toHtml() }})"
-                                            class="ap-btn-ghost !py-1.5 !text-xs text-red-600 hover:!bg-red-50 dark:hover:!bg-red-500/10">
+                                            class="ap-btn-ghost !py-2 !text-xs text-red-600 hover:!bg-red-50 dark:hover:!bg-red-500/10"
+                                            title="حذف {{ $theme['name'] }}">
                                         <x-admin-panel::icon name="trash-2" class="size-3.5" />
                                         حذف
                                     </button>
                                 @endcan
+                            </div>
+                        @else
+                            <div class="mt-3.5 flex items-center gap-2 rounded-xl bg-brand-50/70 px-3 py-2 text-[11px] font-semibold text-brand-700 dark:bg-brand-500/10 dark:text-brand-400">
+                                <x-admin-panel::icon name="check-circle" class="size-3.5 shrink-0" />
+                                این قالب در حال حاضر روی فروشگاه فعال است.
                             </div>
                         @endunless
                     </div>

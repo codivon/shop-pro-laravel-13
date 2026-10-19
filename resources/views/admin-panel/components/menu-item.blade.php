@@ -7,6 +7,11 @@
             $url = route($item['route'], $item['params'] ?? []);
             if (str_starts_with($item['route'], 'np.')) {
                 $isActive = request()->routeIs($item['route']);
+                // صفحات create/edit/show یک بخش، آیتم «لیست» همان بخش را هم فعال کنند
+                if (!$isActive && str_ends_with($item['route'], '.index')) {
+                    $base = substr($item['route'], 0, -6);
+                    $isActive = request()->routeIs([$base.'.create', $base.'.edit', $base.'.show', $base.'.form']);
+                }
             }
         } catch (\Throwable $e) {
             $url = '#';

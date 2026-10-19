@@ -414,6 +414,8 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
         */
         Route::get('widgets', WidgetIndex::class)->name('widgets.index');
         Route::get('widgets/create', WidgetForm::class)->name('widgets.create');
+        Route::get('widgets/builder', \App\Livewire\Admin\Widgets\WidgetBuilder::class)->name('widgets.builder');
+        Route::post('media/upload', \App\Http\Controllers\AdminPanel\MediaController::class . '@store')->name('media.upload'); // آپلود تصویر CKEditor
         Route::get('widgets/{widget}/edit', WidgetForm::class)->name('widgets.edit');
 
         Route::get('posts-widgets', PostWidgetIndex::class)->name('posts-widgets.index');

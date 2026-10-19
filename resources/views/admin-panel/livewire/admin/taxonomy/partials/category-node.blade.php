@@ -1,12 +1,48 @@
-{{-- گره درخت دسته‌بندی — فراخوانی بازگشتی با @include --}}
+{{-- گره درخت دسته‌بندی — فراخوانی بازگشتی با @include (پارامتر level: ریشه = ۱) --}}
 @php
+    $level = (int) ($level ?? 1);
     $category = $node['model'];
+    $isSub = $level >= 2;
+    $isDeep = $level >= 3;
+
+    // تمایز بصری سطح‌ها: پس‌زمینه ردیف + وزن/اندازه فونت عنوان (ریشه پررنگ‌ترین)
+    $rowBg = $isDeep
+        ? 'bg-surface-3/60 hover:bg-surface-3 dark:bg-night-3 dark:hover:bg-night-3/80'
+        : ($isSub
+            ? 'bg-surface-2/70 hover:bg-surface-3/70 dark:bg-night-3/60 dark:hover:bg-night-3'
+            : 'bg-surface hover:bg-surface-2 dark:bg-night-2 dark:hover:bg-night-3');
+
+    $titleClass = $isDeep
+        ? 'text-xs font-medium'
+        : ($isSub
+            ? 'text-[13px] font-semibold'
+            : 'text-[13px] font-extrabold');
 @endphp
 <li wire:key="cat-{{ $category->id }}" class="list-none">
-    <div class="flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border border-line bg-surface px-3 py-2.5 transition-colors hover:border-brand-300 hover:bg-surface-2 dark:border-night-line dark:bg-night-2 dark:hover:border-brand-500/40 dark:hover:bg-night-3">
+    <div class="flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border border-line px-3 py-2.5 transition-all {{ $rowBg }} hover:border-brand-300 dark:border-night-line dark:hover:border-brand-500/40"
+         x-on:dragover.prevent="dragOver($event, {{ $category->id }})"
+         x-on:drop.prevent="drop($event, {{ $category->id }})"
+         :class="dropClass({{ $category->id }})">
 
-        <a href="{{ route('np.categories.edit', $category) }}" wire:navigate
-           class="text-[13px] font-bold text-ink transition-colors hover:text-brand-600 dark:text-night-ink dark:hover:text-brand-400">
+        {{-- هندل درگ‌انددراپ (آیکون grip-vertical — جایگزین nestable قدیمی) --}}
+        <span draggable="true"
+              x-on:dragstart="startDrag($event, {{ $category->id }}, {{ json_encode($node['subtreeIds']) }})"
+              class="cursor-grab touch-none select-none rounded-md p-1 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 active:cursor-grabbing dark:text-night-ink-2 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
+              title="کشیدن برای جابه‌جایی" aria-label="کشیدن برای جابه‌جایی دسته">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4" aria-hidden="true">
+                <circle cx="9" cy="5" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="19" r="1" />
+                <circle cx="15" cy="5" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="19" r="1" />
+            </svg>
+        </span>
+
+        {{-- آیکون گره کنار عنوان زیرشاخه‌ها --}}
+        @if ($isSub)
+            <x-admin-panel::icon name="circle-dot" class="size-3 shrink-0 text-brand-500/70 dark:text-brand-500/50" />
+        @endif
+
+        <a href="{{ route('np.categories.edit', $category) }}" wire:navigate draggable="false"
+           class="{{ $titleClass }} text-ink transition-colors hover:text-brand-600 dark:text-night-ink dark:hover:text-brand-400">
             {{ $category->title }}
         </a>
 
@@ -15,9 +51,9 @@
             <code class="text-[10px]">{{ $category->slug }}</code>
         </span>
 
-        {{-- تعداد محصولات کل شاخه — فقط دسته‌بندی محصولات (پورت productsCount) --}}
+        {{-- تعداد محصولات کل شاخه — فقط دسته‌بندی محصولات (پورت productsCount) — برای زیرشاخه‌ها کوچک‌تر --}}
         @if ($type === 'productcat')
-            <span class="ap-badge bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-400"
+            <span class="ap-badge bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-400 {{ $isSub ? '!text-[10px]' : '' }}"
                   title="تعداد محصولات این شاخه">
                 <x-admin-panel::icon name="package" class="size-3" />
                 <span class="fa-digits">{{ number_format($this->productCount($category)) }}</span>
@@ -39,7 +75,7 @@
 
         <span class="flex-1"></span>
 
-        {{-- مرتب‌سازی هم‌سطح‌ها (جایگزین درگ‌انددراپ قدیمی) --}}
+        {{-- مرتب‌سازی هم‌سطح‌ها (مکمل درگ‌انددراپ) --}}
         <button type="button" wire:click="moveUp({{ $category->id }})"
                 class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10"
                 title="انتقال به بالا" aria-label="انتقال به بالا">
@@ -61,7 +97,7 @@
             @endforeach
         </select>
 
-        <a href="{{ route('np.categories.edit', $category) }}" wire:navigate
+        <a href="{{ route('np.categories.edit', $category) }}" wire:navigate draggable="false"
            class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10"
            title="ویرایش دسته‌بندی" aria-label="ویرایش">
             <x-admin-panel::icon name="pencil" class="size-4" />
@@ -83,9 +119,10 @@
     </div>
 
     @if (count($node['children']))
-        <ul class="ms-4 mt-1.5 space-y-1.5 border-s border-line ps-3 sm:ms-6 dark:border-night-line">
+        {{-- خط اتصال عمودی والد→فرزند (نقطه‌چین برند) --}}
+        <ul class="ms-4 mt-1.5 space-y-1.5 border-s border-dashed ps-3 sm:ms-6 border-brand-300/60 dark:border-brand-500/30">
             @foreach ($node['children'] as $childNode)
-                @include('admin-panel::livewire.admin.taxonomy.partials.category-node', ['node' => $childNode])
+                @include('admin-panel::livewire.admin.taxonomy.partials.category-node', ['node' => $childNode, 'level' => $level + 1])
             @endforeach
         </ul>
     @endif

@@ -16,9 +16,10 @@ use Livewire\Component;
  * پورت ۱:۱ از ProductController::categories + PostController::categories
  * و CategoryController@store/destroy/sort (پنل قدیمی).
  *
- * انحراف آگاهانه: مرتب‌سازی درگ‌انددراپ (jquery.nestable) با دکمه‌های ↑↓ و
- * سلکت «انتقال به سطح» جایگزین شده که همان نتیجه نهایی (category_id + ordering)
- * را بدون jQuery اعمال می‌کند.
+ * درگ‌انددراپ (فاز ۹-ج): جایگزین نهایی jquery.nestable با Alpine خالص در blade
+ * و اکشن moveNode (قبل/بعد/داخل) روی سرور؛ دکمه‌های ↑↓ و سلکت «انتقال به سطح»
+ * به‌عنوان مکمل (و جایگزین لمسی درگ) حفظ شده‌اند — هر دو همان خروجی نهایی
+ * (category_id + ordering) پورت nestable را می‌سازند.
  */
 #[Layout('admin-panel::layout')]
 #[Title('دسته‌بندی‌ها')]
@@ -401,6 +402,77 @@ class CategoryTree extends Component
         $category->save();
 
         $this->dispatch('toast', message: 'جایگاه دسته‌بندی به‌روزرسانی شد.', type: 'success');
+    }
+
+    /* ============================ درگ‌انددراپ (پورت نهایی sort_category) ============================ */
+
+    /**
+     * پورت نهایی sort_category قدیمی (jquery.nestable) با مدل قبل/بعد/داخل:
+     *
+     * الگوریتم shift برای before/after — خواهرهای والدِ «هدف» (بدون خودِ گره
+     * کشیده‌شده) با ترتیب استاندارد صفحه (orderBy ordering, id و null = ۱۰^۹):
+     *   - before: همه خواهرهایی که ordering >= ordering هدف → +۱؛ گره = ordering هدف.
+     *   - after:  همه خواهرهایی که ordering >= ordering هدف + ۱ → +۱ (shift متناظر؛
+     *     هدف سرجایش می‌ماند)؛ گره = ordering هدف + ۱.
+     * داخل: category_id = هدف و ordering = nextOrdering(هدف) (متد مشترک
+     * با createCategory و changeParent).
+     * فرزندان گره با والدشان جابه‌جا می‌شوند (category_id آن‌ها = شناسه گره دست
+     * نمی‌خورد) و برای جلوگیری از حلقه، هدف نباید داخل زیردرخت گره باشد
+     * (allChildCategories شامل خودِ دسته + همه نوادگان است — مثل changeParent).
+     */
+    public function moveNode(int $dragId, int $targetId, string $mode): void
+    {
+        $this->authorizeCategory();
+
+        if (! in_array($mode, ['before', 'after', 'inside'], true)) {
+            return;
+        }
+
+        $drag = Category::where('type', $this->type)->find($dragId);
+        $target = Category::where('type', $this->type)->find($targetId);
+
+        if (! $drag || ! $target || $drag->id === $target->id) {
+            return;
+        }
+
+        // ضد حلقه: هدف نباید خودِ گره یا یکی از زیرشاخه‌هایش باشد
+        if (in_array($target->id, $drag->allChildCategories(), true)) {
+            $this->dispatch('toast', message: 'انتقال دسته به داخل زیرشاخهٔ خودش مجاز نیست.', type: 'error');
+
+            return;
+        }
+
+        if ($mode === 'inside') {
+            $drag->category_id = $target->id;
+            $drag->ordering = $this->nextOrdering($target->id);
+            $drag->save();
+        } else {
+            // خواهرهای والد هدف (بدون گره کشیده‌شده) — where با null خودش whereNull می‌شود
+            $siblings = Category::where('type', $this->type)
+                ->where('category_id', $target->category_id)
+                ->where('id', '!=', $drag->id)
+                ->orderBy('ordering')
+                ->orderBy('id')
+                ->get(['id', 'ordering']);
+
+            // ستون ordering nullable است → null = ۱۰^۹ (همیشه انتهای لیست)
+            $targetOrder = $target->ordering ?? 1000000000;
+            $threshold = $mode === 'before' ? $targetOrder : $targetOrder + 1;
+
+            foreach ($siblings as $sibling) {
+                $current = $sibling->ordering ?? 1000000000;
+
+                if ($current >= $threshold) {
+                    Category::whereKey($sibling->id)->update(['ordering' => $current + 1]);
+                }
+            }
+
+            $drag->category_id = $target->category_id;
+            $drag->ordering = $mode === 'before' ? $targetOrder : $targetOrder + 1;
+            $drag->save();
+        }
+
+        $this->dispatch('toast', message: 'ساختار درخت به‌روزرسانی شد.', type: 'success');
     }
 
     /* ============================ کمکی ============================ */
