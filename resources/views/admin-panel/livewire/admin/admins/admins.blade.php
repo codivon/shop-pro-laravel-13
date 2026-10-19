@@ -1,4 +1,7 @@
 {{-- مدیریت مدیران — پنل جدید (فاز ۷-ج) — پورت ۱:۱ back/admins/* (لیست + مودال ایجاد/ویرایش + حذف تکی/گروهی + وضعیت) --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-7xl space-y-5">
 
     {{-- سربرگ --}}

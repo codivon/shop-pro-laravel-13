@@ -147,34 +147,140 @@ document.addEventListener('DOMContentLoaded', () => ApDatepicker.start());
 document.addEventListener('livewire:navigated', () => ApDatepicker.start());
 
 /* ------------------------------------------------------------------
- | CKEditor 5 — ویرایشگر متن غنی توضیحات
- | <div data-editor-value="..."> → جایگزین textarea قدیمی
+ | CKEditor 5 — ویرایشگر کامل (همه قابلیت‌های پنل قدیمی)
+ | <div id="ap-ckeditor" data-editor-value="..."> → جایگزین textarea قدیمی
+ | پراپ لایووایر با data-editor-prop قابل تغییر است (پیش‌فرض: description)
  ------------------------------------------------------------------ */
+
+/* آداپتر آپلود تصویر (الگوی رسمی CustomUploadAdapter) — POST به مسیر مدیای پنل */
+class ApUploadAdapter {
+    constructor(loader) {
+        this.loader = loader;
+    }
+
+    upload() {
+        return this.loader.file.then(
+            (file) => new Promise((resolve, reject) => { this._send(resolve, reject, file); }),
+        );
+    }
+
+    abort() {
+        if (this.xhr) this.xhr.abort();
+    }
+
+    _send(resolve, reject, file) {
+        const prefix = document.querySelector('meta[name="admin-prefix"]')?.content;
+        const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+        if (!prefix) {
+            reject(new Error('آدرس آپلود تصویر یافت نشد (meta admin-prefix موجود نیست).'));
+            return;
+        }
+
+        const xhr = (this.xhr = new XMLHttpRequest());
+        xhr.open('POST', `/admin/${prefix}/media/upload`, true);
+        xhr.responseType = 'json';
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.setRequestHeader('X-CSRF-TOKEN', token);
+
+        xhr.addEventListener('error', () => reject(new Error('خطا در ارتباط با سرور هنگام آپلود تصویر.')));
+        xhr.addEventListener('abort', () => reject(new Error('آپلود تصویر لغو شد.')));
+        xhr.addEventListener('load', () => {
+            const res = xhr.response;
+
+            if (xhr.status >= 200 && xhr.status < 300 && res && res.url) {
+                resolve({ default: res.url });
+                return;
+            }
+
+            let message = res && res.message;
+            if (!message && res && res.errors) {
+                const first = Object.values(res.errors)[0];
+                message = Array.isArray(first) ? first[0] : first;
+            }
+            reject(new Error(message || 'آپلود تصویر ناموفق بود.'));
+        });
+
+        const body = new FormData();
+        body.append('file', file);
+        xhr.send(body);
+    }
+}
+
 window.ApEditor = {
     instance: null,
+    prop: 'description',
 
     async init() {
         const container = document.querySelector('#ap-ckeditor[data-editor-value]:not([data-ap-ready])');
 
-        if (!container || !window.Livewire) return;
+        if (!container) {
+            /* صفحه فعلی ویرایشگر ندارد — نمونه قبلی را آزاد کن */
+            await this.destroy();
+            return;
+        }
+        if (!window.Livewire) return;
 
         container.setAttribute('data-ap-ready', '1');
+        await this.destroy();
 
         try {
-            const { ClassicEditor, Essentials, Paragraph, Heading, Bold, Italic, Underline,
-                Strikethrough, BlockQuote, Link, List, Alignment,
-                Table, TableToolbar, MediaEmbed, PasteFromOffice, Undo, RemoveFormat } =
-                await import('ckeditor5');
+            const {
+                /* پایه */
+                ClassicEditor, Essentials, Paragraph, Heading, Undo,
+                /* استایل‌های متنی */
+                Bold, Italic, Underline, Strikethrough, Code, Subscript, Superscript, RemoveFormat,
+                /* فونت، رنگ و هایلایت */
+                FontColor, FontBackgroundColor, FontFamily, FontSize, Highlight,
+                /* بلوک‌ها و جهت‌ها */
+                BlockQuote, CodeBlock, Indent, IndentBlock, Alignment, HorizontalLine, PageBreak,
+                /* لیست‌ها */
+                List, ListProperties, TodoList,
+                /* لینک */
+                Link, LinkImage, AutoLink,
+                /* جدول */
+                Table, TableToolbar, TableProperties, TableCellProperties, TableCaption,
+                /* تصویر */
+                Image, ImageToolbar, ImageUpload, ImageResize, AutoImage, ImageStyle, ImageCaption, PictureEditing,
+                /* مدیا و سایر ابزارها */
+                MediaEmbed, AutoMediaEmbed, PasteFromOffice, FindAndReplace, SourceEditing, ShowBlocks,
+                SpecialCharacters, SpecialCharactersEssentials, HtmlEmbed, WordCount, Fullscreen, Emoji,
+            } = await import('ckeditor5');
+
+            const { default: faTranslations } = await import('ckeditor5/translations/fa.js');
 
             const editor = await ClassicEditor.create(container, {
                 licenseKey: 'GPL',
-                plugins: [Essentials, Paragraph, Heading, Bold, Italic, Underline, Strikethrough,
-                    BlockQuote, Link, List, Alignment, Table, TableToolbar,
-                    MediaEmbed, PasteFromOffice, Undo, RemoveFormat],
-                toolbar: ['heading', '|', 'bold', 'italic', 'underline', 'strikethrough', '|',
-                    'link', 'bulletedList', 'numberedList', '|', 'alignment', 'blockQuote',
-                    'insertTable', 'mediaEmbed', '|', 'undo', 'redo', 'removeFormat'],
-                language: { ui: 'en', content: 'fa' },
+                language: 'fa',
+                translations: [faTranslations],
+                plugins: [
+                    Essentials, Paragraph, Heading, Undo,
+                    Bold, Italic, Underline, Strikethrough, Code, Subscript, Superscript, RemoveFormat,
+                    FontColor, FontBackgroundColor, FontFamily, FontSize, Highlight,
+                    BlockQuote, CodeBlock, Indent, IndentBlock, Alignment, HorizontalLine, PageBreak,
+                    List, ListProperties, TodoList,
+                    Link, LinkImage, AutoLink,
+                    Table, TableToolbar, TableProperties, TableCellProperties, TableCaption,
+                    Image, ImageToolbar, ImageUpload, ImageResize, AutoImage, ImageStyle, ImageCaption, PictureEditing,
+                    MediaEmbed, AutoMediaEmbed, PasteFromOffice, FindAndReplace, SourceEditing, ShowBlocks,
+                    SpecialCharacters, SpecialCharactersEssentials, HtmlEmbed, WordCount, Fullscreen, Emoji,
+                ],
+                toolbar: [
+                    'heading', '|',
+                    'bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript', 'code', '|',
+                    'fontColor', 'fontBackgroundColor', 'highlight', 'fontFamily', 'fontSize', '|',
+                    'link', '|',
+                    'bulletedList', 'numberedList', 'todoList', 'outdent', 'indent', '|',
+                    'alignment', '|',
+                    'blockQuote', 'codeBlock', '|',
+                    'uploadImage', 'insertTable', 'mediaEmbed', 'htmlEmbed', '|',
+                    'specialCharacters', 'horizontalLine', 'pageBreak', '|',
+                    'findAndReplace', 'removeFormat', '|',
+                    'showBlocks', 'sourceEditing', '|',
+                    'fullscreen', '|',
+                    'emoji', '|',
+                    'undo', 'redo',
+                ],
                 heading: {
                     options: [
                         { model: 'paragraph', title: 'متن', class: 'ck-heading_paragraph' },
@@ -183,11 +289,30 @@ window.ApEditor = {
                         { model: 'heading4', view: 'h4', title: 'تیتر ۴', class: 'ck-heading_heading4' },
                     ],
                 },
-                table: { contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells'] },
+                table: {
+                    contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells', 'toggleTableCaption', 'tableProperties', 'tableCellProperties'],
+                },
+                image: {
+                    toolbar: ['imageStyle:inline', 'imageStyle:block', 'imageStyle:side', '|', 'toggleImageCaption', 'imageTextAlternative', '|', 'linkImage'],
+                },
+                mediaEmbed: {
+                    previewsInData: true,
+                    extraProviders: [
+                        {
+                            name: 'aparat',
+                            url: /aparat\.com\/v\/([\w-]+)/,
+                            html: (match) => '<iframe src="https://www.aparat.com/video/video/embed/videohash/' + match[1] + '/vt/frame" width="640" height="360" frameborder="0" allowfullscreen></iframe>',
+                        },
+                    ],
+                },
             });
 
             editor.setData(container.dataset.editorValue || '');
             this.instance = editor;
+            this.prop = container.dataset.editorProp || 'description';
+
+            /* آداپتر آپلود تصویر */
+            editor.plugins.get('FileRepository').createUploadAdapter = (loader) => new ApUploadAdapter(loader);
 
             // همگام‌سازی محتوا با Livewire
             const componentEl = container.closest('[wire\\:id]');
@@ -195,12 +320,35 @@ window.ApEditor = {
 
             editor.model.document.on('change:data', () => {
                 const data = editor.getData();
-                if (component) component.$wire.description = data;
+                if (component) component.$wire[this.prop] = data;
                 const input = document.querySelector('#ap-ckeditor-input');
                 if (input) input.value = data;
             });
+
+            /* شمارش کلمات/حروف — اگر محل نمایش (#ap-editor-wordcount) وجود داشته باشد */
+            const wordcountEl = document.querySelector('#ap-editor-wordcount');
+            if (wordcountEl) {
+                const wordCount = editor.plugins.get('WordCount');
+                const mount = (target) => {
+                    if (target && wordCount.output && wordCount.output.parentNode !== target) {
+                        target.innerHTML = '';
+                        target.appendChild(wordCount.output);
+                    }
+                };
+                mount(wordcountEl);
+                wordCount.on('update', () => mount(document.querySelector('#ap-editor-wordcount')));
+            }
         } catch (error) {
             console.error('CKEditor init failed:', error);
+        }
+    },
+
+    /* آزادسازی نمونه قبلی (پس از ناوبری لایووایر) */
+    async destroy() {
+        const editor = this.instance;
+        this.instance = null;
+        if (editor) {
+            try { await editor.destroy(); } catch (e) { /* نمونه قبلی از بین رفته است */ }
         }
     },
 };
@@ -211,7 +359,7 @@ document.addEventListener('livewire:navigated', () => ApEditor.init());
 /* همگام‌سازی محتوای CKEditor پس از دریافت محصول از دیجی‌کالا */
 window.Livewire?.hook('message.processed', ({ component }) => {
     if (component.effects?.dispatches?.some((d) => d.name === 'ap-set-description') && window.ApEditor?.instance) {
-        window.ApEditor.instance.setData(component.description || '');
+        window.ApEditor.instance.setData(component[window.ApEditor.prop] || '');
     }
 });
 
@@ -298,12 +446,42 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
-    /* سایدبار موبایل */
+    /* سایدبار موبایل + حفظ اسکرول و باز بودن منوی فعال */
     Alpine.data('apSidebar', () => ({
         open: false,
         search: '',
         init() {
             window.addEventListener('ap-close-sidebar', () => { this.open = false; });
+            this.restorePosition();
+        },
+
+        /* بعد از هر ناوبری/رفرش: بازگشت به نقطه منوی فعال (یا آخرین اسکرول) */
+        restorePosition() {
+            this.$nextTick(() => {
+                setTimeout(() => {
+                    const nav = this.$refs.nav;
+                    if (!nav) return;
+                    const active = nav.querySelector('.ap-menu-link.is-active');
+                    if (active) {
+                        const navRect = nav.getBoundingClientRect();
+                        const r = active.getBoundingClientRect();
+                        // اگر آیتم فعال دیده نمی‌شود، به یک‌سوم بالای کادر برسان
+                        if (r.top < navRect.top + 8 || r.bottom > navRect.bottom - 8) {
+                            nav.scrollTop = Math.max(0, nav.scrollTop + (r.top - navRect.top) - navRect.height / 3);
+                        }
+                    } else {
+                        const saved = parseInt(sessionStorage.getItem('ap-sidebar-scroll') || '0', 10);
+                        if (saved > 0) nav.scrollTop = saved;
+                    }
+                    try { sessionStorage.setItem('ap-sidebar-scroll', String(nav.scrollTop)); } catch (e) {}
+                }, 80);
+            });
+        },
+
+        saveScroll() {
+            const nav = this.$refs.nav;
+            if (!nav) return;
+            try { sessionStorage.setItem('ap-sidebar-scroll', String(nav.scrollTop)); } catch (e) {}
         },
     }));
 

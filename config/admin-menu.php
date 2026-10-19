@@ -50,7 +50,7 @@ return [
                 ],
                 [
                     'label' => 'مانیتور سیستم',
-                    'route' => 'admin.pulse.index',
+                    'route' => 'np.pulse.index',
                     'permission' => 'pulse.monitor',
                     'icon' => 'activity',
                     'live' => true,
@@ -67,13 +67,13 @@ return [
                     'children' => [
                         [
                             'label' => 'لیست پکیج‌ها',
-                            'route' => 'admin.packages.index',
+                            'route' => 'np.packages.index',
                             'permission' => 'packages.index',
                             'icon' => 'package',
                         ],
                         [
                             'label' => 'پکیج‌های نصب‌شده',
-                            'route' => 'admin.packages.installed',
+                            'route' => 'np.packages.installed',
                             'permission' => 'packages.installed',
                             'icon' => 'package-check',
                         ],
@@ -169,25 +169,25 @@ return [
                     'children' => [
                         [
                             'label' => 'لیست قالب‌ها',
-                            'route' => 'admin.themes.index',
+                            'route' => 'np.themes.index',
                             'permission' => 'themes.index',
                             'icon' => 'list',
                         ],
                         [
                             'label' => 'آپلود قالب جدید',
-                            'route' => 'admin.themes.create',
+                            'route' => 'np.themes.create',
                             'permission' => 'themes.create',
                             'icon' => 'upload',
                         ],
                         [
                             'label' => 'تنظیمات قالب',
-                            'route' => 'admin.themes.settings',
+                            'route' => 'np.themes.settings',
                             'permission' => 'themes.settings',
                             'icon' => 'settings-2',
                         ],
                         [
-                            'label' => 'ویجت‌های صفحه اصلی',
-                            'route' => 'np.widgets.index',
+                            'label' => 'ویجت‌ساز صفحه اصلی',
+                            'route' => 'np.widgets.builder',
                             'permission' => 'themes.settings',
                             'icon' => 'layout-panel-top',
                         ],
@@ -337,13 +337,13 @@ return [
                         ],
                         [
                             'label' => 'قیمت‌ها',
-                            'route' => 'admin.product.prices.index',
+                            'route' => 'np.products.prices',
                             'permission' => 'products.prices',
                             'icon' => 'tags',
                         ],
                         [
                             'label' => 'گروه‌های قیمت',
-                            'route' => 'admin.product.pricesGroup.index',
+                            'route' => 'np.products.prices-group',
                             'permission' => 'products.pricesGroup',
                             'icon' => 'tags',
                         ],
@@ -645,43 +645,43 @@ return [
                     'children' => [
                         [
                             'label' => 'آمار سفارشات',
-                            'route' => 'admin.statistics.orders',
+                            'route' => 'np.statistics.orders',
                             'permission' => 'statistics.orders',
                             'icon' => 'chart-column',
                         ],
                         [
                             'label' => 'آمار کاربران',
-                            'route' => 'admin.statistics.users',
+                            'route' => 'np.statistics.users',
                             'permission' => 'statistics.users',
                             'icon' => 'chart-line',
                         ],
                         [
                             'label' => 'آمار بازدید',
-                            'route' => 'admin.statistics.views',
+                            'route' => 'np.statistics.views',
                             'permission' => 'statistics.views',
                             'icon' => 'eye',
                         ],
                         [
                             'label' => 'آمارگیری فروش هر محصول',
-                            'route' => 'admin.statistics.orders.products',
+                            'route' => 'np.statistics.orders-products',
                             'permission' => 'statistics.product',
                             'icon' => 'chart-pie',
                         ],
                         [
                             'label' => 'لیست بازدیدها',
-                            'route' => 'admin.statistics.viewsList',
+                            'route' => 'np.statistics.views-list',
                             'permission' => 'statistics.viewsList',
                             'icon' => 'list',
                         ],
                         [
                             'label' => 'بازدیدکنندگان امروز',
-                            'route' => 'admin.statistics.viewers',
+                            'route' => 'np.statistics.viewers',
                             'permission' => 'statistics.viewers',
                             'icon' => 'users',
                         ],
                         [
                             'label' => 'لاگ پیامک‌های ارسالی',
-                            'route' => 'admin.statistics.smsLog',
+                            'route' => 'np.statistics.sms-log',
                             'permission' => 'statistics.sms',
                             'icon' => 'smartphone',
                         ],
@@ -861,7 +861,7 @@ return [
                     'children' => [
                         [
                             'label' => 'اعلان‌های پنل',
-                            'route' => 'admin.notifications',
+                            'route' => 'np.notifications.panel',
                             'permission' => 'notifications.panel',
                             'icon' => 'bell-ring',
                         ],
@@ -897,19 +897,19 @@ return [
                     'children' => [
                         [
                             'label' => 'درون‌ریزی مطالب',
-                            'route' => 'admin.import.posts',
+                            'route' => 'np.imports.posts',
                             'permission' => 'imports.posts',
                             'icon' => 'download',
                         ],
                         [
                             'label' => 'درون‌ریزی محصولات',
-                            'route' => 'admin.import.products',
+                            'route' => 'np.imports.products',
                             'permission' => 'imports.products',
                             'icon' => 'download',
                         ],
                         [
                             'label' => 'درون‌ریزی کاربران',
-                            'route' => 'admin.import.users',
+                            'route' => 'np.imports.users',
                             'permission' => 'imports.users',
                             'icon' => 'download',
                         ],
@@ -921,31 +921,31 @@ return [
                     'children' => [
                         [
                             'label' => 'اطلاعات فروشگاه',
-                            'route' => 'admin.settings.information',
+                            'route' => 'np.settings.information',
                             'permission' => 'settings.information',
                             'icon' => 'store',
                         ],
                         [
                             'label' => 'شبکه‌های اجتماعی',
-                            'route' => 'admin.settings.socials',
+                            'route' => 'np.settings.socials',
                             'permission' => 'settings.socials',
                             'icon' => 'share-2',
                         ],
                         [
                             'label' => 'درگاه‌های پرداخت',
-                            'route' => 'admin.settings.gateways',
+                            'route' => 'np.settings.gateways',
                             'permission' => 'settings.gateway',
                             'icon' => 'credit-card',
                         ],
                         [
                             'label' => 'سایر تنظیمات',
-                            'route' => 'admin.settings.others',
+                            'route' => 'np.settings.others',
                             'permission' => 'settings.others',
                             'icon' => 'sliders-horizontal',
                         ],
                         [
                             'label' => 'تنظیمات پیامک',
-                            'route' => 'admin.settings.sms',
+                            'route' => 'np.settings.sms',
                             'permission' => 'settings.sms',
                             'icon' => 'message-circle',
                         ],
@@ -975,13 +975,13 @@ return [
                         ],
                         [
                             'label' => 'مدیریت فایل‌ها',
-                            'route' => 'admin.file-manager',
+                            'route' => 'np.file-manager.index',
                             'permission' => 'file-manager',
                             'icon' => 'folder-open',
                         ],
                         [
                             'label' => 'لیست بکاپ‌ها',
-                            'route' => 'admin.backups.index',
+                            'route' => 'np.backups.index',
                             'permission' => 'backups.index',
                             'icon' => 'archive',
                         ],
@@ -1007,13 +1007,13 @@ return [
                         ],
                         [
                             'label' => 'تنظیمات برنامه‌نویس',
-                            'route' => 'admin.developer.settings',
+                            'route' => 'np.developer.index',
                             'permission' => null,
                             'icon' => 'settings',
                         ],
                         [
                             'label' => 'لاگ سیستم',
-                            'route' => 'admin.logs.index',
+                            'route' => 'np.logs.index',
                             'permission' => null,
                             'icon' => 'scroll-text',
                             'external' => true,
@@ -1026,7 +1026,7 @@ return [
                         ],
                         [
                             'label' => 'بروزرسانی سیستم',
-                            'route' => 'admin.developer.showUpdater',
+                            'route' => 'np.developer.index',
                             'permission' => null,
                             'icon' => 'refresh-cw',
                         ],

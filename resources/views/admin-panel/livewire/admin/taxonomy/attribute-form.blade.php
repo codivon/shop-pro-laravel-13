@@ -1,4 +1,7 @@
 {{-- فرم ویرایش ویژگی — پنل جدید (فاز ۵) --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-3xl space-y-6">
 
     <form wire:submit="save" class="space-y-6"

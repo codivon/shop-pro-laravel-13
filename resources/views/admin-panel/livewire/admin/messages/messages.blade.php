@@ -1,4 +1,7 @@
 {{-- ارسال پیام گروهی + لیست پیام‌های ارسال‌شده — پورت back/messages/index.blade.php — پنل جدید (فاز ۷) --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-7xl space-y-5">
 
     {{-- کارت‌های آمار (پورت آمار ویوی قدیمی) --}}

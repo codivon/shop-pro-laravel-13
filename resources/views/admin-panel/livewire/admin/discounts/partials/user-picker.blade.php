@@ -1,4 +1,7 @@
 {{-- چیپ‌یاب کاربران — قابل استفاده مجدد (فاز ۴ تخفیف‌ها) --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 @props([
     'label' => 'انتخاب مشتریان',
     'placeholder' => 'جستجو بر اساس نام، نام کاربری یا ایمیل…',

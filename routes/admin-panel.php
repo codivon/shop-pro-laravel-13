@@ -118,6 +118,38 @@ use App\Livewire\Admin\System\ActivityLogIndex;
 use App\Livewire\Admin\Admins\AdminIndex;
 use App\Livewire\Admin\Admins\RoleIndex;
 use App\Livewire\Admin\Admins\PermissionIndex;
+use App\Livewire\Admin\Statistics\ViewsPage;
+use App\Livewire\Admin\Statistics\ViewersPage;
+use App\Livewire\Admin\Statistics\ViewsList;
+use App\Livewire\Admin\Statistics\OrdersPage;
+use App\Livewire\Admin\Statistics\ProductsStats;
+use App\Livewire\Admin\Statistics\UsersStats;
+use App\Livewire\Admin\Statistics\SmsLog;
+use App\Livewire\Admin\Statistics\SmsShow;
+use App\Livewire\Admin\Products\PriceIndex;
+use App\Livewire\Admin\Products\PriceGroupIndex;
+use App\Livewire\Admin\Settings\Information;
+use App\Livewire\Admin\Settings\Socials;
+use App\Livewire\Admin\Settings\Gateways;
+use App\Livewire\Admin\Settings\Others;
+use App\Livewire\Admin\Settings\SmsSettings;
+use App\Livewire\Admin\System\Developer;
+use App\Livewire\Admin\System\BaleSettings;
+use App\Livewire\Admin\Packages\PackageIndex;
+use App\Livewire\Admin\Packages\PackageInstalled;
+use App\Livewire\Admin\Packages\PackageShow;
+use App\Livewire\Admin\Packages\PackagePaymentCallback;
+use App\Livewire\Admin\Themes\ThemeIndex;
+use App\Livewire\Admin\Themes\ThemeCreate;
+use App\Livewire\Admin\Themes\ThemeSettings;
+use App\Livewire\Admin\Imports\PostsImport;
+use App\Livewire\Admin\Imports\ProductsImport;
+use App\Livewire\Admin\Imports\UsersImport;
+use App\Livewire\Admin\System\PulseIndex;
+use App\Livewire\Admin\System\BackupIndex;
+use App\Livewire\Admin\System\FileManager;
+use App\Livewire\Admin\Notifications\PanelNotifications;
+use App\Livewire\Admin\System\LogsIndex;
 use App\Http\Controllers\Back\FormController as LegacyFormController;
 use App\Http\Controllers\AdminPanel\LogoutController;
 use App\Http\Controllers\Back\OrderController as LegacyOrderController;
@@ -382,6 +414,8 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
         */
         Route::get('widgets', WidgetIndex::class)->name('widgets.index');
         Route::get('widgets/create', WidgetForm::class)->name('widgets.create');
+        Route::get('widgets/builder', \App\Livewire\Admin\Widgets\WidgetBuilder::class)->name('widgets.builder');
+        Route::post('media/upload', \App\Http\Controllers\AdminPanel\MediaController::class . '@store')->name('media.upload'); // آپلود تصویر CKEditor
         Route::get('widgets/{widget}/edit', WidgetForm::class)->name('widgets.edit');
 
         Route::get('posts-widgets', PostWidgetIndex::class)->name('posts-widgets.index');
@@ -481,8 +515,57 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
         Route::get('roles', RoleIndex::class)->name('roles.index');
         Route::get('permissions', PermissionIndex::class)->name('permissions.index');
 
-        // سایر بخش‌ها در فازهای بعدی اضافه می‌شوند:
-        // فاز ۷: پشتیبانی/سیستم / ...
+        /*
+        |----------------------
+        | آمار + SMS + قیمت‌گذاری (فاز ۷-ج۲)
+        |----------------------
+        */
+        Route::get('statistics/views', ViewsPage::class)->name('statistics.views');
+        Route::get('statistics/viewers', ViewersPage::class)->name('statistics.viewers');
+        Route::get('statistics/views-list', ViewsList::class)->name('statistics.views-list');
+        Route::get('statistics/orders', OrdersPage::class)->name('statistics.orders');
+        Route::get('statistics/orders-products', ProductsStats::class)->name('statistics.orders-products');
+        Route::get('statistics/users', UsersStats::class)->name('statistics.users');
+        Route::get('statistics/sms-log', SmsLog::class)->name('statistics.sms-log');
+        Route::get('sms/{sms}', SmsShow::class)->name('sms.show');
+        Route::get('products/prices', PriceIndex::class)->name('products.prices');
+        Route::get('products/prices-group', PriceGroupIndex::class)->name('products.prices-group');
+
+        /*
+        |----------------------
+        | تنظیمات + توسعه‌دهنده + بله (فاز ۷-ج۳)
+        |----------------------
+        */
+        Route::get('settings/information', Information::class)->name('settings.information');
+        Route::get('settings/socials', Socials::class)->name('settings.socials');
+        Route::get('settings/gateways', Gateways::class)->name('settings.gateways');
+        Route::get('settings/others', Others::class)->name('settings.others');
+        Route::get('settings/sms', SmsSettings::class)->name('settings.sms');
+        Route::get('developer', Developer::class)->name('developer.index');
+        Route::get('bale-settings', BaleSettings::class)->name('bale-settings.index');
+
+        /*
+        |----------------------
+        | پکیج‌ها / تم‌ها / ایمپورت / Pulse / بکاپ / فایل‌منیجر / اعلان‌های پنل / لاگ‌ها (فاز ۷-ج۴)
+        |----------------------
+        */
+        Route::get('packages/payment/callback', PackagePaymentCallback::class)->name('packages.payment.callback');
+        Route::get('packages/installed', PackageInstalled::class)->name('packages.installed');
+        Route::get('packages/{slug}', PackageShow::class)->name('packages.show');
+        Route::get('packages', PackageIndex::class)->name('packages.index');
+        Route::get('themes/create', ThemeCreate::class)->name('themes.create');
+        Route::get('themes/settings', ThemeSettings::class)->name('themes.settings');
+        Route::get('themes', ThemeIndex::class)->name('themes.index');
+        Route::get('imports/posts', PostsImport::class)->name('imports.posts');
+        Route::get('imports/products', ProductsImport::class)->name('imports.products');
+        Route::get('imports/users', UsersImport::class)->name('imports.users');
+        Route::get('pulse', PulseIndex::class)->name('pulse.index');
+        Route::get('backups', BackupIndex::class)->name('backups.index');
+        Route::get('file-manager', FileManager::class)->name('file-manager.index');
+        Route::get('notifications/panel', PanelNotifications::class)->name('notifications.panel');
+        Route::get('logs', LogsIndex::class)->name('logs.index');
+
+        // فاز ۷ کامل شد — فاز ۸: QA نهایی، بهینه‌سازی و همگام‌سازی
 
     });
 });

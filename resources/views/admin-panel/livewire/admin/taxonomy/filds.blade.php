@@ -1,4 +1,7 @@
 {{-- لیست فیلدهای اختصاصی — پنل جدید (فاز ۵) | پورت back/filds/index + create --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-7xl space-y-5">
 
     {{-- سربرگ --}}

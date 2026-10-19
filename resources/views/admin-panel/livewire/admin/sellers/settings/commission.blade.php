@@ -1,4 +1,7 @@
 {{-- تنظیمات فروشندگان — نمایش میزان کمیسیون (فاز ۳) --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-5xl space-y-5">
 
     {{-- سربرگ --}}

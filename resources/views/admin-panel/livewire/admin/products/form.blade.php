@@ -1,4 +1,7 @@
 {{-- فرم ایجاد/ویرایش محصول — پنل جدید (فاز ۱) --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-7xl"
      x-data="apProductForm()"
      data-rounding-default="{{ option('default_rounding_amount', 'no') }}"

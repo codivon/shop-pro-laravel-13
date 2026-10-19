@@ -1,4 +1,7 @@
 {{-- فرم ویرایش نوع مشخصات + ریپیتر گروه‌ها/مشخصات — پنل جدید (فاز ۵) --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-4xl space-y-6">
 
     <form wire:submit="save" class="space-y-6"

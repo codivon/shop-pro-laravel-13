@@ -1,3 +1,6 @@
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="grid min-h-screen lg:grid-cols-2">
 
     {{-- ستون فرم --}}

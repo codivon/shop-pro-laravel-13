@@ -1,5 +1,8 @@
 {{-- رندر داینامیک options ابزارک بر اساس template config — پورت ۱:۱ back/widgets/template.blade.php + partials --}}
 {{-- متغیرها: $options (لیست option های template)، $widget (Model|null)، $this → کامپوننت WidgetForm --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 @foreach ($options as $option)
     @php $optionKey = $option['key']; $errorKey = 'optionValues.' . $optionKey; @endphp
 

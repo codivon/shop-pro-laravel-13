@@ -1,4 +1,7 @@
 {{-- لاگ فعالیت‌ها — پنل جدید (فاز ۷-ب۴) — پورت ۱:۱ back/activity-log/index + partials/modal-details --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-7xl space-y-5">
 
     {{-- سربرگ --}}

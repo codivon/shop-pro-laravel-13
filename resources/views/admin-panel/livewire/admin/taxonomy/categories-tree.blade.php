@@ -1,4 +1,7 @@
-{{-- درخت دسته‌بندی‌ها — پنل جدید (فاز ۵) — پورت ProductController::categories / PostController::categories --}}
+{{-- درخت دسته‌بندی‌ها — پنل جدید (فاز ۵ + ۹-ج) — پورت ProductController::categories / PostController::categories --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 @php
     $isProduct  = $type === 'productcat';
     $permission = $isProduct ? 'products.category' : 'posts.category';
@@ -88,18 +91,70 @@
         </div>
     @endcan
 
-    {{-- درخت دسته‌بندی‌ها --}}
-    <div class="ap-card p-4 sm:p-5">
+    {{-- درخت دسته‌بندی‌ها + وضعیت درگ‌انددراپ (Alpine خالص — جایگزین nestable قدیمی) --}}
+    <div class="ap-card p-4 sm:p-5"
+         x-data="{
+            dragId: null,
+            dragSubtree: [],
+            overId: null,
+            overMode: null,
+            startDrag(event, id, subtree) {
+                this.dragId = id
+                this.dragSubtree = Array.isArray(subtree) && subtree.length ? subtree : [id]
+                event.dataTransfer.effectAllowed = 'move'
+                try { event.dataTransfer.setData('text/plain', String(id)) } catch (e) {}
+            },
+            dragOver(event, id) {
+                if (this.dragId === null || this.dragId === id) return
+                const rect = event.currentTarget.getBoundingClientRect()
+                const pos = rect.height > 0 ? (event.clientY - rect.top) / rect.height : 0.5
+                this.overId = id
+                this.overMode = this.dragSubtree.includes(id)
+                    ? 'forbidden'
+                    : (pos < 0.25 ? 'before' : (pos > 0.75 ? 'after' : 'inside'))
+            },
+            dropClass(id) {
+                if (this.dragId === null) return ''
+                if (this.overId !== id) return 'cursor-grabbing'
+                const map = {
+                    before: 'cursor-grabbing shadow-[inset_0_2px_0_0_var(--color-brand-500)]',
+                    after: 'cursor-grabbing shadow-[inset_0_-2px_0_0_var(--color-brand-500)]',
+                    inside: 'cursor-grabbing ring-2 ring-inset ring-brand-500',
+                    forbidden: 'cursor-grabbing ring-2 ring-inset ring-red-500',
+                }
+                return map[this.overMode] ?? 'cursor-grabbing'
+            },
+            resetDrag() {
+                this.dragId = null
+                this.dragSubtree = []
+                this.overId = null
+                this.overMode = null
+            },
+            drop(event, id) {
+                const dragId = this.dragId
+                const mode = this.overMode
+                this.resetDrag()
+                if (! dragId || dragId === id) return
+                if (! mode || mode === 'forbidden') {
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: { message: 'انتقال دسته به داخل زیرشاخهٔ خودش مجاز نیست.', type: 'error' },
+                    }))
+                    return
+                }
+                $wire.moveNode(dragId, id, mode)
+            },
+         }"
+         x-on:dragend.window="resetDrag()">
         @if (count($nodes))
             <ul class="space-y-2">
                 @foreach ($nodes as $node)
-                    @include('admin-panel::livewire.admin.taxonomy.partials.category-node', ['node' => $node])
+                    @include('admin-panel::livewire.admin.taxonomy.partials.category-node', ['node' => $node, 'level' => 1])
                 @endforeach
             </ul>
 
             <p class="mt-4 flex items-start gap-1.5 text-xs leading-6 text-ink-3 dark:text-night-ink-2">
                 <x-admin-panel::icon name="info" class="mt-1 size-4 shrink-0" />
-                برای ایجاد زیرشاخه از دکمه «افزودن زیرشاخه» یا سلکت «انتقال به سطح دیگر» استفاده کنید؛ دکمه‌های فلش، ترتیب هم‌سطح‌ها را جابه‌جا می‌کنند. (جایگزین کشیدن‌ورهاکردن قدیمی)
+                <span>با کشیدن هندل ⋮⋮ می‌توانید دسته را روی گره دیگر ببرید؛ وسط = زیرشاخه، بالا/پایین = هم‌سطح. دکمه‌های فلش و سلکت «انتقال به سطح دیگر» هم مثل قبل برای مرتب‌سازی و جابه‌جایی در دسترس‌اند.</span>
             </p>
         @else
             <div class="flex flex-col items-center gap-2 py-14 text-ink-3 dark:text-night-ink-2">
@@ -138,7 +193,7 @@
     </div>
 
     {{-- لودینگ --}}
-    <div wire:loading wire:target="createCategory, generateSlug, moveUp, moveDown, delete, parentIds, confirmDelete, startCreate"
+    <div wire:loading wire:target="createCategory, generateSlug, moveUp, moveDown, moveNode, delete, parentIds, confirmDelete, startCreate"
          class="pointer-events-none fixed bottom-6 start-6 z-[65] flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 shadow-pop dark:border-night-line dark:bg-night-3">
         <svg class="size-4 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />

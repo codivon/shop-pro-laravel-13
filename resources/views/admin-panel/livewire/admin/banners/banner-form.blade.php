@@ -1,5 +1,8 @@
 {{-- فرم ایجاد/ویرایش بنر — پنل جدید (فاز ۶) — پورت ۱:۱ back/banners/create|edit + _image_uploader + _checkbox_grid (صفحات/گروه‌ها/موقعیت‌ها) --}}
 @php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
+@php
     $pageOptions  = $this->pageOptions;
     $groupOptions = $this->groupOptions;
     $placeOptions = $this->placeOptions;

@@ -1,4 +1,7 @@
 {{-- فرم‌ساز — پنل جدید (فاز ۶) — پورت ۱:۱ back/forms/{create,edit} + سازنده‌ی فیلد Alpine --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-7xl space-y-5" x-data="fbBuilder({
         isEditing: @js($isEditing),
         existingNames: @js($this->existingFields->pluck('name')->all()),

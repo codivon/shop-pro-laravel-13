@@ -1,4 +1,7 @@
 {{-- مدیریت منوها — صفحه تک‌صفحه‌ای با درخت + فرم نوع‌محور — پورت back/menus/index --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-5xl space-y-5">
 
     {{-- سربرگ --}}

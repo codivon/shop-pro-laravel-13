@@ -1,5 +1,8 @@
 {{-- فرم ویرایش دسته‌بندی — پنل جدید (فاز ۵) — پورت ۱:۱ CategoryController@update --}}
 @php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
+@php
     $isProduct   = $type === 'productcat';
     $treeRoute   = $isProduct ? 'np.categories.product' : 'np.categories.post';
     $typeLabel   = $isProduct ? 'دسته‌بندی محصولات' : 'دسته‌بندی وبلاگ';

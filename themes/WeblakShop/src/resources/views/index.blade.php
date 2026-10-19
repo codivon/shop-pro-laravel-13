@@ -28,67 +28,70 @@
 
 @section('content')
     @foreach ($widgets as $widget)
-        @php
-            // اول چک کن آیا ماژولی این ویجت رو ثبت کرده
-            $moduleView = \App\Services\WidgetRegistry::getView($widget->key);
-            $moduleHasWidget = $moduleView && view()->exists($moduleView);
-        @endphp
+        {{-- wrapper ابزارک برای ویجت‌ساز پنل (هایلایت/اسکرول) — بدون تغییر ظاهری --}}
+        <div id="widget-{{ $widget->id }}">
+            @php
+                // اول چک کن آیا ماژولی این ویجت رو ثبت کرده
+                $moduleView = \App\Services\WidgetRegistry::getView($widget->key);
+                $moduleHasWidget = $moduleView && view()->exists($moduleView);
+            @endphp
 
-        @if ($moduleHasWidget)
-            {{-- ویجت از ماژول لود میشه --}}
-            @include($moduleView)
-        @else
-            @switch($widget->key)
-                @case('fullscreen-slider')
-                    @include('front::widgets.fullscreen-slider')
-                    @break
+            @if ($moduleHasWidget)
+                {{-- ویجت از ماژول لود میشه --}}
+                @include($moduleView)
+            @else
+                @switch($widget->key)
+                    @case('fullscreen-slider')
+                        @include('front::widgets.fullscreen-slider')
+                        @break
 
-                @case('main-slider')
-                    @include('front::widgets.main-slider')
-                    @break
+                    @case('main-slider')
+                        @include('front::widgets.main-slider')
+                        @break
 
 
-                @case('products-moment-block')
-                @case('products-default-block')
-                    @include('front::widgets.products-default-block')
-                    @break
+                    @case('products-moment-block')
+                    @case('products-default-block')
+                        @include('front::widgets.products-default-block')
+                        @break
 
-                @case('products-colorful-block')
-                    @include('front::widgets.products-colorful-block')
-                    @break
+                    @case('products-colorful-block')
+                        @include('front::widgets.products-colorful-block')
+                        @break
 
-                @case('middle-banners')
-                    @include('front::widgets.middle-banners')
-                    @break
+                    @case('middle-banners')
+                        @include('front::widgets.middle-banners')
+                        @break
 
-                @case('middle-banners-2')
-                    @include('front::widgets.middle-banners-2')
-                    @break
+                    @case('middle-banners-2')
+                        @include('front::widgets.middle-banners-2')
+                        @break
 
-                @case('middle-banners-4')
-                    @include('front::widgets.middle-banners-4')
-                    @break
+                    @case('middle-banners-4')
+                        @include('front::widgets.middle-banners-4')
+                        @break
 
-                @case('coworker-sliders')
-                    @include('front::widgets.coworker-sliders')
-                    @break
+                    @case('coworker-sliders')
+                        @include('front::widgets.coworker-sliders')
+                        @break
 
-                @case('sevices-sliders')
-                    @include('front::widgets.sevices-sliders')
-                    @break
+                    @case('sevices-sliders')
+                        @include('front::widgets.sevices-sliders')
+                        @break
 
-                @case('categories')
-                    @include('front::widgets.categories')
-                    @break
+                    @case('categories')
+                        @include('front::widgets.categories')
+                        @break
 
-                @case('posts')
-                    @include('front::widgets.posts')
-                    @break
-                @case('faqs')
-                    @include('front::widgets.faqs')
-                    @break
-            @endswitch
-        @endif
+                    @case('posts')
+                        @include('front::widgets.posts')
+                        @break
+                    @case('faqs')
+                        @include('front::widgets.faqs')
+                        @break
+                @endswitch
+            @endif
+        </div>
     @endforeach
 @endsection
 @push('scripts')
@@ -137,6 +140,55 @@
 
         <script>
             $('#text-popup-modal').modal('show');
+        </script>
+    @endif
+
+    {{-- اسکریپت ویجت‌ساز پنل (فاز ۹-ه) — فقط در حالت پیش‌نمایش ?ap-preview=1؛ بدون هیچ تاثیری در بازدید عادی --}}
+    @if (request()->get('ap-preview'))
+        <style>
+            [data-ap-outline] {
+                animation: apWidgetPulse 1.6s ease-in-out infinite;
+            }
+            @keyframes apWidgetPulse {
+                0%, 100% { outline-color: rgba(245, 158, 11, .95); outline-offset: 4px; }
+                50% { outline-color: rgba(245, 158, 11, .35); outline-offset: 9px; }
+            }
+            .ap-widget-guide {
+                outline: 1px dashed rgba(148, 163, 184, .8) !important;
+                outline-offset: 2px;
+            }
+        </style>
+        <script>
+            (function () {
+                function clearHighlight() {
+                    document.querySelectorAll('[data-ap-outline]').forEach(function (node) {
+                        node.style.outline = '';
+                        node.removeAttribute('data-ap-outline');
+                    });
+                }
+
+                function highlightWidget(id) {
+                    var el = document.getElementById('widget-' + id);
+                    if (!el) { return; }
+                    clearHighlight();
+                    el.setAttribute('data-ap-outline', '1');
+                    el.style.outline = '2px dashed rgba(245, 158, 11, .95)';
+                    el.style.outlineOffset = '4px';
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+
+                function setGuides(on) {
+                    document.querySelectorAll('[id^="widget-"]').forEach(function (node) {
+                        node.classList.toggle('ap-widget-guide', !!on);
+                    });
+                }
+
+                window.addEventListener('message', function (event) {
+                    var data = event.data || {};
+                    if (data.apWidgetId) { highlightWidget(data.apWidgetId); }
+                    if (typeof data.apShowGuides !== 'undefined') { setGuides(data.apShowGuides); }
+                });
+            })();
         </script>
     @endif
 @endpush

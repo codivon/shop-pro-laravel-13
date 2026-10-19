@@ -12,6 +12,8 @@ class EncryptCookies extends Middleware
      * @var array
      */
     protected $except = [
-        //
+        // تم پنل ادمین: سمت کلاینت با document.cookie ست می‌شود و layout
+        // سمت سرور آن را می‌خواند — نباید رمزنگاری شود.
+        'admin-theme',
     ];
 }

@@ -1,4 +1,7 @@
 {{-- نقش‌ها (مقام‌ها) — پنل جدید (فاز ۷-ج) — پورت ۱:۱ back/roles/* (لیست + مودال ایجاد/ویرایش با درخت دسترسی + حذف) --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-7xl space-y-5">
 
     {{-- سربرگ --}}

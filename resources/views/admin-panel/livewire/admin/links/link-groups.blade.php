@@ -1,4 +1,7 @@
 {{-- گروه‌های لینک — ویرایش عنوان‌ها (پورت updateGroups با option_update) + افزودن/حذف گروه افزوده‌شده --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-4xl space-y-5">
 
     {{-- سربرگ --}}

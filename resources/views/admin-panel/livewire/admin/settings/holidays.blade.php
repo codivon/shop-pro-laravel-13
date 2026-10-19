@@ -1,4 +1,7 @@
 {{-- تعطیلات رسمی: نمایش ۳ سال + ویرایشگر JSON سال + ابزار چک/تبدیل — پنل جدید (فاز ۷-ب۱) --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-7xl space-y-5">
 
     {{-- سربرگ --}}
