@@ -88,6 +88,15 @@ use App\Livewire\Admin\Widgets\WidgetForm;
 use App\Livewire\Admin\Widgets\PostWidgetIndex;
 use App\Livewire\Admin\Widgets\PostWidgetForm;
 use App\Livewire\Admin\Settings\FloatingWidget;
+use App\Livewire\Admin\Tickets\TicketIndex;
+use App\Livewire\Admin\Tickets\TicketCreate;
+use App\Livewire\Admin\Tickets\TicketShow;
+use App\Livewire\Admin\Messages\MessageIndex;
+use App\Livewire\Admin\Messages\MessageShow;
+use App\Livewire\Admin\Messages\MessageBirthday;
+use App\Livewire\Admin\Support\ContactIndex;
+use App\Livewire\Admin\Support\NewsletterIndex;
+use App\Livewire\Admin\Notifications\NotificationIndex;
 use App\Http\Controllers\Back\FormController as LegacyFormController;
 use App\Http\Controllers\AdminPanel\LogoutController;
 use App\Http\Controllers\Back\OrderController as LegacyOrderController;
@@ -364,6 +373,30 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
         |----------------------
         */
         Route::get('settings/floating-widget', FloatingWidget::class)->name('settings.floating-widget');
+
+        /*
+        |----------------------
+        | پشتیبانی (فاز ۷-الف)
+        |----------------------
+        */
+        Route::get('tickets', TicketIndex::class)->name('tickets.index');
+        Route::get('tickets/create', TicketCreate::class)->name('tickets.create');
+        Route::get('tickets/{ticket}', TicketShow::class)->name('tickets.show');
+
+        Route::get('contacts', ContactIndex::class)->name('contacts.index');
+
+        /*
+        |----------------------
+        | پیام‌ها و خبرنامه و اعلان‌ها (فاز ۷-الف)
+        |----------------------
+        */
+        Route::get('messages', MessageIndex::class)->name('messages.index');
+        Route::get('messages/birthday', MessageBirthday::class)->name('messages.birthday');
+        Route::get('messages/{message}', MessageShow::class)->name('messages.show');
+
+        Route::get('newsletters', NewsletterIndex::class)->name('newsletters.index');
+
+        Route::get('notifications', NotificationIndex::class)->name('notifications.index');
 
         // سایر بخش‌ها در فازهای بعدی اضافه می‌شوند:
         // فاز ۷: پشتیبانی/سیستم / ...

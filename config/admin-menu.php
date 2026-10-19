@@ -741,13 +741,13 @@ return [
                     'children' => [
                         [
                             'label' => 'لیست تیکت‌ها',
-                            'route' => 'admin.tickets.index',
+                            'route' => 'np.tickets.index',
                             'permission' => 'tickets.index',
                             'icon' => 'list',
                         ],
                         [
                             'label' => 'تیکت جدید',
-                            'route' => 'admin.tickets.create',
+                            'route' => 'np.tickets.create',
                             'permission' => 'tickets.create',
                             'icon' => 'plus',
                         ],
@@ -755,7 +755,7 @@ return [
                 ],
                 [
                     'label' => 'لیست تماس با ما',
-                    'route' => 'admin.contacts.index',
+                    'route' => 'np.contacts.index',
                     'permission' => 'contacts',
                     'icon' => 'phone',
                 ],
@@ -779,7 +779,7 @@ return [
                 ],
                 [
                     'label' => 'خبرنامه',
-                    'route' => 'admin.newsletters.index',
+                    'route' => 'np.newsletters.index',
                     'permission' => 'newsletters',
                     'icon' => 'send',
                 ],
@@ -867,7 +867,7 @@ return [
                         ],
                         [
                             'label' => 'مدیریت اعلان‌ها',
-                            'route' => 'admin.notifications.index',
+                            'route' => 'np.notifications.index',
                             'permission' => 'notifications',
                             'icon' => 'settings-2',
                         ],
@@ -875,7 +875,7 @@ return [
                 ],
                 [
                     'label' => 'ارسال پیام',
-                    'route' => 'admin.messages.index',
+                    'route' => 'np.messages.index',
                     'permission' => 'settings.sms',
                     'icon' => 'send',
                 ],
