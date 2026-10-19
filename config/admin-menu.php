@@ -38,13 +38,13 @@ return [
                 ],
                 [
                     'label' => 'نشست‌های فعال',
-                    'route' => 'admin.sessions.index',
+                    'route' => 'np.sessions.index',
                     'permission' => 'sessions.index',
                     'icon' => 'monitor',
                 ],
                 [
                     'label' => 'دستگاه‌های بلاک شده',
-                    'route' => 'admin.sessions.blocked-list',
+                    'route' => 'np.sessions.blocked',
                     'permission' => 'sessions.blocked',
                     'icon' => 'shield-off',
                 ],
@@ -57,7 +57,7 @@ return [
                 ],
                 [
                     'label' => 'فعالیت‌های اخیر',
-                    'route' => 'admin.activity-log.index',
+                    'route' => 'np.activity-log.index',
                     'permission' => 'activity-log.index',
                     'icon' => 'history',
                 ],
@@ -283,13 +283,13 @@ return [
                     'children' => [
                         [
                             'label' => 'لیست انبارها',
-                            'route' => 'admin.warehouses.index',
+                            'route' => 'np.warehouses.index',
                             'permission' => 'warehouses.index',
                             'icon' => 'list',
                         ],
                         [
                             'label' => 'ایجاد انبار جدید',
-                            'route' => 'admin.warehouses.create',
+                            'route' => 'np.warehouses.index',
                             'permission' => 'warehouses.create',
                             'icon' => 'plus',
                         ],

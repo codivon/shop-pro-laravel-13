@@ -107,6 +107,14 @@ use App\Livewire\Admin\Content\SearchIndex;
 use App\Livewire\Admin\Settings\Robots;
 use App\Livewire\Admin\Settings\Redirects;
 use App\Livewire\Admin\Settings\Apikeys;
+use App\Livewire\Admin\Warehouses\WarehouseIndex;
+use App\Livewire\Admin\Warehouses\WarehouseShow;
+use App\Livewire\Admin\Warehouses\WarehouseVariations;
+use App\Livewire\Admin\Warehouses\WarehouseMovements;
+use App\Livewire\Admin\Warehouses\WarehouseStockTake;
+use App\Livewire\Admin\Warehouses\WarehouseBulkStock;
+use App\Livewire\Admin\System\SessionIndex;
+use App\Livewire\Admin\System\ActivityLogIndex;
 use App\Http\Controllers\Back\FormController as LegacyFormController;
 use App\Http\Controllers\AdminPanel\LogoutController;
 use App\Http\Controllers\Back\OrderController as LegacyOrderController;
@@ -437,6 +445,29 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
         Route::get('robots', Robots::class)->name('robots.index');
         Route::get('redirects', Redirects::class)->name('redirects.index');
         Route::get('apikeys', Apikeys::class)->name('apikeys.index');
+
+        /*
+        |----------------------
+        | انبارها (فاز ۷-ب۳)
+        |----------------------
+        | ترتیب مهم است: مسیرهای ثابت قبل از {warehouse}.
+        | variations با query ?product={id} فیلتر می‌شود.
+        */
+        Route::get('warehouses', WarehouseIndex::class)->name('warehouses.index');
+        Route::get('warehouses/{warehouse}/variations', WarehouseVariations::class)->name('warehouses.variations');
+        Route::get('warehouses/{warehouse}/movements', WarehouseMovements::class)->name('warehouses.movements');
+        Route::get('warehouses/{warehouse}/stock-take', WarehouseStockTake::class)->name('warehouses.stock-take');
+        Route::get('warehouses/{warehouse}/bulk-stock', WarehouseBulkStock::class)->name('warehouses.bulk-stock');
+        Route::get('warehouses/{warehouse}', WarehouseShow::class)->name('warehouses.show');
+
+        /*
+        |----------------------
+        | نشست‌ها و لاگ فعالیت (فاز ۷-ب۴)
+        |----------------------
+        */
+        Route::get('sessions/blocked', fn () => redirect(route('np.sessions.index', ['tab' => 'blocked'])))->name('sessions.blocked');
+        Route::get('sessions', SessionIndex::class)->name('sessions.index');
+        Route::get('activity-log', ActivityLogIndex::class)->name('activity-log.index');
 
         // سایر بخش‌ها در فازهای بعدی اضافه می‌شوند:
         // فاز ۷: پشتیبانی/سیستم / ...
