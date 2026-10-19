@@ -24,5 +24,16 @@ export default defineConfig({
         // خروجی = public/admin-panel (manifest هم همین‌جا ساخته می‌شود)
         outDir: 'public/admin-panel',
         emptyOutDir: true,
+
+        // مرورگرهای مدرن — Tailwind CSS v4 و CSS nesting به همین حداقل نیاز دارند.
+        // با این تارگت، esbuild دیگر ۷۲ اخطار unsupported-css-nesting نمی‌دهد.
+        target: ['chrome112', 'edge112', 'firefox117', 'safari16.5'],
+
+        // چانک ckeditor5 به‌صورت lazy و جداگانه لود می‌شود (~2.2MB مخصوص CKEditor 5 است)
+        chunkSizeWarningLimit: 2600,
+
+        // بدون sourcemap در پروداکشن + حجم gzip محاسبه نشود (بیلد سریع‌تر و لاگ تمیزتر)
+        sourcemap: false,
+        reportCompressedSize: false,
     },
 });
