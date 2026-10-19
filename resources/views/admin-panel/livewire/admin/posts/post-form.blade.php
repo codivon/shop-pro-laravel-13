@@ -88,29 +88,14 @@
 
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                            <label class="mb-1.5 block text-xs font-semibold">دسته بندی ها <span class="text-red-500">*</span></label>
-                            {{-- فاز ۱۱: انتخابگر کارتی به‌جای چک‌باکس خام --}}
-                            <div class="max-h-96 overflow-y-auto rounded-xl border border-line bg-surface-2 p-3 dark:border-night-line dark:bg-night-3">
-                                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                    @forelse ($this->categoryTree as $node)
-                                        @php $category = $node['model']; @endphp
-                                        <label class="ap-check-card" style="margin-inline-start: {{ $node['depth'] * 14 }}px">
-                                            <input type="checkbox" wire:model="categories" value="{{ $category->id }}">
-                                            <span class="ap-check-mark" aria-hidden="true">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                                            </span>
-                                            <span class="ap-check-card-body truncate">{{ $category->title }}</span>
-                                            @unless ($category->published)
-                                                <span class="ap-badge bg-amber-50 text-[10px] text-amber-700 dark:bg-amber-500/12 dark:text-amber-400">پیش‌نویس</span>
-                                            @endunless
-                                        </label>
-                                    @empty
-                                        <p class="py-3 text-center text-xs text-ink-3 dark:text-night-ink-2">
-                                            دسته‌بندی وبلاگی برای زبان فعلی ثبت نشده است.
-                                        </p>
-                                    @endforelse
-                                </div>
-                            </div>
+                            {{-- فاز ۱۳: انتخابگر مودالی درختی به‌جای چک‌باکس — دکمه + پنل درخت با زیرمجموعه‌ها + جستجو + چیپ انتخاب‌شده‌ها --}}
+                            <x-admin-panel::category-picker
+                                wireProp="categories"
+                                :multiple="true"
+                                :tree="$this->categoryTree"
+                                label="دسته بندی ها"
+                                required
+                                placeholder="انتخاب دسته‌بندی‌ها…" />
                             @error('categories') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                             @error('categories.*') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                         </div>

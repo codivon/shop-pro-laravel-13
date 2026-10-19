@@ -733,6 +733,85 @@ class MenuManager extends Component
         $this->dispatch('toast', message: 'منو به سطح ریشه منتقل شد.', type: 'success');
     }
 
+    /**
+     * فاز ۱۳ — ذخیره کل ساختار درخت از درگ‌انددراپ SortableJS:
+     * آرایه تو در تو [{id, children:[…]}, …] — والد و ترتیب هر منو از جایگاهش در آرایه.
+     * چون ساختار از DOM رندرشده می‌آید، حلقه به‌طور ساختاری ناممکن است؛ با این حال
+     * همه شناسه‌ها اعتبارسنجی می‌شوند (باید منوهای همین محدوده زبان باشند).
+     */
+    public function saveTree($tree = null): void
+    {
+        $this->authorizeUpdate();
+
+        $nodes = is_string($tree) ? json_decode($tree, true) : $tree;
+
+        if (! is_array($nodes)) {
+            return;
+        }
+
+        // گردآوری همه شناسه‌ها برای اعتبارسنجی
+        $ids = [];
+
+        $collect = function (array $items) use (&$collect, &$ids): void {
+            foreach ($items as $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+
+                $id = (int) ($item['id'] ?? 0);
+
+                if ($id > 0) {
+                    $ids[] = $id;
+                }
+
+                if (! empty($item['children']) && is_array($item['children'])) {
+                    $collect($item['children']);
+                }
+            }
+        };
+
+        $collect($nodes);
+
+        if (empty($ids)) {
+            return; // ساختار خالی (مثلاً درگ بی‌تغییر) — کاری نکن
+        }
+
+        $validIds = Menu::detectLang()
+            ->whereIn('id', $ids)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if (count($ids) !== count($validIds)) {
+            $this->dispatch('toast', message: 'ساختار ارسال‌شده نامعتبر است.', type: 'error');
+
+            return;
+        }
+
+        DB::transaction(function () use ($nodes) {
+            $apply = function (array $items, ?int $parentId) use (&$apply): void {
+                foreach ($items as $index => $item) {
+                    if (! is_array($item) || empty($item['id'])) {
+                        continue;
+                    }
+
+                    Menu::whereKey((int) $item['id'])->update([
+                        'menu_id'  => $parentId,
+                        'ordering' => $index + 1,
+                    ]);
+
+                    if (! empty($item['children']) && is_array($item['children'])) {
+                        $apply($item['children'], (int) $item['id']);
+                    }
+                }
+            };
+
+            $apply($nodes, null);
+        });
+
+        $this->dispatch('toast', message: 'ساختار منوها به‌روزرسانی شد.', type: 'success');
+    }
+
     /* ============================ کمکی ============================ */
 
     /** بزرگ‌ترین ترتیب خواهرها + ۱ (برای افزودن به انتهای سطح) */

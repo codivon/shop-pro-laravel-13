@@ -4,6 +4,7 @@ namespace App\Livewire\Admin\Taxonomy;
 
 use App\Models\Category;
 use Cviebrock\EloquentSluggable\Services\SlugService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
@@ -494,6 +495,88 @@ class CategoryTree extends Component
         $drag->save();
 
         $this->dispatch('toast', message: 'دسته به سطح ریشه منتقل شد.', type: 'success');
+    }
+
+    /**
+     * فاز ۱۳ — ذخیره کل ساختار درخت از درگ‌انددراپ SortableJS:
+     * آرایه تو در تو [{id, children:[…]}, …] — والد و ترتیب هر دسته از جایگاهش در آرایه.
+     * ساختار از DOM رندرشده می‌آید (حلقه ساختاری ناممکن است) و همه شناسه‌ها
+     * به نوع دسته‌بندی جاری محدود و اعتبارسنجی می‌شوند.
+     */
+    public function saveTree($tree = null): void
+    {
+        $this->authorizeCategory();
+
+        $nodes = is_string($tree) ? json_decode($tree, true) : $tree;
+
+        if (! is_array($nodes)) {
+            return;
+        }
+
+        $ids = [];
+
+        $collect = function (array $items) use (&$collect, &$ids): void {
+            foreach ($items as $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+
+                $id = (int) ($item['id'] ?? 0);
+
+                if ($id > 0) {
+                    $ids[] = $id;
+                }
+
+                if (! empty($item['children']) && is_array($item['children'])) {
+                    $collect($item['children']);
+                }
+            }
+        };
+
+        $collect($nodes);
+
+        if (empty($ids)) {
+            return; // ساختار خالی (مثلاً درگ بی‌تغییر) — کاری نکن
+        }
+
+        $validIds = Category::query()
+            ->where('type', $this->type)
+            ->whereIn('id', $ids)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if (count($ids) !== count($validIds)) {
+            $this->dispatch('toast', message: 'ساختار ارسال‌شده نامعتبر است.', type: 'error');
+
+            return;
+        }
+
+        DB::transaction(function () use ($nodes) {
+            $apply = function (array $items, ?int $parentId) use (&$apply): void {
+                foreach ($items as $index => $item) {
+                    if (! is_array($item) || empty($item['id'])) {
+                        continue;
+                    }
+
+                    Category::query()
+                        ->where('type', $this->type)
+                        ->whereKey((int) $item['id'])
+                        ->update([
+                            'category_id' => $parentId,
+                            'ordering'    => $index + 1,
+                        ]);
+
+                    if (! empty($item['children']) && is_array($item['children'])) {
+                        $apply($item['children'], (int) $item['id']);
+                    }
+                }
+            };
+
+            $apply($nodes, null);
+        });
+
+        $this->dispatch('toast', message: 'ساختار درخت به‌روزرسانی شد.', type: 'success');
     }
 
     /* ============================ کمکی ============================ */

@@ -137,7 +137,8 @@ class PostForm extends Component
     /* ============================ مراجع ============================ */
 
     /**
-     * دسته‌های وبلاگ به‌صورت درخت چک‌باکس — یک کوئری با ترتیب پیش‌پیمایش
+     * دسته‌های وبلاگ به‌صورت درخت تو‌درتو برای apCategoryPicker (فاز ۱۳ — انتخابگر مودالی)
+     * یک کوئری با ترتیب پیش‌پیمایش
      * (پورت: Category::detectLang()->where('type','postcat')->orderBy('ordering'))
      */
     #[Computed]
@@ -152,22 +153,22 @@ class PostForm extends Component
 
         $byParent = $flat->groupBy(fn (Category $category) => (int) $category->category_id);
 
-        $rows = [];
-
-        $walk = function (int $parentId, int $depth = 0) use (&$walk, $byParent, &$rows): void {
+        $build = function (int $parentId, int $depth = 0) use (&$build, $byParent): array {
             if ($depth > 10) {
-                return;
+                return [];
             }
 
-            foreach ($byParent->get($parentId, collect()) as $category) {
-                $rows[] = ['model' => $category, 'depth' => $depth];
-                $walk($category->id, $depth + 1);
-            }
+            return $byParent->get($parentId, collect())
+                ->map(fn (Category $category) => [
+                    'id'       => (int) $category->id,
+                    'title'    => (string) $category->title,
+                    'children' => $build($category->id, $depth + 1),
+                ])
+                ->values()
+                ->all();
         };
 
-        $walk(0);
-
-        return $rows;
+        return $build(0);
     }
 
     /** پورت: Fild::where('belongs_to', 'posts') — با اصلاح belongs_to=blogs (enum دیتابیس) */

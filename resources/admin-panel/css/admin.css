@@ -395,14 +395,14 @@ body {
 }
 
 /* ==================================================================
-   فیکس تراز اسپینر داخل دکمه‌ها (فاز ۱۱)
-   Livewire هنگام نمایش span های [wire:loading] به‌جای display اصلی،
-   display:inline-block ست می‌کند؛ نتیجه: آیکون و متن زیر هم می‌افتند.
-   راه‌حل: هر span لودینگِ «نمایان» داخل دکمه به‌صورت inline-flex وسط‌چین شود.
-   (وقتی Livewire display:none ست کند سلکتور نمی‌خورد و مخفی می‌ماند؛
-   اسپن‌های wire:loading.remove هم نام اتریبیوت متفاوت دارند و بی‌تأثیرند.)
+   فیکس تراز اسپینر داخل دکمه‌ها (فاز ۱۱ — بازنویسی برای Livewire 4 در فاز ۱۳)
+   Livewire 4 عنصرهای [wire:loading] را با استایل‌شیت تزریقی مخفی می‌کند (نه inline)؛
+   هنگام لودینگ display را inline می‌گذارد. پس قانون تراز فقط وقتی باید اعمال شود که
+   استایل inline (نمایان بودن حین لودینگ) وجود دارد — شرط [style] بدون آن، span لودینگ
+   در حالت پیش‌فرض همیشه نمایان می‌ماند (باگ دکمه «در حال ذخیره…»).
+   (اسپن‌های wire:loading.remove هم نام اتریبیوت متفاوت دارند و بی‌تأثیرند.)
    ================================================================== */
-button [wire\:loading]:not([style*="display: none"]):not([style*="display:none"]):not([style*="display:none !important"]) {
+button [wire\:loading][style]:not([style*="display: none"]):not([style*="display:none"]) {
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
@@ -828,4 +828,49 @@ button [wire\:loading]:not([style*="display: none"]):not([style*="display:none"]
 .dark .ck-content .ap-style-small-text,
 .dark .ck.ck-style-panel .ap-style-small-text {
     color: rgb(161 161 170);
+}
+
+/* ==================================================================
+   فاز ۱۳ — گارد بوت لایووایر + درگ‌انددراپ SortableJS
+   ================================================================== */
+
+/* ۱) تا لحظه راه‌اندازی لایووایر، spanهای wire:loading مخفی بمانند
+      (رفع دکمه‌هایی که وقتی JS لایووایر لود نشده از ابتدا حالت «در حال ذخیره…» دارند) */
+.lw-booting [wire\:loading],
+.lw-booting [wire\:loading\.delay],
+.lw-booting [wire\:loading\.inline],
+.lw-booting [wire\:loading\.delay\.inline],
+.lw-booting [wire\:loading\.inline\.delay] {
+    display: none !important;
+}
+
+/* ۲) درگ‌انددراپ Sortable (منوها / دسته‌بندی‌ها / ابزارک‌ها) */
+.ap-dnd-ghost {
+    opacity: 0.35 !important;
+}
+.ap-dnd-chosen {
+    cursor: grabbing !important;
+}
+/* حین درگ، لیست‌های خالی به‌عنوان ناحیه رهاسازی دیده می‌شوند (فرزند شدن گره بدون فرزند) */
+.ap-dnd-active [data-dnd-list]:empty {
+    min-height: 10px;
+    margin-block: 2px;
+    border-radius: 0.5rem;
+    outline: 1.5px dashed var(--color-brand-500);
+    outline-offset: 2px;
+    background: rgb(16 185 129 / 0.06);
+}
+/* هندل درگ در حالت فعال */
+[data-dnd-handle] {
+    cursor: grab;
+}
+[data-dnd-handle]:active {
+    cursor: grabbing;
+}
+
+/* عنصر شبح درگ در حالت fallback — سایه و شفافیت ملایم */
+.ap-dnd-fallback {
+    opacity: 0.9 !important;
+    box-shadow: 0 12px 28px -10px rgb(2 6 23 / 0.35) !important;
+    border-radius: 0.75rem !important;
 }

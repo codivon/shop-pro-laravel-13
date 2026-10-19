@@ -4,25 +4,8 @@
     $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
 @endphp
 <div class="mx-auto max-w-6xl space-y-5"
-     x-data="{
-        dragId: null,
-        overId: null,
-        overAfter: false,
-        handleDrop(targetId) {
-            if (! this.dragId || Number(this.dragId) === Number(targetId)) { return; }
-            const items = Array.from(document.querySelectorAll('#ap-widget-rows [data-widget-id]'));
-            const order = items.map((el) => Number(el.dataset.widgetId));
-            const from = order.indexOf(Number(this.dragId));
-            if (from === -1) { return; }
-            order.splice(from, 1);
-            let idx = order.indexOf(Number(targetId));
-            if (idx === -1) { return; }
-            idx = this.overAfter ? idx + 1 : idx;
-            order.splice(idx, 0, Number(this.dragId));
-            this.$wire.reorderWidgets(order);
-            this.dragId = null; this.overId = null; this.overAfter = false;
-        }
-     }">
+     data-ap-dnd-tree data-dnd-flat data-dnd-group="widgets" data-dnd-save="reorderWidgets"
+     x-init="$el.__apDndWire = $wire; window.ApDnd && window.ApDnd.init($el)">
 
     {{-- ===== سربرگ گرادیانی برند ===== --}}
     <div class="relative overflow-hidden rounded-3xl bg-linear-to-bl from-brand-700 via-brand-600 to-brand-500 p-5 text-white shadow-lg shadow-brand-600/20 sm:p-6">
@@ -104,27 +87,15 @@
                 </p>
             </div>
 
-            <ul id="ap-widget-rows" class="divide-y divide-line/70 dark:divide-night-line/70">
+            <ul id="ap-widget-rows" data-dnd-list class="divide-y divide-line/70 dark:divide-night-line/70">
                 @foreach ($this->widgets as $widget)
                     <li wire:key="widget-row-{{ $widget->id }}" data-widget-id="{{ $widget->id }}"
-                        class="relative transition-all duration-200"
-                        :class="dragId === {{ $widget->id }} ? 'opacity-40' : ''"
-                        x-on:dragover.prevent="overId = {{ $widget->id }}; overAfter = draggingId !== null && draggingId !== {{ $widget->id }} && (($event.clientY - $el.getBoundingClientRect().top) > $el.offsetHeight / 2)"
-                        x-on:dragleave="if (overId === {{ $widget->id }}) { overId = null; overAfter = false; }"
-                        x-on:drop.prevent="handleDrop({{ $widget->id }})">
-
-                        {{-- نشانگر جای‌گذاری درگ --}}
-                        <span x-show="overId === {{ $widget->id }} && ! overAfter" x-cloak
-                              class="absolute inset-x-3 top-0 z-10 h-0.5 rounded-full bg-brand-500 shadow-md shadow-brand-500/40" aria-hidden="true"></span>
-                        <span x-show="overId === {{ $widget->id }} && overAfter" x-cloak
-                              class="absolute inset-x-3 bottom-0 z-10 h-0.5 rounded-full bg-brand-500 shadow-md shadow-brand-500/40" aria-hidden="true"></span>
+                        data-dnd-id="{{ $widget->id }}" class="relative transition-colors duration-200">
 
                         <div class="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 transition-colors hover:bg-surface-2/60 dark:hover:bg-night-3/40">
-                            {{-- هندل درگ --}}
-                            <span draggable="true"
-                                  x-on:dragstart="dragId = {{ $widget->id }}; $event.dataTransfer.effectAllowed = 'move'; $event.dataTransfer.setData('text/plain', String({{ $widget->id }}))"
-                                  x-on:dragend="dragId = null; overId = null; overAfter = false"
-                                  class="cursor-grab touch-none select-none rounded-lg p-1 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 active:cursor-grabbing dark:text-night-ink-2 dark:hover:bg-brand-500/10"
+                            {{-- هندل درگ (SortableJS — فاز ۱۳) — فقط از همین هندل --}}
+                            <span data-dnd-handle
+                                  class="touch-none select-none rounded-lg p-1 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:text-night-ink-2 dark:hover:bg-brand-500/10"
                                   title="کشیدن برای تغییر ترتیب" aria-label="کشیدن {{ $widget->title }} برای تغییر ترتیب">
                                 <x-admin-panel::icon name="grip-vertical" class="size-4.5" />
                             </span>

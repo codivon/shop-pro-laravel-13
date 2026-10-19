@@ -91,100 +91,21 @@
         </div>
     @endcan
 
-    {{-- درخت دسته‌بندی‌ها + وضعیت درگ‌انددراپ (Alpine خالص — فاز ۱۱ بازطراحی) --}}
+    {{-- درخت دسته‌بندی‌ها — درگ‌انددراپ SortableJS (فاز ۱۳؛ جانشین باندهای ناقص فاز ۱۱) --}}
     <div class="ap-card p-4 sm:p-5"
-         x-data="{
-            dragId: null,
-            dragSubtree: [],
-            overId: null,
-            overMode: null,
-            startDrag(event, id, subtree) {
-                this.dragId = id
-                this.dragSubtree = Array.isArray(subtree) && subtree.length ? subtree : [id]
-                event.dataTransfer.effectAllowed = 'move'
-                try { event.dataTransfer.setData('text/plain', String(id)) } catch (e) {}
-            },
-            overBand(event, id, mode) {
-                if (this.dragId === null) return
-                // فقط شاخه خودش را نمی‌توان داخل خودش برد
-                this.overId = id
-                this.overMode = this.dragSubtree.includes(id) ? 'forbidden' : mode
-            },
-            leaveBand(id) {
-                if (this.overId === id) { this.overId = null; this.overMode = null }
-            },
-            dropClass(id) {
-                if (this.dragId === null || this.overId !== id) return ''
-                return {
-                    before: 'ap-drop-before',
-                    after: 'ap-drop-after',
-                    inside: 'ap-drop-inside',
-                    forbidden: 'ap-drop-forbidden',
-                }[this.overMode] ?? ''
-            },
-            dropLabel(id) {
-                if (this.dragId === null || this.overId !== id) return ''
-                return {
-                    before: 'هم‌سطح — قبل از این دسته',
-                    after: 'هم‌سطح — بعد از این دسته',
-                    inside: 'زیرشاخهٔ این دسته',
-                    forbidden: 'انتقال به زیرشاخهٔ خودش مجاز نیست',
-                }[this.overMode] ?? ''
-            },
-            resetDrag() {
-                this.dragId = null
-                this.dragSubtree = []
-                this.overId = null
-                this.overMode = null
-            },
-            drop(event, id) {
-                const dragId = this.dragId
-                const mode = this.overMode
-                this.resetDrag()
-                if (! dragId || dragId === id) return
-                if (! mode || mode === 'forbidden') {
-                    window.dispatchEvent(new CustomEvent('toast', {
-                        detail: { message: 'انتقال دسته به داخل زیرشاخهٔ خودش مجاز نیست.', type: 'error' },
-                    }))
-                    return
-                }
-                $wire.moveNode(dragId, id, mode)
-            },
-            dropRoot(event) {
-                const dragId = this.dragId
-                this.resetDrag()
-                if (! dragId) return
-                $wire.moveNodeToRoot(dragId)
-            },
-         }"
-         x-on:dragend.window="resetDrag()"
-         {{-- dragover روی کل کارت: جلوگیری از رد شدن drop روی فاصله‌ها (به‌خصوص Firefox) --}}
-         x-on:dragover.prevent=""
-    >
+         data-ap-dnd-tree data-dnd-group="categories" data-dnd-save="saveTree"
+         x-init="$el.__apDndWire = $wire; window.ApDnd && window.ApDnd.init($el)">
         @if (count($nodes))
-            <ul class="space-y-2">
+            {{-- لیست ریشه — رها کردن دسته اینجا = خروج از زیرمجموعه --}}
+            <ul class="space-y-2" data-dnd-list>
                 @foreach ($nodes as $node)
                     @include('admin-panel::livewire.admin.taxonomy.partials.category-node', ['node' => $node, 'level' => 1])
                 @endforeach
             </ul>
 
-            {{-- ناحیه رهاسازی ریشه — خروج از زیرمجموعه با درگ (فاز ۱۱) --}}
-            <div x-show="dragId !== null" x-cloak x-transition.opacity.duration.150ms
-                 x-on:dragover.prevent.stop="overId = null; overMode = 'root'"
-                 x-on:dragleave.prevent="overMode = null"
-                 x-on:drop.prevent.stop="dropRoot($event)"
-                 class="mt-3 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-[13px] font-bold transition-colors"
-                 :class="overMode === 'root'
-                     ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300'
-                     : 'border-line text-ink-3 dark:border-night-line dark:text-night-ink-2'"
-                 role="region" aria-label="ناحیه انتقال به سطح ریشه">
-                <x-admin-panel::icon name="corner-up-right" class="size-4.5 -scale-x-100" />
-                <span>برای تبدیل به دسته اصلی (خروج از زیرمجموعه) اینجا رها کنید</span>
-            </div>
-
             <p class="mt-4 flex items-start gap-1.5 text-xs leading-6 text-ink-3 dark:text-night-ink-2">
                 <x-admin-panel::icon name="info" class="mt-1 size-4 shrink-0" />
-                <span>هندل ⋮⋮ را بکشید: <b class="text-ink-2 dark:text-night-ink">بالای ردیف</b> = هم‌سطح قبل، <b class="text-ink-2 dark:text-night-ink">وسط</b> = زیرشاخه، <b class="text-ink-2 dark:text-night-ink">پایین</b> = هم‌سطح بعد، یا رها کنید روی ناحیه «سطح ریشه». دکمه‌های فلش و سلکت «انتقال به سطح» هم برای مرتب‌سازی در دسترس‌اند.</span>
+                <span>هندل ⋮⋮ را بکشید: <b class="text-ink-2 dark:text-night-ink">جابه‌جایی بین ردیف‌ها</b> = هم‌سطح، <b class="text-ink-2 dark:text-night-ink">رها کردن روی کادر خط‌چین زیر یک دسته</b> = زیرشاخه شدن، و <b class="text-ink-2 dark:text-night-ink">رها کردن در لیست بالا (ریشه)</b> = خروج از زیرمجموعه. دکمه‌های فلش و سلکت «انتقال به سطح» هم برای مرتب‌سازی در دسترس‌اند.</span>
             </p>
         @else
             <div class="flex flex-col items-center gap-2 py-14 text-ink-3 dark:text-night-ink-2">
@@ -223,7 +144,7 @@
     </div>
 
     {{-- لودینگ --}}
-    <div wire:loading wire:target="createCategory, generateSlug, moveUp, moveDown, moveNode, delete, parentIds, confirmDelete, startCreate"
+    <div wire:loading wire:target="createCategory, generateSlug, moveUp, moveDown, delete, parentIds, confirmDelete, startCreate, saveTree"
          class="pointer-events-none fixed bottom-6 start-6 z-[65] flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 shadow-pop dark:border-night-line dark:bg-night-3">
         <svg class="size-4 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />

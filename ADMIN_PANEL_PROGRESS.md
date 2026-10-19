@@ -413,3 +413,46 @@
 - build: 11.2s، 0 warning/0 error؛ manifest: 9 entry، 0 missing/0 orphan
 - مرورگر: سایدبار (openGroups:0، hashLinks:[]، vendor on/off)، brands/roles/filters/attribute-groups رندر، FAQ (نوار مخفی→«۱ مورد انتخاب شده» بعد از انتخاب)، مودال مدیران (عنوان/انصراف/بیرون/ESC)، تب تصاویر (هر دو input محدود به کارت)، picker (۲ پیکر، ۵۶ گره، جستجو)، CKEditor (style/bookmark)، منوها (۳۰ هندل درگ + is-active)
 - laravel.log: رشد صفر بایت
+
+---
+
+## فاز ۱۳ — درخواست چهارم کاربر (درگ SortableJS، توست اعتبارسنجی، پیکر نوشته‌ها، فیکس‌های Livewire 4)
+
+**تاریخ:** 1405/07/27 — وضعیت: browser-verified، push شده
+
+### ۱) باگ «دکمه‌ها از ابتدا در حال ذخیره…» (همه صفحات — ریشه واقعی)
+- Livewire 4 عنصرهای `[wire:loading]` را با **استایل‌شیت تزریقی** مخفی می‌کند نه با inline style؛ قانون «تراز اسپینر» فاز ۱۱ با شرط `:not([style*="display: none"])` فرض inline بودن داشت → شرط هرگز عمل نمی‌کرد و **همه spanهای لودینگ داخل دکمه‌ها همیشه نمایان بودند** (در سندباکس هم بازتولید شد)
+- فیکس: `button [wire\:loading][style]:not([style*=display:none])` — تراز inline-flex فقط وقتی که استایل inline (حین لودینگ) وجود دارد
+- گارد دفاعی اضافه: کلاس `lw-booting` روی `<html>` + CSS `.lw-booting [wire\:loading]{display:none!important}` که با `livewire:init/initialized/navigated` برداشته می‌شود
+- **نگهبان خودترمیم asset**: اگر Livewire بعد از ۶ ثانیه لود نشود (مثل 404 پس از تغییر APP_KEY)، یک‌بار در ۳۰ ثانیه reload می‌کند (sessionStorage ضد حلقه)
+
+### ۲) خطای 404 `livewire-<hash>/livewire.js` روی سیستم کاربر (تشخیص)
+- Livewire v4.4.7 مسیر asset را **مسیر دقیقِ مشتق از APP_KEY** رجیستر می‌کند: `sha256(APP_KEY.'livewire-endpoint')[:8]` (`EndpointResolver::prefix`) — هیچ wildcard یا کشی در کار نیست
+- یعنی 404 فقط وقتی رخ می‌دهد که URL صفحه (اسنپ‌شات wire:navigate/تب باز/کش route) با APP_KEY فعلی نخواند. بیلد Vite ربطی ندارد
+- راه‌حل کاربر: `php artisan optimize:clear` + ری‌استارت serve + Ctrl+F5؛ تشخیص: `route:list --path=livewire` در برابر view-source؛ از اجرای مجدد installer/`key:generate` در میانه session خودداری شود
+- کندی لوکال: `php artisan serve` تک‌پردازنده است؛ پیشنهاد: vhost آپاچی Laragon + غیرفعال‌کردن debugbar؛ خطای `Max execution time 300s` در ServeCommand خطای پروسه ناظر است و بی‌خطر
+
+### ۳) درگ‌انددراپ با SortableJS (جانشین کامل درگ دستی HTML5)
+- `sortablejs` نصب شد (bun)؛ هلپر سراسری `window.ApDnd` در admin.js: init/serializeTree/save + initAll روی `livewire:navigated`
+- سه سطح بازنویسی شد: **منوها** (درخت با لیست فرزندانِ همیشه‌رندر — فرزند شدن با رها روی کادر خط‌چین زیر گره، خروج به ریشه با رها در لیست ریشه)، **دسته‌بندی‌ها** (باندهای فاز ۱۱ که pointer-events:none بودند و عملاً drop نمی‌گرفتند حذف شدند)، **ابزارک‌ها** (باگ `draggingId` تعریف‌نشده در dragover — ReferenceError — حذف شد)
+- `forceFallback: true` → درگ مبتنی بر موس/لمس (سازگار با RTL/تاچ، هم‌تجربه nestable پنل قبلی) + استایل‌های ghost/fallback
+- اکشن‌های سرور جدید `saveTree(array)` در MenuManager و CategoryTree (اعتبارسنجی idها، تراکنش، نرمالایز ۱..n)؛ moveNode/moveNodeToRoot/moveUp/moveDown برای سازگاری حفظ شدند
+- باگ‌های مسیر کشف‌شده: serialize با `:scope >` لیست ریشه را نمی‌افتاد (داخل wrapper پدینگ است) → جستجوی لیستِ خارج از گره‌ها؛ payload خالی → گارد سرور
+- وریفای درگ واقعی (Playwright mouse): منو ۱۶ → داخل منو ۲۶ → DB: menu_id=26، ord=1؛ بازگشت به ریشه → دقیقاً baseline (ord=2)؛ دسته ۲۱ → داخل ۱۸ → category_id=18، ord=1؛ بازگشت به ریشه ✅؛ ابزارک ۴۰ بالای ۳۹ → 40:o1/39:o2 ✅
+
+### ۴) پیکر دسته‌بندی نوشته‌ها (چک‌باکس → مودال درختی)
+- PostForm: `categoryTree` به شکل تو‌درتو `{id,title,children}` تبدیل شد؛ ویو: چک‌باکس‌های کارتی → `<x-admin-panel::category-picker wireProp="categories" :multiple="true">` (دکمه + پنل درخت + جستجوی زنده + چیپ‌ها)
+- وریفای: جستجوی «اپل» → ۲ ردیف، انتخاب دو مورد → چیپ‌های مسیر کامل + `categories=[39,33]`، ارسال فرم → نوشته با cat=[29] در DB
+
+### ۵) پیام لحظه‌ای خطاهای اعتبارسنجی (همه فرم‌ها)
+- هوک سراسری در admin.js: `Livewire.hook('commit')` → `snapshot.memo.errors` غیرخالی → `ApToast.error('لطفاً خطاهای مشخص‌شده در فرم را برطرف کنید.')` (ضدتکرار ۱.۵s) + پشتیبان `hook('request')` برای HTTP 422 واقعی
+- وریفای: ارسال فرم خالی نوشته → توست اختصاصی «عنوان الزامی است» + توست سراسری جدید + خطای زیر فیلد
+
+### ۶) باگ «ایجاد صفحه جدید کار نمی‌کند» — ریشه واقعی
+- `window.Livewire.find(wireId)` در Livewire 4 آبجکت مرده (نه کامپوننت زنده) برمی‌گرداند → سینک `change:data` ادیتور روی `$wire.description` **بی‌صدا گم می‌شد** → خطای «محتوای صفحه الزامی است» برای همیشه
+- فیکس: resolve کامپوننت با `Livewire.all().find(c => c.el === componentEl)`
+- وریفای کامل: create (title+content+submit → ریدایرکت + رکورد DB با محتوا)، edit (prefill ادیتور + ذخیره تغییرات → DB)
+
+### ۷) سایر
+- منوی «دستگاه‌های بلاک شده» از config/admin-menu.php حذف شد (تب آن داخل نشست‌های فعال باقی است)
+- build: ~11s، 0 warning؛ manifest 9 entry سازگار؛ laravel.log رشد صفر؛ دیتای تست کاملاً پاک شد (menus=30, pages=0, posts=0, widgets=1 = baseline)

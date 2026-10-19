@@ -27,6 +27,7 @@
     "dependencies": {
         "@majidh1/jalalidatepicker": "^1.0.0",
         "ckeditor5": "^49.0.0",
-        "echarts": "^6.1.0"
+        "echarts": "^6.1.0",
+        "sortablejs": "^1.15.7"
     }
 }

@@ -1,21 +1,15 @@
 {{-- گره درخت منوها — فراخوانی بازگشتی با @include (پورت back/menus/partials/child_menu) --}}
-{{-- فاز ۱۲-د: درگ‌انددراپ (هم‌الگوی partial گره دسته‌بندی) + حفظ دکمه‌های ▲▼ به‌عنوان جایگزین در دسترس --}}
+{{-- فاز ۱۳: درگ‌انددراپ SortableJS (handle-only) — لیست فرزندان همیشه رندر می‌شود تا --}}
+{{-- رها کردن روی کادر خط‌چینِ گرهِ بدون فرزند هم = زیرمجموعه شدن (هم‌تجربه nestable قدیمی) --}}
 @php
     $menu = $node['model'];
 @endphp
-<li wire:key="menu-{{ $menu->id }}" class="list-none">
-    {{-- ردیف قابل درگ — تشخیص نوار (قبل/داخل/بعد) از موقعیت نشانگر روی خود ردیف --}}
-    {{-- (نوارهای هم‌پوشان ap-dropband در درگ واقعی رویدادی نمی‌گیرند چون pointer-events:none دارند) --}}
-    <div class="cat-row relative flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border border-line bg-surface px-3 py-2.5 transition-all hover:border-brand-300 hover:bg-surface-2 dark:border-night-line dark:bg-night-2 dark:hover:border-brand-500/40 dark:hover:bg-night-3"
-         :class="[dropClass({{ $menu->id }}), dragId === {{ $menu->id }} ? 'opacity-40 saturate-50' : '']"
-         x-on:dragover.prevent.stop="overRow($event, {{ $menu->id }})"
-         x-on:dragleave="leaveRow($event, {{ $menu->id }})"
-         x-on:drop.prevent.stop="drop($event, {{ $menu->id }})">
+<li wire:key="menu-{{ $menu->id }}" data-dnd-id="{{ $menu->id }}" class="list-none">
+    <div class="cat-row relative flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border border-line bg-surface px-3 py-2.5 transition-all hover:border-brand-300 hover:bg-surface-2 dark:border-night-line dark:bg-night-2 dark:hover:border-brand-500/40 dark:hover:bg-night-3">
 
-        {{-- هندل درگ‌انددراپ (آیکون grip-vertical) --}}
-        <span draggable="true"
-              x-on:dragstart="startDrag($event, {{ $menu->id }}, {{ json_encode($node['subtreeIds']) }})"
-              class="cursor-grab touch-none select-none rounded-md p-1 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 active:cursor-grabbing dark:text-night-ink-2 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
+        {{-- هندل درگ‌انددراپ (آیکون grip-vertical) — فقط از همین هندل درگ شروع می‌شود --}}
+        <span data-dnd-handle
+              class="touch-none select-none rounded-md p-1 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:text-night-ink-2 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
               title="کشیدن برای جابه‌جایی یا زیرمجموعه شدن" aria-label="کشیدن برای جابه‌جایی منو">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4" aria-hidden="true">
@@ -87,24 +81,13 @@
                 <x-admin-panel::icon name="trash-2" class="size-4" />
             </button>
         @endcan
-
-        {{-- برچسب راهنمای شناور حین درگ (عملیات: جابه‌جایی / زیرمجموعه شدن) --}}
-        {{-- نواحی قبل/داخل/بعد با کلاس‌های ap-drop-* روی همین ردیف مشخص می‌شوند (CSS فاز ۱۱) --}}
-        <span x-show="dragId !== null && overId === {{ $menu->id }}" x-cloak
-              class="pointer-events-none absolute -top-3.5 start-6 z-30 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-bold shadow-lg"
-              :class="overMode === 'forbidden'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-brand-600 text-white'"
-              aria-hidden="true">
-            <span x-text="dropLabel({{ $menu->id }})"></span>
-        </span>
     </div>
 
-    @if (count($node['children']))
-        <ul class="ms-4 mt-1.5 space-y-1.5 border-s border-line ps-3 sm:ms-6 dark:border-night-line">
-            @foreach ($node['children'] as $childNode)
-                @include('admin-panel::livewire.admin.menus.partials.menu-node', ['node' => $childNode])
-            @endforeach
-        </ul>
-    @endif
+    {{-- لیست فرزندان — همیشه رندر می‌شود؛ در حین درگ، لیست خالی به‌شکل کادر خط‌چین دیده می‌شود --}}
+    <ul data-dnd-list class="ms-4 mt-1.5 space-y-1.5 border-s border-line ps-3 sm:ms-6 dark:border-night-line">
+        @forelse ($node['children'] as $childNode)
+            @include('admin-panel::livewire.admin.menus.partials.menu-node', ['node' => $childNode])
+        @empty
+        @endforelse
+    </ul>
 </li>

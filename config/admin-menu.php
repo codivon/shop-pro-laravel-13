@@ -42,12 +42,8 @@ return [
                     'permission' => 'sessions.index',
                     'icon' => 'monitor',
                 ],
-                [
-                    'label' => 'دستگاه‌های بلاک شده',
-                    'route' => 'np.sessions.blocked',
-                    'permission' => 'sessions.blocked',
-                    'icon' => 'shield-off',
-                ],
+                // «دستگاه‌های بلاک شده» حذف شد (فاز ۱۳ به‌درخواست کاربر) — لیست بلاک‌شده‌ها
+                // همچنان به‌صورت تب داخل np.sessions.index در دسترس است.
                 [
                     'label' => 'مانیتور سیستم',
                     'route' => 'np.pulse.index',

@@ -7,6 +7,7 @@
 import 'ckeditor5/ckeditor5.css';
 import '@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css';
 import '@majidh1/jalalidatepicker';
+import Sortable from 'sortablejs';
 import * as echarts from 'echarts/core';
 import { BarChart, LineChart, PieChart } from 'echarts/charts';
 import { GridComponent, TooltipComponent, LegendComponent, TitleComponent } from 'echarts/components';
@@ -328,8 +329,13 @@ window.ApEditor = {
             editor.plugins.get('FileRepository').createUploadAdapter = (loader) => new ApUploadAdapter(loader);
 
             // همگام‌سازی محتوا با Livewire
+            // فاز ۱۳: Livewire.find(id) در v4 آبجکت مرده برمی‌گرداند (نه کامپوننت زنده) —
+            // نتیجه: سینک description بی‌صدا گم می‌شد («ایجاد صفحه جدید کار نمی‌کند»).
+            // کامپوننت زنده با تطبیق el پیدا می‌شود.
             const componentEl = container.closest('[wire\\:id]');
-            const component = componentEl ? window.Livewire.find(componentEl.getAttribute('wire:id')) : null;
+            const component = componentEl
+                ? (window.Livewire.all().find((c) => c.el === componentEl) || null)
+                : null;
 
             editor.model.document.on('change:data', () => {
                 const data = editor.getData();
@@ -706,5 +712,122 @@ document.addEventListener('alpine:init', () => {
 });
 
 /* ------------------------------------------------------------------
- | آماده‌سازی Livewire (بدون هوک‌های سفارشی — امضای v4)
+ | فاز ۱۳ — درگ‌انددراپ تو‌درتو با SortableJS (جانشین درگ دستی HTML5)
+ | هم‌تجربه کتابخانه nestable پنل قبلی: جابه‌جایی هم‌سطح + فرزند شدن
+ | (کشیدن روی لیست خالی/فرزندان گره) + خروج به ریشه (کشیدن به لیست ریشه).
+ | استفاده:
+ |   <div data-ap-dnd-tree data-dnd-group="menus" data-dnd-save="saveTree"
+ |        x-init="$el.__apDndWire = $wire; window.ApDnd && window.ApDnd.init($el)">
+ |     <ul data-dnd-list> <li data-dnd-id="…"> <span data-dnd-handle>…</span>
+ |         <ul data-dnd-list>…</ul> </li> … </ul>
+ |   </div>
+ | حالت تخت (بدون تو‌درتو): data-dnd-flat روی ریشه + اکشن آرایه‌ای مثل reorderWidgets.
  ------------------------------------------------------------------ */
+window.ApDnd = {
+    init(root) {
+        if (!root || !root.querySelector) return;
+        // نابودی نمونه‌های قبلی (پس از مورف لایووایر یا init تکراری)
+        (root.__apDnd || []).forEach((s) => { try { s.destroy(); } catch (e) {} });
+        root.__apDnd = [];
+        const group = root.getAttribute('data-dnd-group') || 'ap-dnd';
+        root.querySelectorAll('[data-dnd-list]').forEach((list) => {
+            root.__apDnd.push(new Sortable(list, {
+                group: group,
+                animation: 150,
+                handle: '[data-dnd-handle]',
+                ghostClass: 'ap-dnd-ghost',
+                chosenClass: 'ap-dnd-chosen',
+                /* فاز ۱۳ — درگ مبتنی بر موس/لمس (به‌جای HTML5 native) — سازگاری بهتر
+                   با RTL، داخل اسکرول و لمس؛ تجربه نزدیک‌تر به nestable پنل قبلی */
+                forceFallback: true,
+                fallbackClass: 'ap-dnd-fallback',
+                fallbackTolerance: 3,
+                fallbackOnBody: true,
+                swapThreshold: 0.62,
+                emptyInsertThreshold: 16,
+                scroll: true,
+                scrollSensitivity: 120,
+                scrollSpeed: 14,
+                onStart: () => root.classList.add('ap-dnd-active'),
+                onEnd: () => {
+                    root.classList.remove('ap-dnd-active');
+                    window.ApDnd.save(root);
+                },
+            }));
+        });
+    },
+
+    /* خروجی حالت درختی: [{ id, children: […] }, …] از خود DOM */
+    serializeTree(root) {
+        const walkList = (listEl) => Array.from(listEl.querySelectorAll(':scope > [data-dnd-id]')).map((item) => {
+            const sub = item.querySelector(':scope > [data-dnd-list]');
+            return {
+                id: Number(item.getAttribute('data-dnd-id')),
+                children: sub ? walkList(sub) : [],
+            };
+        });
+        /* فاز ۱۳ — لیست ریشه: اولین data-dnd-list که داخل هیچ گره‌ای نیست
+           (لزوماً فرزند مستقیم ریشه نیست — ممکن است داخل wrapper پدینگ باشد) */
+        const rootList = Array.from(root.querySelectorAll('[data-dnd-list]'))
+            .find((list) => !list.closest('[data-dnd-id]'));
+        return rootList ? walkList(rootList) : [];
+    },
+
+    save(root) {
+        const wire = root.__apDndWire;
+        const method = root.getAttribute('data-dnd-save');
+        if (!wire || !method || typeof wire[method] !== 'function') return;
+        const payload = root.hasAttribute('data-dnd-flat')
+            ? Array.from(root.querySelectorAll('[data-dnd-id]')).map((el) => Number(el.getAttribute('data-dnd-id')))
+            : window.ApDnd.serializeTree(root);
+        try {
+            Promise.resolve(wire[method](payload))
+                .catch(() => {})
+                .then(() => { setTimeout(() => window.ApDnd.init(root), 300); }); // بازسازی نمونه‌ها پس از رندر مجدد
+        } catch (e) { /* کامپوننت در حال حذف/جابه‌جایی است */ }
+    },
+
+    /* init همه درخت‌های صفحه — برای livewire:navigated */
+    initAll() {
+        document.querySelectorAll('[data-ap-dnd-tree]').forEach((root) => window.ApDnd.init(root));
+    },
+};
+
+/* ------------------------------------------------------------------
+ | آماده‌سازی Livewire — هوک‌های سراسری (فاز ۱۳)
+ ------------------------------------------------------------------ */
+(function () {
+    const register = () => {
+        if (!window.Livewire) return;
+
+        // پیام لحظه‌ای برای خطاهای اعتبارسنجی در همه فرم‌ها (در کنار خطای زیر فیلد)
+        let lastErrorToast = 0;
+        const showValidationError = () => {
+            const now = Date.now();
+            if (now - lastErrorToast < 1500) return; // ضد تکرار
+            lastErrorToast = now;
+            window.ApToast && window.ApToast.error('لطفاً خطاهای مشخص‌شده در فرم را برطرف کنید.');
+        };
+
+        // ۱) خطای اعتبارسنجی اکشن‌ها: memo.errors در snapshot موفق (HTTP 200 + errors)
+        window.Livewire.hook('commit', ({ succeed }) => {
+            succeed(({ snapshot }) => {
+                const errors = snapshot && snapshot.memo && snapshot.memo.errors;
+                if (errors && Object.keys(errors).length) showValidationError();
+            });
+        });
+
+        // ۲) پشتیبان: پاسخ واقعی HTTP 422 (آپلود فایل و …)
+        window.Livewire.hook('request', ({ respond }) => {
+            respond(({ status }) => {
+                if (status === 422) showValidationError();
+            });
+        });
+    };
+
+    if (window.Livewire) register();
+    else document.addEventListener('livewire:init', register, { once: true });
+})();
+
+document.addEventListener('livewire:navigated', () => window.ApDnd.initAll());
+document.addEventListener('DOMContentLoaded', () => window.ApDnd.initAll());

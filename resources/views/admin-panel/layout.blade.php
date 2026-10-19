@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl"
-      class="h-full {{ request()->cookie('admin-theme') === 'dark' ? 'dark' : '' }}">
+      class="h-full lw-booting {{ request()->cookie('admin-theme') === 'dark' ? 'dark' : '' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -57,6 +57,37 @@
 @endif
 
 @livewireScripts
+
+{{-- فاز ۱۳ — گارد بوت لایووایر + نگهبان خودترمیم asset
+     ۱) کلاس lw-booting تا لحظه راه‌اندازی لایووایر، spanهای wire:loading را مخفی نگه می‌دارد
+        (رفع دکمه‌هایی که از ابتدا «در حال ذخیره…» نشان می‌دهند وقتی JS لایووایر لود نشده).
+     ۲) اگر اسکریپت لایووایر بعد از ۶ ثانیه لود نشد (مثل 404 پس از تغییر APP_KEY که
+        URL سرویسِ asset را عوض می‌کند)، یک‌بار صفحه تازه‌سازی می‌شود (بدون حلقه بی‌پایان). --}}
+<script>
+    (function () {
+        var root = document.documentElement;
+        var unboot = function () {
+            root.classList.remove('lw-booting');
+            document.removeEventListener('livewire:init', unboot);
+            document.removeEventListener('livewire:initialized', unboot);
+            document.removeEventListener('livewire:navigated', unboot);
+        };
+        document.addEventListener('livewire:init', unboot);
+        document.addEventListener('livewire:initialized', unboot);
+        document.addEventListener('livewire:navigated', unboot);
+        setTimeout(function () {
+            if (window.Livewire) { unboot(); return; }
+            try {
+                var stamp = 'ap-lw-boot-reload';
+                var last = parseInt(sessionStorage.getItem(stamp) || '0', 10);
+                if (Date.now() - last > 30000) {
+                    sessionStorage.setItem(stamp, String(Date.now()));
+                    location.reload();
+                }
+            } catch (e) { /* دسترسی به sessionStorage نیست — چیزی نکن */ }
+        }, 6000);
+    })();
+</script>
 @stack('scripts')
 </body>
 </html>

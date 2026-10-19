@@ -1,4 +1,6 @@
 {{-- گره درخت دسته‌بندی — فراخوانی بازگشتی با @include (پارامتر level: ریشه = ۱) --}}
+{{-- فاز ۱۳: درگ‌انددراپ SortableJS (handle-only) — لیست فرزندان همیشه رندر می‌شود تا --}}
+{{-- رها کردن روی کادر خط‌چینِ گرهِ بدون فرزند هم = زیرشاخه شدن --}}
 @php
     $level = (int) ($level ?? 1);
     $category = $node['model'];
@@ -18,14 +20,12 @@
             ? 'text-[13px] font-semibold'
             : 'text-[13px] font-extrabold');
 @endphp
-<li wire:key="cat-{{ $category->id }}" class="list-none">
-    <div class="cat-row relative flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border border-line px-3 py-2.5 transition-all {{ $rowBg }} hover:border-brand-300 dark:border-night-line dark:hover:border-brand-500/40"
-         :class="[dropClass({{ $category->id }}), dragId === {{ $category->id }} ? 'opacity-40 saturate-50' : '']">
+<li wire:key="cat-{{ $category->id }}" data-dnd-id="{{ $category->id }}" class="list-none">
+    <div class="cat-row relative flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border border-line px-3 py-2.5 transition-all {{ $rowBg }} hover:border-brand-300 dark:border-night-line dark:hover:border-brand-500/40">
 
-        {{-- هندل درگ‌انددراپ (آیکون grip-vertical) --}}
-        <span draggable="true"
-              x-on:dragstart="startDrag($event, {{ $category->id }}, {{ json_encode($node['subtreeIds']) }})"
-              class="cursor-grab touch-none select-none rounded-md p-1 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 active:cursor-grabbing dark:text-night-ink-2 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
+        {{-- هندل درگ‌انددراپ (آیکون grip-vertical) — فقط از همین هندل درگ شروع می‌شود --}}
+        <span data-dnd-handle
+              class="touch-none select-none rounded-md p-1 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 active:cursor-grabbing dark:text-night-ink-2 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
               title="کشیدن برای جابه‌جایی" aria-label="کشیدن برای جابه‌جایی دسته">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4" aria-hidden="true">
@@ -114,45 +114,14 @@
                 <x-admin-panel::icon name="trash-2" class="size-4" />
             </button>
         @endcan
-
-        {{-- ===== نوارهای رهاسازی (فاز ۱۱) — سه ناحیه واقعی و درشت ===== --}}
-        {{-- فقط حین درگ فعال‌اند؛ بقیه وقت pointer-events-none تا کلیک/لینک/سلکت مختل نشود --}}
-        <span class="ap-dropband absolute inset-x-0 top-0 z-20 h-[30%] rounded-t-xl"
-              :class="dragId === null ? '!pointer-events-none' : ''"
-              x-on:dragover.prevent.stop="overBand($event, {{ $category->id }}, 'before')"
-              x-on:dragleave.prevent.stop="leaveBand({{ $category->id }})"
-              x-on:drop.prevent.stop="drop($event, {{ $category->id }})"
-              aria-hidden="true"></span>
-        <span class="ap-dropband absolute inset-x-0 top-[30%] z-20 h-[40%]"
-              :class="dragId === null ? '!pointer-events-none' : ''"
-              x-on:dragover.prevent.stop="overBand($event, {{ $category->id }}, 'inside')"
-              x-on:dragleave.prevent.stop="leaveBand({{ $category->id }})"
-              x-on:drop.prevent.stop="drop($event, {{ $category->id }})"
-              aria-hidden="true"></span>
-        <span class="ap-dropband absolute inset-x-0 bottom-0 z-20 h-[30%] rounded-b-xl"
-              :class="dragId === null ? '!pointer-events-none' : ''"
-              x-on:dragover.prevent.stop="overBand($event, {{ $category->id }}, 'after')"
-              x-on:dragleave.prevent.stop="leaveBand({{ $category->id }})"
-              x-on:drop.prevent.stop="drop($event, {{ $category->id }})"
-              aria-hidden="true"></span>
-
-        {{-- برچسب راهنمای شناور حین درگ --}}
-        <span x-show="dragId !== null && overId === {{ $category->id }}" x-cloak
-              class="pointer-events-none absolute -top-3.5 start-6 z-30 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-bold shadow-lg"
-              :class="overMode === 'forbidden'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-brand-600 text-white'"
-              aria-hidden="true">
-            <span x-text="dropLabel({{ $category->id }})"></span>
-        </span>
     </div>
 
-    @if (count($node['children']))
-        {{-- خط اتصال عمودی والد→فرزند (نقطه‌چین برند) --}}
-        <ul class="ms-4 mt-1.5 space-y-1.5 border-s border-dashed ps-3 sm:ms-6 border-brand-300/60 dark:border-brand-500/30">
-            @foreach ($node['children'] as $childNode)
-                @include('admin-panel::livewire.admin.taxonomy.partials.category-node', ['node' => $childNode, 'level' => $level + 1])
-            @endforeach
-        </ul>
-    @endif
+    {{-- لیست فرزندان — همیشه رندر می‌شود؛ در حین درگ، لیست خالی کادر خط‌چین می‌گیرد --}}
+    {{-- خط اتصال عمودی والد→فرزند (نقطه‌چین برند) --}}
+    <ul data-dnd-list class="ms-4 mt-1.5 space-y-1.5 border-s border-dashed ps-3 sm:ms-6 border-brand-300/60 dark:border-brand-500/30">
+        @forelse ($node['children'] as $childNode)
+            @include('admin-panel::livewire.admin.taxonomy.partials.category-node', ['node' => $childNode, 'level' => $level + 1])
+        @empty
+        @endforelse
+    </ul>
 </li>
