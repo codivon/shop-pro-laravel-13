@@ -61,9 +61,16 @@ class ThemeSettings extends Component
             $file = $this->settingFiles[$key] ?? null;
 
             if ($file) {
+                // امنیتی: اعتبارسنجی نوع/حجم فایل آپلودی (تصویر) — جلوگیری از آپلود فایل اجرایی
+                $this->validate(
+                    ['settingFiles.'.$key => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp,gif,svg', 'extensions:jpg,jpeg,png,webp,gif,svg', 'max:8192']],
+                    [],
+                    ['settingFiles.'.$key => $title]
+                );
+
                 $oldFile = option($key);
 
-                $imageName = time() . '_' . $key . '.' . $file->getClientOriginalExtension();
+                $imageName = time() . '_' . $key . '.' . strtolower($file->getClientOriginalExtension());
                 $file->move(public_path('uploads/themes/'), $imageName);
 
                 if ($oldFile && file_exists(public_path($oldFile))) {

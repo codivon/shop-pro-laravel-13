@@ -22,7 +22,7 @@ class NewSellerCodeSent extends Notification
     public function __construct(NewSeller $newSeller)
     {
 
-        $newSeller->update(['code_mobile_verification'    => rand(11111, 99999)]);
+        $newSeller->update(['code_mobile_verification'    => random_int(10000, 99999)]);
         $this->verify_code = $newSeller->code_mobile_verification;
     }
 

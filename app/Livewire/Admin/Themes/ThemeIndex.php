@@ -53,6 +53,12 @@ class ThemeIndex extends Component
     {
         auth('adminPanel')->user()?->can('themes.update') ?: abort(403);
 
+        // امنیتی: جلوگیری از path-traversal در نام قالب
+        if (!is_safe_extension_name($theme)) {
+            $this->dispatch('toast', message: 'نام قالب معتبر نیست.', type: 'error');
+            return;
+        }
+
         if (!Storage::disk('themes')->exists($theme)) {
             $this->dispatch('toast', message: 'قالب پیدا نشد.', type: 'error');
             return;
@@ -83,6 +89,12 @@ class ThemeIndex extends Component
     {
         auth('adminPanel')->user()?->can('themes.delete') ?: abort(403);
 
+        // امنیتی: نام قالب باید معتبر باشد
+        if (!is_safe_extension_name($theme)) {
+            $this->dispatch('toast', message: 'نام قالب معتبر نیست.', type: 'error');
+            return;
+        }
+
         $this->confirmingDelete = $theme;
     }
 
@@ -111,7 +123,12 @@ class ThemeIndex extends Component
         }
 
         Storage::disk('themes')->deleteDirectory($theme);
-        Storage::disk('public')->deleteDirectory($config['asset_path'] ?? '');
+
+        // امنیتی: جلوگیری از پاک‌شدن کل دیسک وقتی asset_path خالی/نامعتبر است
+        $assetPath = is_array($config) ? ($config['asset_path'] ?? '') : '';
+        if (is_string($assetPath) && $assetPath !== '' && !str_contains($assetPath, '..')) {
+            Storage::disk('public')->deleteDirectory($assetPath);
+        }
 
         $this->loadThemes();
 

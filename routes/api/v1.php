@@ -29,7 +29,7 @@ use App\Http\Controllers\Api\V1\TorobEmallsController;
 Route::prefix('v1')->name('api.')->group(function () {
 
     // ------------------ AuthController
-    Route::post('login', [AuthController::class, 'login']);
+    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1');
     Route::post('register', [AuthController::class, 'register']);
 
 

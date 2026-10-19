@@ -103,10 +103,12 @@ class ProvinceController extends Controller
 
         $this->validate($request, [
             'provinces' => 'required|array',
+            'provinces.*' => 'integer',
             'orderings' => 'required|array',
+            'orderings.*' => 'integer',
         ]);
 
-        $orderings = implode(',', $request->orderings);
+        $orderings = implode(',', array_map('intval', $request->orderings));
         $count = 0;
 
         $provinces = Province::whereIn('id', $request->provinces)

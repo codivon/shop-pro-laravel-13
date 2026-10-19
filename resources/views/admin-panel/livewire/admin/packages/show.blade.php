@@ -89,7 +89,7 @@
 
                             {{-- توضیح کوتاه — رندر HTML مثل قدیمی ({!! short_description !!}) --}}
                             <div class="pkg-prose mt-2.5 text-[13px] leading-6 text-ink-2 dark:text-night-ink-2">
-                                {!! $package['short_description'] ?? ($package['description'] ?? '') !!}
+                                {!! sanitize_rich_text($package['short_description'] ?? ($package['description'] ?? '')) !!}
                             </div>
                         </div>
                     </div>
@@ -107,7 +107,7 @@
                         <div class="space-y-4 p-5">
                             @if (!empty($package['long_description']))
                                 <div class="pkg-prose text-[13px] leading-7 text-ink-2 dark:text-night-ink-2">
-                                    {!! $package['long_description'] !!}
+                                    {!! sanitize_rich_text($package['long_description']) !!}
                                 </div>
                             @endif
 
@@ -121,7 +121,7 @@
                                         @foreach ($package['changelog'] as $ver => $changes)
                                             <li class="flex items-start gap-2 rounded-xl border border-line p-2.5 text-xs leading-6 dark:border-night-line">
                                                 <span class="ltr fa-digits shrink-0 rounded-lg bg-surface-2 px-2 py-0.5 font-bold dark:bg-night-3">v{{ $ver }}</span>
-                                                <span class="text-ink-2 dark:text-night-ink-2">{!! is_array($changes) ? implode('<br>', $changes) : $changes !!}</span>
+                                                <span class="text-ink-2 dark:text-night-ink-2">{!! sanitize_rich_text(is_array($changes) ? implode('<br>', e($changes)) : e($changes)) !!}</span>
                                             </li>
                                         @endforeach
                                     </ul>

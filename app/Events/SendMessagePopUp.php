@@ -27,7 +27,18 @@ class SendMessagePopUp implements  ShouldBroadcast
 
     public function broadcastOn()
     {
-        return ['inbox-user-' . $this->messageUser->user_id];
+        // امنیتی: کانال خصوصی به‌جای رشته‌ی عمومی — دسترسی کانال در routes/channels.php کنترل می‌شود
+        return [new PrivateChannel('inbox-user.' . $this->messageUser->user_id)];
+    }
+
+    /** امنیتی: فقط فیلدهای غیرحساس پخش می‌شوند */
+    public function broadcastWith(): array
+    {
+        return [
+            'id'         => $this->message->id ?? null,
+            'title'      => $this->message->title ?? null,
+            'created_at' => optional($this->message->created_at)->toDateTimeString(),
+        ];
     }
 
     public function broadcastAs()

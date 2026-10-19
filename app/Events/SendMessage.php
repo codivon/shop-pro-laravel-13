@@ -3,7 +3,7 @@
 namespace App\Events;
 
 use App\Models\Message;
-use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -22,6 +22,17 @@ class SendMessage implements ShouldBroadcast, ShouldQueue
 
     public function broadcastOn()
     {
-        return new Channel('send-message');
+        // امنیتی: کانال خصوصی — محتوای پیام برای همه عمومی نبود
+        return new PrivateChannel('send-message');
+    }
+
+    /** امنیتی: فقط فیلدهای غیرحساس پخش می‌شوند */
+    public function broadcastWith(): array
+    {
+        return [
+            'id'         => $this->message->id ?? null,
+            'title'      => $this->message->title ?? null,
+            'created_at' => optional($this->message->created_at)->toDateTimeString(),
+        ];
     }
 }

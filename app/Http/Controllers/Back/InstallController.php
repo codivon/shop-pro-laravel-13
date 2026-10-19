@@ -27,13 +27,36 @@ class InstallController extends Controller
 
     public function register(Request $request)
     {
+        // امنیتی: قفل اتمی نصب — جلوگیری از رقابت همزمان برای ساخت اولین مدیر
+        try {
+            $lock = cache()->lock('install:creator-lock', 30);
+
+            if (!$lock->get()) {
+                return response()->json(['message' => 'فرآیند نصب در حال انجام است؛ لطفاً چند لحظه بعد تلاش کنید.'], 429);
+            }
+
+            try {
+                return $this->performRegistration($request);
+            } finally {
+                optional($lock)->release();
+            }
+        } catch (\Throwable $e) {
+            // اگر درایور کش از lock پشتیبانی نمی‌کند، بدون قفل ادامه بده
+            report($e);
+
+            return $this->performRegistration($request);
+        }
+    }
+
+    private function performRegistration(Request $request)
+    {
         $this->validate($request, [
             'first_name'            => 'required|string|max:191',
             'last_name'             => 'required|string|max:191',
             'username'              => 'required|string|max:191|unique:admins',
-            'password'              => 'required|min:6|confirmed',
+            'password'              => 'required|min:8|confirmed',
             'password_confirmation' => 'required',
-            'admin_route_prefix'    => 'required|string'
+            'admin_route_prefix'    => ['required', 'string', 'regex:/^[A-Za-z0-9_-]{1,100}$/'],
         ]);
 
         $admin = Admin::create([
@@ -54,6 +77,10 @@ class InstallController extends Controller
 
 
         $this->configApplication();
+
+        // امنیتی: ثبت نشان نصب‌شده — مسیرهای /install و /update عمومی برای همیشه بسته می‌شوند
+        try { touch(storage_path('installed')); } catch (\Throwable $e) { report($e); }
+
         Auth::guard('adminPanel')->login($admin);
 
         return response()->json(['admin_prefix' => $request->admin_route_prefix, 'redirect' => url('/admin/' . $request->admin_route_prefix)]);

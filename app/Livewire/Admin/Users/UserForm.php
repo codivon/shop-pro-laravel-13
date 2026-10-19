@@ -182,8 +182,8 @@ class UserForm extends Component
             'email' => ['nullable', 'string', 'email', 'max:255', $this->uniqueRule('email')],
             'national_code' => ['nullable', 'string', 'max:10', $this->uniqueRule('national_code')],
             'password' => $this->isEditing
-                ? ['nullable', 'string', 'min:6', 'confirmed']
-                : ['required', 'string', 'confirmed'],
+                ? ['nullable', 'string', 'min:8', 'confirmed']
+                : ['required', 'string', 'min:8', 'confirmed'],
             'roles' => 'nullable|array',
             'roles.*' => 'exists:roles,id',
             'image' => 'nullable|image|max:2048',
@@ -212,7 +212,7 @@ class UserForm extends Component
             'national_code.max' => 'کد ملی باید ۱۰ رقم باشد.',
             'national_code.unique' => 'این کد ملی قبلاً ثبت شده است.',
             'password.required' => 'گذرواژه الزامی است.',
-            'password.min' => 'گذرواژه باید حداقل ۶ کاراکتر باشد.',
+            'password.min' => 'گذرواژه باید حداقل ۸ کاراکتر باشد.',
             'password.confirmed' => 'تکرار گذرواژه مطابقت ندارد.',
             'roles.*.exists' => 'نقش انتخاب شده معتبر نیست.',
             'image.image' => 'فایل آپلود شده باید تصویر باشد.',

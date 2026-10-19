@@ -44,6 +44,34 @@ class ThemeController extends Controller
         $name = $uuid . '.' . $file->getClientOriginalExtension();
         $request->file->storeAs('tmp', $name);
 
+        /*
+         * امنیتی (Zip-Slip): قبل از استخراج، نام تمام ورودی‌های zip بررسی می‌شود؛
+         * ورودی‌های دارای ../ یا مسیر مطلق یا symlink ⇒ رد.
+         */
+        $zipPath = $path . $name;
+        $zipArchive = new \ZipArchive;
+        if ($zipArchive->open($zipPath) === true) {
+            for ($i = 0; $i < $zipArchive->numFiles; $i++) {
+                $entryName = (string) $zipArchive->getNameIndex($i);
+                $stat      = $zipArchive->statIndex($i);
+
+                $isUnsafe = $entryName === ''
+                    || str_contains($entryName, '..')
+                    || str_starts_with($entryName, '/')
+                    || preg_match('/^[A-Za-z]:[\\\/]/', $entryName)
+                    // ورودی‌های symlink (0xA000) — دایرکتوری/فایل عادی مجاز است
+                    || (isset($stat['attr']) && ((($stat['attr'] >> 16) & 0xF000) === 0xA000));
+
+                if ($isUnsafe) {
+                    $zipArchive->close();
+                    File::delete($zipPath);
+
+                    return response(['errors' => ['theme' => ['فایل zip حاوی ورودی‌های غیرمجاز است.']]], 422);
+                }
+            }
+            $zipArchive->close();
+        }
+
         $zipper = new Madzipper;
         $zipper->make($path . $name)->extractTo($path . $uuid);
         $zipper->close();
@@ -53,6 +81,20 @@ class ThemeController extends Controller
         $themes = Storage::disk('themes')->directories();
         $new_theme = Storage::disk('public')->directories('uploads/tmp/' . $uuid);
         $new_theme = substr($new_theme[0], strrpos($new_theme[0], '/') + 1);
+
+        // امنیتی: نام قالب استخراج‌شده از zip باید معتبر باشد (جلوگیری از traversal/تزریق env/آرگومان artisan)
+        if (!is_safe_extension_name($new_theme)) {
+            File::deleteDirectory($path . $uuid);
+
+            return response(
+                [
+                    'errors' => [
+                        'theme' => ["نام قالب داخل zip معتبر نیست."]
+                    ]
+                ],
+                422
+            );
+        }
 
         if (in_array($new_theme, $themes)) {
 
@@ -75,7 +117,10 @@ class ThemeController extends Controller
         Artisan::call('dump-autoload');
 
         AppServiceProvider::loadTheme();
-        Artisan::call('vendor:publish --tag="' . $new_theme . '" --force');
+
+        if (is_safe_extension_name($new_theme)) {
+            Artisan::call('vendor:publish --tag="' . $new_theme . '" --force');
+        }
         Artisan::call('shop:link');
 
         return response()->json(['name' => $new_theme]);
@@ -92,6 +137,11 @@ class ThemeController extends Controller
     {
         $this->authorize('themes.update');
 
+        // امنیتی: جلوگیری از path-traversal در نام قالب
+        if (!is_safe_extension_name((string) $theme)) {
+            return response(['errors' => ['theme' => ["نام قالب معتبر نیست."]]], 422);
+        }
+
         if (!Storage::disk('themes')->exists($theme)) {
             return response(
                 [
@@ -105,6 +155,11 @@ class ThemeController extends Controller
 
         $targetPath = base_path("themes/{$theme}/src/resources/assets"); // مسیر اصلی فایل‌ها
         $linkPath = public_path("themes/{$theme}");       // مسیر شورت‌کات
+
+        // امنیتی: مطمئن می‌شویم مسیر حل‌شده واقعاً داخل themes/ است
+        if (!str_starts_with(realpath(dirname($targetPath)) ?: '', realpath(base_path('themes')))) {
+            return response(['errors' => ['theme' => ["مسیر قالب معتبر نیست."]]], 422);
+        }
 
         // اگر لینک وجود ندارد، ایجاد کن
         if (!File::exists($linkPath)) {
@@ -128,6 +183,11 @@ class ThemeController extends Controller
     {
         $this->authorize('themes.delete');
 
+        // امنیتی: جلوگیری از path-traversal در نام قالب
+        if (!is_safe_extension_name((string) $theme)) {
+            return response(['errors' => ['theme' => ["نام قالب معتبر نیست."]]], 422);
+        }
+
         if (!Storage::disk('themes')->exists($theme)) {
             return response(
                 [
@@ -141,7 +201,12 @@ class ThemeController extends Controller
 
         $config = customConfig(base_path() . '/themes/' . $theme . '/config/general.php');
         Storage::disk('themes')->deleteDirectory($theme);
-        Storage::disk('public')->deleteDirectory($config['asset_path']);
+
+        // امنیتی: جلوگیری از پاک‌شدن کل دیسک وقتی asset_path خالی/نامعتبر است
+        $assetPath = is_array($config) ? ($config['asset_path'] ?? '') : '';
+        if (is_string($assetPath) && $assetPath !== '' && !str_contains($assetPath, '..')) {
+            Storage::disk('public')->deleteDirectory($assetPath);
+        }
 
         return response('success');
     }
@@ -176,9 +241,16 @@ class ThemeController extends Controller
         foreach ($fileFields as $key => $title) {
             if ($request->hasFile("settings.{$key}")) {
                 $file = $request->file("settings.{$key}");
+
+                // امنیتی: اعتبارسنجی نوع/حجم فایل آپلودی (تصویر) — جلوگیری از آپلود فایل اجرایی
+                validator(
+                    ['file' => $file],
+                    ['file' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp,gif,svg', 'extensions:jpg,jpeg,png,webp,gif,svg', 'max:8192']]
+                )->validate();
+
                 $oldFile = option($key);
 
-                $imageName = time() . '_' . $key . '.' . $file->getClientOriginalExtension();
+                $imageName = time() . '_' . $key . '.' . strtolower($file->getClientOriginalExtension());
                 $file->move(public_path('uploads/themes/'), $imageName);
 
                 if ($oldFile && file_exists(public_path($oldFile))) {
@@ -327,7 +399,13 @@ class ThemeController extends Controller
                     $file = $request->file('settings.' . $setting['key']);
 
                     if ($file) {
-                        $name = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
+                        // امنیتی: اعتبارسنجی نوع/حجم فایل آپلودی — جلوگیری از آپلود فایل اجرایی
+                        validator(
+                            ['file' => $file],
+                            ['file' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp,gif,svg', 'extensions:jpg,jpeg,png,webp,gif,svg', 'max:8192']]
+                        )->validate();
+
+                        $name = uniqid() . '_' . time() . '.' . strtolower($file->getClientOriginalExtension());
                         $path = $file->storeAs('themes', $name);
                         $settings[$setting['key']] = '/uploads/' . $path;
                     } else {

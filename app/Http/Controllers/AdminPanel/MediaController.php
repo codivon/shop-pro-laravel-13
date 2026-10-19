@@ -42,9 +42,13 @@ class MediaController extends Controller
         try {
             try {
                 if (strtolower((string) $file->getClientOriginalExtension()) === 'svg') {
-                    // SVG را نمی‌توان با Intervention باز-انکد کرد — ذخیره مستقیم در پوشه ماه جاری
+                    /*
+                     * SVG را نمی‌توان با Intervention باز-انکد کرد — ذخیره مستقیم در پوشه ماه جاری؛
+                     * امنیتی: محتوای SVG قبل از ذخیره پاک‌سازی می‌شود (ضد Stored XSS).
+                     */
+                    $svg = \App\Services\SvgSanitizer::clean((string) file_get_contents($file->getRealPath()));
                     $path = 'uploads/images/' . now()->format('Y-m') . '/svg-' . uniqid() . '.svg';
-                    Storage::disk('public')->put($path, file_get_contents($file->getRealPath()));
+                    Storage::disk('public')->put($path, $svg);
                 } else {
                     // بهینه‌سازی/تبدیل با هلپر موجود پنل (ذخیره زیر uploads/images/)
                     $path = uploadOptimizedImage($file, 'images');
@@ -57,8 +61,15 @@ class MediaController extends Controller
                  */
                 report($e);
 
-                $path = 'uploads/images/' . now()->format('Y-m') . '/' . uniqid() . '.' . strtolower((string) $file->getClientOriginalExtension());
-                Storage::disk('public')->put($path, file_get_contents($file->getRealPath()));
+                $ext  = strtolower((string) $file->getClientOriginalExtension());
+                $path = 'uploads/images/' . now()->format('Y-m') . '/' . uniqid() . '.' . $ext;
+
+                $content = (string) file_get_contents($file->getRealPath());
+                if ($ext === 'svg') {
+                    // امنیتی: پاک‌سازی SVG حتی در مسیر fallback
+                    $content = \App\Services\SvgSanitizer::clean($content);
+                }
+                Storage::disk('public')->put($path, $content);
             }
         } catch (Throwable $e) {
             report($e);

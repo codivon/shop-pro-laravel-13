@@ -56,7 +56,8 @@ class ShopLink extends Command
                 try {
                     if (!$this->isWindows()) {
                         $schedule = new Schedule();
-                        $event = $schedule->exec('ln -s ' . $target . ' ' . $link);
+                        // امنیتی: پناه‌گذاری پوسته — آرگومان‌ها escape می‌شوند
+                        $event = $schedule->exec('ln -s ' . escapeshellarg($target) . ' ' . escapeshellarg($link));
                         $event->run($this->laravel);
                     } else {
                         $schedule = new Schedule();

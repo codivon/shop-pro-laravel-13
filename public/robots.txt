@@ -29,3 +29,19 @@ Crawl-delay: 1
 # Bingbot
 User-agent: Bingbot
 Crawl-delay: 2
+
+# --- Bot trap paths (decoys) ---
+Disallow: /wp-admin
+Disallow: /wp-login.php
+Disallow: /wp-content
+Disallow: /wp-includes
+Disallow: /wordpress
+Disallow: /xmlrpc.php
+Disallow: /phpmyadmin
+Disallow: /pma
+Disallow: /adminer.php
+Disallow: /phpinfo.php
+Disallow: /shell.php
+Disallow: /cgi-bin
+Disallow: /.env
+Disallow: /.git

@@ -196,6 +196,6 @@ return [
     |
     */
 
-    'same_site' => 'none',
+    'same_site' => 'lax', // امنیتی: none باعث ارسال کوکی سشن در درخواست‌های cross-site می‌شود
 
 ];

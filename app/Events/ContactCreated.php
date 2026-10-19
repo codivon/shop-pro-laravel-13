@@ -3,10 +3,9 @@
 namespace App\Events;
 
 use App\Models\Contact;
-use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -35,6 +34,7 @@ class ContactCreated implements ShouldBroadcast, ShouldQueue
      */
     public function broadcastOn()
     {
-        return new Channel('contacts');
+        // امنیتی: کانال خصوصی — پیام‌های تماس عمومی نیستند
+        return new PrivateChannel('contacts');
     }
 }

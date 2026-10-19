@@ -27,10 +27,10 @@ class AuthServiceProvider extends ServiceProvider
                         return $user->level == 'creator' || $user->hasRole($permission->roles);
                     }
 
-                    // بررسی اگر کاربر فروشنده است
+                    // امنیتی: فروشنده‌ها هیچ پرمیشن پنل مدیریتی ندارند
+                    // (پیش‌تر true بود — هر فروشنده‌ای به همه‌ی گیت‌های پنل پاس می‌شد)
                     if ($user instanceof Seller) {
-                        // فروشنده‌ها به همه چیز دسترسی دارند (یا منطق دلخواه)
-                        return true;
+                        return false;
                     }
 
                     return false;

@@ -26,7 +26,7 @@ class NewUserCodeSent extends Notification
      */
     public function __construct(UserMobileVerify $user)
     {
-        $user->update(['code'    => rand(11111, 99999)]);
+        $user->update(['code'    => random_int(10000, 99999)]);
         $this->verify_code = $user->code;
     }
 

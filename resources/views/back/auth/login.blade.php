@@ -36,6 +36,15 @@
                                         <div class="card-body pt-1">
                                             <form id="login-form" method="POST" action="{{ route('admin.login-submit') }}">
                                                 @csrf
+                                                {{-- ربات‌گیر: تله‌ی زمان --}}
+                                                <input type="hidden" name="rendered_at" value="{{ time() }}">
+
+                                                {{-- ربات‌گیر: تله‌ی فیلد مخفی --}}
+                                                <div style="height:0; width:0; overflow:hidden; opacity:0; margin:0; padding:0;" aria-hidden="true">
+                                                    <label for="website_url">وب‌سایت شما</label>
+                                                    <input type="text" id="website_url" name="website_url" tabindex="-1" autocomplete="off">
+                                                </div>
+
                                                 <label for="user-name" class="form-label">نام کاربری</label>
                                                 <fieldset class="form-label-group form-group position-relative has-icon-left">
                                                     <input type="text" class="form-control" id="user-name" placeholder="نام کاربری را وارد کنید" name="username" value="{{ old('username') }}">
@@ -68,6 +77,23 @@
                                                         </fieldset>
                                                     </div>
                                                 </div>
+
+                                                {{-- ربات‌گیر: کپچای امنیتی --}}
+                                                @if(config('security.login_captcha', true))
+                                                <div class="form-group">
+                                                    <label for="captcha-input" class="form-label">کد امنیتی</label>
+                                                    <div class="d-flex align-items-center" style="gap: .5rem">
+                                                        <img src="{{ route('captcha.image') }}" alt="کد امنیتی" width="120" height="44"
+                                                             style="border-radius: .5rem; border: 1px solid #dfe3e7; user-select: none">
+                                                        <input type="text" class="form-control" id="captcha-input" name="captcha"
+                                                               placeholder="کد تصویر" maxlength="10" autocomplete="off" required>
+                                                    </div>
+                                                    @error('captcha')
+                                                        <small class="text-danger">{{ $message }}</small>
+                                                    @enderror
+                                                </div>
+                                                @endif
+
                                                 <button type="submit" class="w-100 btn btn-primary float-right btn-inline">ورود به سیستم</button>
                                             </form>
                                         </div>
@@ -94,7 +120,7 @@
     @if(session('admin_login_error'))
         <script>
             toastr.error(
-                '<?= session('admin_login_error') ?>',
+                @json(session('admin_login_error')),
                 '',
                 {
                     positionClass: 'toast-bottom-left',
@@ -106,7 +132,7 @@
     @error('username')
     <script>
         toastr.error(
-            '<?= $message ?>',
+            @json($message),
             '',
             {
                 positionClass: 'toast-top-right',
@@ -118,7 +144,7 @@
     @error('password')
     <script>
         toastr.error(
-            '<?= $message ?>',
+            @json($message),
             '',
             {
                 positionClass: 'toast-top-right',

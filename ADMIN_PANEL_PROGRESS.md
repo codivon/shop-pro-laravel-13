@@ -485,3 +485,55 @@
 - تنظیمات: ۵ پیکر هم‌زمان، انتخاب ایزوله فقط پراپرتی خودش (uid targeting) → ذخیره → option در DB ✓
 - پکیج‌ها (با سرور mock محلی به‌جای update.weblak.ir): ایندکس با ۳ پکیج — تصویر نسبی مطلق شد و لود شد (loaded:true)، تصویر مطلق خراب → fallback آیکون، توضیحات متنِ تمیز بدون تگ؛ صفحه جزئیات: رندر HTML توضیحات/تاریخچه/پیش‌نیازها/لاگ‌ها ✓؛ مودال نصب رایگان ✓؛ مودال پلن پولی با مبلغ تخفیف‌دار (۷۹۰,۰۰۰) ✓؛ فراخوانی purchase به API واقعاً ارسال شد
 - پاکسازی: رکوردهای تست حذف شدند (slider 59 / banner 29 / option info_logo_seller)، .env به حالت قبل، mock متوقف؛ laravel.log رشد خالص = فقط خطای عمدی mock (422 نصب در محیط تست)
+
+---
+
+## فاز ۱۵ — ممیزی امنیتی کامل + ربات‌گیر (Bot Trap)
+
+### روش ممیزی
+سه ایجنت موازی کل کدبیس (app/، resources/، themes/، routes/، config/، bootstrap/) را از سه منظر اسکن کردند: ① تزریق (SQLi/CMD/LFI/traversal) ② XSS و آپلود فایل ③ احراز هویت/مجوز/افشای تنظیمات. سپس موارد بحرانی اصلاح و هر فیکس با `php -l` و تست مرورگری E2E تأیید شد.
+
+### ۱) ربات‌گیر (Bot Trap) — ویژگی جدید درخواستی
+- **جدول `bot_traps`** (migration جدید): IP مهاجم، user_agent، مسیر تله، تعداد ضربه — با Model `App\Models\BotTrap` و کش ۱۰ دقیقه‌ای لیست IPها
+- **مسیرهای طعمه**: `wp-login.php`, `wp-admin`, `xmlrpc.php`, `phpmyadmin`, `.env`, `.git/config`, `phpinfo.php`, `adminer.php`, ... (۲۶ مسیر رایج اسکنرها) + `/bot-trap/hit` — هر ضربه = مسدودسازی کامل IP؛ ربات‌های مطیع با robots.txt به سمت تله هدایت می‌شوند
+- **میان‌افزار سراسری `BlockBots`**: IPهای ثبت‌شده در تله → 403 روی کل سایت (وب+API) بدون کوئری اضافه (کش)
+- **تله‌ی فرم ورود (هر دو پنل)**: ① honeypot field نامرئی (`website_url`) — پر کردن توسط ربات = مسدودسازی IP ② time-trap — ارسال فرم در <۳ ثانیه = رد ③ کپچای تصویری (سرویس CaptchaService موجود — کد هش‌شده در سشن، یک‌بارمصرف، ضد brute-force روی خود کپچا) ④ محدودیت تلاش `LoginThrottle`: هر ۵ شکست ⇒ قفل تدریجی ۱۵ دقیقه → ۳۰ دقیقه → ۱ ساعت → ... (حداکثر ۲۴ ساعت) بر اساس «نام‌کاربری+IP»
+- **OTP ضد بردار-force**: کدها از `rand` به `random_int` (CSPRNG) + محدودیت ۵ حدس در ۱۵ دقیقه به‌ازای هر کاربر+IP در `LoginWithCodeController::confirm` و `OneTimeLoginController::store` + throttle:10,1 روی مسیرها
+- E2E مرورگری: ورود نادرست → خطای فارسی؛ ۵ شکست → پیام قفل ۱۵ دقیقه (حتی با رمز صحیح)؛ پر کردن honeypot توسط «ربات» → پیام عمومی + ثبت IP در bot_traps + 403 سراسری؛ خواندن کپچا با VLM و ورود موفق → داشبورد ✓
+
+### ۲) تزریق — بحرانی‌های اصلاح‌شده
+- **SQLi** در مرتب‌سازی استان/شهر (`orderByRaw('FIELD(ordering,'.$request->orderings.')')` بدون اعتبارسنجی) → `orderings.*=>integer` + `array_map('intval')`
+- **حذف فایل دلخواه (path traversal)** در `TicketController::destoryFile` (`Storage::delete('tmp/'.$filename)` با `../../.env`) → گارد `basename` + hash_equals
+- **تزریق .env** در `change_env()` (بودن `\n` در مقدار ⇒ تعریف کلید دلخواه مثل APP_KEY/DB_PASSWORD) → پاکسازی CR/LF/NUL + الگوی کلید + کوت‌کردن مقدار با فاصله
+- **CMD injection** در `ShopLink` (`exec('ln -s '.$target.' '.$link)` بدون escape) → `escapeshellarg` (پورت رفتار Windows که از قبل escape داشت)
+- **LFI/symlink/wipe قالب**: نام قالب در `ThemeController@update/destroy/activate/confirmDelete` (قدیم+جدید) با allowlist `is_safe_extension_name()` + گارد realpath داخل themes/ + گارد `asset_path` خالی/تراaversal قبل از `deleteDirectory` (قبلاً `''` ⇒ پاک شدن کل public!)
+- **Zip-Slip** در آپلود قالب (Controller + Livewire): بررسی ZipArchive ورودی‌ها (`../`، مسیر مطلق، symlink) قبل از Madzipper + allowlist نام قالب استخراج‌شده + گارد آرگومان artisan `vendor:publish`
+- **TLS**: `CURLOPT_SSL_VERIFYPEER/HOST` خاموش در ۵ فایل (اسکریپر، ایمپورت‌ها) → روشن (تحت MITM بودند)
+
+### ۳) XSS و آپلود
+- **Stored XSS توضیحات غنی**: هلپر `sanitize_rich_text()` (حذف script/style/object/embed/form/iframe غیرمجاز، on* handlers، javascript:/vbscript:/data: URLs) اعمال‌شده روی ذخیره‌سازی توضیحات محصول (ادمین+فروشنده)، مقاله (store/update)، صفحه؛ **خوراک پکیج‌ها** (HTML از API ثالث) در رندر هر دو پنل پاکسازی می‌شود؛ پیام تراکنش پنل قدیمی escape شد
+- **RCE آپلود**: `config/file-manager.php` قبلاً `allowFileTypes=[]` + `maxUploadFileSize=null` بود (هر فایلی از جمله PHP!) → لیست سفید + ۲۰MB؛ آپلود تنظیمات قالب (Controller+Livewire) بدون هیچ validate بود → قانون image/mimes/8MB؛ **SVG** در MediaController و fallback → `SvgSanitizer` (حذف script/on*/javascript: URL/foreignObject/entity) قبل از ذخیره
+- **`.htaccess`**: قطع اجرای PHP در `uploads|storage|themes` + مسدودسازی `.env/.git/composer.json` از وب؛ فایل `.htaccess` مدفون در `public/uploads/` و `storage/app/public/` (php_flag engine off + FilesMatch deny) — دفاع در عمق حتی اگر قانون اصلی بازنویسی شود
+
+### ۴) احراز هویت/مجوز/کانفیگ
+- **IDOR بحرانی API**: `Api/V1/OrderController::show` هر کاربر هر سفارشی را می‌خواند (PII کامل: نام/موبایل/آدرس) → گارد مالکیت
+- **کانال‌های broadcast عمومی**: `OrderPaid`/`SendMessage`/`SendMessagePopUp`/`ContactCreated` کل مدل‌ها را روی کانال public پخش می‌کردند → PrivateChannel + `broadcastWith()` فیلترشده + مجوز واقعی در `routes/channels.php` (فقط ادمین پنل برای orders/contacts/send-message؛ خودِ کاربر برای inbox-user.{id})
+- **پیام‌های OTP**: `VerifyCodeSent`/`NewUserCodeSent`/`NewSellerCodeSent` → `random_int`
+- **AuthServiceProvider**: گیت‌ها برای Seller `return true` بودند → `false`
+- **SettingController**: ۷ متود فروشنده‌تنظیم (commission/econtract/hero) بدون `$this->authorize` → اضافه شد
+- **نصب‌گر وب**: `installedAlreadyAction='abort'`، `updaterEnabled=false`، ثبت `storage/installed` پس از نصب، قفل اتمی ساخت اولین ادمین (cache lock) + رمز min:8 + regex برای admin_route_prefix
+- **`.env.example`**: APP_KEY هاردکد حذف (قبلاً با کپی خودکار روی .env ⇒ کلید عمومی شناخته‌شده!) + `APP_DEBUG=false` + راهنمای TRUST_PROXIES/CORS
+- **Session**: `same_site` از `none` به `lax` | **CORS**: از `*` هاردکد به `CORS_ALLOWED_ORIGINS` | **Sanctum**: انقضای توکن ۳۰ روز + رفع deprecation `parse_url`
+- **TrustProxies**: از کلاس حذف‌شده‌ی fideloper به کلاس داخلی لاراول + کنترل با `TRUST_PROXIES` (رفع 500 در نسخه ۱۳)
+- **هدرهای امنیتی**: میان‌افزار `SecurityHeaders` سراسری (X-Frame-Options/X-Content-Type-Options/Referrer-Policy/Permissions-Policy)
+- متفرقه: حذف `refresh-csrf` عمومی (403 بدون لاگین)، حذف `auth.password_confirmed_at` پس از ورود (دور زدن password.confirm)، ساده‌سازی VerifyCsrfToken (حذف استثنای پویا از کانفیگ ناموجود)، حذف ۴ عدد `dd()` باقی‌مانده در اسکریپر محصول، رمز min:8 در UserForm، throttle روی login قدیمی و API login و مسیرهای OTP
+
+### ۵) رفع باگ Livewire 404 (معمای فاز قبل)
+- ریشه‌یابی شد: پیشوند اندپوینت لایووایر ۴ از `sha256(APP_KEY.'livewire-endpoint')` ساخته می‌شود (`EndpointResolver::prefix`)؛ با تغییر/ناهمخوانی APP_KEY بین محیط‌ها (یا نبود key:generate پس از deploy) مسیرهای `/livewire-{hash}/update` و JS در HTML قدیمی به 404 می‌خورند. تست‌های این فاز (ورود Livewire با پست‌های متعدد update) سالم اجرا شد ⇒ راه‌حل عملیاتی: APP_KEY ثابت در هر سرور + `php artisan key:generate` فقط یک‌بار
+
+### ۶) وریفای E2E (مرورگر واقعی)
+- پنل جدید: ورود موفق → داشبورد، لیست محصولات ✓، `refresh-csrf` بدون لاگین 403 ✓
+- کپچا: رندر 200x64 PNG ✓، ورود بدون کد → «وارد کردن کد امنیتی الزامی است» ✓، ورود با کد خوانده‌شده توسط VLM → موفق ✓ (یعنی کپچا انسانی‌پذیر و ماشینی‌ناپذیر نیست ولی برای ربات‌های ساده کافی است)
+- پنل قدیمی: قفل تدریجی با پیام فارسی ✓، اجبار کپچا هنگام فعال بودن ✓
+- ربات‌گیر: ضربه به `wp-admin` → ثبت در bot_traps → 403 کل سایت (وب+کپچا) ✓؛ پاکسازی دستی ⇒ رفع فوری (کش) ✓
+- build: `bun run build:admin` — ~12s بدون warning؛ manifest سازگار

@@ -38,7 +38,7 @@ class PageController extends Controller
 
         Page::create([
             'title'      => $request->title,
-            'content'    => $request->input('content'),
+            'content'    => sanitize_rich_text($request->input('content')),
             'slug'       => $request->slug ?: $request->title,
             'meta_title'       => $request->meta_title,
             'meta_description' => $request->meta_description,
@@ -66,7 +66,7 @@ class PageController extends Controller
 
         $page->update([
             'title'     => $request->title,
-            'content'   => $request->input('content'),
+            'content'   => sanitize_rich_text($request->input('content')),
             'slug'      => $request->slug ?: $request->title,
             'published' => $request->published ? true : false,
         ]);

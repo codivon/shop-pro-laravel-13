@@ -46,6 +46,15 @@ class RemoveSinglePriceFromProductsTable extends Migration
             ]);
         }
 
+        // سازگاری SQLite: ایندکس‌های حاوی ستون‌های حذف‌شونی باید اول drop شوند
+        foreach (['products_category_id_price_index', 'products_price_index', 'products_discount_index', 'products_stock_index'] as $indexName) {
+            if (Schema::hasIndex('products', $indexName)) {
+                Schema::table('products', function (Blueprint $table) use ($indexName) {
+                    $table->dropIndex($indexName);
+                });
+            }
+        }
+
         Schema::table('products', function (Blueprint $table) {
             $table->dropColumn('price');
             $table->dropColumn('discount');

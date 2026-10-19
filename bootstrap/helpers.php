@@ -535,8 +535,76 @@ function application_installed()
     return file_exists(storage_path('installed'));
 }
 
+/*
+ * امنیتی: اعتبارسنجی نام قالب/ماژول — جلوگیری از path-traversal
+ * (LFI در customConfig، symlink attack، حذف دایرکتوری‌های دلخواه و ...)
+ * نام معتبر: فقط حروف لاتین، عدد، خط تیره و زیرخط.
+ */
+function is_safe_extension_name(string $name): bool
+{
+    return preg_match('/^[A-Za-z0-9_-]{1,100}$/', $name) === 1;
+}
+
+/*
+ * امنیتی (XSS): پاک‌سازی HTML غنیِ ورودی کاربر (توضیحات محصول/مقاله/صفحه و ...)
+ * قبل از ذخیره‌سازی. HTML مجاز (تگ‌های فرمت‌بندی CKEditor) نگه داشته می‌شود و
+ * بردارهای اجرای اسکریپت حذف می‌شوند: <script>، event handlers،
+ * javascript:/vbscript:/data: URLs، <iframe> خارج از لیست مجاز، <object/embed/form> ...
+ */
+function sanitize_rich_text(?string $html): ?string
+{
+    if ($html === null || trim($html) === '') {
+        return $html;
+    }
+
+    // ۱) حذف کامل بلوک‌های خطرناک همراه با محتوایشان
+    $html = preg_replace('/<script\b[^>]*>.*?<\/script\s*>/is', '', $html) ?? $html;
+    $html = preg_replace('/<style\b[^>]*>.*?<\/style\s*>/is', '', $html) ?? $html;
+    $html = preg_replace('/<object\b[^>]*>.*?<\/object\s*>/is', '', $html) ?? $html;
+    $html = preg_replace('/<embed\b[^>]*>.*?(<\/embed\s*>)?/is', '', $html) ?? $html;
+    $html = preg_replace('/<form\b[^>]*>.*?<\/form\s*>/is', '', $html) ?? $html;
+    $html = preg_replace('/<meta\b[^>]*>/is', '', $html) ?? $html;
+    $html = preg_replace('/<link\b[^>]*>/is', '', $html) ?? $html;
+    $html = preg_replace('/<base\b[^>]*>/is', '', $html) ?? $html;
+    $html = preg_replace('/<applet\b[^>]*>.*?(<\/applet\s*>)?/is', '', $html) ?? $html;
+    $html = preg_replace('/<iframe(?![^>]*(youtube|youtube-nocookie|aparat|vimeo)\.com)[^>]*>.*?(<\/iframe\s*>)?/is', '', $html) ?? $html;
+
+    // ۲) حذف ویژگی‌های رویداد (on*) در همه‌ی تگ‌ها
+    $html = preg_replace('/\son\w+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/is', '', $html) ?? $html;
+
+    // ۳) خنثی‌سازی URL های خطرناک در href/src/action
+    $html = preg_replace(
+        '/(\s(?:href|src|action|xlink:href)\s*=\s*)("\s*(?:javascript|vbscript|data:text\/html)[^"]*"|\'\s*(?:javascript|vbscript|data:text\/html)[^\']*\'|(?:javascript|vbscript|data:text\/html)[^\s>]*)/is',
+        '$1"#"',
+        $html
+    ) ?? $html;
+
+    // ۴) حذف استایل‌های حاوی expression/javascript
+    $html = preg_replace('/style\s*=\s*("[^"]*(?:javascript:|expression\()[^"]*"|\'[^\']*(?:javascript:|expression\()[^\']*\')/is', '', $html) ?? $html;
+
+    return $html;
+}
+
 function change_env($key, $value)
 {
+    /*
+     * امنیتی (env-injection): مقدار نباید شامل کاراکترهای خط جدید یا نویسه‌های
+     * کنترلی باشد وگرنه یک مهاجم می‌تواند کلیدهای دلخواه .env (مثل APP_KEY یا
+     * DB_PASSWORD) را تزریق کند. کلید هم فقط [A-Z0-9_] مجاز است.
+     */
+    $key   = strtoupper(trim((string) $key));
+    $value = str_replace(["\r", "\n", "\0"], '', (string) $value);
+    $value = trim($value);
+
+    if (!preg_match('/^[A-Z][A-Z0-9_]*$/', $key) || $value === '') {
+        return false;
+    }
+
+    // اگر مقدار فاصله/کاراکتر خاص دارد، داخل کوتیشن قرار می‌گیرد
+    if (preg_match('/[\s"\'#\\\\]/', $value) && !preg_match('/^".*"$/', $value)) {
+        $value = '"' . str_replace('"', '\\"', $value) . '"';
+    }
+
     // Read .env-file
     $env = file_get_contents(base_path() . '/.env');
 
@@ -574,6 +642,8 @@ function change_env($key, $value)
     file_put_contents(base_path() . '/.env', $env);
 
     Artisan::call('config:cache');
+
+    return true;
 }
 
 function get_current_theme()

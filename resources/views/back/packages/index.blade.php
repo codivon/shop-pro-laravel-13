@@ -230,7 +230,7 @@
                                             <span class="pkg-card-version">v{{ $latestVersion }}</span>
                                         </div>
                                         <p class="pkg-card-desc">
-                                            {!! $pkg['short_description'] ?? 'بدون توضیحات' !!}
+                                            {!! sanitize_rich_text($pkg['short_description'] ?? '') ?: 'بدون توضیحات' !!}
                                         </p>
                                     @endif
 

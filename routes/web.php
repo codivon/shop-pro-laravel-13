@@ -88,7 +88,7 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin-old/' . admin_route_prefix()]
 
     Route::get('login', [AdminLoginController::class, 'showLoginForm'])->name('login');
 
-    Route::post('login/submit', [AdminLoginController::class, 'login'])->name('login-submit');
+    Route::post('login/submit', [AdminLoginController::class, 'login'])->name('login-submit')->middleware('throttle:10,1');
     // راه‌اندازی اولیه (ثبت اولین مدیر) — آدرس جدید: /admin-old/{prefix}/setup
     // (مسیر قدیمی register به آدرس جدید ریدایرکت می‌شود تا لینک‌های قدیمی نشکند)
     Route::get('setup', [InstallController::class, 'showRegisterForm'])->name('register')->middleware(['CheckUserNotExists']);
@@ -686,10 +686,33 @@ Route::get('manifest.json', function () {
 });
 
 
-// refresh csrf token
+/*
+|--------------------------------------------------------------------------
+| ربات‌گیر (Bot Trap)
+|--------------------------------------------------------------------------
+| مسیرهای طعمه: اسکنرهای خودکار و ربات‌های مخرب همیشه این مسیرها را پیمایش
+| می‌کنند؛ هیچ کاربر واقعی‌ای به آن‌ها سر نمی‌زند. هر ضربه = مسدودسازی IP.
+| این مسیرها در robots.txt هم Disallow شده‌اند (ربات‌های مطیع می‌آیند و تله می‌شوند).
+*/
+Route::match(['get', 'post'], 'bot-trap/hit', [\App\Http\Controllers\BotTrapController::class, 'catch'])
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+
+foreach ([
+    'wp-login.php', 'wp-admin', 'wp-admin/', 'wp-content', 'wp-includes', 'wordpress',
+    'xmlrpc.php', 'phpmyadmin', 'pma', 'adminer.php', 'wp-config.php', 'wp-settings.php',
+    '.env', '.git/config', 'phpinfo.php', 'info.php', 'shell.php', 'eval-stdin.php',
+    'config.json', 'composer.json.bak', '.aws/credentials', 'cgi-bin', 'telescope',
+    'vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php', 'actuator/gateway/logout',
+] as $trapPath) {
+    Route::match(['get', 'post'], $trapPath, [\App\Http\Controllers\BotTrapController::class, 'catch']);
+}
+
+// به‌روزرسانی خودکار csrf برای اسکریپت‌های داخلی — دیگر توکن به بیرون درز نمی‌کند
 Route::get('refresh-csrf', function () {
+    abort_unless(auth('web')->check() || auth('adminPanel')->check(), 403);
+
     return csrf_token();
-})->name('csrf');
+})->name('csrf')->middleware('throttle:30,1');
 
 Route::get('/captcha/image', [\App\Http\Controllers\CaptchaController::class, 'image'])
     ->name('captcha.image')
