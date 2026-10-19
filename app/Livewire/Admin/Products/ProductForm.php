@@ -1213,6 +1213,53 @@ class ProductForm extends Component
         return $result;
     }
 
+    /** درخت تو در توی دسته‌بندی برای انتخابگر درختی (فاز ۱۲) */
+    #[\Livewire\Attributes\Computed]
+    public function categoryTree(): array
+    {
+        // ریشه‌ها = دسته‌هایی که category_id آن‌ها null یا صفر است
+        $byParent = $this->categories()->groupBy(fn ($cat) => (int) $cat->category_id ?: 0);
+
+        $build = function ($parentId) use (&$build, $byParent): array {
+            return $byParent->get($parentId, collect())
+                ->map(fn ($cat) => [
+                    'id' => (int) $cat->id,
+                    'title' => $cat->title,
+                    'children' => $build((int) $cat->id),
+                ])
+                ->values()
+                ->toArray();
+        };
+
+        return $build(0);
+    }
+
+    /** پرکاربردترین دسته‌ها بر اساس تعداد محصولات (فاز ۱۲) */
+    #[\Livewire\Attributes\Computed]
+    public function popularCategories(): array
+    {
+        $counts = \DB::table('category_product')
+            ->selectRaw('category_id, count(*) as c')
+            ->groupBy('category_id')
+            ->orderByDesc('c')
+            ->limit(10)
+            ->pluck('c', 'category_id');
+
+        if ($counts->isEmpty()) {
+            return [];
+        }
+
+        // categories() یک Collection آماده است (نه query builder) → whereIn مستقیم
+        $keys = $counts->keys()->map(fn ($k) => (int) $k);
+        $cats = $this->categories()->whereIn('id', $keys);
+
+        return $cats->sortByDesc(fn ($c) => $counts[$c->id] ?? 0)
+            ->take(6)
+            ->map(fn ($c) => ['id' => (int) $c->id, 'title' => $c->title, 'count' => (int) ($counts[$c->id] ?? 0)])
+            ->values()
+            ->toArray();
+    }
+
     #[\Livewire\Attributes\Computed]
     public function attributeGroups(): \Illuminate\Support\Collection
     {

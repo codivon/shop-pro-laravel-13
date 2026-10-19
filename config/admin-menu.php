@@ -249,12 +249,6 @@ return [
                             'icon' => 'list',
                         ],
                         [
-                            'label' => 'لینک جدید',
-                            'route' => 'np.links.create',
-                            'permission' => 'links.create',
-                            'icon' => 'plus',
-                        ],
-                        [
                             'label' => 'گروه‌های لینک',
                             'route' => 'np.links.groups',
                             'permission' => 'links.groups',
@@ -289,12 +283,6 @@ return [
                             'route' => 'np.warehouses.index',
                             'permission' => 'warehouses.index',
                             'icon' => 'list',
-                        ],
-                        [
-                            'label' => 'ایجاد انبار جدید',
-                            'route' => 'np.warehouses.index',
-                            'permission' => 'warehouses.create',
-                            'icon' => 'plus',
                         ],
                     ],
                 ],
@@ -352,63 +340,33 @@ return [
                         ],
                         [
                             'label' => 'برندها',
+                            'route' => 'np.brands.index',
+                            'permission' => 'products.brands',
                             'icon' => 'award',
-                            'children' => [
-                                [
-                                    'label' => 'لیست برندها',
-                                    'route' => 'np.brands.index',
-                                    'permission' => 'products.brands',
-                                    'icon' => 'list',
-                                ],
-                                [
-                                    'label' => 'برند جدید',
-                                    'route' => 'np.brands.index',
-                                    'permission' => 'products.brands',
-                                    'icon' => 'plus',
-                                ],
-                            ],
                         ],
                         [
-                            'label' => 'ویژگی‌ها',
+                            'label' => 'گروه‌های ویژگی',
+                            'route' => 'np.attribute-groups.index',
+                            'permission' => 'attributes.groups.index',
                             'icon' => 'sliders-horizontal',
-                            'children' => [
-                                [
-                                    'label' => 'گروه‌های ویژگی',
-                                    'route' => 'np.attribute-groups.index',
-                                    'permission' => 'attributes.groups.index',
-                                    'icon' => 'list',
-                                ],
-                                [
-                                    'label' => 'گروه ویژگی جدید',
-                                    'route' => 'np.attribute-groups.index',
-                                    'permission' => 'attributes.groups.create',
-                                    'icon' => 'plus',
-                                ],
-                                [
-                                    'label' => 'ویژگی جدید',
-                                    'route' => 'np.attributes.create',
-                                    'permission' => 'attributes.create',
-                                    'icon' => 'plus',
-                                ],
-                            ],
+                        ],
+                        [
+                            'label' => 'ویژگی جدید',
+                            'route' => 'np.attributes.create',
+                            'permission' => 'attributes.create',
+                            'icon' => 'plus',
                         ],
                         [
                             'label' => 'فیلترها',
+                            'route' => 'np.filters.index',
+                            'permission' => 'filters.index',
                             'icon' => 'filter',
-                            'children' => [
-                                [
-                                    'label' => 'لیست فیلترها',
-                                    'route' => 'np.filters.index',
-                                    'permission' => 'filters.index',
-                                    'icon' => 'list',
-                                ],
-                                [
-                                    'label' => 'فیلتر جدید',
-                                    'route' => 'np.filters.create',
-                                    'permission' => 'filters.create',
-                                    'icon' => 'plus',
-                                ],
-                            ],
+                        ],
+                        [
+                            'label' => 'فیلتر جدید',
+                            'route' => 'np.filters.create',
+                            'permission' => 'filters.create',
+                            'icon' => 'plus',
                         ],
                     ],
                 ],
@@ -465,18 +423,6 @@ return [
                             'permission' => 'carriers.provinces.index',
                             'icon' => 'map',
                         ],
-                        [
-                            'label' => 'استان جدید',
-                            'route' => 'np.provinces.index',
-                            'permission' => 'carriers.provinces.create',
-                            'icon' => 'plus',
-                        ],
-                        [
-                            'label' => 'شهر جدید',
-                            'route' => 'np.cities.index',
-                            'permission' => 'carriers.cities.create',
-                            'icon' => 'plus',
-                        ],
                     ],
                 ],
             ],
@@ -488,6 +434,8 @@ return [
         |------------------
         */
         [
+            // فاز ۱۲: فقط وقتی سیستم چند فروشندگی فعال است نمایش داده می‌شود
+            'vendor' => true,
             'key' => 'sellers',
             'title' => 'امور فروشندگان',
             'items' => [
@@ -711,6 +659,7 @@ return [
                             'route' => 'np.transactions.seller-deposits',
                             'permission' => 'payments.transactions.seller_deposit',
                             'icon' => 'coins',
+                            'vendor' => true,
                         ],
                         [
                             'label' => 'لیست ارزها',
@@ -725,6 +674,7 @@ return [
                     'route' => 'np.request-deposit.index',
                     'permission' => 'request_deposit',
                     'icon' => 'hourglass',
+                    'vendor' => true,
                 ],
             ],
         ],
@@ -833,28 +783,10 @@ return [
                             'icon' => 'list',
                         ],
                         [
-                            'label' => 'مدیر جدید',
-                            'route' => 'np.admins.index',
-                            'permission' => 'admins.create',
-                            'icon' => 'plus',
-                        ],
-                        [
                             'label' => 'نقش‌ها',
+                            'route' => 'np.roles.index',
+                            'permission' => 'roles.index',
                             'icon' => 'key-round',
-                            'children' => [
-                                [
-                                    'label' => 'لیست نقش‌ها',
-                                    'route' => 'np.roles.index',
-                                    'permission' => 'roles.index',
-                                    'icon' => 'list',
-                                ],
-                                [
-                                    'label' => 'نقش جدید',
-                                    'route' => 'np.roles.index',
-                                    'permission' => 'roles.create',
-                                    'icon' => 'plus',
-                                ],
-                            ],
                         ],
                     ],
                 ],

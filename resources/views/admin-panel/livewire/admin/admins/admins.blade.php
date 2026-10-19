@@ -18,9 +18,9 @@
         @endcan
     </div>
 
-    {{-- نوار عملیات گروهی (پورت datatable-actions قدیمی) --}}
-    <div class="ap-card flex flex-wrap items-center justify-between gap-3 border-s-4 border-s-red-500 p-3.5"
-         @class(['hidden' => count($selected) === 0])>
+    {{-- نوار عملیات گروهی (پورت datatable-actions قدیمی) — فقط بعد از انتخاب ردیف‌ها نمایش داده می‌شود --}}
+    <div @class(['ap-card flex flex-wrap items-center justify-between gap-3 border-s-4 border-s-red-500 p-3.5',
+                 '!hidden' => count($selected) === 0])>
         <p class="text-[13px] font-bold text-red-600">
             <span class="fa-digits">{{ number_format(count($selected)) }}</span> مورد انتخاب شده:
         </p>
@@ -232,17 +232,18 @@
         </div>
     </div>
 
-    {{-- مودال ایجاد/ویرایش (پورت create/edit قدیمی) --}}
+    {{-- مودال ایجاد/ویرایش (پورت create/edit قدیمی) — فاز ۱۲: بستن با کلیک بیرون/ESC/انصراف اصلاح شد --}}
     <div x-data="{ open: @entangle('showFormModal').live }"
          x-show="open" x-cloak
+         x-on:keydown.escape.window="open = false"
          class="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto p-4 sm:items-center">
-        <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" x-show="open" x-on:click="closeFormModal" x-transition.opacity aria-hidden="true"></div>
+        <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" x-show="open" x-on:click="open = false" x-transition.opacity aria-hidden="true"></div>
         <div x-show="open" x-on:click.stop
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
              class="relative my-4 w-full max-w-2xl rounded-2xl border border-line bg-surface p-6 shadow-pop dark:border-night-line dark:bg-night-2"
              role="dialog" aria-modal="true">
-            <h3 class="text-base font-bold">{{ $adminId ? 'ویرایش مدیر' : 'ایجاد کاربر جدید' }}</h3>
+            <h3 class="text-base font-bold">{{ $adminId ? 'ویرایش مدیر' : 'ایجاد مدیر جدید' }}</h3>
 
             <form wire:submit="save" class="mt-4 space-y-4">
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -334,9 +335,9 @@
                 <div class="flex gap-2.5 pt-1">
                     <button type="submit" wire:loading.attr="disabled" wire:target="save" class="ap-btn flex-1 !py-2.5">
                         <x-admin-panel::icon name="check" class="size-4" />
-                        {{ $adminId ? 'ویرایش کاربر' : 'ایجاد کاربر' }}
+                        {{ $adminId ? 'ویرایش مدیر' : 'ایجاد مدیر' }}
                     </button>
-                    <button type="button" x-on:click="closeFormModal" class="ap-btn-ghost flex-1">انصراف</button>
+                    <button type="button" x-on:click="open = false" class="ap-btn-ghost flex-1">انصراف</button>
                 </div>
             </form>
         </div>

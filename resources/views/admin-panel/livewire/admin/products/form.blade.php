@@ -137,13 +137,8 @@
                     </div>
 
                     <div>
-                        <label class="mb-1.5 block text-[13px] font-semibold">دسته‌بندی اصلی <span class="text-red-500">*</span></label>
-                        <select wire:model="category_id" class="ap-input">
-                            <option value="">انتخاب دسته‌بندی…</option>
-                            @foreach ($this->categoryOptions as $cat)
-                                <option value="{{ $cat['id'] }}">{{ $cat['title'] }}</option>
-                            @endforeach
-                        </select>
+                        {{-- فاز ۱۲: انتخابگر درختی دسته‌بندی --}}
+                        <x-admin-panel::category-picker wireProp="category_id" :tree="$this->categoryTree()" :popular="$this->popularCategories()" label="دسته‌بندی اصلی" required placeholder="انتخاب دسته‌بندی اصلی…" />
                         @error('category_id') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                     </div>
 
@@ -214,22 +209,11 @@
                     @endif
                 </div>
 
-                {{-- دسته‌بندی‌های اضافی --}}
+                {{-- دسته‌بندی‌های بیشتر (فاز ۱۲: انتخابگر درختی چندانتخابی) --}}
                 <div>
-                    {{-- فاز ۱۱: انتخابگر کارتی به‌جای چک‌باکس خام --}}
-                    <div class="max-h-48 overflow-y-auto rounded-xl border border-line bg-surface-2 p-3 dark:border-night-line dark:bg-night-3/50">
-                        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                            @foreach ($this->categories as $cat)
-                                <label class="ap-check-card">
-                                    <input type="checkbox" value="{{ $cat->id }}" wire:model="extraCategories">
-                                    <span class="ap-check-mark" aria-hidden="true">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                                    </span>
-                                    <span class="ap-check-card-body truncate">{{ $cat->title }}</span>
-                                </label>
-                            @endforeach
-                        </div>
-                    </div>
+                    <x-admin-panel::category-picker wireProp="extraCategories" :tree="$this->categoryTree()" :popular="$this->popularCategories()" :multiple="true" label="دسته‌بندی‌های بیشتر" placeholder="انتخاب دسته‌بندی‌های بیشتر…" />
+                    @error('extraCategories.*') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                </div>
 
                 {{-- برچسب‌ها --}}
                 <div x-data="apTags()" data-initial="{{ old('labels', $labels) }}" x-effect="$wire.labels = items.join(',')">
@@ -621,7 +605,8 @@
                             @endforeach
 
                             {{-- افزودن --}}
-                            <label class="group flex aspect-square cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-line bg-surface-2 transition-colors hover:border-brand-400 dark:border-night-line dark:bg-night-3/50">
+                            {{-- فاز ۱۲: relative اجباری است — بدون آن input نامرئی file روی کل صفحه گسترده می‌یابد و هر کلیک، پنجره انتخاب فایل را باز می‌کرد --}}
+                            <label class="group relative flex aspect-square cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-xl border-2 border-dashed border-line bg-surface-2 transition-colors hover:border-brand-400 dark:border-night-line dark:bg-night-3/50">
                                 @if (count($gallery) > 0 && ! $errors->has('gallery.*'))
                                     <x-admin-panel::icon name="plus" class="size-6 text-brand-600 dark:text-brand-400" />
                                 @else

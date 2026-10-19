@@ -18,9 +18,9 @@
         @endcan
     </div>
 
-    {{-- نوار عملیات گروهی (پورت multiple-actions-bar قدیمی) --}}
-    <div class="ap-card flex flex-wrap items-center justify-between gap-3 border-s-4 border-s-red-500 p-3.5"
-         @class(['hidden' => count($selected) === 0])>
+    {{-- نوار عملیات گروهی (پورت multiple-actions-bar قدیمی) — فقط بعد از انتخاب ردیف‌ها نمایش داده می‌شود --}}
+    <div @class(['ap-card flex flex-wrap items-center justify-between gap-3 border-s-4 border-s-red-500 p-3.5',
+                 '!hidden' => count($selected) === 0])>
         <p class="text-[13px] font-bold text-red-600">
             <span class="fa-digits">{{ number_format(count($selected)) }}</span> مورد انتخاب شده:
         </p>

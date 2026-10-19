@@ -56,7 +56,7 @@
                             @endforeach
                         </select>
                         <p class="mt-1.5 text-[11px] text-ink-3 dark:text-night-ink-2">
-                            برای تبدیل منو به زیرمجموعه یا خروج از حالت زیرمجموعه، والد را تغییر دهید.
+                            برای تبدیل منو به زیرمجموعه یا خروج از آن، والد را تغییر دهید یا منو را با درگ جابه‌جا کنید.
                         </p>
                         @error('formParentId') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                     </div>
@@ -103,17 +103,8 @@
                             @error('formCategoryIcon') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div class="sm:col-span-2">
-                            <label class="mb-1.5 block text-xs font-semibold" for="menu-form-category">انتخاب دسته بندی <span class="text-red-500">*</span></label>
-                            <select id="menu-form-category" wire:model="formCategoryId" class="ap-input !py-2">
-                                <option value="">انتخاب دسته‌بندی…</option>
-                                @foreach ($this->categories as $type => $categoryGroup)
-                                    <optgroup label="{{ category_group($type) }}">
-                                        @foreach ($categoryGroup as $category)
-                                            <option value="{{ $category->id }}">{{ $category->full_title }}</option>
-                                        @endforeach
-                                    </optgroup>
-                                @endforeach
-                            </select>
+                            <x-admin-panel::category-picker wireProp="formCategoryId" :tree="$this->menuCategoryTree"
+                                                            label="انتخاب دسته بندی" required />
                             @error('formCategoryId') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <label class="flex cursor-pointer items-center gap-2 text-[13px] font-semibold">
@@ -162,15 +153,103 @@
         </div>
     @endcan
 
-    {{-- درخت منوها --}}
-    <div class="ap-card overflow-hidden">
+    {{-- درخت منوها + وضعیت درگ‌انددراپ (Alpine خالص — فاز ۱۲-د، هم‌الگوی درخت دسته‌بندی‌ها) --}}
+    <div class="ap-card overflow-hidden"
+         x-data="{
+            dragId: null,
+            dragSubtree: [],
+            overId: null,
+            overMode: null,
+            startDrag(event, id, subtree) {
+                this.dragId = id
+                this.dragSubtree = Array.isArray(subtree) && subtree.length ? subtree : [id]
+                event.dataTransfer.effectAllowed = 'move'
+                try { event.dataTransfer.setData('text/plain', String(id)) } catch (e) {}
+            },
+            /*
+             * تشخیص ناحیه از موقعیت نشانگر روی خودِ ردیف — سه نوار واقعی ۳۰/۴۰/۳۰٪
+             * (نوارهای هم‌پوشان قبلی حین درگ رویدادی نمی‌گیرند؛ hit-testing مستقیم
+             * روی ردیف هم دقیق‌تر است و همان تجربه پیش/داخل/بعد را می‌دهد — فاز ۱۲-د).
+             */
+            overRow(event, id) {
+                if (this.dragId === null) return
+                const rect = event.currentTarget.getBoundingClientRect()
+                const y = event.clientY - rect.top
+                const band = y < rect.height * 0.3 ? 'before' : (y > rect.height * 0.7 ? 'after' : 'inside')
+                // فقط شاخه خودش را نمی‌توان داخل خودش برد
+                this.overId = id
+                this.overMode = this.dragSubtree.includes(id) ? 'forbidden' : band
+            },
+            /* خروج از ردیف — عبور از فرزندهای خود ردیف (دکمه‌ها/متن) نباید وضعیت را پاک کند */
+            leaveRow(event, id) {
+                if (event.relatedTarget && event.currentTarget.contains(event.relatedTarget)) return
+                this.leaveBand(id)
+            },
+            leaveBand(id) {
+                if (this.overId === id) { this.overId = null; this.overMode = null }
+            },
+            /* درگ روی فاصله بین ردیف‌ها (خارج هر ردیف) — پاک‌کردن نشانگر کهنه */
+            cardOver(event) {
+                if (this.dragId === null) return
+                this.overId = null
+                this.overMode = null
+            },
+            dropClass(id) {
+                if (this.dragId === null || this.overId !== id) return ''
+                return {
+                    before: 'ap-drop-before',
+                    after: 'ap-drop-after',
+                    inside: 'ap-drop-inside',
+                    forbidden: 'ap-drop-forbidden',
+                }[this.overMode] ?? ''
+            },
+            dropLabel(id) {
+                if (this.dragId === null || this.overId !== id) return ''
+                return {
+                    before: 'جابه‌جایی — قبل از این منو',
+                    after: 'جابه‌جایی — بعد از این منو',
+                    inside: 'زیرمجموعه شدن — زیر این منو',
+                    forbidden: 'انتقال به زیرمجموعهٔ خودش مجاز نیست',
+                }[this.overMode] ?? ''
+            },
+            resetDrag() {
+                this.dragId = null
+                this.dragSubtree = []
+                this.overId = null
+                this.overMode = null
+            },
+            drop(event, id) {
+                const dragId = this.dragId
+                const mode = this.overMode
+                this.resetDrag()
+                if (! dragId || dragId === id) return
+                if (! mode || mode === 'forbidden') {
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: { message: 'انتقال منو به داخل زیرمجموعهٔ خودش مجاز نیست.', type: 'error' },
+                    }))
+                    return
+                }
+                $wire.moveNode(dragId, id, mode)
+            },
+            dropRoot(event) {
+                const dragId = this.dragId
+                this.resetDrag()
+                if (! dragId) return
+                $wire.moveNodeToRoot(dragId)
+            },
+         }"
+         x-on:dragend.window="resetDrag()"
+         {{-- dragover روی کل کارت: جلوگیری از رد شدن drop روی فاصله‌ها (به‌خصوص Firefox) --}}
+         {{-- و پاک‌کردن نشانگر وقتی نشانگر روی فاصله بین ردیف‌هاست (رویداد ردیف‌ها .stop می‌شود) --}}
+         x-on:dragover.prevent="cardOver($event)"
+    >
         <div class="flex items-center justify-between gap-2 border-b border-line px-4 py-3 dark:border-night-line">
             <h2 class="flex items-center gap-2 text-sm font-bold">
                 <x-admin-panel::icon name="list" class="size-4.5 text-brand-600 dark:text-brand-400" />
                 درخت منوها
             </h2>
             <p class="hidden text-[11px] text-ink-3 dark:text-night-ink-2 sm:block">
-                ترتیب با دکمه‌های ▲▼ و جایگاه با «ویرایش» و انتخاب منوی والد تنظیم می‌شود.
+                جابه‌جایی با کشیدن هندل ⋮⋮ یا دکمه‌های ▲▼؛ زیرمجموعه شدن با کشیدن روی وسط ردیف.
             </p>
         </div>
 
@@ -181,6 +260,25 @@
                         @include('admin-panel::livewire.admin.menus.partials.menu-node', ['node' => $node])
                     @endforeach
                 </ul>
+
+                {{-- ناحیه رهاسازی ریشه — خروج از زیرمجموعه با درگ --}}
+                <div x-show="dragId !== null" x-cloak x-transition.opacity.duration.150ms
+                     x-on:dragover.prevent.stop="overId = null; overMode = 'root'"
+                     x-on:dragleave.prevent="overMode = null"
+                     x-on:drop.prevent.stop="dropRoot($event)"
+                     class="mt-3 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-[13px] font-bold transition-colors"
+                     :class="overMode === 'root'
+                         ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300'
+                         : 'border-line text-ink-3 dark:border-night-line dark:text-night-ink-2'"
+                     role="region" aria-label="ناحیه انتقال به سطح ریشه">
+                    <x-admin-panel::icon name="corner-up-right" class="size-4.5 -scale-x-100" />
+                    <span>برای تبدیل به منوی اصلی (خروج از زیرمجموعه) اینجا رها کنید</span>
+                </div>
+
+                <p class="mt-4 flex items-start gap-1.5 text-xs leading-6 text-ink-3 dark:text-night-ink-2">
+                    <x-admin-panel::icon name="info" class="mt-1 size-4 shrink-0" />
+                    <span>هندل ⋮⋮ را بکشید: <b class="text-ink-2 dark:text-night-ink">بالای ردیف</b> = هم‌سطح قبل، <b class="text-ink-2 dark:text-night-ink">وسط</b> = زیرمجموعه شدن، <b class="text-ink-2 dark:text-night-ink">پایین</b> = هم‌سطح بعد، یا رها کنید روی ناحیه «سطح ریشه». دکمه‌های ▲▼ و «منوی والد» فرم هم برای جابه‌جایی در دسترس‌اند.</span>
+                </p>
             @else
                 <div class="flex flex-col items-center gap-2 py-12 text-ink-3 dark:text-night-ink-2">
                     <x-admin-panel::icon name="menu" class="size-10 opacity-40" />
@@ -218,7 +316,7 @@
     </div>
 
     {{-- لودینگ --}}
-    <div wire:loading wire:target="save, editMenu, delete, moveUp, moveDown, startCreate"
+    <div wire:loading wire:target="save, editMenu, delete, moveUp, moveDown, startCreate, moveNode, moveNodeToRoot"
          class="pointer-events-none fixed bottom-6 start-6 z-[65] flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 shadow-pop dark:border-night-line dark:bg-night-3">
         <svg class="size-4 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />

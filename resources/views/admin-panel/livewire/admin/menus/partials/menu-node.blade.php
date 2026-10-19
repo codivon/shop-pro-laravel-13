@@ -1,9 +1,28 @@
 {{-- گره درخت منوها — فراخوانی بازگشتی با @include (پورت back/menus/partials/child_menu) --}}
+{{-- فاز ۱۲-د: درگ‌انددراپ (هم‌الگوی partial گره دسته‌بندی) + حفظ دکمه‌های ▲▼ به‌عنوان جایگزین در دسترس --}}
 @php
     $menu = $node['model'];
 @endphp
 <li wire:key="menu-{{ $menu->id }}" class="list-none">
-    <div class="flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border border-line bg-surface px-3 py-2.5 transition-colors hover:border-brand-300 hover:bg-surface-2 dark:border-night-line dark:bg-night-2 dark:hover:border-brand-500/40 dark:hover:bg-night-3">
+    {{-- ردیف قابل درگ — تشخیص نوار (قبل/داخل/بعد) از موقعیت نشانگر روی خود ردیف --}}
+    {{-- (نوارهای هم‌پوشان ap-dropband در درگ واقعی رویدادی نمی‌گیرند چون pointer-events:none دارند) --}}
+    <div class="cat-row relative flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border border-line bg-surface px-3 py-2.5 transition-all hover:border-brand-300 hover:bg-surface-2 dark:border-night-line dark:bg-night-2 dark:hover:border-brand-500/40 dark:hover:bg-night-3"
+         :class="[dropClass({{ $menu->id }}), dragId === {{ $menu->id }} ? 'opacity-40 saturate-50' : '']"
+         x-on:dragover.prevent.stop="overRow($event, {{ $menu->id }})"
+         x-on:dragleave="leaveRow($event, {{ $menu->id }})"
+         x-on:drop.prevent.stop="drop($event, {{ $menu->id }})">
+
+        {{-- هندل درگ‌انددراپ (آیکون grip-vertical) --}}
+        <span draggable="true"
+              x-on:dragstart="startDrag($event, {{ $menu->id }}, {{ json_encode($node['subtreeIds']) }})"
+              class="cursor-grab touch-none select-none rounded-md p-1 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 active:cursor-grabbing dark:text-night-ink-2 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
+              title="کشیدن برای جابه‌جایی یا زیرمجموعه شدن" aria-label="کشیدن برای جابه‌جایی منو">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4" aria-hidden="true">
+                <circle cx="9" cy="5" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="19" r="1" />
+                <circle cx="15" cy="5" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="19" r="1" />
+            </svg>
+        </span>
 
         {{-- full_title مثل قدیمی (عنوان + نوع) --}}
         <span class="text-[13px] font-bold text-ink dark:text-night-ink">{{ $this->displayTitle($menu) }}</span>
@@ -31,16 +50,16 @@
 
         <span class="flex-1"></span>
 
-        {{-- مرتب‌سازی خواهرها (جایگزین درگ‌انددراپ قدیمی) --}}
+        {{-- مرتب‌سازی هم‌سطح‌ها (مکمل درگ‌انددراپ — جایگزین لمسی/در دسترس) --}}
         <button type="button" wire:click="moveUp({{ $menu->id }})"
-                class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10"
+                class="rounded-lg p-1 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10"
                 title="انتقال به بالا" aria-label="انتقال به بالا">
-            <x-admin-panel::icon name="chevron-up" class="size-4" />
+            <x-admin-panel::icon name="chevron-up" class="size-3.5" />
         </button>
         <button type="button" wire:click="moveDown({{ $menu->id }})"
-                class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10"
+                class="rounded-lg p-1 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10"
                 title="انتقال به پایین" aria-label="انتقال به پایین">
-            <x-admin-panel::icon name="chevron-down" class="size-4" />
+            <x-admin-panel::icon name="chevron-down" class="size-3.5" />
         </button>
 
         {{-- ویرایش (پورت دکمه edit-menu با فرم پرشده) --}}
@@ -68,6 +87,17 @@
                 <x-admin-panel::icon name="trash-2" class="size-4" />
             </button>
         @endcan
+
+        {{-- برچسب راهنمای شناور حین درگ (عملیات: جابه‌جایی / زیرمجموعه شدن) --}}
+        {{-- نواحی قبل/داخل/بعد با کلاس‌های ap-drop-* روی همین ردیف مشخص می‌شوند (CSS فاز ۱۱) --}}
+        <span x-show="dragId !== null && overId === {{ $menu->id }}" x-cloak
+              class="pointer-events-none absolute -top-3.5 start-6 z-30 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-bold shadow-lg"
+              :class="overMode === 'forbidden'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-brand-600 text-white'"
+              aria-hidden="true">
+            <span x-text="dropLabel({{ $menu->id }})"></span>
+        </span>
     </div>
 
     @if (count($node['children']))

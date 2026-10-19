@@ -3,6 +3,8 @@
     $menu = config('admin-menu.groups');
     $admin = auth('adminPanel')->user();
     $siteTitle = option('info_site_title', config('app.name'));
+    // فاز ۱۲: منوهای وابسته به سیستم چندفروشندگی فقط وقتی فعال است نمایش داده می‌شوند
+    $vendorEnabled = option('multi_vendor_system_status', 'false') == 'true';
 @endphp
 
 <aside
@@ -41,8 +43,11 @@
     <nav x-ref="nav" x-on:scroll.passive="saveScroll()" class="flex-1 overflow-y-auto overflow-x-hidden px-3 pb-6 pt-1">
         @foreach ($menu as $group)
             @php
-                // فیلتر آیتم‌ها بر اساس دسترسی
-                $visibleItems = collect($group['items'])->filter(function ($item) use ($admin) {
+                // فاز ۱۲: گروه‌های وابسته به چندفروشندگی + آیتم‌ها بر اساس دسترسی
+                if (! empty($group['vendor']) && ! $vendorEnabled) continue;
+
+                $visibleItems = collect($group['items'])->filter(function ($item) use ($admin, $vendorEnabled) {
+                    if (! empty($item['vendor']) && ! $vendorEnabled) return false;
                     if (!empty($item['creator_only'])) {
                         return $admin && ($admin->id === 1 || $admin->level === 'creator');
                     }
@@ -51,23 +56,6 @@
                 })->values();
 
                 if ($visibleItems->isEmpty()) continue;
-
-                // آیا این گروه آیتم فعال دارد؟ (شامل زیرمنوها — برای باز بودن آکاردئون)
-                $apRouteActive = function ($routeName): bool {
-                    if (!str_starts_with((string) $routeName, 'np.')) return false;
-                    if (request()->routeIs($routeName)) return true;
-                    // صفحات لیست برای create/edit/show خودشان هم فعال باشند
-                    if (str_ends_with($routeName, '.index')) {
-                        $base = substr($routeName, 0, -6);
-                        return request()->routeIs([$base.'.create', $base.'.edit', $base.'.show', $base.'.form']);
-                    }
-                    return false;
-                };
-
-                $hasActive = $visibleItems->contains(function ($i) use ($apRouteActive) {
-                    if ($apRouteActive($i['route'] ?? '')) return true;
-                    return collect($i['children'] ?? [])->contains(fn ($c) => $apRouteActive($c['route'] ?? ''));
-                });
 
                 $groupText = $group['title'] . ' ' . $visibleItems->map(function ($i) {
                     return $i['label'] . ' ' . collect($i['children'] ?? [])->pluck('label')->implode(' ');
@@ -84,12 +72,12 @@
                             {{-- آیتم با زیرمنو --}}
                             @php
                                 $childItems = collect($item['children'])
-                                    ->filter(fn ($c) => empty($c['permission']) || ($admin && $admin->can($c['permission'])))
+                                    ->filter(fn ($c) => ! empty($c['vendor']) && ! $vendorEnabled ? false : (empty($c['permission']) || ($admin && $admin->can($c['permission']))))
                                     ->values();
                             @endphp
                             @if ($childItems->isNotEmpty())
                                 <li>
-                                    <div x-data="apMenuGroup({{ $hasActive ? 'true' : 'false' }})">
+                                    <div x-data="apMenuGroup(false)">
                                         <button type="button" class="ap-menu-link w-full" x-on:click="toggle()"
                                                 :aria-expanded="open.toString()" aria-haspopup="true">
                                             <x-admin-panel::icon :name="$item['icon']" class="size-[18px] shrink-0 opacity-80" />
@@ -106,7 +94,7 @@
                                              x-transition:enter-end="opacity-100 translate-y-0"
                                              x-transition:leave="transition ease-in duration-150"
                                              x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-                                            <ul class="mt-0.5 space-y-0.5 me-3 border-e border-line/70 ps-0 dark:border-night-line/70">
+                                            <ul class="mt-0.5 space-y-0.5 ms-4 border-s-2 border-line/70 ps-2.5 dark:border-night-line/70">
                                                 @each('admin-panel::components.menu-item', $childItems, 'item')
                                             </ul>
                                         </div>

@@ -16,9 +16,11 @@ use Illuminate\Validation\ValidationException;
  * (index/store/update/show/destroy/sort).
  *
  * انحرافات آگاهانه (مستند در worklog):
- * - درگ‌انددراپ nestable قدیمی با دکمه‌های ↑↓ (جابه‌جایی ordering بین خواهرها با تراکنش)
- *   و «select والد» در فرم (هم برای ایجاد زیرمنو، هم تبدیل به زیرمجموعه/خروج از والد)
- *   جایگزین شد — همان نتیجه نهایی روی menu_id + ordering.
+ * - درگ‌انددراپ nestable قدیمی ابتدا با دکمه‌های ↑↓ (جابه‌جایی ordering بین خواهرها با تراکنش)
+ *   و «select والد» در فرم جایگزین شد — همان نتیجه نهایی روی menu_id + ordering.
+ * - فاز ۱۲-د: درگ‌انددراپ واقعی هم اضافه شد (هم‌الگوی درخت دسته‌بندی‌ها؛ اکشن
+ *   moveNode قبل/بعد/داخل + moveNodeToRoot با گارد ضد حلقه)؛ دکمه‌های ↑↓ و
+ *   «select والد» فرم به‌عنوان جایگزین لمسی/در دسترس حفظ شده‌اند.
  * - قدیمی فرم والد نداشت (زیرمنو فقط با درگ ساخته می‌شد) → فیلد والد اختیاری افزودنی است.
  *
  * کلیدهای دسترسی: صفحه=menus (کلید اصلی منو؛ menus.index هم پذیرفته می‌شود مثل Policy قدیمی)،
@@ -50,7 +52,7 @@ class MenuManager extends Component
 
     public ?string $formCategoryIcon = null;
 
-    /** @var int|string شناسه دسته انتخابی */
+    /** @var int|string|null شناسه دسته انتخابی (انتخابگر درختی int/null ست می‌کند) */
     public $formCategoryId = '';
 
     public bool $formChildren = true;
@@ -122,9 +124,19 @@ class MenuManager extends Component
             $nodes = [];
 
             foreach ($byParent->get($parentId, collect()) as $menu) {
+                $children = $build($menu->id, $level + 1);
+
+                // شناسه‌های زیردرخت (خود گره + همه نوادگان) — گارد سمت کلاینت درگ‌انددراپ
+                $subtreeIds = [$menu->id];
+
+                foreach ($children as $child) {
+                    $subtreeIds = array_merge($subtreeIds, $child['subtreeIds']);
+                }
+
                 $nodes[] = [
-                    'model'    => $menu,
-                    'children' => $build($menu->id, $level + 1),
+                    'model'      => $menu,
+                    'children'   => $children,
+                    'subtreeIds' => $subtreeIds,
                 ];
             }
 
@@ -149,6 +161,33 @@ class MenuManager extends Component
             ->orderBy('ordering')
             ->get()
             ->groupBy('type');
+    }
+
+    /**
+     * درخت تو در توی دسته‌ها برای انتخابگر درختی فرم (فاز ۱۲-د) —
+     * همه گروه‌های نوع (محصولات/وبلاگ/...) در یک درخت ادغام می‌شوند و
+     * عنوان‌ها همان عنوان ساده دسته است (مسیر کامل خودش را درخت نشان می‌دهد).
+     */
+    #[Computed]
+    public function menuCategoryTree(): array
+    {
+        $flat = $this->categories->flatMap(fn ($group) => $group->values());
+
+        // ریشه‌ها = دسته‌هایی که category_id آن‌ها null یا صفر است
+        $byParent = $flat->groupBy(fn ($cat) => (int) $cat->category_id ?: 0);
+
+        $build = function (int $parentId) use (&$build, $byParent): array {
+            return $byParent->get($parentId, collect())
+                ->map(fn ($cat) => [
+                    'id'       => (int) $cat->id,
+                    'title'    => (string) $cat->title,
+                    'children' => $build((int) $cat->id),
+                ])
+                ->values()
+                ->toArray();
+        };
+
+        return $build(0);
     }
 
     /** گزینه‌های «منوی والد» فرم — همه منوها به‌جز خود منو و زیرمجموعه‌هایش (ضد حلقه) */
@@ -579,6 +618,147 @@ class MenuManager extends Component
         });
 
         $this->dispatch('toast', message: 'ترتیب منوها ذخیره شد.', type: 'success');
+    }
+
+    /* ============================ درگ‌انددراپ (فاز ۱۲-د — پورت نهایی sort قدیمی) ============================ */
+
+    /**
+     * جایگزین نهایی jquery.nestable قدیمی با مدل قبل/بعد/داخل (هم‌الگوی CategoryTree):
+     *
+     *   - before/after: گره به خانوادهٔ والدِ هدف منتقل و درجستِ قبل/بعد از هدف
+     *     قرار می‌گیرد؛ خواهرها (با گره) به ۱..n نرمالایز می‌شوند — ترتیب نسبی
+     *     (ordering, id) حفظ می‌شود و ترتیب‌های تکراری/گپ‌دار داده قدیمی اصلاح می‌شود.
+     *   - inside: menu_id = هدف و ordering = nextOrdering(هدف) (انتهای صف فرزندان).
+     *   - فرزندان گره با والدشان جابه‌جا می‌شوند (menu_id آن‌ها دست نمی‌خورد) و برای
+     *     جلوگیری از حلقه، هدف نباید داخل زیردرخت گره باشد (descendantIds شامل
+     *     همه نوادگان است — همان گارد validatedParentId).
+     */
+    public function moveNode(int $dragId, int $targetId, string $mode): void
+    {
+        $this->authorizeUpdate();
+
+        if (! in_array($mode, ['before', 'after', 'inside'], true)) {
+            return;
+        }
+
+        $drag = Menu::detectLang()->find($dragId);
+        $target = Menu::detectLang()->find($targetId);
+
+        if (! $drag || ! $target || $drag->id === $target->id) {
+            return;
+        }
+
+        // ضد حلقه: هدف نباید یکی از زیرشاخه‌های خودِ گره باشد
+        if (in_array($target->id, $this->descendantIds($drag), true)) {
+            $this->dispatch('toast', message: 'انتقال منو به داخل زیرمجموعهٔ خودش مجاز نیست.', type: 'error');
+
+            return;
+        }
+
+        $oldParentId = $drag->menu_id !== null ? (int) $drag->menu_id : null;
+        $newParentId = null;
+
+        DB::transaction(function () use ($drag, $target, $mode, $oldParentId) {
+            if ($mode === 'inside') {
+                $newParentId = (int) $target->id;
+
+                $drag->menu_id = $newParentId;
+                $drag->ordering = $this->nextOrdering($newParentId); // انتهای صف فرزندان هدف
+                $drag->save();
+
+                $this->renumberSiblings($newParentId);
+            } else {
+                $newParentId = $target->menu_id !== null ? (int) $target->menu_id : null;
+
+                $drag->menu_id = $newParentId;
+                $drag->save();
+
+                // خواهرهای والدِ هدف بدون خودِ گره — با ترتیب استاندارد صفحه
+                $siblings = Menu::detectLang()
+                    ->where('menu_id', $target->menu_id)
+                    ->where('id', '!=', $drag->id)
+                    ->orderBy('ordering')
+                    ->orderBy('id')
+                    ->pluck('id')
+                    ->values();
+
+                $position = $siblings->search($target->id);
+
+                if ($position === false) {
+                    $position = $siblings->count();
+                }
+
+                // درج گره قبل/بعد از هدف (جابه‌جایی هم‌سطح) و نرمال‌سازی ۱..n
+                $siblings->splice($mode === 'before' ? $position : $position + 1, 0, [$drag->id]);
+
+                foreach ($siblings as $index => $siblingId) {
+                    Menu::whereKey($siblingId)->update(['ordering' => $index + 1]);
+                }
+            }
+
+            // پاک‌سازی گپ والد قبلی بعد از خروج گره (حفظ ترتیب نسبی)
+            if ($oldParentId !== $newParentId) {
+                $this->renumberSiblings($oldParentId);
+            }
+        });
+
+        $this->dispatch('toast', message: 'ساختار منوها به‌روزرسانی شد.', type: 'success');
+    }
+
+    /**
+     * فاز ۱۲-د — خارج کردن منو از زیرمجموعه با درگ (رها کردن روی ناحیه «سطح ریشه»):
+     * menu_id=null + انتهای صف ریشه، مثل خروجی فرم با والدِ «منوی اصلی».
+     */
+    public function moveNodeToRoot(int $dragId): void
+    {
+        $this->authorizeUpdate();
+
+        $drag = Menu::detectLang()->find($dragId);
+
+        if (! $drag || $drag->menu_id === null) {
+            return; // از قبل ریشه است
+        }
+
+        $oldParentId = (int) $drag->menu_id;
+
+        DB::transaction(function () use ($drag, $oldParentId) {
+            $drag->menu_id = null;
+            $drag->ordering = $this->nextOrdering(null); // انتهای صف ریشه
+            $drag->save();
+
+            $this->renumberSiblings($oldParentId); // پاک‌سازی گپ والد قبلی
+            $this->renumberSiblings(null);         // نرمال‌سازی ترتیب ریشه‌ها
+        });
+
+        $this->dispatch('toast', message: 'منو به سطح ریشه منتقل شد.', type: 'success');
+    }
+
+    /* ============================ کمکی ============================ */
+
+    /** بزرگ‌ترین ترتیب خواهرها + ۱ (برای افزودن به انتهای سطح) */
+    protected function nextOrdering(?int $parentId): int
+    {
+        return (int) Menu::detectLang()
+            ->where('menu_id', $parentId)
+            ->max('ordering') + 1;
+    }
+
+    /**
+     * نرمال‌سازی ترتیب خواهرها به ۱..n با حفظ ترتیب نسبی فعلی (ordering, id) —
+     * ترتیب‌های null/تکراری/گپ‌دار داده قدیمی اصلاح می‌شود و رندر تغییر نمی‌کند.
+     */
+    protected function renumberSiblings(?int $parentId): void
+    {
+        $ids = Menu::detectLang()
+            ->where('menu_id', $parentId)
+            ->orderBy('ordering')
+            ->orderBy('id')
+            ->pluck('id')
+            ->values();
+
+        foreach ($ids as $index => $id) {
+            Menu::whereKey($id)->update(['ordering' => $index + 1]);
+        }
     }
 
     /* ============================ برچسب‌ها (مثل ویوهای قدیمی) ============================ */

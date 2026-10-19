@@ -1,10 +1,11 @@
-{{-- فرم‌ساز — پنل جدید (فاز ۶) — پورت ۱:۱ back/forms/{create,edit} + سازنده‌ی فیلد Alpine --}}
+{{-- فرم‌ساز — پنل جدید (بازطراحی تب‌بندی فاز ۱۲) — پورت ۱:۱ back/forms/{create,edit} + سازنده‌ی فیلد Alpine --}}
 @php
     $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
 @endphp
-<div class="mx-auto max-w-7xl space-y-5" x-data="fbBuilder({
+<div class="mx-auto max-w-6xl space-y-5" x-data="fbBuilder({
         isEditing: @js($isEditing),
         existingNames: @js($this->existingFields->pluck('name')->all()),
+        existingCount: @js($this->existingFields->count()),
         typeNames: @js(\App\Livewire\Admin\Forms\FormBuilder::TYPE_NAMES),
         typeIcons: @js(\App\Livewire\Admin\Forms\FormBuilder::TYPE_ICONS),
         choiceTypes: @js(['select', 'radio', 'checkbox'])
@@ -12,37 +13,124 @@
 
     {{-- سربرگ --}}
     <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-2">
-            <a href="{{ route('np.forms.index') }}" wire:navigate
-               class="rounded-lg p-2 text-ink-3 transition-colors hover:bg-surface-3 dark:hover:bg-night-3"
-               aria-label="بازگشت به فرم‌ها" title="بازگشت">
-                <x-admin-panel::icon name="arrow-right" class="size-4.5" />
-            </a>
-            <h1 class="text-base font-bold sm:text-lg">
-                {{ $isEditing ? 'ویرایش فرم: ' . $form->title : 'ایجاد فرم جدید' }}
-            </h1>
+        <div class="flex flex-wrap items-center gap-2.5">
+            <span class="flex size-10 items-center justify-center rounded-xl bg-brand-600 text-white shadow-card">
+                <x-admin-panel::icon name="layout-template" class="size-5" />
+            </span>
+            <div>
+                <h1 class="text-base font-extrabold sm:text-lg">
+                    {{ $isEditing ? 'ویرایش فرم: ' . $form->title : 'ایجاد فرم جدید' }}
+                </h1>
+                <p class="mt-0.5 text-[11px] text-ink-3 dark:text-night-ink-2">
+                    @if ($isEditing)
+                        نامک: <code dir="ltr" class="text-[10px]">{{ $form->slug }}</code>
+                    @else
+                        عنوان، فیلدها و تنظیمات فرم را در تب‌های زیر تکمیل کنید
+                    @endif
+                </p>
+            </div>
+            @if ($isEditing)
+                @if ($published)
+                    <span class="ap-badge bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-400">
+                        <x-admin-panel::icon name="check" class="size-3" />
+                        منتشر شده
+                    </span>
+                @else
+                    <span class="ap-badge bg-amber-50 text-amber-700 dark:bg-amber-500/12 dark:text-amber-400">
+                        <x-admin-panel::icon name="clock" class="size-3" />
+                        پیش‌نویس
+                    </span>
+                @endif
+            @else
+                <span class="ap-badge bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-400">فرم تازه</span>
+            @endif
         </div>
-        <button type="button" x-on:click="submitForm" wire:loading.attr="disabled" wire:target="save"
-                class="ap-btn">
-            <x-admin-panel::icon name="check" class="size-4" />
-            ذخیره فرم
-        </button>
+        <a href="{{ route('np.forms.index') }}" wire:navigate class="ap-btn-ghost !py-2">
+            <x-admin-panel::icon name="arrow-right" class="size-4" />
+            لیست فرم‌ها
+        </a>
     </div>
 
-    <div class="grid grid-cols-1 gap-5 xl:grid-cols-3">
+    {{-- همه‌ی تب‌ها داخل یک فرم هستند و با یک ذخیره ارسال می‌شوند --}}
+    <form x-on:submit.prevent="submitForm" class="space-y-5">
 
-        {{-- ستون فیلدهای فرم (تمام عرض در موبایل، ۲/۳ عرض در دسکتاپ) --}}
-        <div class="space-y-5 xl:col-span-2">
+        <div class="ap-card overflow-hidden">
+            {{-- نوار تب‌ها (الگوی فرم محصول) --}}
+            <div class="flex gap-1 overflow-x-auto border-b border-line bg-surface-2 px-2 pt-2 dark:border-night-line dark:bg-night-3/50" role="tablist">
+                @foreach ([
+                    'info'     => ['clipboard-list', 'اطلاعات فرم'],
+                    'fields'   => ['list', 'فیلدها'],
+                    'messages' => ['bell', 'پیام‌ها و اعلان'],
+                    'seo'      => ['search', 'سئو'],
+                ] as $tab => [$icon, $label])
+                    <button type="button" class="ap-tab relative whitespace-nowrap" x-on:click="tab = '{{ $tab }}'"
+                            x-bind:aria-selected="(tab === '{{ $tab }}').toString()" role="tab"
+                            x-bind:class="tab === '{{ $tab }}' ? 'is-active' : ''">
+                        <x-admin-panel::icon name="{{ $icon }}" class="size-4" />
+                        {{ $label }}
+                        @if ($tab === 'fields')
+                            <span class="fa-digits ms-1 rounded-md bg-brand-100 px-1.5 text-[10px] font-bold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300"
+                                  x-text="(existingCount + fields.length).toLocaleString('fa-IR')"
+                                  x-cloak>{{ $this->existingFields->count() }}</span>
+                        @endif
+                    </button>
+                @endforeach
+            </div>
 
-            {{-- کارت فیلدهای فرم --}}
-            <div class="ap-card overflow-hidden">
-                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line p-4 dark:border-night-line sm:p-5">
+            {{-- ================= تب اطلاعات فرم ================= --}}
+            <div id="fb-tab-info" x-show="tab === 'info'" x-cloak class="animate-fade-in space-y-5 p-5 sm:p-6">
+                <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    <div>
+                        <label class="mb-1.5 block text-[13px] font-semibold" for="fb-title">عنوان فرم <span class="text-red-500">*</span></label>
+                        <input id="fb-title" type="text" wire:model="title" class="ap-input" placeholder="مثال: فرم تماس با ما">
+                        <p class="mt-1 text-[11px] text-ink-3 dark:text-night-ink-2">این عنوان در لیست فرم‌ها و صفحه نمایش داده می‌شود</p>
+                        @error('title') <p class="fb-err mt-1 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="mb-1.5 block text-[13px] font-semibold" for="fb-slug">نامک (آدرس)</label>
+                        <input id="fb-slug" type="text" wire:model="slug" dir="ltr" class="ap-input font-mono text-start" placeholder="contact-us">
+                        <p class="mt-1 text-[11px] text-ink-3 dark:text-night-ink-2">بهتر است خالی بماند و از عنوان ساخته شود</p>
+                        @error('slug') <p class="fb-err mt-1 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- انتشار --}}
+                    <div class="md:col-span-2">
+                        <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-line bg-surface-2 p-3.5 transition-colors hover:border-brand-300 dark:border-night-line dark:bg-night-3 dark:hover:border-brand-500/50">
+                            <input type="checkbox" wire:model="published" class="peer sr-only">
+                            <span class="relative h-6 w-11 shrink-0 rounded-full bg-surface-3 transition-colors duration-200 after:absolute after:top-0.5 after:start-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-brand-600 peer-checked:after:translate-x-[-1.25rem] peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/40 dark:bg-night-3 dark:after:bg-night-ink dark:peer-checked:bg-brand-500"
+                                  aria-hidden="true"></span>
+                            <span class="min-w-0">
+                                <span class="block text-[13px] font-bold">انتشار صفحه فرم</span>
+                                <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">در صورت فعال بودن، فرم در سایت برای بازدیدکنندگان نمایش داده می‌شود</span>
+                            </span>
+                        </label>
+                    </div>
+
+                    {{-- توضیحات فرم (CKEditor با پل ApEditor) — تب پیش‌فرض است تا ویرایشگر در نمای اول راه‌اندازی شود --}}
+                    <div class="md:col-span-2">
+                        <label class="mb-1.5 block text-[13px] font-semibold">توضیحات فرم</label>
+                        <div class="overflow-hidden rounded-xl border border-line dark:border-night-line" wire:ignore>
+                            <div id="ap-ckeditor" data-editor-value="{{ $description }}"></div>
+                        </div>
+                        <input type="hidden" wire:model="description" id="ap-ckeditor-input">
+                        <p class="mt-1 text-[11px] text-ink-3 dark:text-night-ink-2">متن اختیاری بالای فرم در صفحه سایت</p>
+                        @error('description') <p class="fb-err mt-1 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+            </div>
+
+            {{-- ================= تب فیلدها ================= --}}
+            <div id="fb-tab-fields" x-show="tab === 'fields'" x-cloak class="animate-fade-in space-y-4 p-5 sm:p-6">
+                <div class="flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <h2 class="flex items-center gap-2 text-sm font-bold">
-                            <x-admin-panel::icon name="list" class="size-4.5 text-brand-600 dark:text-brand-400" />
+                            <span class="flex size-8 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
+                                <x-admin-panel::icon name="list" class="size-4" />
+                            </span>
                             فیلدهای فرم
                         </h2>
-                        <p class="mt-0.5 text-xs text-ink-3 dark:text-night-ink-2">
+                        <p class="mt-1 text-[11px] text-ink-3 dark:text-night-ink-2">
                             @if ($isEditing)
                                 فیلدهای ذخیره‌شده با فلش‌های بالا/پایین جابجا می‌شوند؛ فقط فیلدهای جدید پس از ذخیره به فرم اضافه می‌شوند
                             @else
@@ -56,245 +144,226 @@
                     </button>
                 </div>
 
-                <div class="p-4 sm:p-5">
-                    @error('fieldsData')
-                        <div class="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-[13px] font-medium text-red-700 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-300">
-                            <x-admin-panel::icon name="triangle-alert" class="mt-0.5 size-4 shrink-0" />
-                            <span>{{ $message }}</span>
-                        </div>
-                    @enderror
+                @error('fieldsData')
+                    <div class="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-[13px] font-medium text-red-700 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-300">
+                        <x-admin-panel::icon name="triangle-alert" class="mt-0.5 size-4 shrink-0" />
+                        <span>{{ $message }}</span>
+                    </div>
+                @enderror
 
-                    {{-- فیلدهای موجود (حالت ویرایش) --}}
-                    @if ($isEditing)
-                        <ul class="mb-4 space-y-2.5">
-                            @forelse ($this->existingFields as $existing)
-                                <li wire:key="existing-field-{{ $existing->id }}"
-                                    class="rounded-xl border border-line bg-surface-2 p-3.5 transition-colors hover:border-brand-300 dark:border-night-line dark:bg-night-3">
-                                    <div class="flex items-start justify-between gap-2">
-                                        <div class="min-w-0">
-                                            <div class="flex flex-wrap items-center gap-2">
-                                                <span class="text-ink-3"><x-admin-panel::icon name="ellipsis" class="size-4" /></span>
-                                                <strong class="text-[13px]">{{ $existing->label }}</strong>
-                                                <span class="ap-badge bg-surface-3 text-ink-2 dark:bg-night-3 dark:text-night-ink-2">
-                                                    {{ \App\Livewire\Admin\Forms\FormBuilder::typeName($existing->type) }}
-                                                </span>
-                                                @if ($existing->required)
-                                                    <span class="ap-badge bg-red-50 text-red-600 dark:bg-red-500/12 dark:text-red-400">ضروری</span>
-                                                @endif
-                                            </div>
-                                            <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-ink-3 dark:text-night-ink-2">
-                                                <span>نام: <code dir="ltr">{{ $existing->name }}</code></span>
-                                                @if ($existing->placeholder)
-                                                    <span>| متن نمایشی: {{ $existing->placeholder }}</span>
-                                                @endif
-                                                @if ($existing->help_text)
-                                                    <span>| راهنما: {{ $existing->help_text }}</span>
-                                                @endif
-                                                @if ($existing->rules_validation)
-                                                    <span dir="ltr">| اعتبارسنجی: {{ $existing->rules_validation }}</span>
-                                                @endif
-                                                @if ($existing->default_value)
-                                                    <span>| مقدار پیش‌فرض: {{ $existing->default_value }}</span>
-                                                @endif
-                                                @if ($existing->class)
-                                                    <span dir="ltr">| کلاس: {{ $existing->class }}</span>
-                                                @endif
-                                            </div>
-                                            @if ($existing->options && is_array($existing->options) && count($existing->options))
-                                                <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
-                                                    <span class="text-[11px] text-ink-3">گزینه‌ها:</span>
-                                                    @foreach ($existing->options as $option)
-                                                        <span class="rounded-md border border-line bg-surface px-1.5 py-0.5 text-[11px] dark:border-night-line dark:bg-night-2">{{ $option }}</span>
-                                                    @endforeach
-                                                </div>
-                                            @endif
-                                        </div>
-                                        <div class="flex shrink-0 items-center gap-0.5">
-                                            <button type="button" wire:click="moveExistingField({{ $existing->id }}, 'up')"
-                                                    class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10"
-                                                    title="جابجایی به بالا" aria-label="بالا">
-                                                <x-admin-panel::icon name="chevron-up" class="size-4" />
-                                            </button>
-                                            <button type="button" wire:click="moveExistingField({{ $existing->id }}, 'down')"
-                                                    class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10"
-                                                    title="جابجایی به پایین" aria-label="پایین">
-                                                <x-admin-panel::icon name="chevron-down" class="size-4" />
-                                            </button>
-                                            @can('forms.delete')
-                                                <button type="button" wire:click="confirmDeleteField({{ $existing->id }})"
-                                                        class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
-                                                        title="حذف فیلد" aria-label="حذف">
-                                                    <x-admin-panel::icon name="trash-2" class="size-4" />
-                                                </button>
-                                            @endcan
-                                        </div>
-                                    </div>
-                                </li>
-                            @empty
-                                <li class="flex flex-col items-center gap-1.5 py-6 text-center text-ink-3 dark:text-night-ink-2">
-                                    <x-admin-panel::icon name="list" class="size-8 opacity-40" />
-                                    <p class="text-[13px] font-medium">این فرم هنوز فیلد ذخیره‌شده ندارد</p>
-                                </li>
-                            @endforelse
-                        </ul>
-                    @endif
-
-                    {{-- فیلدهای جدید هنوز ذخیره‌نشده (سازنده‌ی Alpine) --}}
-                    <ul class="space-y-2.5" x-show="fields.length > 0">
-                        <template x-for="(field, index) in fields" :key="field.id">
-                            <li class="rounded-xl border border-brand-200 bg-brand-50/50 p-3.5 dark:border-brand-500/25 dark:bg-brand-500/8">
+                {{-- فیلدهای موجود (حالت ویرایش) --}}
+                @if ($isEditing)
+                    <ul class="space-y-2.5">
+                        @forelse ($this->existingFields as $existing)
+                            <li wire:key="existing-field-{{ $existing->id }}"
+                                class="rounded-xl border border-line bg-surface-2 p-3.5 transition-colors hover:border-brand-300 dark:border-night-line dark:bg-night-3">
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="min-w-0">
                                         <div class="flex flex-wrap items-center gap-2">
-                                            <span class="ap-badge bg-brand-600 text-white">جدید</span>
-                                            <strong class="text-[13px]" x-text="field.label"></strong>
-                                            <span class="ap-badge bg-surface-3 text-ink-2 dark:bg-night-3 dark:text-night-ink-2" x-text="typeNames[field.type] ?? field.type"></span>
-                                            <span class="ap-badge bg-red-50 text-red-600 dark:bg-red-500/12 dark:text-red-400" x-show="field.required">ضروری</span>
+                                            <span class="text-ink-3"><x-admin-panel::icon name="ellipsis" class="size-4" /></span>
+                                            <strong class="text-[13px]">{{ $existing->label }}</strong>
+                                            <span class="ap-badge bg-surface-3 text-ink-2 dark:bg-night-3 dark:text-night-ink-2">
+                                                {{ \App\Livewire\Admin\Forms\FormBuilder::typeName($existing->type) }}
+                                            </span>
+                                            @if ($existing->required)
+                                                <span class="ap-badge bg-red-50 text-red-600 dark:bg-red-500/12 dark:text-red-400">ضروری</span>
+                                            @endif
                                         </div>
                                         <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-ink-3 dark:text-night-ink-2">
-                                            <span>نام: <code dir="ltr" x-text="field.name"></code></span>
-                                            <span x-show="field.placeholder">| متن نمایشی: <span x-text="field.placeholder"></span></span>
-                                            <span x-show="field.help_text">| راهنما: <span x-text="field.help_text"></span></span>
-                                            <span x-show="field.validation" dir="ltr">| اعتبارسنجی: <span x-text="field.validation"></span></span>
-                                            <span x-show="field.default_value">| مقدار پیش‌فرض: <span x-text="field.default_value"></span></span>
-                                            <span x-show="field.class" dir="ltr">| کلاس: <span x-text="field.class"></span></span>
+                                            <span>نام: <code dir="ltr">{{ $existing->name }}</code></span>
+                                            @if ($existing->placeholder)
+                                                <span>| متن نمایشی: {{ $existing->placeholder }}</span>
+                                            @endif
+                                            @if ($existing->help_text)
+                                                <span>| راهنما: {{ $existing->help_text }}</span>
+                                            @endif
+                                            @if ($existing->rules_validation)
+                                                <span dir="ltr">| اعتبارسنجی: {{ $existing->rules_validation }}</span>
+                                            @endif
+                                            @if ($existing->default_value)
+                                                <span>| مقدار پیش‌فرض: {{ $existing->default_value }}</span>
+                                            @endif
+                                            @if ($existing->class)
+                                                <span dir="ltr">| کلاس: {{ $existing->class }}</span>
+                                            @endif
                                         </div>
-                                        <div class="mt-1.5 flex flex-wrap items-center gap-1.5" x-show="field.options && field.options.length > 0">
-                                            <span class="text-[11px] text-ink-3">گزینه‌ها:</span>
-                                            <template x-for="(option, optionIndex) in field.options" :key="optionIndex">
-                                                <span class="rounded-md border border-line bg-surface px-1.5 py-0.5 text-[11px] dark:border-night-line dark:bg-night-2" x-text="option"></span>
-                                            </template>
-                                        </div>
+                                        @if ($existing->options && is_array($existing->options) && count($existing->options))
+                                            <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                                <span class="text-[11px] text-ink-3">گزینه‌ها:</span>
+                                                @foreach ($existing->options as $option)
+                                                    <span class="rounded-md border border-line bg-surface px-1.5 py-0.5 text-[11px] dark:border-night-line dark:bg-night-2">{{ $option }}</span>
+                                                @endforeach
+                                            </div>
+                                        @endif
                                     </div>
                                     <div class="flex shrink-0 items-center gap-0.5">
-                                        <button type="button" x-on:click="moveField(index, -1)"
+                                        <button type="button" wire:click="moveExistingField({{ $existing->id }}, 'up')"
                                                 class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10"
                                                 title="جابجایی به بالا" aria-label="بالا">
                                             <x-admin-panel::icon name="chevron-up" class="size-4" />
                                         </button>
-                                        <button type="button" x-on:click="moveField(index, 1)"
+                                        <button type="button" wire:click="moveExistingField({{ $existing->id }}, 'down')"
                                                 class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10"
                                                 title="جابجایی به پایین" aria-label="پایین">
                                             <x-admin-panel::icon name="chevron-down" class="size-4" />
                                         </button>
-                                        <button type="button" x-on:click="removeField(index)"
-                                                class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
-                                                title="حذف فیلد جدید" aria-label="حذف">
-                                            <x-admin-panel::icon name="trash-2" class="size-4" />
-                                        </button>
+                                        @can('forms.delete')
+                                            <button type="button" wire:click="confirmDeleteField({{ $existing->id }})"
+                                                    class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
+                                                    title="حذف فیلد" aria-label="حذف">
+                                                <x-admin-panel::icon name="trash-2" class="size-4" />
+                                            </button>
+                                        @endcan
                                     </div>
                                 </div>
                             </li>
-                        </template>
+                        @empty
+                            <li class="flex flex-col items-center gap-1.5 py-6 text-center text-ink-3 dark:text-night-ink-2">
+                                <x-admin-panel::icon name="list" class="size-8 opacity-40" />
+                                <p class="text-[13px] font-medium">این فرم هنوز فیلد ذخیره‌شده ندارد</p>
+                            </li>
+                        @endforelse
                     </ul>
+                @endif
 
-                    {{-- حالت خالی (create بدون فیلد) --}}
-                    <div x-show="fields.length === 0" class="flex flex-col items-center gap-1.5 py-8 text-center text-ink-3 dark:text-night-ink-2">
-                        <x-admin-panel::icon name="list" class="size-10 opacity-40" />
-                        <p class="text-sm font-semibold">هنوز فیلدی اضافه نشده است</p>
-                        <p class="text-xs">برای شروع، روی «افزودن فیلد جدید» بزنید</p>
+                {{-- فیلدهای جدید هنوز ذخیره‌نشده (سازنده‌ی Alpine) --}}
+                <ul class="space-y-2.5" x-show="fields.length > 0">
+                    <template x-for="(field, index) in fields" :key="field.id">
+                        <li class="rounded-xl border border-brand-200 bg-brand-50/50 p-3.5 dark:border-brand-500/25 dark:bg-brand-500/8">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="ap-badge bg-brand-600 text-white">جدید</span>
+                                        <strong class="text-[13px]" x-text="field.label"></strong>
+                                        <span class="ap-badge bg-surface-3 text-ink-2 dark:bg-night-3 dark:text-night-ink-2" x-text="typeNames[field.type] ?? field.type"></span>
+                                        <span class="ap-badge bg-red-50 text-red-600 dark:bg-red-500/12 dark:text-red-400" x-show="field.required">ضروری</span>
+                                    </div>
+                                    <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-ink-3 dark:text-night-ink-2">
+                                        <span>نام: <code dir="ltr" x-text="field.name"></code></span>
+                                        <span x-show="field.placeholder">| متن نمایشی: <span x-text="field.placeholder"></span></span>
+                                        <span x-show="field.help_text">| راهنما: <span x-text="field.help_text"></span></span>
+                                        <span x-show="field.validation" dir="ltr">| اعتبارسنجی: <span x-text="field.validation"></span></span>
+                                        <span x-show="field.default_value">| مقدار پیش‌فرض: <span x-text="field.default_value"></span></span>
+                                        <span x-show="field.class" dir="ltr">| کلاس: <span x-text="field.class"></span></span>
+                                    </div>
+                                    <div class="mt-1.5 flex flex-wrap items-center gap-1.5" x-show="field.options && field.options.length > 0">
+                                        <span class="text-[11px] text-ink-3">گزینه‌ها:</span>
+                                        <template x-for="(option, optionIndex) in field.options" :key="optionIndex">
+                                            <span class="rounded-md border border-line bg-surface px-1.5 py-0.5 text-[11px] dark:border-night-line dark:bg-night-2" x-text="option"></span>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="flex shrink-0 items-center gap-0.5">
+                                    <button type="button" x-on:click="moveField(index, -1)"
+                                            class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10"
+                                            title="جابجایی به بالا" aria-label="بالا">
+                                        <x-admin-panel::icon name="chevron-up" class="size-4" />
+                                    </button>
+                                    <button type="button" x-on:click="moveField(index, 1)"
+                                            class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10"
+                                            title="جابجایی به پایین" aria-label="پایین">
+                                        <x-admin-panel::icon name="chevron-down" class="size-4" />
+                                    </button>
+                                    <button type="button" x-on:click="removeField(index)"
+                                            class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
+                                            title="حذف فیلد جدید" aria-label="حذف">
+                                        <x-admin-panel::icon name="trash-2" class="size-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        </li>
+                    </template>
+                </ul>
+
+                {{-- حالت خالی (فقط create بدون فیلد — در ویرایش، لیست سروری بالاتر خالی بودن را نشان می‌دهد) --}}
+                <div x-show="! isEditing && fields.length === 0" class="flex flex-col items-center gap-1.5 py-8 text-center text-ink-3 dark:text-night-ink-2">
+                    <x-admin-panel::icon name="list" class="size-10 opacity-40" />
+                    <p class="text-sm font-semibold">هنوز فیلدی اضافه نشده است</p>
+                    <p class="text-xs">برای شروع، روی «افزودن فیلد جدید» بزنید</p>
+                </div>
+            </div>
+
+            {{-- ================= تب پیام‌ها و اعلان ================= --}}
+            <div id="fb-tab-messages" x-show="tab === 'messages'" x-cloak class="animate-fade-in grid grid-cols-1 gap-5 p-5 sm:p-6 md:grid-cols-2">
+                <div>
+                    <label class="mb-1.5 block text-[13px] font-semibold" for="fb-success-message">پیام موفقیت</label>
+                    <input id="fb-success-message" type="text" wire:model="success_message" class="ap-input" placeholder="فرم با موفقیت ارسال شد">
+                    <p class="mt-1 text-[11px] text-ink-3 dark:text-night-ink-2">پس از ارسال فرم به کاربر نمایش داده می‌شود</p>
+                    @error('success_message') <p class="fb-err mt-1 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label class="mb-1.5 block text-[13px] font-semibold" for="fb-button-text">متن دکمه ارسال</label>
+                    <input id="fb-button-text" type="text" wire:model="button_text" class="ap-input" placeholder="ارسال">
+                    <p class="mt-1 text-[11px] text-ink-3 dark:text-night-ink-2">متن روی دکمه‌ی ثبت فرم در سایت</p>
+                    @error('button_text') <p class="fb-err mt-1 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="mb-1.5 block text-[13px] font-semibold" for="fb-email-notify">ایمیل اعلان</label>
+                    <div class="flex items-start gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                        <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
+                            <x-admin-panel::icon name="bell" class="size-4" />
+                        </span>
+                        <span class="min-w-0 flex-1">
+                            <input id="fb-email-notify" type="email" wire:model="email_notify" dir="ltr" class="ap-input" placeholder="info@example.com">
+                            <p class="mt-1.5 text-[11px] text-ink-3 dark:text-night-ink-2">در صورت پر شدن، اعلان هر پاسخ جدید به این ایمیل ارسال می‌شود</p>
+                            @error('email_notify') <p class="fb-err mt-1 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                        </span>
                     </div>
                 </div>
             </div>
 
-            {{-- دکمه‌های اقدام --}}
-            <div class="ap-card flex items-center justify-between gap-3 p-4 sm:p-5">
-                <p class="text-xs text-ink-3 dark:text-night-ink-2">
-                    نامک (اسلاگ) در صورت خالی بودن از عنوان ساخته می‌شود
-                </p>
-                <button type="button" x-on:click="submitForm" wire:loading.attr="disabled" wire:target="save"
-                        class="ap-btn">
-                    <x-admin-panel::icon name="check" class="size-4" />
-                    ذخیره فرم
+            {{-- ================= تب سئو ================= --}}
+            <div id="fb-tab-seo" x-show="tab === 'seo'" x-cloak class="animate-fade-in space-y-5 p-5 sm:p-6">
+                <h2 class="flex items-center gap-2 text-sm font-bold">
+                    <span class="flex size-8 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
+                        <x-admin-panel::icon name="search" class="size-4" />
+                    </span>
+                    تنظیمات سئو
+                </h2>
+                <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    <div>
+                        <label class="mb-1.5 block text-[13px] font-semibold" for="fb-meta-title">عنوان سئو</label>
+                        <input id="fb-meta-title" type="text" wire:model="meta_title" class="ap-input">
+                        <p class="mt-1 text-[11px] text-ink-3 dark:text-night-ink-2">در صورت خالی بودن، عنوان فرم استفاده می‌شود</p>
+                        @error('meta_title') <p class="fb-err mt-1 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-[13px] font-semibold" for="fb-meta-description">توضیحات سئو</label>
+                        <textarea id="fb-meta-description" rows="3" wire:model="meta_description" class="ap-input"></textarea>
+                        @error('meta_description') <p class="fb-err mt-1 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+                <div class="space-y-2 rounded-xl border border-line bg-surface-2 p-3 text-[11px] text-ink-3 dark:border-night-line dark:bg-night-3 dark:text-night-ink-2">
+                    <p class="flex items-center gap-1.5"><x-admin-panel::icon name="check" class="size-3.5 text-brand-500" /> ایجاد Google Snippet برای موتور جستجو (خودکار)</p>
+                    <p class="flex items-center gap-1.5"><x-admin-panel::icon name="check" class="size-3.5 text-brand-500" /> ایجاد پیشنمایش برای شبکه‌های اجتماعی (خودکار)</p>
+                    <p class="flex items-center gap-1.5"><x-admin-panel::icon name="check" class="size-3.5 text-brand-500" /> افزودن به sitemap.xml سایت (خودکار)</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- نوار ذخیره چسبان --}}
+        <div class="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface/95 p-3.5 shadow-pop backdrop-blur dark:border-night-line dark:bg-night-2/95">
+            <p class="hidden items-center gap-1.5 text-[11px] text-ink-3 dark:text-night-ink-2 sm:flex">
+                <x-admin-panel::icon name="info" class="size-3.5" />
+                همه‌ی تب‌ها با یک ذخیره ثبت می‌شوند — نامک خالی از عنوان ساخته می‌شود
+            </p>
+            <div class="flex items-center gap-2.5">
+                <a href="{{ route('np.forms.index') }}" wire:navigate class="ap-btn-ghost">انصراف</a>
+                <button type="submit" wire:loading.attr="disabled" wire:target="save"
+                        class="ap-btn-primary min-w-36">
+                    <span wire:loading.remove wire:target="save">ذخیره فرم</span>
+                    <span wire:loading wire:target="save" class="flex items-center justify-center gap-2">
+                        <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                            <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
+                        </svg>
+                        در حال ذخیره…
+                    </span>
                 </button>
             </div>
         </div>
-
-        {{-- ستون متادیتای فرم --}}
-        <div class="space-y-5">
-            <div class="ap-card p-4 sm:p-5">
-                <h2 class="mb-4 flex items-center gap-2 text-sm font-bold">
-                    <x-admin-panel::icon name="clipboard-list" class="size-4.5 text-brand-600 dark:text-brand-400" />
-                    اطلاعات فرم
-                </h2>
-
-                <form wire:submit="save" class="space-y-4">
-                    <div>
-                        <label class="mb-1.5 block text-xs font-semibold" for="fb-title">عنوان فرم <span class="text-red-500">*</span></label>
-                        <input id="fb-title" type="text" wire:model="title" class="ap-input" placeholder="مثال: فرم تماس با ما">
-                        @error('title') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div>
-                        <label class="mb-1.5 block text-xs font-semibold" for="fb-slug">نامک (آدرس)</label>
-                        <input id="fb-slug" type="text" wire:model="slug" dir="ltr" class="ap-input font-mono" placeholder="contact-us">
-                        <p class="mt-1 text-[11px] text-ink-3 dark:text-night-ink-2">بهتر است خالی بماند و خودکار ایجاد شود</p>
-                        @error('slug') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div>
-                        <label class="mb-1.5 block text-xs font-semibold" for="fb-success-message">پیام موفقیت</label>
-                        <input id="fb-success-message" type="text" wire:model="success_message" class="ap-input" placeholder="فرم با موفقیت ارسال شد">
-                        @error('success_message') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div>
-                        <label class="mb-1.5 block text-xs font-semibold" for="fb-button-text">متن دکمه ارسال</label>
-                        <input id="fb-button-text" type="text" wire:model="button_text" class="ap-input" placeholder="ارسال">
-                        @error('button_text') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div>
-                        <label class="mb-1.5 block text-xs font-semibold" for="fb-email-notify">ایمیل اعلان</label>
-                        <input id="fb-email-notify" type="email" wire:model="email_notify" dir="ltr" class="ap-input" placeholder="info@example.com">
-                        <p class="mt-1 text-[11px] text-ink-3 dark:text-night-ink-2">در صورت پر شدن، اعلان پاسخ جدید ایمیل می‌شود</p>
-                        @error('email_notify') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
-                    </div>
-
-                    <label class="flex cursor-pointer items-center gap-2.5 rounded-xl border border-line bg-surface-2 p-3 dark:border-night-line dark:bg-night-3">
-                        <input type="checkbox" wire:model="published"
-                               class="size-4 cursor-pointer rounded border-line text-brand-600">
-                        <span class="text-[13px] font-semibold">انتشار صفحه؟</span>
-                    </label>
-
-                    {{-- توضیحات فرم (CKEditor با پل ApEditor) --}}
-                    <div>
-                        <label class="mb-1.5 block text-xs font-semibold">توضیحات فرم</label>
-                        <div class="overflow-hidden rounded-xl border border-line dark:border-night-line" wire:ignore>
-                            <div id="ap-ckeditor" data-editor-value="{{ $description }}"></div>
-                        </div>
-                        <input type="hidden" wire:model="description" id="ap-ckeditor-input">
-                        @error('description') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
-                    </div>
-                </form>
-            </div>
-
-            {{-- تنظیمات سئو --}}
-            <div class="ap-card p-4 sm:p-5">
-                <h2 class="mb-4 flex items-center gap-2 text-sm font-bold">
-                    <x-admin-panel::icon name="search" class="size-4.5 text-brand-600 dark:text-brand-400" />
-                    تنظیمات سئو
-                </h2>
-                <div class="space-y-4">
-                    <div>
-                        <label class="mb-1.5 block text-xs font-semibold" for="fb-meta-title">عنوان سئو</label>
-                        <input id="fb-meta-title" type="text" wire:model="meta_title" class="ap-input">
-                        @error('meta_title') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
-                    </div>
-                    <div>
-                        <label class="mb-1.5 block text-xs font-semibold" for="fb-meta-description">توضیحات سئو</label>
-                        <textarea id="fb-meta-description" rows="3" wire:model="meta_description" class="ap-input"></textarea>
-                        @error('meta_description') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
-                    </div>
-                    <div class="space-y-2 rounded-xl border border-line bg-surface-2 p-3 text-[11px] text-ink-3 dark:border-night-line dark:bg-night-3 dark:text-night-ink-2">
-                        <p class="flex items-center gap-1.5"><x-admin-panel::icon name="check" class="size-3.5 text-brand-500" /> ایجاد Google Snippet برای موتور جستجو (خودکار)</p>
-                        <p class="flex items-center gap-1.5"><x-admin-panel::icon name="check" class="size-3.5 text-brand-500" /> ایجاد پیشنمایش برای شبکه‌های اجتماعی (خودکار)</p>
-                        <p class="flex items-center gap-1.5"><x-admin-panel::icon name="check" class="size-3.5 text-brand-500" /> افزودن به sitemap.xml سایت (خودکار)</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    </form>
 
     {{-- ================= مودال افزودن فیلد (انتخاب نوع + پیکربندی) ================= --}}
     <div x-show="modalOpen" x-cloak
@@ -486,8 +555,10 @@
     function fbBuilder(config) {
         return {
             /* ---------- state ---------- */
+            isEditing: config.isEditing,
             modalOpen: false,
             step: 'pick',
+            tab: 'info',
             selectedType: 'text',
             fields: [],
             errors: {},
@@ -495,6 +566,7 @@
             typeNames: config.typeNames,
             typeIcons: config.typeIcons,
             existingNames: config.existingNames || [],
+            existingCount: config.existingCount || 0,
             cfg: {},
 
             emptyCfg() {
@@ -597,10 +669,33 @@
                 [this.fields[index], this.fields[target]] = [this.fields[target], this.fields[index]];
             },
 
+            /* ---------- سوئیچ تب بر اساس خطاهای اعتبارسنجی پس از ذخیره‌ی ناموفق (تشخیص از DOM) ---------- */
+            async focusErrorTab() {
+                const panels = [
+                    { tab: 'fields', id: 'fb-tab-fields' },
+                    { tab: 'info', id: 'fb-tab-info' },
+                    { tab: 'messages', id: 'fb-tab-messages' },
+                    { tab: 'seo', id: 'fb-tab-seo' },
+                ];
+
+                for (let attempt = 0; attempt < 12; attempt++) {
+                    await new Promise((resolve) => setTimeout(resolve, 100));
+
+                    for (const panel of panels) {
+                        const el = document.getElementById(panel.id);
+                        if (el && el.querySelector('.text-red-600, .text-red-700')) {
+                            this.tab = panel.tab;
+                            return;
+                        }
+                    }
+                }
+            },
+
             /* ---------- ذخیره (fields_data JSON → Livewire) ---------- */
             async submitForm() {
                 await this.$wire.set('fieldsData', JSON.stringify(this.fields));
                 await this.$wire.call('save');
+                this.focusErrorTab();
             },
         };
     }

@@ -236,8 +236,8 @@ window.ApEditor = {
                 BlockQuote, CodeBlock, Indent, IndentBlock, Alignment, HorizontalLine, PageBreak,
                 /* لیست‌ها */
                 List, ListProperties, TodoList,
-                /* لینک */
-                Link, LinkImage, AutoLink,
+                /* لینک و نشانک */
+                Link, LinkImage, AutoLink, Bookmark,
                 /* جدول */
                 Table, TableToolbar, TableProperties, TableCellProperties, TableCaption,
                 /* تصویر */
@@ -245,6 +245,8 @@ window.ApEditor = {
                 /* مدیا و سایر ابزارها */
                 MediaEmbed, AutoMediaEmbed, PasteFromOffice, FindAndReplace, SourceEditing, ShowBlocks,
                 SpecialCharacters, SpecialCharactersEssentials, HtmlEmbed, WordCount, Fullscreen, Emoji,
+                /* فاز ۱۲ — تکمیل شکاف قابلیت‌ها: نشانک/انتخاب همه/استایل‌های آماده/تبدیل خودکار نویسه‌ها/خودفرمت‌کن + GHS برای ذخیره کلاس استایل‌ها */
+                SelectAll, Style, TextTransformation, Autoformat, GeneralHtmlSupport,
             } = await import('ckeditor5');
 
             const { default: faTranslations } = await import('ckeditor5/translations/fa.js');
@@ -259,23 +261,24 @@ window.ApEditor = {
                     FontColor, FontBackgroundColor, FontFamily, FontSize, Highlight,
                     BlockQuote, CodeBlock, Indent, IndentBlock, Alignment, HorizontalLine, PageBreak,
                     List, ListProperties, TodoList,
-                    Link, LinkImage, AutoLink,
+                    Link, LinkImage, AutoLink, Bookmark,
                     Table, TableToolbar, TableProperties, TableCellProperties, TableCaption,
                     Image, ImageToolbar, ImageUpload, ImageResize, AutoImage, ImageStyle, ImageCaption, PictureEditing,
                     MediaEmbed, AutoMediaEmbed, PasteFromOffice, FindAndReplace, SourceEditing, ShowBlocks,
                     SpecialCharacters, SpecialCharactersEssentials, HtmlEmbed, WordCount, Fullscreen, Emoji,
+                    SelectAll, Style, TextTransformation, Autoformat, GeneralHtmlSupport,
                 ],
                 toolbar: [
-                    'heading', '|',
+                    'heading', 'style', '|',
                     'bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript', 'code', '|',
                     'fontColor', 'fontBackgroundColor', 'highlight', 'fontFamily', 'fontSize', '|',
-                    'link', '|',
+                    'link', 'bookmark', '|',
                     'bulletedList', 'numberedList', 'todoList', 'outdent', 'indent', '|',
                     'alignment', '|',
                     'blockQuote', 'codeBlock', '|',
                     'uploadImage', 'insertTable', 'mediaEmbed', 'htmlEmbed', '|',
                     'specialCharacters', 'horizontalLine', 'pageBreak', '|',
-                    'findAndReplace', 'removeFormat', '|',
+                    'findAndReplace', 'selectAll', 'removeFormat', '|',
                     'showBlocks', 'sourceEditing', '|',
                     'fullscreen', '|',
                     'emoji', '|',
@@ -303,6 +306,16 @@ window.ApEditor = {
                             url: /aparat\.com\/v\/([\w-]+)/,
                             html: (match) => '<iframe src="https://www.aparat.com/video/video/embed/videohash/' + match[1] + '/vt/frame" width="640" height="360" frameborder="0" allowfullscreen></iframe>',
                         },
+                    ],
+                },
+                /* فاز ۱۲ — استایل‌های آماده (کلاس‌ها با پیشوند ap-style-، CSS در انتهای admin.css) */
+                style: {
+                    definitions: [
+                        { name: 'کال‌اوت تیتر ۲', element: 'h2', classes: ['ap-style-callout-h2'] },
+                        { name: 'بند هایلایت‌شده', element: 'p', classes: ['ap-style-highlight-marker'] },
+                        { name: 'کال‌اوت قرمز', element: 'p', classes: ['ap-style-callout-red'] },
+                        { name: 'کد اسنیپت تیره', element: 'pre', classes: ['ap-style-code-dark'] },
+                        { name: 'متن کوچک', element: 'p', classes: ['ap-style-small-text'] },
                     ],
                 },
             });
@@ -461,8 +474,11 @@ document.addEventListener('alpine:init', () => {
                 setTimeout(() => {
                     const nav = this.$refs.nav;
                     if (!nav) return;
+                    // فاز ۱۲: آکاردئون‌ها به‌صورت پیش‌فرض بسته‌اند؛ اگر آیتم فعال داخل گروه بسته
+                    // است (display:none) به آن اسکرول نمی‌کنیم و سراغ اسکرول ذخیره‌شده می‌رویم
                     const active = nav.querySelector('.ap-menu-link.is-active');
-                    if (active) {
+                    const visible = active && active.offsetParent !== null && active.getBoundingClientRect().width > 0;
+                    if (visible) {
                         const navRect = nav.getBoundingClientRect();
                         const r = active.getBoundingClientRect();
                         // اگر آیتم فعال دیده نمی‌شود، به یک‌سوم بالای کادر برسان
@@ -567,6 +583,124 @@ document.addEventListener('alpine:init', () => {
         },
         remove(index) {
             this.items.splice(index, 1);
+        },
+    }));
+
+    /* ------------------------------------------------------------------
+     | انتخابگر درختی دسته‌بندی (فاز ۱۲) — تک/چند انتخابی + جستجو + پیشنهاد پرکاربرد
+     | مقدار با $wire.set(prop, value) (deferred) سینک می‌شود؛ تغییر سمت سرور
+     | (مثل پرکردن خودکار) هم با $wire.$watch به UI منعکس می‌شود.
+     ------------------------------------------------------------------ */
+    Alpine.data('apCategoryPicker', (config = {}) => ({
+        prop: config.prop || 'category_id',
+        multiple: !!config.multiple,
+        tree: config.tree || [],
+        popular: config.popular || [],
+        open: false,
+        query: '',
+        expanded: {},
+        value: null, // number | number[] | null
+        titles: {}, // id -> title
+
+        init() {
+            const flat = {};
+            const walk = (nodes, trail) => (nodes || []).forEach((n) => {
+                flat[n.id] = (trail.length ? trail.join(' ← ') + ' ← ' : '') + n.title;
+                walk(n.children, trail.concat([n.title]));
+            });
+            walk(this.tree, []);
+            this.titles = flat;
+
+            const current = this.$wire.get(this.prop);
+            this.value = this.multiple
+                ? Array.from(current || [])
+                : (current || null);
+
+            // تغییر سمت سرور (پرکردن خودکار و ...) باید در UI دیده شود
+            this.$wire.$watch(this.prop, (v) => {
+                this.value = this.multiple ? Array.from(v || []) : (v || null);
+            });
+        },
+
+        selectedIds() {
+            return this.multiple ? (this.value || []) : (this.value ? [this.value] : []);
+        },
+
+        selectedTitles() {
+            return this.selectedIds().map((id) => this.titles[id] || ('#' + id));
+        },
+
+        isSelected(id) {
+            return this.selectedIds().includes(Number(id));
+        },
+
+        toggleOpen() {
+            this.open = !this.open;
+            if (this.open) this.query = '';
+        },
+
+        close() {
+            this.open = false;
+        },
+
+        expandPath(id) {
+            // پدرهای یک گره را باز کن (با ساختار درخت)
+            const path = [];
+            const find = (nodes, trail) => (nodes || []).some((n) => {
+                if (Number(n.id) === Number(id)) { path.push(...trail); return true; }
+                return find(n.children, trail.concat([n.id]));
+            });
+            find(this.tree, []);
+            path.forEach((pid) => { this.expanded[pid] = true; });
+        },
+
+        choose(id) {
+            id = Number(id);
+            if (this.multiple) {
+                const list = this.selectedIds().slice();
+                const idx = list.indexOf(id);
+                if (idx >= 0) list.splice(idx, 1); else list.push(id);
+                this.value = list;
+                this.$wire.set(this.prop, list);
+            } else {
+                // انتخاب مجدد همان گزینه = لغو انتخاب
+                this.value = this.value === id ? null : id;
+                this.$wire.set(this.prop, this.value);
+                this.open = false;
+            }
+        },
+
+        removeAt(id) {
+            if (this.multiple) {
+                this.value = this.selectedIds().filter((v) => v !== Number(id));
+                this.$wire.set(this.prop, this.value);
+            } else {
+                this.value = null;
+                this.$wire.set(this.prop, null);
+            }
+        },
+
+        clear() {
+            this.value = this.multiple ? [] : null;
+            this.$wire.set(this.prop, this.value);
+        },
+
+        /* جستجو: گره اگر خودش یا یکی از فرزندانش با عبارت بخورد نمایش داده می‌شود */
+        matches(node) {
+            if (!this.query) return true;
+            const q = this.query.trim().toLowerCase();
+            if (!q) return true;
+            if (String(node.title || '').toLowerCase().includes(q)) return true;
+            return (node.children || []).some((c) => this.matches(c));
+        },
+
+        shouldExpand(node) {
+            if (this.query && this.query.trim()) return true; // هنگام جستجو همه باز
+            return !!this.expanded[node.id];
+        },
+
+        hasChildren(node) {
+            return (node.children || []).length > 0;
         },
     }));
 });
