@@ -5,7 +5,6 @@ namespace App\Livewire\Admin\Settings;
 use Illuminate\Support\Facades\Artisan;
 use Livewire\Attributes\Title;
 use Livewire\Component;
-use Livewire\WithFileUploads;
 
 /**
  * تنظیمات دیگر — پورت ۱:۱ Back\SettingController::showOthers/updateOthers
@@ -15,7 +14,7 @@ use Livewire\WithFileUploads;
  *   (+ BROADCAST_DRIVER خودکار بر اساس کامل بودن pusher — پورت دقیق)
  * - ⚠️ quirk پورت‌شده: فیلد name="transport" در ویوی قدیمی جزو env_options نیست →
  *   به‌صورت option با کلید transport ذخیره می‌شود (عیناً مثل قدیمی).
- * - فایل‌ها: factor_logo / watermarkImage با uploadOptimizedImage (سایز ۱۰۰ + png + uploads/others/)
+ * - فایل‌ها: factor_logo / watermarkImage از File Manager سایت انتخاب می‌شوند (مسیر رشته‌ای در option)
  * - انحراف کوچک: قدیمی در حلقه‌ی env هر کلید را بی‌قید change_env می‌کرد؛ اینجا هم همان است ولی
  *   فقط برای کلیدهای واقعاً موجود در فرم (MAIL_MAILER/MAIL_TRANSPORT در فرم قدیمی هم نبودند و
  *   $request->only آن‌ها را نمی‌آورد — رفتار یکسان ماند).
@@ -23,8 +22,6 @@ use Livewire\WithFileUploads;
 #[Title('تنظیمات دیگر')]
 class Others extends Component
 {
-    use WithFileUploads;
-
     /* ---------------- چند فروشندگی ---------------- */
 
     public string $multi_vendor_system_status = 'false';
@@ -41,7 +38,8 @@ class Others extends Component
 
     public string $factor_economical_number = '';
 
-    public $factor_logo;
+    /** مقدار تازه انتخاب‌شده از File Manager (مسیر/URL رشته‌ای) — خالی یعنی «بدون تغییر» */
+    public string $factor_logo = '';
 
     public string $current_factor_logo = '';
 
@@ -71,7 +69,8 @@ class Others extends Component
 
     public string $watermarkStatus = 'false';
 
-    public $watermarkImage;
+    /** مقدار تازه انتخاب‌شده از File Manager (مسیر/URL رشته‌ای) — خالی یعنی «بدون تغییر» */
+    public string $watermarkImage = '';
 
     public string $current_watermarkImage = '';
 
@@ -200,7 +199,7 @@ class Others extends Component
             $allChanges['env_settings'] = $envChanges;
         }
 
-        // ========== 2. آپلود فایل‌ها ==========
+        // ========== 2. فایل‌ها (انتخاب از File Manager — مثل قدیمی مسیر رشته‌ای در option) ==========
         $file_inputs = [
             'factor_logo' => 'لوگو فاکتور',
             'watermarkImage' => 'تصویر واترمارک',
@@ -208,25 +207,19 @@ class Others extends Component
 
         $fileChanges = [];
         foreach ($file_inputs as $key => $title) {
-            if ($this->{$key}) {
+            $newPath = trim((string) $this->{$key});
+
+            if ($newPath !== '' && $newPath !== (string) option($key)) {
                 $oldFile = option($key);
 
-                $imageOptions = [
-                    'size' => 100,
-                    'watermark' => false,
-                    'path' => 'uploads/others/',
-                    'field' => 'option_value',
-                    'format' => 'png',
-                ];
-                $filename = uploadOptimizedImage($this->{$key}, 'options', $key, $imageOptions);
-                option_update($key, $filename);
+                option_update($key, $newPath);
 
-                $this->{'current_'.$key} = $filename;
-                $this->{$key} = null;
+                $this->{'current_'.$key} = $newPath;
+                $this->{$key} = '';
 
                 $fileChanges[$key] = [
                     'old' => $oldFile ?: 'بدون فایل',
-                    'new' => $filename,
+                    'new' => $newPath,
                     'title' => $title,
                 ];
             }

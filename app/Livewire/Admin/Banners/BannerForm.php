@@ -3,13 +3,11 @@
 namespace App\Livewire\Admin\Banners;
 
 use App\Models\Banner;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
-use Livewire\WithFileUploads;
 
 /**
  * فرم ایجاد/ویرایش بنر — پورت ۱:۱ BannerController@store/update (+validateBanner با همان پیام‌های فارسی).
@@ -20,16 +18,14 @@ use Livewire\WithFileUploads;
 #[Title('فرم بنر')]
 class BannerForm extends Component
 {
-    use WithFileUploads;
-
     public ?Banner $banner = null;
 
     public bool $isEditing = false;
 
     /* ---------------- فیلدهای فرم (پورت store/update) ---------------- */
 
-    /** فایل تصویر (TemporaryUploadedFile) — در ویرایش null یعنی «تصویر قبلی حفظ شود» */
-    public $image;
+    /** تصویر به‌صورت مسیر/URL رشته‌ای از File Manager سایت (پورت دقیق قدیمی) */
+    public string $image = '';
 
     public array $pages = [];
 
@@ -63,6 +59,7 @@ class BannerForm extends Component
             $this->link = (string) $banner->link;
             $this->description = $banner->description;
             $this->published = (bool) $banner->published;
+            $this->image = (string) ($banner->image ?? '');
         } else {
             auth('adminPanel')->user()?->can('banners.create') ?: abort(403);
         }
@@ -128,8 +125,8 @@ class BannerForm extends Component
     protected function rules(): array
     {
         return [
-            // قدیمی: 'image' => 'required|max:2048' — در ویرایش بدون فایل جدید، تصویر قبلی حفظ می‌شود
-            'image'       => $this->isEditing ? 'nullable|image|max:2048' : 'required|image|max:2048',
+            // قدیمی: 'image' => 'required|max:2048' (رشته‌ای از File Manager)
+            'image'       => $this->isEditing ? 'nullable|string|max:2048' : 'required|string|max:2048',
             'pages'       => 'required|array|min:1',
             'pages.*'     => 'required|string|in:' . implode(',', array_keys(Banner::availablePages())),
             'groups'      => 'required|array|min:1',
@@ -147,8 +144,7 @@ class BannerForm extends Component
     {
         return [
             'image.required'  => 'انتخاب تصویر بنر الزامی است.',
-            'image.image'     => 'فایل انتخاب‌شده باید تصویر باشد.',
-            'image.max'       => 'حجم تصویر نباید بیشتر از ۲ مگابایت باشد.',
+            'image.max'       => 'آدرس تصویر بنر معتبر نیست.',
             'pages.required'  => 'انتخاب حداقل یک صفحه الزامی است.',
             'pages.min'       => 'باید حداقل یک صفحه را انتخاب کنید.',
             'pages.*.in'      => 'صفحه‌ی انتخاب شده معتبر نیست.',
@@ -190,29 +186,18 @@ class BannerForm extends Component
             'link'        => $this->link ?: null,
             'description' => $this->description ?: null,
             'published'   => $this->published,
+            // پورت دقیق قدیمی: 'image' => $request->image (رشته‌ای از File Manager)
+            'image'       => $this->image ?: null,
         ];
 
         if ($this->isEditing) {
-            if ($this->image) {
-                // حذف فایل قبلی (الگوی پاک‌سازی رسانه‌های پنل — برندها)
-                if ($this->banner->image) {
-                    Storage::disk('public')->delete(ltrim($this->banner->image, '/'));
-                }
-
-                $this->banner->image = uploadOptimizedImage($this->image, 'banners');
-            }
-
             $this->banner->update($payload);
-
-            $this->banner->save(); // برای ستون image آپلودشده
 
             session()->flash('np-toast', ['type' => 'success', 'message' => 'بنر با موفقیت ویرایش شد.']);
         } else {
             // انحراف مستند: قدیمی ordering را null می‌گذاشت (بنر جدید بالای لیست می‌پرید)؛
             // برای سازگاری با مرتب‌سازی ۱..n، انتهای لیست قرار می‌گیرد.
             $payload['ordering'] = (int) Banner::max('ordering') + 1;
-
-            $payload['image'] = uploadOptimizedImage($this->image, 'banners');
 
             Banner::create($payload);
 

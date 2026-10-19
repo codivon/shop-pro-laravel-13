@@ -150,15 +150,21 @@
                 <div class="ap-card flex flex-col overflow-hidden">
                     <div class="flex items-start gap-3 p-4 pb-0">
                         <span class="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface-2 dark:bg-night-3">
-                            @if (!empty($pkg['thumbnail']))
-                                <img src="{{ $pkg['thumbnail'] }}" alt="{{ $pkg['name'] ?? $pkg['slug'] }}" class="size-full object-cover">
+                            @if (\App\Support\PackageMedia::thumbnailUrl($pkg))
+                                <img src="{{ \App\Support\PackageMedia::thumbnailUrl($pkg) }}" alt="{{ $pkg['name'] ?? $pkg['slug'] }}" loading="lazy" class="size-full object-cover"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <span class="hidden size-full items-center justify-center" style="display:none">
+                                    <x-admin-panel::icon name="package-2" class="size-5 text-ink-3" />
+                                </span>
                             @else
                                 <x-admin-panel::icon name="package-2" class="size-5 text-ink-3" />
                             @endif
                         </span>
                         <div class="min-w-0 flex-1">
                             <h3 class="truncate text-sm font-bold">{{ $pkg['name'] ?? $pkg['slug'] }}</h3>
-                            <p class="mt-0.5 line-clamp-2 text-xs leading-5 text-ink-3 dark:text-night-ink-2">{{ \Illuminate\Support\Str::limit($pkg['description'] ?? '', 90) }}</p>
+                            <p class="mt-0.5 line-clamp-2 text-xs leading-5 text-ink-3 dark:text-night-ink-2">
+                                {{ \App\Support\PackageMedia::descriptionText($pkg['short_description'] ?? $pkg['description'] ?? null, 90) }}
+                            </p>
                         </div>
                     </div>
 

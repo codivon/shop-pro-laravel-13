@@ -3,35 +3,32 @@
 namespace App\Livewire\Admin\Sliders;
 
 use App\Models\Slider;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
-use Livewire\WithFileUploads;
 
 /**
  * فرم ایجاد/ویرایش اسلایدر — پورت ۱:۱ SliderController@store/update (+validateSlider با همان پیام‌های فارسی).
  *
- * تفاوت مستند با قدیمی: تصویر در قدیمی از File Manager (input مخفی رشته‌ای) می‌آمد؛
- * اینجا آپلود مستقیم با uploadOptimizedImage در پوشه sliders انجام می‌شود و در ویرایش،
- * بدون آپلود فایل جدید، تصویر قبلی حفظ می‌گردد.
+ * تصویر مثل پنل قدیمی از File Manager سایت انتخاب می‌شود (input مخفی رشته‌ای →
+ * در قدیمی window.open('/file-manager/fm-button') و callbackی fmSetLink)؛
+ * در پنل جدید همان تجربه داخل مودال iframe ارائه می‌شود. مقدار = مسیر/URL رشته‌ای.
+ * در ویرایش، بدون انتخاب تصویر جدید، تصویر قبلی حفظ می‌گردد (مثل قدیمی).
  */
 #[Layout('admin-panel::layout')]
 #[Title('فرم اسلایدر')]
 class SliderForm extends Component
 {
-    use WithFileUploads;
-
     public ?Slider $slider = null;
 
     public bool $isEditing = false;
 
     /* ---------------- فیلدهای فرم (پورت store/update) ---------------- */
 
-    /** فایل تصویر (TemporaryUploadedFile) — در ویرایش null یعنی «تصویر قبلی حفظ شود» */
-    public $image;
+    /** تصویر به‌صورت مسیر/URL رشته‌ای از File Manager سایت (پورت دقیق قدیمی) */
+    public string $image = '';
 
     public array $pages = [];
 
@@ -65,6 +62,7 @@ class SliderForm extends Component
             $this->link = (string) $slider->link;
             $this->description = $slider->description;
             $this->published = (bool) $slider->published;
+            $this->image = (string) ($slider->image ?? '');
         } else {
             auth('adminPanel')->user()?->can('sliders.create') ?: abort(403);
         }
@@ -113,8 +111,8 @@ class SliderForm extends Component
     protected function rules(): array
     {
         return [
-            // قدیمی: 'image' => 'required|max:2048' — در ویرایش بدون فایل جدید، تصویر قبلی حفظ می‌شود
-            'image'       => $this->isEditing ? 'nullable|image|max:2048' : 'required|image|max:2048',
+            // قدیمی: 'image' => 'required|max:2048' (رشته‌ای از File Manager)
+            'image'       => $this->isEditing ? 'nullable|string|max:2048' : 'required|string|max:2048',
             'pages'       => 'required|array|min:1',
             'pages.*'     => 'required|string|in:' . implode(',', array_keys(Slider::availablePages())),
             'groups'      => 'required|array|min:1',
@@ -131,8 +129,7 @@ class SliderForm extends Component
     {
         return [
             'image.required'  => 'انتخاب تصویر اسلایدر الزامی است.',
-            'image.image'     => 'فایل انتخاب‌شده باید تصویر باشد.',
-            'image.max'       => 'حجم تصویر نباید بیشتر از ۲ مگابایت باشد.',
+            'image.max'       => 'آدرس تصویر اسلایدر معتبر نیست.',
             'pages.required'  => 'انتخاب حداقل یک صفحه الزامی است.',
             'pages.min'       => 'باید حداقل یک صفحه را انتخاب کنید.',
             'pages.*.in'      => 'صفحه‌ی انتخاب شده معتبر نیست.',
@@ -172,29 +169,18 @@ class SliderForm extends Component
             'description' => $this->description ?: null,
             'published'   => $this->published,
             'lang'        => app()->getLocale(), // مثل store/update قدیمی
+            // پورت دقیق قدیمی: 'image' => $request->image (رشته‌ای از File Manager)
+            'image'       => $this->image ?: null,
         ];
 
         if ($this->isEditing) {
-            if ($this->image) {
-                // حذف فایل قبلی (الگوی پاک‌سازی رسانه‌های پنل — برندها)
-                if ($this->slider->image) {
-                    Storage::disk('public')->delete(ltrim($this->slider->image, '/'));
-                }
-
-                $this->slider->image = uploadOptimizedImage($this->image, 'sliders');
-            }
-
             $this->slider->update($payload);
-
-            $this->slider->save(); // برای ستون image آپلودشده
 
             session()->flash('np-toast', ['type' => 'success', 'message' => 'اسلایدر با موفقیت ویرایش شد.']);
         } else {
             // انحراف مستند: قدیمی ordering را null می‌گذاشت (اسلایدر جدید بالای لیست می‌پرید)؛
             // برای سازگاری با مرتب‌سازی ۱..n، انتهای لیست قرار می‌گیرد.
             $payload['ordering'] = (int) Slider::max('ordering') + 1;
-
-            $payload['image'] = uploadOptimizedImage($this->image, 'sliders');
 
             Slider::create($payload);
 

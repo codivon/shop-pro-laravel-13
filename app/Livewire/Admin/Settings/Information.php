@@ -5,7 +5,6 @@ namespace App\Livewire\Admin\Settings;
 use App\Models\Province;
 use Livewire\Attributes\Title;
 use Livewire\Component;
-use Livewire\WithFileUploads;
 
 /**
  * تنظیمات کلی سایت — پورت ۱:۱ Back\SettingController::showInformation/updateInformation
@@ -14,16 +13,15 @@ use Livewire\WithFileUploads;
  * کلیدهای options دقیقاً همان قدیمی‌ها هستند (info_* / map_api / multi_language_enabled).
  *
  * تفاوت‌های مستندشده با قدیمی:
- *  1. آپلود تصاویر (info_icon/info_logo/info_logo_seller/info_logo_panel_seller/info_og_image)
- *     در قدیمی کامنت شده بود و هرگز ذخیره نمی‌شد — طبق اسپک فاز ۷ با WithFileUploads +
- *     uploadOptimizedImage (الگوی updateOthers برای factor_logo) فعال شد.
+ *  1. تصاویر (info_icon/info_logo/info_logo_seller/info_logo_panel_seller/info_og_image)
+ *     مثل پنل قدیمی از File Manager سایت (Alexusmai FM) انتخاب می‌شوند — انتخابگر رسانه
+ *     پنل جدید همان URL/مسیر رشته‌ای را در option ذخیره می‌کند (مقدار قبلی حفظ/جایگزین).
  *  2. پس از تغییر admin_route_prefix، قدیمی Artisan::call('route:cache') اجرا می‌کرد؛
  *     route:cache با روت‌های closure و Livewire ناسازگار است (اسپک فاز ۷) → فقط change_env.
  */
 #[Title('تنظیمات کلی')]
 class Information extends Component
 {
-    use WithFileUploads;
 
     /* ---------------- اطلاعات پایه ---------------- */
 
@@ -53,16 +51,16 @@ class Information extends Component
 
     /* ---------------- تصاویر و لوگو ---------------- */
 
-    /** فایل‌های جدید (Livewire TemporaryUploadedFile) */
-    public $info_icon;
+    /** مقدار تازه انتخاب‌شده از File Manager (مسیر/URL رشته‌ای) — خالی یعنی «بدون تغییر» */
+    public string $info_icon = '';
 
-    public $info_logo;
+    public string $info_logo = '';
 
-    public $info_logo_seller;
+    public string $info_logo_seller = '';
 
-    public $info_logo_panel_seller;
+    public string $info_logo_panel_seller = '';
 
-    public $info_og_image;
+    public string $info_og_image = '';
 
     /** مسیرهای فعلی (برای پیش‌نمایش) — یک‌بار در mount خوانده می‌شود */
     public string $current_info_icon = '';
@@ -198,20 +196,20 @@ class Information extends Component
 
         $this->validate([
             'info_site_title' => 'required',
-            'info_icon' => 'nullable|max:2048',
-            'info_logo' => 'nullable|max:2048',
-            'info_logo_seller' => 'nullable|max:2048',
-            'info_logo_panel_seller' => 'nullable|max:2048',
-            'info_og_image' => 'nullable|max:2048',
+            'info_icon' => 'nullable|string|max:2048',
+            'info_logo' => 'nullable|string|max:2048',
+            'info_logo_seller' => 'nullable|string|max:2048',
+            'info_logo_panel_seller' => 'nullable|string|max:2048',
+            'info_og_image' => 'nullable|string|max:2048',
             'info_city_id' => 'nullable|exists:cities,id',
             'info_province_id' => 'nullable|exists:provinces,id',
         ], [
             'info_site_title.required' => 'عنوان وبسایت الزامی است.',
-            'info_icon.max' => 'حجم آیکون سایت نباید بیشتر از ۲ مگابایت باشد.',
-            'info_logo.max' => 'حجم لوگو نباید بیشتر از ۲ مگابایت باشد.',
-            'info_logo_seller.max' => 'حجم لوگوی فروشندگان نباید بیشتر از ۲ مگابایت باشد.',
-            'info_logo_panel_seller.max' => 'حجم لوگوی پنل فروشندگان نباید بیشتر از ۲ مگابایت باشد.',
-            'info_og_image.max' => 'حجم تصویر OG نباید بیشتر از ۲ مگابایت باشد.',
+            'info_icon.max' => 'آدرس تصویر آیکون سایت معتبر نیست.',
+            'info_logo.max' => 'آدرس تصویر لوگو معتبر نیست.',
+            'info_logo_seller.max' => 'آدرس تصویر لوگوی فروشندگان معتبر نیست.',
+            'info_logo_panel_seller.max' => 'آدرس تصویر لوگوی پنل فروشندگان معتبر نیست.',
+            'info_og_image.max' => 'آدرس تصویر OG معتبر نیست.',
             'info_city_id.exists' => 'شهر انتخاب‌شده معتبر نیست.',
             'info_province_id.exists' => 'استان انتخاب‌شده معتبر نیست.',
         ], [
@@ -232,24 +230,21 @@ class Information extends Component
 
         $fileChanges = [];
         foreach ($fileInputs as $key => $title) {
-            if ($this->{$key}) {
+            // مقدار تازه انتخاب‌شده از File Manager (رشته) — مثل قدیمی مستقیماً در option ذخیره می‌شود
+            $newPath = trim((string) $this->{$key});
+
+            if ($newPath !== '' && $newPath !== (string) option($key)) {
                 $oldFile = option($key);
 
-                $filename = uploadOptimizedImage($this->{$key}, 'options', $key, [
-                    'watermark' => false,
-                    'path' => 'uploads/others/',
-                    'field' => 'option_value',
-                    'format' => 'png',
-                ]);
-                option_update($key, $filename);
+                option_update($key, $newPath);
 
                 // به‌روزرسانی مسیر فعلی برای پیش‌نمایش
-                $this->{'current_'.$key} = $filename;
-                $this->{$key} = null;
+                $this->{'current_'.$key} = $newPath;
+                $this->{$key} = '';
 
                 $fileChanges[$key] = [
                     'old' => $oldFile ?: 'بدون فایل',
-                    'new' => $filename,
+                    'new' => $newPath,
                     'title' => $title,
                 ];
             }

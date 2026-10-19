@@ -72,14 +72,14 @@
             <div x-show="tab === 'factor'" x-cloak class="animate-fade-in space-y-4 p-5 sm:p-6">
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                        <label class="mb-1.5 block text-xs font-semibold">لوگو</label>
-                        @if ($factor_logo)
-                            <img src="{{ $factor_logo->temporaryUrl() }}" alt="پیش‌نمایش لوگو فاکتور" class="mb-2 h-14 w-auto rounded-lg border border-line bg-surface-2 object-contain p-1 dark:border-night-line dark:bg-night-3">
-                        @elseif ($current_factor_logo)
-                            <img src="{{ asset($current_factor_logo) }}" alt="لوگو فاکتور" class="mb-2 h-14 w-auto rounded-lg border border-line bg-surface-2 object-contain p-1 dark:border-night-line dark:bg-night-3">
-                        @endif
-                        <input type="file" accept="image/*" wire:model="factor_logo" class="w-full cursor-pointer rounded-xl border border-line bg-transparent p-1.5 text-xs file:me-2 file:rounded-lg file:border-0 file:bg-brand-50 file:px-2 file:py-1 file:text-brand-700 dark:border-night-line dark:file:bg-night-3 dark:file:text-night-ink-1">
-                        @error('factor_logo') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                        <x-admin-panel::media-picker
+                            wireModel="factor_logo"
+                            :value="$current_factor_logo"
+                            label="لوگو"
+                            hint="از رسانه‌های سایت انتخاب کنید"
+                            height="h-24"
+                            aspect="contain"
+                        />
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-semibold">عنوان فاکتور</label>
@@ -188,14 +188,14 @@
                         </select>
                     </div>
                     <div class="sm:col-span-2">
-                        <label class="mb-1.5 block text-xs font-semibold">تصویر واترمارک</label>
-                        @if ($watermarkImage)
-                            <img src="{{ $watermarkImage->temporaryUrl() }}" alt="پیش‌نمایش واترمارک" class="mb-2 h-14 w-auto rounded-lg border border-line bg-surface-2 object-contain p-1 dark:border-night-line dark:bg-night-3">
-                        @elseif ($current_watermarkImage)
-                            <img src="{{ asset($current_watermarkImage) }}" alt="واترمارک" class="mb-2 h-14 w-auto rounded-lg border border-line bg-surface-2 object-contain p-1 dark:border-night-line dark:bg-night-3">
-                        @endif
-                        <input type="file" accept="image/*" wire:model="watermarkImage" class="w-full cursor-pointer rounded-xl border border-line bg-transparent p-1.5 text-xs file:me-2 file:rounded-lg file:border-0 file:bg-brand-50 file:px-2 file:py-1 file:text-brand-700 dark:border-night-line dark:file:bg-night-3 dark:file:text-night-ink-1">
-                        @error('watermarkImage') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                        <x-admin-panel::media-picker
+                            wireModel="watermarkImage"
+                            :value="$current_watermarkImage"
+                            label="تصویر واترمارک"
+                            hint="از رسانه‌های سایت انتخاب کنید"
+                            height="h-24"
+                            aspect="contain"
+                        />
                     </div>
                 </div>
             </div>

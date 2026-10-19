@@ -41,33 +41,20 @@
             {{-- ستون چک‌باکس‌ها (صفحات + گروه‌ها) — پورت ستون col-lg-7 قدیمی --}}
             <div class="space-y-5 lg:col-span-3">
 
-                {{-- تصویر اسلایدر (پورت _image_uploader) --}}
+                {{-- تصویر اسلایدر (پورت _image_uploader قدیمی — انتخاب از File Manager سایت) --}}
                 <div class="ap-card p-5">
                     <h2 class="mb-4 flex items-center gap-2 text-sm font-bold">
                         <x-admin-panel::icon name="image" class="size-4.5 text-brand-600 dark:text-brand-400" />
                         تصویر اسلایدر
-                        <span class="ap-badge bg-red-50 text-red-600 dark:bg-red-500/12 dark:text-red-400">ضروری</span>
                     </h2>
 
-                    <div class="group relative flex h-48 w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-line bg-surface-2 transition-colors hover:border-brand-400 dark:border-night-line dark:bg-night-3">
-                        @if ($image)
-                            <img src="{{ $image->temporaryUrl() }}" alt="پیش‌نمایش تصویر اسلایدر" class="absolute inset-0 size-full object-cover">
-                        @elseif ($isEditing && $slider->image)
-                            <img src="{{ asset($slider->image) }}" alt="تصویر فعلی اسلایدر" class="absolute inset-0 size-full object-cover">
-                        @else
-                            <span class="flex flex-col items-center gap-2 text-ink-3 dark:text-night-ink-2">
-                                <x-admin-panel::icon name="image-plus" class="size-8 transition-transform group-hover:scale-110" />
-                                <span class="text-xs font-semibold">تصویر اسلایدر را انتخاب کنید</span>
-                                <span class="text-[11px]">فرمت تصویر — حداکثر ۲ مگابایت</span>
-                            </span>
-                        @endif
-                        <input type="file" wire:model="image" accept="image/*" class="absolute inset-0 cursor-pointer opacity-0" aria-label="انتخاب تصویر اسلایدر">
-                    </div>
-
-                    @if ($image || ($isEditing && $slider->image))
-                        <p class="mt-2 text-[11px] text-ink-3 dark:text-night-ink-2">انتخاب فایل جدید، تصویر فعلی را جایگزین می‌کند.</p>
-                    @endif
-                    @error('image') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                    <x-admin-panel::media-picker
+                        wireModel="image"
+                        :value="$image"
+                        hint="تصویر را از رسانه‌های سایت انتخاب کنید — پنجره مدیریت فایل‌ها باز می‌شود و می‌توانید فایل جدید هم آپلود کنید"
+                        required
+                        height="h-44 sm:h-52"
+                    />
                 </div>
 
                 {{-- نمایش در صفحه (پورت _pages_section — ۳ صفحه ثابت با لیبل خود مدل) --}}
@@ -200,12 +187,4 @@
         </div>
     </form>
 
-    {{-- لودینگ آپلود تصویر --}}
-    <div wire:loading wire:target="image"
-         class="pointer-events-none fixed bottom-6 start-6 z-[65] flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 shadow-pop dark:border-night-line dark:bg-night-3">
-        <svg class="size-4 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-            <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
-        </svg>
-        <span class="text-[13px] font-semibold">در حال بارگذاری تصویر…</span>
-    </div>
 </div>

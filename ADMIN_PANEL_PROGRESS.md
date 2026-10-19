@@ -456,3 +456,32 @@
 ### ۷) سایر
 - منوی «دستگاه‌های بلاک شده» از config/admin-menu.php حذف شد (تب آن داخل نشست‌های فعال باقی است)
 - build: ~11s، 0 warning؛ manifest 9 entry سازگار؛ laravel.log رشد صفر؛ دیتای تست کاملاً پاک شد (menus=30, pages=0, posts=0, widgets=1 = baseline)
+
+---
+
+## فاز ۱۴ — بخش پکیج‌ها (بازطراحی کامل) + انتخابگر رسانه File Manager (اسلایدر/بنر/تنظیمات)
+
+### ۱) بخش پکیج‌ها — ریشه‌یابی و رفع دو باگ اصلی
+- **«تصاویر پکیج لود نمی‌شود»**: قدیمی برای تصویر `thumbnail_url ?? thumbnail` می‌گرفت و پاسخ API معمولاً مسیر نسبی است؛ پنل جدید فقط `thumbnail` را مستقیم در `<img>` می‌گذاشت → مرورگر آن را روی دامنه خودِ سایت می‌جست (404). فیکس: هلپر جدید `App\Support\PackageMedia::thumbnailUrl()` (thumbnail_url → thumbnail → مسیر نسبی با پیشوند دامنه API مطلق می‌شود) + fallback آیکون با onerror در کارت‌ها و سربرگ
+- **«متن‌ها به صورت کد HTML نمایش داده می‌شود»**: توضیحات API حاوی HTML است. کارت‌های لیست حالا از `PackageMedia::descriptionText()` (strip_tags + فشرده‌سازی فاصله + limit) متن تمیز نشان می‌دهند؛ صفحه جزئیات مثل قدیمی با `{!! !!}` رندر می‌کند (short_description، long_description، changelog) + کلاس استایل `pkg-prose` برای زیبایی HTML خام (h3/ul/li/a/code/img/table)
+- **build bug کشف‌شده**: `@php(...)` تک‌خطی که بعد از آن یک بلوک چندخطی `@php ... @endphp` در همان ویو بیاید → کامپایل Blade خراب می‌شود (خروجی `<?php(...)` بدون بستن + دایرکتیوهای بعدی خام → 500). هر دو ویو پکیج از الگوی تک‌خطی پاک شدند (فراخوانی مستقیم هلپر در @if و src)
+
+### ۲) صفحه جزئیات پکیج — پورت کامل عملیات پنل قبلی (قبلاً فقط نمایش بود)
+- PackageShow جدید: `openInstall/confirmInstall` (مودال تأیید نصب با آلرت پرداخت و مبلغ پلن — پورت install-confirm-modal)، `updateModule` (چک expired/in-progress)، `toggleActivation`، `confirmUninstall/uninstall` (مودال هشدار حذف)، `refreshStatus` + `wire:poll.3s` هنگام status=updating (پورت startPolling/pollStatus هر ۳ ثانیه) + توست موفقیت/شکست با گذار وضعیت
+- چیدمان مثل قدیمی: کارت سربرگ (تصویر بزرگ + نشان رایگان/پولی + چیپ‌های نویسنده/دسته/دانلود + توضیح HTML)، کارت «توضیحات کامل» + تاریخچه نسخه‌ها، پلن‌های قیمت‌گذاری (نصب هر پلن با مودال تأیید)، جدول لاگ‌ها با نشان‌های نصب/آپدیت/حذف و موفق/ناموفق/در حال اجرا، ستون عملیات با جعبه وضعیت ۴ حالته (نصب‌نشده / در حال نصب با polling / خطا با last_error / نصب‌شده با انقضای لایسنس)، دکمه‌های آپدیت/فعال‌سازی/غیرفعال‌سازی/حذف، کارت پیش‌نیازها و اشتراک
+- `actionLabel()` برای برچسب فارسی عملیات لاگ؛ redirect به installed پس از حذف (مثل قدیمی)
+
+### ۳) انتخابگر رسانه (File Manager) — تجربه پنل قبلی در پنل جدید
+- کامپوننت جدید `<x-admin-panel::media-picker>`: ناحیه drop زیبا (حالت خالی + پیش‌نمایش با دکمه‌های تغییر/حذف روی hover + حالت «فایل یافت نشد» برای مسیرهای مرده) → کلیک = مودال داخل پنل با iframe روی `/file-manager/fm-button` (همان بسته Alexusmai پنل قبلی) → انتخاب/آپلود فایل در FM → callback مقدار را در فیلد می‌نویسد و پیش‌نمایش فوراً می‌آید
+- پل ارتباطی: ویوی منتشرشده `vendor/file-manager/fmButton.blade.php` دوحالته شد (iframe → window.parent / popup قدیمی → window.opener — سازگاری کامل با صفحات قدیمی)؛ در admin.js: `window.ApMedia` (url/active/setLink) + `window.fmSetLink` + کامپوننت Alpine `apMediaPicker` با سینک input event → wire:model (روی commit بعدی مثل input مخفی قدیمی) + target-uid برای ایزوله‌سازی چند پیکر در یک صفحه
+- پورت ۱:۱ ذخیره‌سازی مثل قدیمی: مقدار FM (مسیر/URL رشته‌ای) مستقیم ذخیره می‌شود؛ **اسلایدر/بنر**: SliderForm/BannerForm از WithFileUploads به رشته تغییر کرد (rules مثل قدیمی `required|string|max:2048`)؛ **تنظیمات**: Information (۵ فیلد info_*) و Others (factor_logo/watermarkImage) — گارد «فقط اگر مقدار عوض شده» + بازنشانی پراپرتی پس از ذخیره
+
+### ۴) باگ مهم جانبی کشف‌شده: فرم تنظیمات هرگز ذخیره نمی‌شد
+- `input type=email/url` با داده واقعی (مثلاً «x-test» یا شماره تماس) → اعتبارسنجی بومی HTML5 مانع submit می‌شد (checkValidity=false → نه submit نه commit). فیکس: `novalidate` روی فرم تنظیمات + بوت‌استرپ سراسری در admin.js که به هر فرم دارای email/url پس از DOMContentLoaded/livewire:navigated، novalidate می‌دهد (اعتبارسنجی سمت Livewire انجام می‌شود)
+
+### ۵) وریفای مرورگری (E2E)
+- اسلایدر: create → مودال FM باز شد → شبیه‌سازی انتخاب (fmSetLink) → پیش‌نمایش + input سینک → ذخیره → رکورد DB با مسیر FM ✓؛ edit → پیش‌نمایش اولیه ✓
+- بنر: همان جریان کامل → رکورد DB ✓؛ ایندکس بنرها asset() با مسیرهای FM قدیمی ✓
+- تنظیمات: ۵ پیکر هم‌زمان، انتخاب ایزوله فقط پراپرتی خودش (uid targeting) → ذخیره → option در DB ✓
+- پکیج‌ها (با سرور mock محلی به‌جای update.weblak.ir): ایندکس با ۳ پکیج — تصویر نسبی مطلق شد و لود شد (loaded:true)، تصویر مطلق خراب → fallback آیکون، توضیحات متنِ تمیز بدون تگ؛ صفحه جزئیات: رندر HTML توضیحات/تاریخچه/پیش‌نیازها/لاگ‌ها ✓؛ مودال نصب رایگان ✓؛ مودال پلن پولی با مبلغ تخفیف‌دار (۷۹۰,۰۰۰) ✓؛ فراخوانی purchase به API واقعاً ارسال شد
+- پاکسازی: رکوردهای تست حذف شدند (slider 59 / banner 29 / option info_logo_seller)، .env به حالت قبل، mock متوقف؛ laravel.log رشد خالص = فقط خطای عمدی mock (422 نصب در محیط تست)

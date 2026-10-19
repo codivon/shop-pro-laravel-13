@@ -24,7 +24,9 @@
         </button>
     </div>
 
-    <form id="information-form" wire:submit="save" x-data="{ tab: 'base' }" class="space-y-5">
+    {{-- novalidate: اعتبارسنجی با Livewire است — inputهای type=email/url با داده‌های واقعی
+         (مثلاً شماره تماس در ایمیل) مانع submit بومی HTML5 می‌شدند و فرم هرگز ذخیره نمی‌شد --}}
+    <form id="information-form" wire:submit="save" x-data="{ tab: 'base' }" class="space-y-5" novalidate>
 
         {{-- تب‌ها --}}
         <div class="ap-card overflow-hidden">
@@ -78,22 +80,15 @@
                             ['key' => 'info_logo_panel_seller', 'current' => 'current_info_logo_panel_seller', 'label' => 'لوگوی پنل فروشندگان', 'hint' => 'بهترین اندازه: ۲۰۰×۶۰ پیکسل'],
                             ['key' => 'info_og_image', 'current' => 'current_info_og_image', 'label' => 'تصویر OG (اشتراک‌گذاری)', 'hint' => 'اندازه پیشنهادی: ۱۲۰۰×۶۳۰ پیکسل'],
                         ] as $img)
-                            @php($fileValue = ${$img['key']})
-                            @php($currentPath = ${$img['current']})
                             <div class="rounded-xl border border-line p-4 dark:border-night-line">
-                                <label class="mb-1.5 block text-xs font-semibold">{{ $img['label'] }}</label>
-                                <p class="mb-2 text-[11px] text-ink-3 dark:text-night-ink-2">{{ $img['hint'] }}</p>
-
-                                @if ($fileValue)
-                                    <img src="{{ $fileValue->temporaryUrl() }}" alt="پیش‌نمایش {{ $img['label'] }}"
-                                         class="mb-2 h-16 w-auto rounded-lg border border-line bg-surface-2 object-contain p-1 dark:border-night-line dark:bg-night-3">
-                                @elseif ($currentPath)
-                                    <img src="{{ asset($currentPath) }}" alt="{{ $img['label'] }}"
-                                         class="mb-2 h-16 w-auto rounded-lg border border-line bg-surface-2 object-contain p-1 dark:border-night-line dark:bg-night-3">
-                                @endif
-
-                                <input type="file" accept="image/*" wire:model="{{ $img['key'] }}" class="w-full cursor-pointer rounded-xl border border-line bg-transparent p-1.5 text-xs file:me-2 file:rounded-lg file:border-0 file:bg-brand-50 file:px-2 file:py-1 file:text-brand-700 dark:border-night-line dark:file:bg-night-3 dark:file:text-night-ink-1">
-                                @error($img['key']) <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                                <x-admin-panel::media-picker
+                                    wireModel="{{ $img['key'] }}"
+                                    :value="${$img['current']}"
+                                    :label="$img['label']"
+                                    :hint="$img['hint']"
+                                    height="h-28"
+                                    aspect="contain"
+                                />
                             </div>
                         @endforeach
                     </div>

@@ -794,6 +794,68 @@ window.ApDnd = {
 };
 
 /* ------------------------------------------------------------------
+ | انتخابگر رسانه (File Manager) — فاز ۱۴
+ | پس از انتخاب فایل، ویوی fm-button تابع سراسری fmSetLink را صدا می‌زند.
+ ------------------------------------------------------------------ */
+window.ApMedia = {
+    /* مقدار ذخیره‌شده (مسیر نسبی یا URL کامل) → URL قابل نمایش */
+    url(value) {
+        if (!value) return '';
+        const v = String(value).trim();
+        if (/^(https?:)?\/\//i.test(v) || v.startsWith('data:') || v.startsWith('blob:')) return v;
+        // مسیر نسبی → مطلق بر اساس هاست فعلی (asset() سمت سرور هم همین معنا)
+        return window.location.origin + '/' + v.replace(/^\/+/, '');
+    },
+
+    /* پیکر فعال — هنگام باز شدن مودال تنظیم می‌شود */
+    active: null,
+
+    /* callback مشترک fm-button (حالت popup قدیمی هم از همین استفاده می‌کند) */
+    setLink(fileUrl) {
+        const target = window.ApMedia.active;
+        if (!target) return;
+        // پاک‌سازی active توسط خود پیکر انجام می‌شود (بعد از تطبیق uid)
+        window.dispatchEvent(new CustomEvent('ap-media-selected', { detail: { url: String(fileUrl || ''), target } }));
+    },
+};
+
+/* قرارداد قدیمی پنل — ویوی fm-button این تابع را صدا می‌زند */
+window.fmSetLink = (url) => window.ApMedia.setLink(url);
+
+/* کامپوننت Alpine انتخابگر رسانه */
+window.apMediaPicker = (initial = '') => ({
+    uid: Math.random().toString(36).slice(2),
+    value: String(initial || ''),
+    open: false,
+    loading: true,
+    imgError: false,
+
+    init() {
+        this.$watch('value', (v) => {
+            this.imgError = false;
+            const input = this.$refs.input;
+            if (!input) return;
+            if (input.value !== v) {
+                input.value = v;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        });
+    },
+
+    openManager() {
+        window.ApMedia.active = this.uid;
+        this.loading = true;
+        this.open = true;
+    },
+
+    remove() {
+        window.ApMedia.active = null;
+        this.value = '';
+        this.open = false;
+    },
+});
+
+/* ------------------------------------------------------------------
  | آماده‌سازی Livewire — هوک‌های سراسری (فاز ۱۳)
  ------------------------------------------------------------------ */
 (function () {
@@ -831,3 +893,22 @@ window.ApDnd = {
 
 document.addEventListener('livewire:navigated', () => window.ApDnd.initAll());
 document.addEventListener('DOMContentLoaded', () => window.ApDnd.initAll());
+
+/* ------------------------------------------------------------------
+ | novalidate خودکار برای فرم‌های دارای input ایمیل/URL — فاز ۱۴
+ | اعتبارسنجی سمت Livewire انجام می‌شود؛ inputهای type=email/url با
+ | داده‌های واقعی (مثلاً شماره در فیلد ایمیل) مانع submit بومی HTML5
+ | می‌شدند و فرم هرگز ارسال نمی‌شد (باگ صفحه تنظیمات).
+ ------------------------------------------------------------------ */
+(function () {
+    const applyNovalidate = () => {
+        document.querySelectorAll('form').forEach((form) => {
+            if (form.querySelector('input[type="email"], input[type="url"]')) {
+                form.setAttribute('novalidate', '');
+            }
+        });
+    };
+
+    document.addEventListener('DOMContentLoaded', applyNovalidate);
+    document.addEventListener('livewire:navigated', applyNovalidate);
+})();

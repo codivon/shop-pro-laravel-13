@@ -874,3 +874,34 @@ button [wire\:loading][style]:not([style*="display: none"]):not([style*="display
     box-shadow: 0 12px 28px -10px rgb(2 6 23 / 0.35) !important;
     border-radius: 0.75rem !important;
 }
+
+/* ------------------------------------------------------------------
+ | نمایش HTML توضیحات پکیج‌ها (فاز ۱۴) — محتوای خام API با {! !!} رندر می‌شود
+ ------------------------------------------------------------------ */
+.pkg-prose > *:first-child { margin-top: 0; }
+.pkg-prose > *:last-child { margin-bottom: 0; }
+.pkg-prose p { margin: 0.5rem 0; }
+.pkg-prose h1, .pkg-prose h2, .pkg-prose h3, .pkg-prose h4 {
+    margin: 0.75rem 0 0.4rem;
+    font-weight: 700;
+    color: var(--color-ink-1, #1e293b);
+    font-size: 0.9rem;
+}
+.pkg-prose ul, .pkg-prose ol { margin: 0.5rem 0; padding-inline-start: 1.25rem; }
+.pkg-prose ul { list-style: disc; }
+.pkg-prose ol { list-style: decimal; }
+.pkg-prose li { margin: 0.2rem 0; }
+.pkg-prose a { color: var(--color-brand-600); text-decoration: underline; }
+.pkg-prose img { max-width: 100%; border-radius: 0.75rem; }
+.pkg-prose table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.pkg-prose th, .pkg-prose td { border: 1px solid var(--color-line, #e2e8f0); padding: 0.4rem 0.6rem; }
+.pkg-prose code {
+    font-family: ui-monospace, monospace;
+    font-size: 0.75rem;
+    background: var(--color-surface-2, #f1f5f9);
+    padding: 0.1rem 0.35rem;
+    border-radius: 0.375rem;
+}
+.dark .pkg-prose h1, .dark .pkg-prose h2, .dark .pkg-prose h3, .dark .pkg-prose h4 {
+    color: var(--color-night-ink-1, #f8fafc);
+}
