@@ -115,6 +115,9 @@ use App\Livewire\Admin\Warehouses\WarehouseStockTake;
 use App\Livewire\Admin\Warehouses\WarehouseBulkStock;
 use App\Livewire\Admin\System\SessionIndex;
 use App\Livewire\Admin\System\ActivityLogIndex;
+use App\Livewire\Admin\Admins\AdminIndex;
+use App\Livewire\Admin\Admins\RoleIndex;
+use App\Livewire\Admin\Admins\PermissionIndex;
 use App\Http\Controllers\Back\FormController as LegacyFormController;
 use App\Http\Controllers\AdminPanel\LogoutController;
 use App\Http\Controllers\Back\OrderController as LegacyOrderController;
@@ -468,6 +471,15 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
         Route::get('sessions/blocked', fn () => redirect(route('np.sessions.index', ['tab' => 'blocked'])))->name('sessions.blocked');
         Route::get('sessions', SessionIndex::class)->name('sessions.index');
         Route::get('activity-log', ActivityLogIndex::class)->name('activity-log.index');
+
+        /*
+        |----------------------
+        | ادمین‌ها / نقش‌ها / دسترسی‌ها (فاز ۷-ج)
+        |----------------------
+        */
+        Route::get('admins', AdminIndex::class)->name('admins.index');
+        Route::get('roles', RoleIndex::class)->name('roles.index');
+        Route::get('permissions', PermissionIndex::class)->name('permissions.index');
 
         // سایر بخش‌ها در فازهای بعدی اضافه می‌شوند:
         // فاز ۷: پشتیبانی/سیستم / ...

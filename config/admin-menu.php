@@ -825,13 +825,13 @@ return [
                     'children' => [
                         [
                             'label' => 'لیست مدیران',
-                            'route' => 'admin.admins.index',
+                            'route' => 'np.admins.index',
                             'permission' => 'admins.index',
                             'icon' => 'list',
                         ],
                         [
                             'label' => 'مدیر جدید',
-                            'route' => 'admin.admins.create',
+                            'route' => 'np.admins.index',
                             'permission' => 'admins.create',
                             'icon' => 'plus',
                         ],
@@ -841,13 +841,13 @@ return [
                             'children' => [
                                 [
                                     'label' => 'لیست نقش‌ها',
-                                    'route' => 'admin.roles.index',
+                                    'route' => 'np.roles.index',
                                     'permission' => 'roles.index',
                                     'icon' => 'list',
                                 ],
                                 [
                                     'label' => 'نقش جدید',
-                                    'route' => 'admin.roles.create',
+                                    'route' => 'np.roles.index',
                                     'permission' => 'roles.create',
                                     'icon' => 'plus',
                                 ],
@@ -1001,7 +1001,7 @@ return [
                     'children' => [
                         [
                             'label' => 'دسترسی‌ها',
-                            'route' => 'admin.permissions.index',
+                            'route' => 'np.permissions.index',
                             'permission' => null,
                             'icon' => 'shield',
                         ],
