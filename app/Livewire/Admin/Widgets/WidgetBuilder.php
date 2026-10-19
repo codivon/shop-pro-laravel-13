@@ -4,9 +4,8 @@ namespace App\Livewire\Admin\Widgets;
 
 use App\Models\Category;
 use App\Models\Widget;
+use App\Livewire\Admin\Widgets\Concerns\InteractsWithWidgetTemplates;
 use App\Services\WidgetTemplateRegistry;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
@@ -14,30 +13,53 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 
 /**
- * ویجت‌ساز تمام‌صفحه (فاز ۹-ه) — پنل ابزارک‌ها + پیش‌نمایش زنده iframe
+ * ویجت‌ساز تمام‌صفحه (فاز ۹-ه + بازطراحی فاز ۱۱) — پنل ابزارک‌ها + پیش‌نمایش زنده iframe
+ *
+ * فاز ۱۱:
+ *  - افزودن دو مرحله‌ای: انتخاب نوع (مودال ۱) → مشخصات (مودال ۲ مطابق اسکرین‌شات:
+ *    نوع/عنوان/وضعیت/ترتیب نمایش/options) → دکمه «ایجاد»
+ *  - ویرایش با مودال (به‌جای فرم inline)
+ *  - پشتیبانی از صفحه «posts» (ابزارک‌های مقالات) با PostWidgetBuilder
  *
  * پورت منطق داده از:
- *   - WidgetController::store / update  → createFromTemplate / saveOptions (با getRequestOptions + saveWidgetOptions)
+ *   - WidgetController::store / update  → createWidget / saveOptions (با getRequestOptions + saveWidgetOptions)
  *   - WidgetController::sort            → reorder
  *   - WidgetController::destroy         → delete
- *   - WidgetIndex::toggleActive         → toggleActive
  */
-#[Title('ویجت‌ساز صفحه اصلی')]
+#[Title('ویجت‌ساز')]
 class WidgetBuilder extends Component
 {
     use WithFileUploads;
+    use InteractsWithWidgetTemplates;
 
-    /** صفحه‌ی ابزارک‌ها (فعلاً فقط home مطابق اسپک) */
+    /** صفحه‌ی ابزارک‌ها: 'home' یا 'posts' (PostWidgetBuilder مقدار posts ست می‌کند) */
     public string $page = 'home';
 
-    /** id ابزارکی که فرم تنظیماتش باز است (فقط یکی) — null = همه بسته */
-    public ?int $editingId = null;
+    /** مودال انتخاب نوع (مرحله ۱ افزودن) */
+    public bool $showAddModal = false;
+
+    /** مودال مشخصات ابزارک (مرحله ۲ افزودن یا ویرایش) */
+    public bool $showFormModal = false;
+
+    /** حالت مودال مشخصات: false = ساخت ابزارک جدید (draftKey)، true = ویرایش (modalWidgetId) */
+    public bool $isModalEditing = false;
+
+    public ?int $modalWidgetId = null;
+
+    /** نوع انتخاب‌شده در مرحله ۱ (حالت ایجاد) */
+    public string $draftKey = '';
+
+    /* ---------------- فیلدهای مودال مشخصات (مطابق اسکرین‌شات فاز ۱۱) ---------------- */
+
+    public string $modalTitle = '';
+
+    public bool $modalActive = true;
+
+    /** ترتیب نمایش — خالی = آخر لیست */
+    public $modalOrdering = '';
 
     /** id ابزارک در مودال تایید حذف */
     public ?int $confirmingDelete = null;
-
-    /** مودال «افزودن ابزارک» (گرید کارت‌های template) */
-    public bool $showAddModal = false;
 
     /** مقادیر options ابزارک باز — پورت request->options قدیمی */
     public array $optionValues = [];
@@ -48,6 +70,36 @@ class WidgetBuilder extends Component
     public function mount(): void
     {
         auth('adminPanel')->user()?->can('themes.widgets') ?: abort(403);
+    }
+
+    /* ================================================================
+     *  صفحه / عنوان‌ها (PostWidgetBuilder رونویسی می‌کند)
+     * ================================================================ */
+
+    public function widgetPage(): string
+    {
+        return $this->page;
+    }
+
+    public function pageTitle(): string
+    {
+        return 'ویجت‌ساز صفحه اصلی';
+    }
+
+    public function pageLabel(): string
+    {
+        return 'صفحه اصلی';
+    }
+
+    /** آدرس پیش‌نمایش: خانه = / ، مقالات = /blog */
+    public function previewBaseUrl(): string
+    {
+        return url('/');
+    }
+
+    public function indexRoute(): string
+    {
+        return route('np.widgets.index');
     }
 
     /* ================================================================
@@ -73,43 +125,47 @@ class WidgetBuilder extends Component
         return WidgetTemplateRegistry::mergedForPage($this->page);
     }
 
-    /** ابزارکی که فرم تنظیماتش باز است */
-    #[Computed]
-    public function editingWidget(): ?Widget
+    /** template متناظر با کلید جاری مودال (ایجاد: draftKey / ویرایش: key ابزارک) */
+    protected function templateForCurrentKey(): ?array
     {
-        if (! $this->editingId) {
+        if ($this->isModalEditing) {
+            $widget = $this->modalWidget;
+
+            return $widget
+                ? WidgetTemplateRegistry::findConfigForPage($this->page, (string) $widget->key)
+                : null;
+        }
+
+        if ($this->draftKey === '') {
             return null;
         }
 
-        return $this->widgets->firstWhere('id', $this->editingId);
+        return WidgetTemplateRegistry::findConfigForPage($this->page, $this->draftKey);
     }
 
-    /** template ابزارک باز */
     #[Computed]
-    public function editingTemplate(): ?array
+    public function modalWidget(): ?Widget
     {
-        $widget = $this->editingWidget;
-
-        if (! $widget) {
+        if (! $this->modalWidgetId) {
             return null;
         }
 
-        return WidgetTemplateRegistry::findConfigForPage($this->page, (string) $widget->key);
+        return $this->widgets->firstWhere('id', $this->modalWidgetId);
     }
 
     /** مقدار فعلی یک option برای نمایش در فرم (پورت WidgetForm::optionValue) */
     public function optionValue(string $optionKey): ?string
     {
-        $widget = $this->editingWidget;
-
         if (array_key_exists($optionKey, $this->optionValues) && $this->optionValues[$optionKey] !== '') {
             return (string) $this->optionValues[$optionKey];
         }
 
+        $widget = $this->isModalEditing ? $this->modalWidget : null;
+
         return $widget ? $widget->option($optionKey) : null;
     }
 
-    /* ---------------- دسته‌بندی‌ها (پورت template() قدیمی) ---------------- */
+    /* ---------------- دسته‌بندی‌ها (پورت template() قدیمی — برای partial options) ---------------- */
 
     #[Computed]
     public function productCategories()
@@ -124,65 +180,12 @@ class WidgetBuilder extends Component
     }
 
     /* ================================================================
-     *  فرم تنظیمات (باز/بسته)
+     *  فاز ۱۱ — جریان افزودن دو مرحله‌ای
      * ================================================================ */
 
-    /** باز کردن فرم تنظیمات یک ابزارک (فقط یکی باز — کلیک روی آیتم باز، همان باز می‌ماند) */
-    public function openEditor(int $widgetId): void
-    {
-        auth('adminPanel')->user()?->can('themes.widgets') ?: abort(403);
-
-        $widget = $this->widgets->firstWhere('id', $widgetId);
-
-        if (! $widget) {
-            return;
-        }
-
-        $this->editingId = $widgetId;
-        $this->reset('fileUploads');
-        $this->loadOptionValues($widget);
-
-        // هایلایت + اسکرول به ابزارک داخل پیش‌نمایش (پس از load در JS ارسال می‌شود)
-        $this->dispatch('ap-highlight-widget', id: $widgetId);
-    }
-
-    public function closeEditor(): void
-    {
-        $this->editingId = null;
-        $this->reset('optionValues', 'fileUploads');
-    }
-
-    /** پر کردن مقادیر اولیه‌ی options از رکورد (پورت WidgetForm::loadOptionValues) */
-    protected function loadOptionValues(Widget $widget): void
-    {
-        $this->optionValues = [];
-
-        $template = WidgetTemplateRegistry::findConfigForPage($this->page, (string) $widget->key);
-
-        if (! $template || empty($template['options'])) {
-            return;
-        }
-
-        foreach ($template['options'] as $option) {
-            $optionKey = $option['key'];
-
-            if (in_array($option['input-type'], ['post_categories', 'product_categories'], true)) {
-                $widgetOption = $widget->options()->where('key', $optionKey)->first();
-
-                $this->optionValues[$optionKey] = $widgetOption
-                    ? $widgetOption->categories()->pluck('categories.id')->map(fn ($id) => (string) $id)->toArray()
-                    : [];
-            } elseif ($option['input-type'] !== 'file') {
-                // فایل‌ها در optionValues نمی‌آیند (مثل فرم قدیمی)
-                $this->optionValues[$optionKey] = (string) $widget->option($optionKey, $option['default'] ?? '');
-            }
-        }
-    }
-
-    /* ================================================================
-     *  افزودن (پورت store قدیمی با رفتار ویجت‌ساز)
-     * ================================================================ */
-
+    /**
+     * مرحله ۱ → ۲: انتخاب نوع (از مودال گرید کارت‌ها) — هنوز چیزی در DB ساخته نمی‌شود.
+     */
     public function createFromTemplate(string $key): void
     {
         auth('adminPanel')->user()?->can('themes.widgets') ?: abort(403);
@@ -202,42 +205,146 @@ class WidgetBuilder extends Component
             return;
         }
 
+        $this->isModalEditing = false;
+        $this->modalWidgetId = null;
+        $this->draftKey = $key;
+        $this->modalTitle = (string) ($template['title'] ?? $key);
+        $this->modalActive = false; // تا تکمیل تنظیمات غیرفعال (مطابق اسپک فاز ۹)
+        $this->modalOrdering = (int) $this->widgets->max('ordering') + 1;
+        $this->initOptionValuesForNew($key);
+
+        $this->showAddModal = false;
+        $this->showFormModal = true;
+    }
+
+    /**
+     * مرحله ۲: دکمه «ایجاد» — پورت store قدیمی (Widget::create + saveWidgetOptions).
+     */
+    public function createWidget(): void
+    {
+        auth('adminPanel')->user()?->can('themes.widgets') ?: abort(403);
+
+        if ($this->draftKey === '' || ! in_array($this->draftKey, WidgetTemplateRegistry::allKeysForPage($this->page), true)) {
+            $this->dispatch('toast', message: 'ابتدا نوع ابزارک را انتخاب کنید.', type: 'error');
+
+            return;
+        }
+
+        $template = WidgetTemplateRegistry::findConfigForPage($this->page, $this->draftKey);
+
+        if (! $template) {
+            $this->dispatch('toast', message: 'ویجت یافت نشد.', type: 'error');
+
+            return;
+        }
+
+        // عنوان اجباری (پورت validate عنوان در فرم قدیمی)
+        $this->validate([
+            'modalTitle' => 'required|string|max:191',
+        ], [
+            'modalTitle.required' => 'عنوان ابزارک الزامی است.',
+        ], [
+            'modalTitle' => 'عنوان ابزارک',
+        ]);
+
+        $errors = $this->validateOptionValues($template);
+
+        if (! empty($errors)) {
+            throw ValidationException::withMessages($errors);
+        }
+
         $maxOrdering = (int) $this->widgets->max('ordering');
 
         $widget = Widget::create([
-            'title'     => $template['title'] ?? $key,
-            'key'       => $key,
-            'is_active' => false, // تا تکمیل تنظیمات غیرفعال (مطابق اسپک)
+            'title'     => $this->modalTitle,
+            'key'       => $this->draftKey,
+            'is_active' => $this->modalActive,
             'theme'     => current_theme_name(),
             'lang'      => app()->getLocale(),
-            'ordering'  => $maxOrdering + 1,
+            'ordering'  => (int) $this->modalOrdering > 0 ? (int) $this->modalOrdering : $maxOrdering + 1,
         ]);
 
-        $this->showAddModal = false;
+        $options = $this->getRequestOptions($template, $widget);
+        $this->saveWidgetOptions($widget, $options);
 
-        // انتخاب و باز شدن فرم تنظیماتش
-        $this->editingId = $widget->id;
-        $this->reset('fileUploads');
-        $this->loadOptionValues($widget);
-        $this->dispatch('ap-highlight-widget', id: $widget->id);
+        // لاگ ایجاد (سبک‌تر از ویرایش — فقط ثبت عمل)
+        activity()
+            ->performedOn($widget)
+            ->causedBy(auth('adminPanel')->user())
+            ->withProperties([
+                'action'    => 'ابزارک ' . $this->pageLabel() . ' را ایجاد کرد',
+                'widget_id' => $widget->id,
+                'page'      => $this->page,
+                'ip'        => request()->ip(),
+            ])
+            ->log("مدیر ابزارک {$this->pageLabel()} «{$widget->title}» را ایجاد کرد");
 
+        $this->closeFormModal();
         unset($this->widgets);
 
-        $this->dispatch('toast', message: 'ابزارک «' . ($template['title'] ?? $key) . '» اضافه شد؛ تنظیمات را تکمیل و ذخیره کنید.', type: 'success');
+        $this->dispatch('toast', message: 'ابزارک «' . $widget->title . '» ایجاد شد.', type: 'success');
+        $this->dispatch('ap-highlight-widget', id: $widget->id);
         $this->dispatch('ap-refresh-preview');
     }
 
     /* ================================================================
-     *  ذخیره تنظیمات (پورت update قدیمی — حذف و بازساخت options)
+     *  ویرایش (مودال مشخصات) — پورت update قدیمی
      * ================================================================ */
 
+    /** باز کردن مودال مشخصات برای ویرایش ابزارک موجود */
+    public function openEditor(int $widgetId): void
+    {
+        auth('adminPanel')->user()?->can('themes.widgets') ?: abort(403);
+
+        $widget = $this->widgets->firstWhere('id', $widgetId);
+
+        if (! $widget) {
+            return;
+        }
+
+        $this->isModalEditing = true;
+        $this->modalWidgetId = $widgetId;
+        $this->draftKey = '';
+        $this->modalTitle = (string) $widget->title;
+        $this->modalActive = (bool) $widget->is_active;
+        $this->modalOrdering = (int) ($widget->ordering ?? 0);
+        $this->loadOptionValuesFor($widget);
+
+        $this->showFormModal = true;
+
+        // هایلایت + اسکرول به ابزارک داخل پیش‌نمایش (پس از load در JS ارسال می‌شود)
+        $this->dispatch('ap-highlight-widget', id: $widgetId);
+    }
+
+    public function closeFormModal(): void
+    {
+        $this->showFormModal = false;
+        $this->isModalEditing = false;
+        $this->modalWidgetId = null;
+        $this->draftKey = '';
+        $this->modalTitle = '';
+        $this->modalActive = true;
+        $this->modalOrdering = '';
+        $this->reset('optionValues', 'fileUploads');
+    }
+
+    /** باز کردن انتخاب نوع از داخل ویرایش (مودال ۱ روی مودال ۲) */
+    public function openTypePickerForEdit(): void
+    {
+        // ویرایش: فقط نمایش — نوع ابزارک ثابت است (تغییر نوع = options ناسازگار)
+        $this->dispatch('toast', message: 'برای تغییر نوع، ابزارک را حذف و ابزارک جدیدی بسازید.', type: 'info');
+    }
+
+    /**
+     * ذخیره مودال مشخصات — پورت update قدیمی (مشخصات + بازساخت options + لاگ)
+     */
     public function saveOptions(): void
     {
         auth('adminPanel')->user()?->can('themes.widgets') ?: abort(403);
 
-        $widget = $this->editingWidget;
+        $widget = $this->modalWidget;
 
-        if (! $widget) {
+        if (! $widget || ! $this->isModalEditing) {
             $this->dispatch('toast', message: 'ابتدا یک ابزارک را انتخاب کنید.', type: 'error');
 
             return;
@@ -251,111 +358,77 @@ class WidgetBuilder extends Component
             ]);
         }
 
-        /* شبیه‌سازی submit فرم قدیمی: همه‌ی optionها مثل فرم HTML مقدار می‌گیرند
-         * (input → default قالب، select → اولین گزینه مثل انتخاب پیش‌فرض مرورگر) */
-        foreach (($template['options'] ?? []) as $option) {
-            $optionKey = $option['key'];
+        $this->validate([
+            'modalTitle' => 'required|string|max:191',
+        ], [
+            'modalTitle.required' => 'عنوان ابزارک الزامی است.',
+        ], [
+            'modalTitle' => 'عنوان ابزارک',
+        ]);
 
-            if ($option['input-type'] === 'select' && (($this->optionValues[$optionKey] ?? '') === '')) {
-                $this->optionValues[$optionKey] = $option['options'][0]['value'] ?? null;
-            } elseif ($option['input-type'] === 'input' && ! array_key_exists($optionKey, $this->optionValues)) {
-                $this->optionValues[$optionKey] = $option['default'] ?? null;
-            }
+        $errors = $this->validateOptionValues($template);
+
+        if (! empty($errors)) {
+            throw ValidationException::withMessages($errors);
         }
 
-        // پورت Validator::make($request->options, $template['rules'])->validate()
-        $optionValidator = Validator::make($this->optionValues, $template['rules'] ?? []);
+        /* ========== پورت update قدیمی (مشخصات + options + لاگ) ========== */
 
-        if ($optionValidator->fails()) {
-            throw ValidationException::withMessages(
-                collect($optionValidator->errors()->toArray())
-                    ->mapWithKeys(fn ($messages, $optionKey) => ['optionValues.' . $optionKey => $messages[0]])
-                    ->all()
-            );
-        }
+        $oldOptions = $this->snapshotWidgetOptions($widget);
+        $oldTitle = $widget->title;
+        $oldActive = (bool) $widget->is_active;
+        $oldOrdering = (int) ($widget->ordering ?? 0);
 
-        /* ========== پورت update قدیمی (بخش options + لاگ) ========== */
-
-        $allChanges = [];
-        $adminName = auth('adminPanel')->user()?->full_name ?? auth('adminPanel')->user()?->name ?? 'مدیر';
-        $widgetTitle = $widget->title;
-
-        // 1. دریافت options قدیمی
-        $oldOptions = [];
-        foreach ($widget->options as $option) {
-            if ($option->key === 'post_categories' || $option->key === 'product_categories') {
-                $oldOptions[$option->key] = $option->categories->pluck('id')->toArray();
-            } else {
-                $oldOptions[$option->key] = $option->value;
-            }
-        }
+        // 1. مشخصات اصلی
+        $widget->update([
+            'title'     => $this->modalTitle,
+            'is_active' => $this->modalActive,
+            'ordering'  => (int) $this->modalOrdering > 0 ? (int) $this->modalOrdering : $widget->ordering,
+        ]);
 
         // 2. ذخیره options جدید (حذف و بازساخت — رفتار قدیمی)
         $options = $this->getRequestOptions($template, $widget);
         $widget->options()->delete();
         $this->saveWidgetOptions($widget, $options);
 
-        // 3. دریافت options جدید
-        $widget->refresh();
-        $newOptions = [];
-        foreach ($widget->options as $option) {
-            if ($option->key === 'post_categories' || $option->key === 'product_categories') {
-                $newOptions[$option->key] = $option->categories->pluck('id')->toArray();
-            } else {
-                $newOptions[$option->key] = $option->value;
-            }
+        // 3. لاگ (ساختار قدیمی)
+        $allChanges = [];
+
+        if ($oldTitle !== $widget->title) {
+            $allChanges['title'] = [
+                'title' => 'عنوان ابزارک',
+                'old'   => $oldTitle,
+                'new'   => $widget->title,
+            ];
         }
 
-        // 4. بررسی تغییرات options
-        $optionChanges = [];
-        $allKeys = array_unique(array_merge(array_keys($oldOptions), array_keys($newOptions)));
-
-        foreach ($allKeys as $optionKey) {
-            $oldValue = $oldOptions[$optionKey] ?? null;
-            $newValue = $newOptions[$optionKey] ?? null;
-
-            if ($oldValue != $newValue) {
-                $optionChanges[$optionKey] = [
-                    'old'   => $this->formatOptionValue($optionKey, $oldValue),
-                    'new'   => $this->formatOptionValue($optionKey, $newValue),
-                    'title' => $this->getOptionFieldTitle($optionKey),
-                ];
-            }
+        if ($oldActive !== $widget->is_active) {
+            $allChanges['is_active'] = [
+                'title' => 'وضعیت',
+                'old'   => $oldActive ? 'فعال' : 'غیرفعال',
+                'new'   => $widget->is_active ? 'فعال' : 'غیرفعال',
+            ];
         }
+
+        if ($oldOrdering !== (int) $widget->ordering) {
+            $allChanges['ordering'] = [
+                'title' => 'ترتیب نمایش',
+                'old'   => $oldOrdering,
+                'new'   => $widget->ordering,
+            ];
+        }
+
+        $optionChanges = $this->widgetOptionChanges($widget, $oldOptions);
 
         if (! empty($optionChanges)) {
             $allChanges['options'] = $optionChanges;
         }
 
-        // 5. ثبت لاگ (پورت ساختار دقیق activity log قدیمی)
-        if (! empty($allChanges)) {
-            $changeDetails = [];
+        $this->logWidgetActivity($widget, $allChanges, 'ابزارک  ' . $this->pageLabel() . ' را ویرایش کرد', $this->pageLabel());
 
-            if (isset($allChanges['options'])) {
-                foreach ($allChanges['options'] as $change) {
-                    $changeDetails[] = "{$change['title']} از «{$change['old']}» به «{$change['new']}»";
-                }
-            }
-
-            $logMessage = "مدیر {$adminName} ابزارک صفحه اصلی «{$widgetTitle}» را ویرایش کرد: " . implode('، ', $changeDetails);
-
-            activity()
-                ->performedOn($widget)
-                ->causedBy(auth('adminPanel')->user())
-                ->withProperties([
-                    'action'       => 'ابزارک  صفحه اصلی را ویرایش کرد', // فاصله‌ی دوتایی عیناً مثل قدیمی
-                    'widget_title' => $widgetTitle,
-                    'widget_id'    => $widget->id,
-                    'page'         => $this->page,
-                    'changes'      => $allChanges,
-                    'ip'           => request()->ip(),
-                ])
-                ->log($logMessage);
-        }
-
-        // 6. بازخوانی فرم با مقادیر تازه + پاک‌سازی فایل‌ها
+        // 4. بازخوانی فرم با مقادیر تازه + پاک‌سازی فایل‌ها
         $this->reset('fileUploads');
-        $this->loadOptionValues($widget);
+        $this->loadOptionValuesFor($widget->refresh());
         unset($this->widgets);
 
         $this->dispatch('toast', message: 'ذخیره شد.', type: 'success');
@@ -433,15 +506,14 @@ class WidgetBuilder extends Component
             ->first();
 
         if ($widget) {
-            // قدیمی با FK cascade (on delete cascade) حذف می‌شد؛ برای قطعیت در همه
-            // درایورها (SQLite FK pragma خاموش) حذف صریح options انجام می‌شود.
+            // قدیمی با FK cascade حذف می‌شد؛ برای قطعیت در همه درایورها حذف صریح options
             $widget->options()->delete();
             $widget->delete();
         }
 
-        // اگر ابزارک باز، همان بود فرمش بسته شود
-        if ($deletedId && $this->editingId === $deletedId) {
-            $this->closeEditor();
+        // اگر مودال ابزارک حذف‌شده باز بود، بسته شود
+        if ($deletedId && $this->modalWidgetId === $deletedId) {
+            $this->closeFormModal();
         }
 
         $this->confirmingDelete = null;
@@ -449,207 +521,6 @@ class WidgetBuilder extends Component
 
         $this->dispatch('toast', message: 'ابزارک با موفقیت حذف شد.', type: 'success');
         $this->dispatch('ap-refresh-preview');
-    }
-
-    /* ================================================================
-     *  پورت getRequestOptions قدیمی (۱:۱ مثل WidgetForm)
-     * ================================================================ */
-
-    protected function getRequestOptions(array $template, Widget $widget): array
-    {
-        $options = [];
-
-        foreach ($template['options'] as $index => $option) {
-            $optionKey = $option['key'];
-
-            switch ($option['input-type']) {
-                case 'input': {
-                    $options[$index]['input-type'] = $option['input-type'];
-                    $options[$index]['key'] = $optionKey;
-                    $options[$index]['value'] = $this->optionValues[$optionKey] ?? null;
-                    break;
-                }
-
-                case 'file': {
-                    if (! file_exists(public_path('/uploads/widgets'))) {
-                        Storage::disk('public')->makeDirectory('/uploads/widgets');
-                    }
-
-                    $file = $this->fileUploads[$optionKey] ?? null;
-
-                    if ($file) {
-                        $name = uniqid() . '_' . time() . '.' . $file->getClientOriginalExtension();
-                        $path = $file->storeAs('widgets', $name);
-                        $options[$index]['value'] = '/uploads/' . $path;
-                    } else {
-                        // بدون آپلود جدید → نگه‌داشتن مقدار قبلی
-                        $options[$index]['value'] = $widget->option($optionKey);
-                    }
-
-                    $options[$index]['input-type'] = $option['input-type'];
-                    $options[$index]['key'] = $optionKey;
-
-                    break;
-                }
-
-                case 'select': {
-                    $options[$index]['input-type'] = $option['input-type'];
-                    $options[$index]['key'] = $optionKey;
-                    $options[$index]['value'] = $this->optionValues[$optionKey] ?? null;
-                    break;
-                }
-
-                case 'post_categories':
-                case 'product_categories': {
-                    $options[$index]['input-type'] = $option['input-type'];
-                    $options[$index]['key'] = $optionKey;
-                    $options[$index]['value'] = $this->optionValues[$optionKey] ?? null;
-                    break;
-                }
-            }
-        }
-
-        return $options;
-    }
-
-    /* ================================================================
-     *  پورت saveWidgetOptions قدیمی (۱:۱ مثل WidgetForm)
-     *  categories → value='on'/'off' + sync پیوت
-     * ================================================================ */
-
-    protected function saveWidgetOptions(Widget $widget, array $options): void
-    {
-        foreach ($options as $option) {
-            switch ($option['input-type']) {
-                case 'post_categories':
-                case 'product_categories': {
-                    $value = is_array($option['value']) && ! empty($option['value']) ? 'on' : 'off';
-
-                    $insertedOption = $widget->options()->create([
-                        'key'   => $option['key'],
-                        'value' => $value,
-                    ]);
-
-                    $insertedOption->categories()->sync(is_array($option['value']) ? $option['value'] : []);
-
-                    break;
-                }
-
-                default: {
-                    $widget->options()->create([
-                        'key'   => $option['key'],
-                        'value' => $option['value'],
-                    ]);
-                }
-            }
-        }
-    }
-
-    /* ================================================================
-     *  پورت formatOptionValue + عنوان‌های فارسی (مثل WidgetForm)
-     * ================================================================ */
-
-    protected function formatOptionValue($optionKey, $value)
-    {
-        if (is_null($value)) {
-            return 'خالی';
-        }
-
-        if (is_array($value)) {
-            if (empty($value)) {
-                return 'هیچ موردی انتخاب نشده';
-            }
-
-            if ($optionKey === 'post_categories' || $optionKey === 'product_categories') {
-                try {
-                    $categoryNames = [];
-                    $categories = Category::query()->whereIn('id', $value)->get();
-
-                    foreach ($categories as $category) {
-                        if (isset($category->title) && $category->title) {
-                            $categoryNames[] = $category->title;
-                        } elseif (isset($category->name) && $category->name) {
-                            $categoryNames[] = $category->name;
-                        } else {
-                            $categoryNames[] = "#{$category->id}";
-                        }
-                    }
-
-                    return ! empty($categoryNames) ? implode('، ', $categoryNames) : implode('، ', $value);
-                } catch (\Exception) {
-                    return implode('، ', $value);
-                }
-            }
-
-            return implode('، ', $value);
-        }
-
-        if (is_bool($value)) {
-            return $value ? 'بله' : 'خیر';
-        }
-
-        return $value ?: 'خالی';
-    }
-
-    protected function getOptionFieldTitle(string $optionKey): string
-    {
-        $titles = [
-            // تنظیمات عمومی
-            'title'            => 'عنوان',
-            'link'             => 'لینک',
-            'link_title'       => 'عنوان لینک',
-            'limit'            => 'تعداد نمایش',
-            'order_by'         => 'ترتیب نمایش',
-            'sort_by'          => 'مرتب‌سازی بر اساس',
-            'show_more'        => 'نمایش دکمه بیشتر',
-            'show_pagination'  => 'نمایش صفحه‌بندی',
-            'ordering'         => 'ترتیب نمایش',
-
-            // تنظیمات ظاهری
-            'background_color' => 'رنگ پس‌زمینه',
-            'text_color'       => 'رنگ متن',
-            'button_text'      => 'متن دکمه',
-            'button_link'      => 'لینک دکمه',
-
-            // تنظیمات تصاویر
-            'image'            => 'تصویر',
-            'image_mobile'     => 'تصویر موبایل',
-            'banner_link'      => 'لینک بنر',
-            'alt_text'         => 'متن جایگزین تصویر',
-
-            // تنظیمات اسلایدر
-            'slides'           => 'اسلایدها',
-            'autoplay'         => 'پخش خودکار',
-            'autoplay_speed'   => 'سرعت پخش خودکار',
-            'dots'             => 'نقاط ناوبری',
-            'arrows'           => 'فلش‌های ناوبری',
-
-            // تنظیمات دسته‌بندی
-            'post_categories'    => 'دسته‌بندی‌های مقالات',
-            'product_categories' => 'دسته‌بندی‌های محصولات',
-
-            // تنظیمات محصولات
-            'product_ids'      => 'محصولات خاص',
-            'show_price'       => 'نمایش قیمت',
-            'show_rating'      => 'نمایش امتیاز',
-            'show_quick_view'  => 'نمایش دکمه مشاهده سریع',
-
-            // تنظیمات مقالات
-            'post_ids'         => 'مقالات خاص',
-            'show_excerpt'     => 'نمایش خلاصه',
-            'show_author'      => 'نمایش نویسنده',
-            'show_date'        => 'نمایش تاریخ',
-
-            // تنظیمات بنر
-            'banner_position'  => 'موقعیت بنر',
-            'banner_width'     => 'عرض بنر',
-            'banner_height'    => 'ارتفاع بنر',
-
-            // تنظیمات استوری (ماژول)
-            'number'           => 'تعداد استوری',
-        ];
-
-        return $titles[$optionKey] ?? str_replace('_', ' ', $optionKey);
     }
 
     /* ================================================================

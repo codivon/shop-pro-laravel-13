@@ -89,8 +89,11 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin-old/' . admin_route_prefix()]
     Route::get('login', [AdminLoginController::class, 'showLoginForm'])->name('login');
 
     Route::post('login/submit', [AdminLoginController::class, 'login'])->name('login-submit');
-    Route::get('register', [InstallController::class, 'showRegisterForm'])->name('register')->middleware(['CheckUserNotExists']);
-    Route::post('register', [InstallController::class, 'register'])->middleware(['CheckUserNotExists']);
+    // راه‌اندازی اولیه (ثبت اولین مدیر) — آدرس جدید: /admin-old/{prefix}/setup
+    // (مسیر قدیمی register به آدرس جدید ریدایرکت می‌شود تا لینک‌های قدیمی نشکند)
+    Route::get('setup', [InstallController::class, 'showRegisterForm'])->name('register')->middleware(['CheckUserNotExists']);
+    Route::post('setup', [InstallController::class, 'register'])->middleware(['CheckUserNotExists']);
+    Route::get('register', fn () => redirect()->route('admin.register'))->name('register.legacy');
     Route::get('logout', [AdminLoginController::class, 'logout'])->name('logout');
 });
 

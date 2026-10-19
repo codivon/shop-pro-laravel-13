@@ -46,16 +46,41 @@
                     </h2>
 
                     {{-- انتخاب نوع ابزارک --}}
+                    {{-- فاز ۱۱: انتخاب نوع به‌صورت کارت‌های کلیک‌شدنی (به‌جای select) --}}
                     <div class="mb-5">
                         <label class="mb-1.5 block text-xs font-semibold" for="widget-key">نوع ابزارک <span class="text-red-500">*</span></label>
-                        <select id="widget-key" wire:model.live="key" class="ap-input">
-                            <option value="">انتخاب کنید</option>
+                        <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                             @foreach ($this->templates as $templateKey => $templateWidget)
-                                <option value="{{ $templateKey }}" @selected($key === $templateKey)>
-                                    {{ $templateWidget['title'] ?? $templateKey }}{{ isset($templateWidget['module']) ? ' (' . $templateWidget['module'] . ')' : '' }}
-                                </option>
+                                @php
+                                    $tImg = $templateWidget['image_url'] ?? (isset($templateWidget['image']) ? theme_asset($templateWidget['image']) : null);
+                                @endphp
+                                <button type="button"
+                                        wire:click="$set('key', {{ \Illuminate\Support\Js::from($templateKey)->toHtml() }})"
+                                        class="group relative flex items-center gap-2.5 rounded-2xl border p-2.5 text-start transition-all duration-200 {{ $key === $templateKey
+                                            ? 'border-brand-500 bg-brand-50/60 shadow-[0_2px_10px_-4px_rgb(5_150_105/.35)] dark:bg-brand-500/12'
+                                            : 'border-line bg-surface hover:border-brand-400/70 hover:bg-brand-50/30 dark:border-night-line dark:bg-night-3/60 dark:hover:bg-brand-500/8' }}"
+                                        :aria-pressed="{{ $key === $templateKey ? 'true' : 'false' }}">
+                                    @if ($tImg)
+                                        <img src="{{ $tImg }}" alt="{{ $templateWidget['title'] ?? $templateKey }}"
+                                             class="size-11 shrink-0 rounded-xl border border-line object-cover dark:border-night-line"
+                                             onerror="this.classList.add('hidden');">
+                                    @else
+                                        <span class="flex size-11 shrink-0 items-center justify-center rounded-xl border border-line bg-surface-2 text-ink-3 dark:border-night-line dark:bg-night-3">
+                                            <x-admin-panel::icon name="layout-template" class="size-5" />
+                                        </span>
+                                    @endif
+                                    <span class="min-w-0">
+                                        <span class="block truncate text-xs font-bold">{{ $templateWidget['title'] ?? $templateKey }}</span>
+                                        @if (isset($templateWidget['module']))
+                                            <span class="mt-0.5 block truncate text-[9px] font-semibold text-brand-700 dark:text-brand-400">{{ $templateWidget['module'] }}</span>
+                                        @endif
+                                    </span>
+                                    <span class="absolute top-2 end-2 flex size-4.5 items-center justify-center rounded-full transition-all {{ $key === $templateKey ? 'bg-brand-600 text-white' : 'bg-surface-3 text-transparent dark:bg-night-3' }}">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="size-3"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </span>
+                                </button>
                             @endforeach
-                        </select>
+                        </div>
                         @error('key') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                     </div>
 

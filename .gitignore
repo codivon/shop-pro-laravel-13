@@ -20,3 +20,6 @@ npm-debug.log
 yarn-error.log
 .idea/
 .htaccess-for-zip
+
+# hot file وییت پنل مدیریت (هرگز کامیت نشود)
+/admin-panel.hot

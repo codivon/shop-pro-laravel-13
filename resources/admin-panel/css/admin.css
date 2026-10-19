@@ -393,3 +393,116 @@ body {
 .ap-builder-panel [draggable="true"]:active {
     cursor: grabbing;
 }
+
+/* ==================================================================
+   فیکس تراز اسپینر داخل دکمه‌ها (فاز ۱۱)
+   Livewire هنگام نمایش span های [wire:loading] به‌جای display اصلی،
+   display:inline-block ست می‌کند؛ نتیجه: آیکون و متن زیر هم می‌افتند.
+   راه‌حل: هر span لودینگِ «نمایان» داخل دکمه به‌صورت inline-flex وسط‌چین شود.
+   (وقتی Livewire display:none ست کند سلکتور نمی‌خورد و مخفی می‌ماند؛
+   اسپن‌های wire:loading.remove هم نام اتریبیوت متفاوت دارند و بی‌تأثیرند.)
+   ================================================================== */
+button [wire\:loading]:not([style*="display: none"]):not([style*="display:none"]):not([style*="display:none !important"]) {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* ==================================================================
+   انتخابگر کارتی چک‌باکس/رادیو (فاز ۱۱) — جایگزین چک‌باکس خام
+   ساختار: <label class="ap-check-card"> <input type="checkbox|radio"> <span class="ap-check-card-body">…</span> </label>
+   ================================================================== */
+.ap-check-card {
+    @apply relative flex cursor-pointer items-center gap-2.5 rounded-xl border border-line bg-surface p-2.5
+           text-[13px] font-medium text-ink transition-all duration-200
+           hover:border-brand-400/70 hover:bg-brand-50/40 select-none;
+}
+.dark .ap-check-card {
+    @apply border-night-line bg-night-3 text-night-ink hover:border-brand-500/50 hover:bg-brand-500/8;
+}
+.ap-check-card input {
+    @apply absolute inset-0 size-full cursor-pointer opacity-0;
+}
+.ap-check-card .ap-check-mark {
+    @apply relative flex size-5 shrink-0 items-center justify-center rounded-md border-2 border-line bg-surface
+           text-transparent transition-all duration-200;
+}
+.dark .ap-check-card .ap-check-mark {
+    @apply border-night-line bg-night-2;
+}
+.ap-check-card .ap-check-mark svg {
+    @apply size-3.5;
+    stroke-width: 3;
+}
+.ap-check-card input:checked ~ .ap-check-mark {
+    @apply border-brand-600 bg-brand-600 text-white;
+}
+.dark .ap-check-card input:checked ~ .ap-check-mark {
+    @apply border-brand-500 bg-brand-500;
+}
+.ap-check-card input:checked ~ .ap-check-card-body {
+    @apply text-brand-800 dark:text-brand-300;
+}
+.ap-check-card input:focus-visible ~ .ap-check-mark {
+    @apply ring-4 ring-brand-500/25;
+}
+.ap-check-card:has(input:checked) {
+    @apply border-brand-500 bg-brand-50/70 shadow-[0_2px_10px_-4px_rgb(5_150_105/.35)];
+}
+.dark .ap-check-card:has(input:checked) {
+    @apply border-brand-500/70 bg-brand-500/12;
+}
+/* حالت رادیویی — mark دایره‌ای */
+.ap-check-card.is-radio .ap-check-mark {
+    @apply rounded-full;
+}
+.ap-check-card.is-radio .ap-check-mark::after {
+    content: "";
+    @apply absolute size-2 rounded-full bg-white opacity-0 transition-opacity;
+}
+.ap-check-card.is-radio input:checked ~ .ap-check-mark svg {
+    @apply hidden;
+}
+.ap-check-card.is-radio input:checked ~ .ap-check-mark::after {
+    @apply opacity-100;
+}
+/* حالت غیرفعال */
+.ap-check-card:has(input:disabled) {
+    @apply cursor-not-allowed opacity-55;
+}
+
+/* ==================================================================
+   درگ‌انددراپ درخت دسته‌بندی‌ها (فاز ۱۱) — نوارهای رهاسازی
+   ================================================================== */
+.ap-dropband {
+    /* خود نوار نامرئی است؛ بازخورد بصری با کلاس‌های والد (ap-drop-*) داده می‌شود */
+    pointer-events: none;
+}
+/* خط قبل/بعد: لبه بالایی/پایینی ردیف */
+.cat-row.ap-drop-before {
+    box-shadow: inset 0 3px 0 0 var(--color-brand-500), 0 6px 16px -8px rgb(5 150 105/.35);
+    border-color: var(--color-brand-500) !important;
+}
+.cat-row.ap-drop-after {
+    box-shadow: inset 0 -3px 0 0 var(--color-brand-500), 0 6px 16px -8px rgb(5 150 105/.35);
+    border-color: var(--color-brand-500) !important;
+}
+/* داخل: قاب برند + ته‌رنگ ملایم */
+.cat-row.ap-drop-inside {
+    box-shadow: inset 0 0 0 2px var(--color-brand-500);
+    background-color: color-mix(in srgb, var(--color-brand-500) 8%, transparent) !important;
+    border-color: var(--color-brand-500) !important;
+}
+/* ممنوع (زیرشاخه خودش) */
+.cat-row.ap-drop-forbidden {
+    box-shadow: inset 0 0 0 2px var(--color-red-500);
+    background-color: color-mix(in srgb, var(--color-red-500) 7%, transparent) !important;
+    border-color: var(--color-red-500) !important;
+}
+/* ردیف در حال کشیده شدن */
+.cat-row[style*="opacity"] {
+    cursor: grabbing;
+}

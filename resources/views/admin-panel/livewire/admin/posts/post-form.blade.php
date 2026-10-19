@@ -89,23 +89,27 @@
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                             <label class="mb-1.5 block text-xs font-semibold">دسته بندی ها <span class="text-red-500">*</span></label>
-                            <div class="max-h-96 space-y-1.5 overflow-y-auto rounded-xl border border-line bg-surface-2 p-3 dark:border-night-line dark:bg-night-3">
-                                @forelse ($this->categoryTree as $node)
-                                    @php $category = $node['model']; @endphp
-                                    <label class="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] transition-colors hover:bg-surface-3 dark:hover:bg-night-2"
-                                           style="margin-inline-start: {{ $node['depth'] * 20 }}px">
-                                        <input type="checkbox" wire:model="categories" value="{{ $category->id }}"
-                                               class="size-4 shrink-0 rounded-md border-line text-brand-600 focus:ring-brand-500/30 dark:border-night-line">
-                                        <span class="font-medium">{{ $category->title }}</span>
-                                        @unless ($category->published)
-                                            <span class="ap-badge bg-amber-50 text-[10px] text-amber-700 dark:bg-amber-500/12 dark:text-amber-400">پیش‌نویس</span>
-                                        @endunless
-                                    </label>
-                                @empty
-                                    <p class="py-3 text-center text-xs text-ink-3 dark:text-night-ink-2">
-                                        دسته‌بندی وبلاگی برای زبان فعلی ثبت نشده است.
-                                    </p>
-                                @endforelse
+                            {{-- فاز ۱۱: انتخابگر کارتی به‌جای چک‌باکس خام --}}
+                            <div class="max-h-96 overflow-y-auto rounded-xl border border-line bg-surface-2 p-3 dark:border-night-line dark:bg-night-3">
+                                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                    @forelse ($this->categoryTree as $node)
+                                        @php $category = $node['model']; @endphp
+                                        <label class="ap-check-card" style="margin-inline-start: {{ $node['depth'] * 14 }}px">
+                                            <input type="checkbox" wire:model="categories" value="{{ $category->id }}">
+                                            <span class="ap-check-mark" aria-hidden="true">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                            </span>
+                                            <span class="ap-check-card-body truncate">{{ $category->title }}</span>
+                                            @unless ($category->published)
+                                                <span class="ap-badge bg-amber-50 text-[10px] text-amber-700 dark:bg-amber-500/12 dark:text-amber-400">پیش‌نویس</span>
+                                            @endunless
+                                        </label>
+                                    @empty
+                                        <p class="py-3 text-center text-xs text-ink-3 dark:text-night-ink-2">
+                                            دسته‌بندی وبلاگی برای زبان فعلی ثبت نشده است.
+                                        </p>
+                                    @endforelse
+                                </div>
                             </div>
                             @error('categories') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                             @error('categories.*') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
@@ -283,20 +287,27 @@
                         <x-admin-panel::icon name="settings" class="size-4 text-brand-600 dark:text-brand-400" />
                         وضعیت نوشته
                     </h3>
-                    <label class="flex cursor-pointer items-center gap-2.5 rounded-xl border border-line px-3 py-2.5 text-[13px] transition-colors hover:bg-surface-2 dark:border-night-line dark:hover:bg-night-3">
-                        <input type="checkbox" wire:model="published"
-                               class="size-4 rounded-md border-line text-brand-600 focus:ring-brand-500/30 dark:border-night-line">
-                        انتشار نوشته؟
+                    {{-- فاز ۱۱: انتخابگر کارتی وضعیت‌ها --}}
+                    <label class="ap-check-card">
+                        <input type="checkbox" wire:model="published">
+                        <span class="ap-check-mark" aria-hidden="true">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                            </span>
+                        <span class="ap-check-card-body">انتشار نوشته</span>
                     </label>
-                    <label class="flex cursor-pointer items-center gap-2.5 rounded-xl border border-line px-3 py-2.5 text-[13px] transition-colors hover:bg-surface-2 dark:border-night-line dark:hover:bg-night-3">
-                        <input type="checkbox" wire:model="is_editor_pick"
-                               class="size-4 rounded-md border-line text-amber-500 focus:ring-amber-500/30 dark:border-night-line">
-                        انتخاب سردبیر؟
+                    <label class="ap-check-card">
+                        <input type="checkbox" wire:model="is_editor_pick">
+                        <span class="ap-check-mark" aria-hidden="true">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                            </span>
+                        <span class="ap-check-card-body">انتخاب سردبیر</span>
                     </label>
-                    <label class="flex cursor-pointer items-center gap-2.5 rounded-xl border border-line px-3 py-2.5 text-[13px] transition-colors hover:bg-surface-2 dark:border-night-line dark:hover:bg-night-3">
-                        <input type="checkbox" wire:model="allow_comments"
-                               class="size-4 rounded-md border-line text-brand-600 focus:ring-brand-500/30 dark:border-night-line">
-                        امکان ارسال دیدگاه؟
+                    <label class="ap-check-card">
+                        <input type="checkbox" wire:model="allow_comments">
+                        <span class="ap-check-mark" aria-hidden="true">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                            </span>
+                        <span class="ap-check-card-body">امکان ارسال دیدگاه</span>
                     </label>
                 </div>
 

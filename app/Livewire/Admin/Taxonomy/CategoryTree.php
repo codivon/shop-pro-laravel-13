@@ -475,6 +475,27 @@ class CategoryTree extends Component
         $this->dispatch('toast', message: 'ساختار درخت به‌روزرسانی شد.', type: 'success');
     }
 
+    /**
+     * فاز ۱۱ — خارج کردن دسته از زیرمجموعه با درگ (رها کردن روی ناحیه «سطح ریشه»)
+     * پورت همان خروجی changeParent با target=0: category_id=null + انتهای صف ریشه.
+     */
+    public function moveNodeToRoot(int $dragId): void
+    {
+        $this->authorizeCategory();
+
+        $drag = Category::where('type', $this->type)->find($dragId);
+
+        if (! $drag || (int) $drag->category_id === 0) {
+            return; // Already root
+        }
+
+        $drag->category_id = null;
+        $drag->ordering = $this->nextOrdering(null);
+        $drag->save();
+
+        $this->dispatch('toast', message: 'دسته به سطح ریشه منتقل شد.', type: 'success');
+    }
+
     /* ============================ کمکی ============================ */
 
     /** بزرگ‌ترین ترتیب خواهرها + ۱ (برای افزودن به انتهای سطح) */

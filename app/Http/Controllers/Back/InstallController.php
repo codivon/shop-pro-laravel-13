@@ -56,7 +56,7 @@ class InstallController extends Controller
         $this->configApplication();
         Auth::guard('adminPanel')->login($admin);
 
-        return response()->json(['admin_prefix' => $request->admin_route_prefix]);
+        return response()->json(['admin_prefix' => $request->admin_route_prefix, 'redirect' => url('/admin/' . $request->admin_route_prefix)]);
     }
 
     private function configApplication()

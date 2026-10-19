@@ -216,21 +216,20 @@
 
                 {{-- دسته‌بندی‌های اضافی --}}
                 <div>
-                    <label class="mb-1.5 block text-[13px] font-semibold">دسته‌بندی‌های بیشتر</label>
+                    {{-- فاز ۱۱: انتخابگر کارتی به‌جای چک‌باکس خام --}}
                     <div class="max-h-48 overflow-y-auto rounded-xl border border-line bg-surface-2 p-3 dark:border-night-line dark:bg-night-3/50">
-                        <div class="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
+                        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                             @foreach ($this->categories as $cat)
-                                @if ($cat->category_id || true)
-                                    <label class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] transition-colors hover:bg-surface-3 dark:hover:bg-night-3">
-                                        <input type="checkbox" value="{{ $cat->id }}" wire:model="extraCategories"
-                                               class="size-4 rounded-md border-line text-brand-600 focus:ring-brand-500/30 dark:border-night-line">
-                                        <span class="truncate">{{ $cat->title }}</span>
-                                    </label>
-                                @endif
+                                <label class="ap-check-card">
+                                    <input type="checkbox" value="{{ $cat->id }}" wire:model="extraCategories">
+                                    <span class="ap-check-mark" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                    </span>
+                                    <span class="ap-check-card-body truncate">{{ $cat->title }}</span>
+                                </label>
                             @endforeach
                         </div>
                     </div>
-                </div>
 
                 {{-- برچسب‌ها --}}
                 <div x-data="apTags()" data-initial="{{ old('labels', $labels) }}" x-effect="$wire.labels = items.join(',')">

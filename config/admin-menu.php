@@ -186,15 +186,18 @@ return [
                             'icon' => 'settings-2',
                         ],
                         [
-                            'label' => 'ویجت‌ساز صفحه اصلی',
-                            'route' => 'np.widgets.builder',
+                            // فاز ۱۱: ورود اول به لیست ابزارک‌ها؛ ویجت‌ساز تعاملی از همان صفحه در دسترس است
+                            'label' => 'ابزارک‌های صفحه اصلی',
+                            'route' => 'np.widgets.index',
                             'permission' => 'themes.settings',
                             'icon' => 'layout-panel-top',
+                            'active_routes' => ['np.widgets.index', 'np.widgets.create', 'np.widgets.edit', 'np.widgets.builder'],
                         ],
                         [
-                            'label' => 'ویجت‌های وبلاگ',
+                            'label' => 'ابزارک‌های مقالات',
                             'route' => 'np.posts-widgets.index',
                             'permission' => 'themes.settings',
+                            'active_routes' => ['np.posts-widgets.index', 'np.posts-widgets.create', 'np.posts-widgets.edit', 'np.widgets.posts-builder'],
                             'icon' => 'layout-panel-left',
                         ],
                     ],

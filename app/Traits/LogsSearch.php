@@ -5,14 +5,29 @@ namespace App\Traits;
 use App\Models\Search;
 use Illuminate\Http\Request;
 
+/**
+ * FIX FK violation (SQLSTATE 23000 / 1452):
+ * auth()->id() مقدار ذخیره‌شده در session را برمی‌گرداند؛ اگر کاربر حذف شده باشد
+ * این id در جدول users وجود ندارد و INSERT با خطای کلید خارجی شکست می‌خورد.
+ * auth()->user()?->id مدل را واقعاً resolve می‌کند و برای کاربر حذف‌شده null می‌دهد
+ * (ستون user_id nullable است و ON DELETE SET NULL دارد).
+ */
 trait LogsSearch
 {
+    /** شناسه امن کاربر جاری — فقط وقتی رکورد کاربر واقعاً وجود دارد */
+    protected function safeSearchUserId(): ?int
+    {
+        $user = auth()->user();
+
+        return $user?->exists ? $user->id : null;
+    }
+
     protected function logProductSearch(Request $request, $products, $categories, $brand, $brand_categories)
     {
        $keyword= $request->q ? $request->q : $request->s;
        $keyword = $keyword ? $keyword : $categories->title;
         return Search::create([
-            'user_id' => auth()->id(),
+            'user_id' => $this->safeSearchUserId(),
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'keyword' => $keyword,
@@ -36,7 +51,7 @@ trait LogsSearch
     protected function logPostSearch(Request $request, $posts)
     {
         return Search::create([
-            'user_id' => auth()->id(),
+            'user_id' => $this->safeSearchUserId(),
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'keyword' => $request->key,

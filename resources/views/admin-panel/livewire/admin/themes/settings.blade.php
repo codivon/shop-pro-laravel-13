@@ -1,87 +1,159 @@
-{{-- تنظیمات قالب — پورت back/themes/settings.blade.php (فاز ۷-ج۴) — بازطراحی مدرن فاز ۹-ه (کامپوننت ThemeSettings دست‌نخورده) --}}
+{{-- تنظیمات قالب — پورت back/themes/settings.blade.php — بازطراحی مدرن فاز ۱۱ --}}
+{{-- فیلدها بر اساس «linebreak» (سربرگ بخش قدیمی) به کارت‌های مستقل بخش‌بندی می‌شوند --}}
 @php
     $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+
+    // بخش‌بندی: هر linebreak = آغاز بخش جدید؛ فیلدهای قبل از اولین linebreak = بخش «عمومی»
+    $sections = [];
+    $currentTitle = 'تنظیمات عمومی';
+    $currentFields = [];
+
+    foreach ($this->settingsFields() as $setting) {
+        if (($setting['input-type'] ?? '') === 'linebreak') {
+            if (! empty($currentFields)) {
+                $sections[] = ['title' => $currentTitle, 'html' => null, 'fields' => $currentFields];
+            }
+            $currentTitle = trim(strip_tags($setting['title'] ?? '')) ?: 'تنظیمات';
+            $currentHtml = $setting['html'] ?? null;
+            $currentFields = [];
+            // عنوان بخش با html سفارشی قدیمی هم پشتیبانی می‌شود
+            $sections[] = ['title' => $currentTitle, 'html' => $currentHtml, 'fields' => null, 'header_only' => true];
+            continue;
+        }
+        $currentFields[] = $setting;
+    }
+    if (! empty($currentFields)) {
+        $sections[] = ['title' => $currentTitle, 'html' => null, 'fields' => $currentFields];
+    }
+
+    // ادغام header_only با بخش بعدی (سربرگ سفارشی + فیلدهایش در یک کارت)
+    $final = [];
+    $count = count($sections);
+    for ($i = 0; $i < $count; $i++) {
+        $sec = $sections[$i];
+        if (! empty($sec['header_only']) && isset($sections[$i + 1]) && empty($sections[$i + 1]['header_only'])) {
+            $next = $sections[$i + 1];
+            $final[] = [
+                'title'  => $sec['html'] ? null : $sec['title'],
+                'html'   => $sec['html'],
+                'fields' => $next['fields'],
+            ];
+            $i++;
+        } elseif (empty($sec['header_only'])) {
+            $final[] = $sec;
+        }
+    }
+
+    $sectionIcons = ['sliders-horizontal', 'palette', 'layout-panel-top', 'shopping-bag', 'newspaper', 'phone', 'share-2', 'settings'];
 @endphp
 <div class="mx-auto max-w-6xl space-y-5">
 
     {{-- سربرگ --}}
-    <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-            <a href="{{ route('np.themes.index') }}" class="ap-btn-ghost !p-2" title="بازگشت به لیست قالب‌ها">
-                <x-admin-panel::icon name="arrow-right" class="size-4" />
-            </a>
-            <span class="flex size-11 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-500/25">
-                <x-admin-panel::icon name="settings-2" class="size-6" />
-            </span>
-            <div>
-                <h1 class="text-lg font-bold">تنظیمات قالب</h1>
-                <p class="text-xs text-ink-3 dark:text-night-ink-2">قالب فعال: {{ config('general.current_theme') }}</p>
+    <div class="relative overflow-hidden rounded-3xl bg-linear-to-bl from-brand-700 via-brand-600 to-brand-500 p-5 text-white shadow-lg shadow-brand-600/20 sm:p-6">
+        <span class="pointer-events-none absolute -top-10 -left-10 size-44 rounded-full bg-white/10 blur-2xl" aria-hidden="true"></span>
+        <span class="pointer-events-none absolute -bottom-14 left-1/3 size-52 rounded-full bg-white/10 blur-2xl" aria-hidden="true"></span>
+
+        <div class="relative flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3.5">
+                <a href="{{ route('np.themes.index') }}"
+                   class="flex size-11 items-center justify-center rounded-2xl bg-white/15 shadow-inner backdrop-blur transition-transform hover:scale-105"
+                   title="بازگشت به لیست قالب‌ها" aria-label="بازگشت به لیست قالب‌ها">
+                    <x-admin-panel::icon name="arrow-right" class="size-5" />
+                </a>
+                <span class="flex size-13 items-center justify-center rounded-2xl bg-white/15 shadow-inner backdrop-blur">
+                    <x-admin-panel::icon name="settings-2" class="size-7" />
+                </span>
+                <div>
+                    <h1 class="text-lg font-bold sm:text-xl">تنظیمات قالب</h1>
+                    <p class="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/85">
+                        <span>قالب فعال:</span>
+                        <span class="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold">{{ config('general.current_theme') }}</span>
+                        <span class="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold">
+                            <span class="fa-digits">{{ number_format(count($this->settingsFields())) }}</span> فیلد
+                        </span>
+                    </p>
+                </div>
             </div>
+            <p class="hidden text-[11px] leading-6 text-white/80 sm:block sm:max-w-64">
+                تغییرات پس از ذخیره، مستقیماً روی فروشگاه اعمال می‌شود.
+            </p>
         </div>
-        <span class="ap-badge bg-surface-3 text-ink-2 dark:bg-night-3 dark:text-night-ink-2">
-            <x-admin-panel::icon name="sliders-horizontal" class="size-3.5" />
-            <span class="fa-digits">{{ number_format(count($this->settingsFields())) }}</span> فیلد تنظیماتی
-        </span>
     </div>
 
     @if (count($this->settingsFields()))
         <form wire:submit="save" class="space-y-5">
 
-            {{-- بخش‌بندی فیلدها (linebreak قدیمی = سربرگ بخش) --}}
-            <div class="ap-card overflow-hidden p-0">
-                <div class="grid grid-cols-1 gap-x-5 gap-y-4 p-4 sm:p-5 md:grid-cols-2">
+            {{-- ===== کارت‌های بخش‌بندی‌شده ===== --}}
+            @foreach ($final as $si => $section)
+                <section class="ap-card overflow-hidden p-0">
+                    {{-- سربرگ بخش --}}
+                    <div class="flex items-center gap-2.5 border-b border-line bg-surface-2/50 px-4 py-3 dark:border-night-line dark:bg-night-3/40">
+                        <span class="flex size-8 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
+                            <x-admin-panel::icon name="{{ $sectionIcons[$si % count($sectionIcons)] }}" class="size-4" />
+                        </span>
+                        @if ($section['html'])
+                            {!! $section['html'] !!}
+                        @else
+                            <h2 class="text-[13px] font-bold">{{ $section['title'] }}</h2>
+                        @endif
+                        <span class="ms-auto rounded-full bg-surface-3 px-2 py-0.5 text-[10px] font-bold text-ink-3 dark:bg-night-3 dark:text-night-ink-2">
+                            <span class="fa-digits">{{ number_format(count($section['fields'])) }}</span> فیلد
+                        </span>
+                    </div>
 
-                    @foreach ($this->settingsFields() as $setting)
-                        @switch($setting['input-type'] ?? '')
+                    {{-- فیلدهای بخش --}}
+                    <div class="grid grid-cols-1 gap-x-5 gap-y-4 p-4 sm:p-5 md:grid-cols-2">
+                        @foreach ($section['fields'] as $setting)
+                            @switch($setting['input-type'] ?? '')
 
-                            @case('select')
-                                @php
-                                    $isYesNo = count($setting['options'] ?? []) === 2
-                                        && in_array('yes', array_column($setting['options'], 'value'), true)
-                                        && in_array('no', array_column($setting['options'], 'value'), true);
-                                @endphp
-                                <div class="{{ $setting['class'] ?? '' }}">
-                                    <label class="mb-1.5 block text-xs font-semibold">{{ $setting['title'] }}</label>
+                                @case('select')
+                                    @php
+                                        $isYesNo = count($setting['options'] ?? []) === 2
+                                            && in_array('yes', array_column($setting['options'], 'value'), true)
+                                            && in_array('no', array_column($setting['options'], 'value'), true);
+                                    @endphp
+                                    <div class="{{ $setting['class'] ?? '' }}">
+                                        <label class="mb-1.5 block text-xs font-semibold">{{ $setting['title'] }}</label>
 
-                                    @if ($isYesNo)
-                                        {{-- سوییچ دوتایی بله/خیر (همان wire:model API — با $set) --}}
-                                        <div class="inline-flex w-full rounded-xl border border-line bg-surface-2 p-1 dark:border-night-line dark:bg-night-3" role="group" aria-label="{{ $setting['title'] }}">
-                                            @foreach ($setting['options'] as $opt)
-                                                <button type="button"
-                                                        wire:click="$set('settings.{{ $setting['key'] }}', '{{ $opt['value'] }}')"
-                                                        class="flex-1 rounded-lg px-3 py-1.5 text-xs font-bold transition-all duration-200 {{ ($settings[$setting['key']] ?? '') == $opt['value']
-                                                            ? 'bg-surface text-brand-600 shadow-sm dark:bg-night-2 dark:text-brand-400'
-                                                            : 'text-ink-3 hover:text-ink-2 dark:text-night-ink-2' }}"
-                                                        :aria-pressed="{{ ($settings[$setting['key']] ?? '') == $opt['value'] ? 'true' : 'false' }}">
-                                                    {{ $opt['title'] }}
-                                                </button>
-                                            @endforeach
-                                        </div>
-                                    @else
-                                        <select wire:model="settings.{{ $setting['key'] }}" class="ap-input !py-2">
-                                            @foreach (($setting['options'] ?? []) as $opt)
-                                                <option value="{{ $opt['value'] }}">{{ $opt['title'] }}</option>
-                                            @endforeach
-                                        </select>
-                                    @endif
-                                </div>
-                                @break
+                                        @if ($isYesNo)
+                                            {{-- سوییچ دوتایی بله/خیر --}}
+                                            <div class="inline-flex w-full rounded-xl border border-line bg-surface-2 p-1 dark:border-night-line dark:bg-night-3" role="group" aria-label="{{ $setting['title'] }}">
+                                                @foreach ($setting['options'] as $opt)
+                                                    <button type="button"
+                                                            wire:click="$set('settings.{{ $setting['key'] }}', '{{ $opt['value'] }}')"
+                                                            class="flex-1 rounded-lg px-3 py-1.5 text-xs font-bold transition-all duration-200 {{ ($settings[$setting['key']] ?? '') == $opt['value']
+                                                                ? 'bg-surface text-brand-600 shadow-sm dark:bg-night-2 dark:text-brand-400'
+                                                                : 'text-ink-3 hover:text-ink-2 dark:text-night-ink-2' }}"
+                                                            :aria-pressed="{{ ($settings[$setting['key']] ?? '') == $opt['value'] ? 'true' : 'false' }}">
+                                                        {{ $opt['title'] }}
+                                                    </button>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <select wire:model="settings.{{ $setting['key'] }}" class="ap-input !py-2">
+                                                @foreach (($setting['options'] ?? []) as $opt)
+                                                    <option value="{{ $opt['value'] }}">{{ $opt['title'] }}</option>
+                                                @endforeach
+                                            </select>
+                                        @endif
+                                    </div>
+                                    @break
 
-                            @case('input')
-                                <div class="{{ $setting['class'] ?? '' }}">
-                                    <label class="mb-1.5 block text-xs font-semibold">{{ $setting['title'] }}</label>
-                                    <input type="text" wire:model="settings.{{ $setting['key'] }}" class="ap-input !py-2">
-                                </div>
-                                @break
+                                @case('input')
+                                    <div class="{{ $setting['class'] ?? '' }}">
+                                        <label class="mb-1.5 block text-xs font-semibold">{{ $setting['title'] }}</label>
+                                        <input type="text" wire:model="settings.{{ $setting['key'] }}" class="ap-input !py-2">
+                                    </div>
+                                    @break
 
-                            @case('file')
-                                <div class="{{ $setting['class'] ?? '' }}">
-                                    <label class="mb-1.5 block text-xs font-semibold">{{ $setting['title'] }}</label>
-                                    <div class="rounded-xl border border-line bg-surface-2 p-3 transition-colors focus-within:border-brand-500/60 dark:border-night-line dark:bg-night-3/60">
-                                        <input type="file" wire:model="settingFiles.{{ $setting['key'] }}"
-                                               class="block w-full cursor-pointer bg-transparent text-xs text-ink-2
-                                                      file:me-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-brand-600 file:px-3 file:py-1.5
-                                                      file:text-xs file:font-semibold file:text-white hover:file:bg-brand-700">
+                                @case('file')
+                                    <div class="{{ $setting['class'] ?? '' }}">
+                                        <label class="mb-1.5 block text-xs font-semibold">{{ $setting['title'] }}</label>
+                                        <div class="rounded-xl border border-line bg-surface-2 p-3 transition-colors focus-within:border-brand-500/60 dark:border-night-line dark:bg-night-3/60">
+                                            <input type="file" wire:model="settingFiles.{{ $setting['key'] }}"
+                                                   class="block w-full cursor-pointer bg-transparent text-xs text-ink-2
+                                                          file:me-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-brand-600 file:px-3 file:py-1.5
+                                                          file:text-xs file:font-semibold file:text-white hover:file:bg-brand-700">
                                         @if (!empty(option($setting['key'])))
                                             <p class="mt-2 flex items-center gap-2 border-t border-line pt-2 text-[11px] text-ink-3 dark:border-night-line dark:text-night-ink-2">
                                                 <x-admin-panel::icon name="check-circle" class="size-3.5 shrink-0 text-emerald-500" />
@@ -93,39 +165,43 @@
                                                 <a href="{{ option($setting['key']) }}" target="_blank" rel="noopener" class="ltr truncate text-brand-600 hover:underline dark:text-brand-400">{{ option($setting['key']) }}</a>
                                             </p>
                                         @endif
+                                        </div>
                                     </div>
-                                </div>
-                                @break
+                                    @break
 
-                            @case('editor')
-                            @case('inline-editor')
-                                <div class="md:col-span-2 {{ $setting['class'] ?? '' }}">
-                                    <label class="mb-1.5 block text-xs font-semibold">{{ $setting['title'] }}</label>
-                                    <textarea wire:model="settings.{{ $setting['key'] }}" rows="4" class="ap-input !py-2">{{ $settings[$setting['key']] ?? '' }}</textarea>
-                                </div>
-                                @break
+                                @case('editor')
+                                @case('inline-editor')
+                                    <div class="md:col-span-2 {{ $setting['class'] ?? '' }}">
+                                        <label class="mb-1.5 block text-xs font-semibold">{{ $setting['title'] }}</label>
+                                        <textarea wire:model="settings.{{ $setting['key'] }}" rows="4" class="ap-input !py-2">{{ $settings[$setting['key']] ?? '' }}</textarea>
+                                    </div>
+                                    @break
 
-                            @case('linebreak')
-                                {{-- جداکننده بخش‌ها (پورت linebreak قدیمی) --}}
-                                <div class="md:col-span-2 -my-1 flex items-center gap-3 border-t border-line pt-4 dark:border-night-line">
-                                    <span class="flex size-7 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
-                                        <x-admin-panel::icon name="settings" class="size-3.5" />
-                                    </span>
-                                    {!! $setting['html'] ?? '<h3 class="text-sm font-bold">' . ($setting['title'] ?? '') . '</h3>' !!}
-                                    <span class="h-px flex-1 bg-line dark:bg-night-line" aria-hidden="true"></span>
-                                </div>
-                                @break
+                            @endswitch
+                        @endforeach
+                    </div>
+                </section>
+            @endforeach
 
-                        @endswitch
-                    @endforeach
-                </div>
-
-                {{-- نوار ذخیره چسبان پایین --}}
-                <div class="sticky bottom-0 flex items-center justify-between gap-3 border-t border-line bg-surface/90 px-4 py-3 backdrop-blur sm:px-5 dark:border-night-line dark:bg-night-2/90">
-                    <p class="text-[11px] text-ink-3 dark:text-night-ink-2">تغییرات پس از ذخیره، مستقیماً روی فروشگاه اعمال می‌شود.</p>
-                    <button type="submit" wire:loading.attr="disabled" wire:target="save" class="ap-btn !py-2">
-                        <x-admin-panel::icon name="check" class="size-4" />
-                        ذخیره تغییرات
+            {{-- نوار ذخیره چسبان پایین --}}
+            <div class="sticky bottom-4 z-30">
+                <div class="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface/95 px-4 py-3 shadow-pop backdrop-blur sm:px-5 dark:border-night-line dark:bg-night-2/95">
+                    <p class="flex items-center gap-2 text-[11px] text-ink-3 dark:text-night-ink-2">
+                        <x-admin-panel::icon name="info" class="size-4 shrink-0" />
+                        <span class="hidden sm:inline">تغییرات پس از ذخیره، مستقیماً روی فروشگاه اعمال می‌شود.</span>
+                        <span class="sm:hidden">ذخیره = اعمال روی فروشگاه</span>
+                    </p>
+                    <button type="submit" wire:loading.attr="disabled" wire:target="save" class="ap-btn-primary !py-2">
+                        <span wire:loading.remove wire:target="save" class="inline-flex items-center gap-2">
+                            <x-admin-panel::icon name="check" class="size-4" />
+                            ذخیره تغییرات
+                        </span>
+                        <span wire:loading wire:target="save" class="inline-flex items-center gap-2">
+                            <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"/>
+                            </svg>
+                            در حال ذخیره…
+                        </span>
                     </button>
                 </div>
             </div>

@@ -6,11 +6,13 @@
         try {
             $url = route($item['route'], $item['params'] ?? []);
             if (str_starts_with($item['route'], 'np.')) {
-                $isActive = request()->routeIs($item['route']);
-                // صفحات create/edit/show یک بخش، آیتم «لیست» همان بخش را هم فعال کنند
-                if (!$isActive && str_ends_with($item['route'], '.index')) {
-                    $base = substr($item['route'], 0, -6);
-                    $isActive = request()->routeIs([$base.'.create', $base.'.edit', $base.'.show', $base.'.form']);
+                // فاز ۱۱: فعال‌سازی «دقیق» — صفحه لیست برای create/edit خودش فعال نمی‌شود
+                // (تنها گروه‌های کشویی والد باز می‌مانند). استثنا: آیتم‌هایی که خودشان
+                // کلید «active_routes» را ست کرده‌اند (مثل ابزارک‌ها که صریحاً خواسته شده).
+                if (! empty($item['active_routes']) && is_array($item['active_routes'])) {
+                    $isActive = request()->routeIs($item['active_routes']);
+                } else {
+                    $isActive = request()->routeIs($item['route']);
                 }
             }
         } catch (\Throwable $e) {

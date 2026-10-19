@@ -91,7 +91,7 @@
         </div>
     @endcan
 
-    {{-- درخت دسته‌بندی‌ها + وضعیت درگ‌انددراپ (Alpine خالص — جایگزین nestable قدیمی) --}}
+    {{-- درخت دسته‌بندی‌ها + وضعیت درگ‌انددراپ (Alpine خالص — فاز ۱۱ بازطراحی) --}}
     <div class="ap-card p-4 sm:p-5"
          x-data="{
             dragId: null,
@@ -104,25 +104,32 @@
                 event.dataTransfer.effectAllowed = 'move'
                 try { event.dataTransfer.setData('text/plain', String(id)) } catch (e) {}
             },
-            dragOver(event, id) {
-                if (this.dragId === null || this.dragId === id) return
-                const rect = event.currentTarget.getBoundingClientRect()
-                const pos = rect.height > 0 ? (event.clientY - rect.top) / rect.height : 0.5
+            overBand(event, id, mode) {
+                if (this.dragId === null) return
+                // فقط شاخه خودش را نمی‌توان داخل خودش برد
                 this.overId = id
-                this.overMode = this.dragSubtree.includes(id)
-                    ? 'forbidden'
-                    : (pos < 0.25 ? 'before' : (pos > 0.75 ? 'after' : 'inside'))
+                this.overMode = this.dragSubtree.includes(id) ? 'forbidden' : mode
+            },
+            leaveBand(id) {
+                if (this.overId === id) { this.overId = null; this.overMode = null }
             },
             dropClass(id) {
-                if (this.dragId === null) return ''
-                if (this.overId !== id) return 'cursor-grabbing'
-                const map = {
-                    before: 'cursor-grabbing shadow-[inset_0_2px_0_0_var(--color-brand-500)]',
-                    after: 'cursor-grabbing shadow-[inset_0_-2px_0_0_var(--color-brand-500)]',
-                    inside: 'cursor-grabbing ring-2 ring-inset ring-brand-500',
-                    forbidden: 'cursor-grabbing ring-2 ring-inset ring-red-500',
-                }
-                return map[this.overMode] ?? 'cursor-grabbing'
+                if (this.dragId === null || this.overId !== id) return ''
+                return {
+                    before: 'ap-drop-before',
+                    after: 'ap-drop-after',
+                    inside: 'ap-drop-inside',
+                    forbidden: 'ap-drop-forbidden',
+                }[this.overMode] ?? ''
+            },
+            dropLabel(id) {
+                if (this.dragId === null || this.overId !== id) return ''
+                return {
+                    before: 'هم‌سطح — قبل از این دسته',
+                    after: 'هم‌سطح — بعد از این دسته',
+                    inside: 'زیرشاخهٔ این دسته',
+                    forbidden: 'انتقال به زیرشاخهٔ خودش مجاز نیست',
+                }[this.overMode] ?? ''
             },
             resetDrag() {
                 this.dragId = null
@@ -143,8 +150,17 @@
                 }
                 $wire.moveNode(dragId, id, mode)
             },
+            dropRoot(event) {
+                const dragId = this.dragId
+                this.resetDrag()
+                if (! dragId) return
+                $wire.moveNodeToRoot(dragId)
+            },
          }"
-         x-on:dragend.window="resetDrag()">
+         x-on:dragend.window="resetDrag()"
+         {{-- dragover روی کل کارت: جلوگیری از رد شدن drop روی فاصله‌ها (به‌خصوص Firefox) --}}
+         x-on:dragover.prevent=""
+    >
         @if (count($nodes))
             <ul class="space-y-2">
                 @foreach ($nodes as $node)
@@ -152,9 +168,23 @@
                 @endforeach
             </ul>
 
+            {{-- ناحیه رهاسازی ریشه — خروج از زیرمجموعه با درگ (فاز ۱۱) --}}
+            <div x-show="dragId !== null" x-cloak x-transition.opacity.duration.150ms
+                 x-on:dragover.prevent.stop="overId = null; overMode = 'root'"
+                 x-on:dragleave.prevent="overMode = null"
+                 x-on:drop.prevent.stop="dropRoot($event)"
+                 class="mt-3 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-[13px] font-bold transition-colors"
+                 :class="overMode === 'root'
+                     ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300'
+                     : 'border-line text-ink-3 dark:border-night-line dark:text-night-ink-2'"
+                 role="region" aria-label="ناحیه انتقال به سطح ریشه">
+                <x-admin-panel::icon name="corner-up-right" class="size-4.5 -scale-x-100" />
+                <span>برای تبدیل به دسته اصلی (خروج از زیرمجموعه) اینجا رها کنید</span>
+            </div>
+
             <p class="mt-4 flex items-start gap-1.5 text-xs leading-6 text-ink-3 dark:text-night-ink-2">
                 <x-admin-panel::icon name="info" class="mt-1 size-4 shrink-0" />
-                <span>با کشیدن هندل ⋮⋮ می‌توانید دسته را روی گره دیگر ببرید؛ وسط = زیرشاخه، بالا/پایین = هم‌سطح. دکمه‌های فلش و سلکت «انتقال به سطح دیگر» هم مثل قبل برای مرتب‌سازی و جابه‌جایی در دسترس‌اند.</span>
+                <span>هندل ⋮⋮ را بکشید: <b class="text-ink-2 dark:text-night-ink">بالای ردیف</b> = هم‌سطح قبل، <b class="text-ink-2 dark:text-night-ink">وسط</b> = زیرشاخه، <b class="text-ink-2 dark:text-night-ink">پایین</b> = هم‌سطح بعد، یا رها کنید روی ناحیه «سطح ریشه». دکمه‌های فلش و سلکت «انتقال به سطح» هم برای مرتب‌سازی در دسترس‌اند.</span>
             </p>
         @else
             <div class="flex flex-col items-center gap-2 py-14 text-ink-3 dark:text-night-ink-2">

@@ -8,7 +8,7 @@ use Livewire\Attributes\Title;
  * پورت PostWidgetController::index — همان الگوی WidgetIndex ولی page='posts'
  * (route ساده: بدون پارامتر page)
  */
-#[Title('ابزارک‌های صفحه مقالات')]
+#[Title('ابزارک‌های مقالات')]
 class PostWidgetIndex extends WidgetIndex
 {
     public string $page = 'posts';
@@ -20,7 +20,21 @@ class PostWidgetIndex extends WidgetIndex
 
     public function pageTitle(): string
     {
-        return 'ابزارک‌های صفحه مقالات';
+        return 'ابزارک‌های مقالات';
+    }
+
+    public function pageLabel(): string
+    {
+        return 'مقالات';
+    }
+
+    public function builderRoute(): ?string
+    {
+        try {
+            return route('np.widgets.posts-builder');
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /** ویوی مخصوص صفحه مقالات (مارک‌آپ مشترک با widgets.blade.php) */

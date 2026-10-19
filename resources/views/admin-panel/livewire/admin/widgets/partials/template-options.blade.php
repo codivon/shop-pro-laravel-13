@@ -98,32 +98,32 @@
             @endphp
             <div class="sm:col-span-2">
                 <label class="mb-1.5 block text-xs font-semibold">{{ $option['title'] }}</label>
-                <div class="max-h-72 space-y-1 overflow-y-auto rounded-xl border border-line p-3 dark:border-night-line">
-                    @forelse ($categoriesList as $category)
-                        @php $depth = $category->parents()->count(); @endphp
-                        <label class="flex cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 transition-colors hover:bg-surface-2 dark:hover:bg-night-3">
-                            <span class="flex items-center gap-2" dir="rtl">
-                                @if ($depth > 0)
-                                    <span class="text-line" aria-hidden="true">└</span>
-                                @endif
+                {{-- فاز ۱۱: انتخابگر کارتی به‌جای چک‌باکس خام --}}
+                <div class="max-h-72 overflow-y-auto rounded-xl border border-line p-3 dark:border-night-line">
+                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        @forelse ($categoriesList as $category)
+                            @php $depth = $category->parents()->count(); @endphp
+                            <label class="ap-check-card" style="margin-inline-start: {{ max(0, $depth - 1) * 14 }}px">
                                 <input type="checkbox" value="{{ $category->id }}"
-                                       wire:model="optionValues.{{ $optionKey }}"
-                                       class="size-4 cursor-pointer rounded border-line text-brand-600">
-                                <span class="text-[13px] {{ $depth > 0 ? 'text-ink-2 dark:text-night-ink-2' : 'font-semibold' }}">
-                                    {{ str_repeat('— ', max(0, $depth - 1)) }}{{ $category->title }}
+                                       wire:model="optionValues.{{ $optionKey }}">
+                                <span class="ap-check-mark" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                                 </span>
-                            </span>
-                        </label>
-                    @empty
-                        <p class="py-3 text-center text-xs text-ink-3 dark:text-night-ink-2">دسته‌بندی‌ای یافت نشد</p>
-                    @endforelse
+                                <span class="ap-check-card-body truncate {{ $depth > 0 ? 'text-ink-2 dark:text-night-ink-2' : 'font-semibold' }}">
+                                    {{ $category->title }}
+                                </span>
+                            </label>
+                        @empty
+                            <p class="py-3 text-center text-xs text-ink-3 dark:text-night-ink-2">دسته‌بندی‌ای یافت نشد</p>
+                        @endforelse
+                    </div>
                 </div>
                 @isset($option['help'])
                     <p class="mt-1 text-[11px] text-ink-3 dark:text-night-ink-2">{{ $option['help'] }}</p>
                 @endisset
                 @error($errorKey) <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
             </div>
-            @break
+@break
 
     @endswitch
 @endforeach

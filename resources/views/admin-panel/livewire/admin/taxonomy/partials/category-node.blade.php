@@ -19,12 +19,10 @@
             : 'text-[13px] font-extrabold');
 @endphp
 <li wire:key="cat-{{ $category->id }}" class="list-none">
-    <div class="flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border border-line px-3 py-2.5 transition-all {{ $rowBg }} hover:border-brand-300 dark:border-night-line dark:hover:border-brand-500/40"
-         x-on:dragover.prevent="dragOver($event, {{ $category->id }})"
-         x-on:drop.prevent="drop($event, {{ $category->id }})"
-         :class="dropClass({{ $category->id }})">
+    <div class="cat-row relative flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border border-line px-3 py-2.5 transition-all {{ $rowBg }} hover:border-brand-300 dark:border-night-line dark:hover:border-brand-500/40"
+         :class="[dropClass({{ $category->id }}), dragId === {{ $category->id }} ? 'opacity-40 saturate-50' : '']">
 
-        {{-- هندل درگ‌انددراپ (آیکون grip-vertical — جایگزین nestable قدیمی) --}}
+        {{-- هندل درگ‌انددراپ (آیکون grip-vertical) --}}
         <span draggable="true"
               x-on:dragstart="startDrag($event, {{ $category->id }}, {{ json_encode($node['subtreeIds']) }})"
               class="cursor-grab touch-none select-none rounded-md p-1 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 active:cursor-grabbing dark:text-night-ink-2 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
@@ -116,6 +114,37 @@
                 <x-admin-panel::icon name="trash-2" class="size-4" />
             </button>
         @endcan
+
+        {{-- ===== نوارهای رهاسازی (فاز ۱۱) — سه ناحیه واقعی و درشت ===== --}}
+        {{-- فقط حین درگ فعال‌اند؛ بقیه وقت pointer-events-none تا کلیک/لینک/سلکت مختل نشود --}}
+        <span class="ap-dropband absolute inset-x-0 top-0 z-20 h-[30%] rounded-t-xl"
+              :class="dragId === null ? '!pointer-events-none' : ''"
+              x-on:dragover.prevent.stop="overBand($event, {{ $category->id }}, 'before')"
+              x-on:dragleave.prevent.stop="leaveBand({{ $category->id }})"
+              x-on:drop.prevent.stop="drop($event, {{ $category->id }})"
+              aria-hidden="true"></span>
+        <span class="ap-dropband absolute inset-x-0 top-[30%] z-20 h-[40%]"
+              :class="dragId === null ? '!pointer-events-none' : ''"
+              x-on:dragover.prevent.stop="overBand($event, {{ $category->id }}, 'inside')"
+              x-on:dragleave.prevent.stop="leaveBand({{ $category->id }})"
+              x-on:drop.prevent.stop="drop($event, {{ $category->id }})"
+              aria-hidden="true"></span>
+        <span class="ap-dropband absolute inset-x-0 bottom-0 z-20 h-[30%] rounded-b-xl"
+              :class="dragId === null ? '!pointer-events-none' : ''"
+              x-on:dragover.prevent.stop="overBand($event, {{ $category->id }}, 'after')"
+              x-on:dragleave.prevent.stop="leaveBand({{ $category->id }})"
+              x-on:drop.prevent.stop="drop($event, {{ $category->id }})"
+              aria-hidden="true"></span>
+
+        {{-- برچسب راهنمای شناور حین درگ --}}
+        <span x-show="dragId !== null && overId === {{ $category->id }}" x-cloak
+              class="pointer-events-none absolute -top-3.5 start-6 z-30 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-bold shadow-lg"
+              :class="overMode === 'forbidden'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-brand-600 text-white'"
+              aria-hidden="true">
+            <span x-text="dropLabel({{ $category->id }})"></span>
+        </span>
     </div>
 
     @if (count($node['children']))

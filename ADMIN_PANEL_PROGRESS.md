@@ -331,3 +331,52 @@
 6. SQLite FK cascade خاموش است — حذف وابسته‌ها صریح انجام شود
 7. تریت‌های آماری/فایل‌ها: دیسک default این پروژه `local` با root=`public/uploads` است (storeAs → /uploads/...)
 8. تریت قدیمی لاگ ابزارک: دستی «ویرایش کرد» + خودکار Observer — تفکیک با description like
+
+## ۱۲ — Phase 10: رفع تداخل گیت + اصلاح بیلد (Hotfix)
+
+**تاریخ:** 1405/07/27 — **کامیت:** `3ce7a2d8` (push شده، verified)
+
+### مشکل کاربر
+1. «بیلد لوکال کلی خطا و اخطار می‌دهد» → لاگ ارسالی بررسی شد: **صفر error**؛ ۷۲ اخطار `unsupported-css-nesting` (esbuild target قدیمی chrome87/safari14) + ۱ اخطار chunk-size مربوط به ckeditor5.
+2. «تداخل احتمالی با تغییرات من» → merge کاربر (`f0a4555d`) **manifest ناسازگار** ساخت: manifest به `ckeditor5-CJyut1VD.js` اشاره می‌کرد ولی فایل واقعی `ckeditor5-pO5LpMiS.js` بود → در ریموت، CKEditor روی همه صفحات 404 می‌شد.
+
+### اقدامات
+- FF-merge به `f0a4555d` (بدون تداخل — local ancestor بود).
+- `vite.admin.config.mjs`: `target: [chrome112, edge112, firefox117, safari16.5]` (Tailwind v4 حداقل همین را لازم دارد)، `chunkSizeWarningLimit: 2600`، `sourcemap:false`، `reportCompressedSize:false`.
+- Rebuild کامل: **0 warning / 0 error**، 11.1s (قبلاً 46s). manifest↔assets کاملاً سازگار (اسکریپت check: همه ref ها موجود، صفر orphan، chunk baked = `ckeditor5-BGZg8Use.js` موجود).
+- Browser verify: login → dashboard رندر کامل RTL؛ `pages/create` → toolbar CKEditor رندر، chunk 200، صفر console error.
+
+### درس برای ادامه (workflow بیلد)
+- هر بار بیلد: `npm run build:admin` سپس **کل پوشه `public/admin-panel` را با هم commit کن** (manifest + assets یکجا) — نیمه-commit = CKEditor 404.
+- قبل از push حتماً `git pull --rebase` تا دوباره merge-commit ناسازگار ساخته نشود.
+
+## ۱۳ — Phase 11: دور دوم بازخورد کاربر (۱۳ مورد)
+
+**تاریخ:** 1405/07/27 — وضعیت: browser-verified، push شده
+
+### ۱) باگ‌ها
+- **sanctum deprecation** (`parse_url(null)`) → `parse_url((string) env('APP_URL', ''))`
+- **خطای FK جدول searches** (1452) → trait `LogsSearch`: `auth()->id()` (id کهنه session کاربر حذف‌شده) → `safeSearchUserId()` با `auth()->user()?->id` (theme controllers هم از همین trait استفاده می‌کنند)
+- **تراز اسپینر دکمه‌ها** → CSS: `button [wire\:loading]:not([style*="display: none"])` → inline-flex وسط‌چین (Livewire هنگام نمایش inline-block ست می‌کرد)
+- **is-active منو** → menu-item فقط match دقیق؛ آیتم‌های دارای کلید `active_routes` استثنا هستند (ابزارک‌ها — درخواست صریح کاربر)؛ آکاردئون والد با منطق قبلی باز می‌ماند
+
+### ۲) قابلیت‌ها
+- **ثبت اولین مدیر**: URL `register` → `setup` (+ ریدایرکت 302 قدیمی)؛ بازطراحی کامل مستقل (بدون bootstrap/jQuery): هیرو گرادیانی + steps، strength-meter گذرواژه، پیش‌نمایش زنده آدرس پنل، eye toggle، اعتبارسنجی vanilla + fetch، پاسخ سرور `redirect` هم اضافه شد
+- **درگ دسته‌بندی‌ها** → بازطراحی کامل: سه نوار رهاسازی واقعی روی هر ردیف (بالا=قبل/وسط=زیرشاخه/پایین=بعد) + برچسب شناور وضعیت + ناحیه «سطح ریشه» برای خروج از زیرمجموعه + اکشن `moveNodeToRoot`؛ هر ۴ حالت browser-verified (before/after/inside/root)
+- **انتخابگر کارتی** (`ap-check-card`) → دسته‌بندی‌های نوشته/محصول + options ابزارک + وضعیت‌های نوشته؛ به‌جای چک‌باکس خام
+- **تنظیمات قالب** → بخش‌بندی خودکار فیلدها با linebreak به کارت‌های مستقل + سربرگ گرادیانی + نوار ذخیره چسبان
+- **ابزارک‌ها**:
+  - لیست به‌جای کارت + درگ‌انددراپ ترتیب + مودال ایجاد/ویرایش
+  - جریان افزودن دو مرحله‌ای: انتخاب نوع (گرید کارت) → مشخصات (نوع/عنوان/وضعیت/ترتیب/options) → «ایجاد»
+  - ویرایش: مودال (نه select) — نوع به‌صورت باکس کلیک‌شدنی که مودال انتخاب نوع را باز می‌کند
+  - ویجت‌ساز مقالات: `np.widgets.posts-builder` (PostWidgetBuilder، preview=/blog)
+  - منو: «ویجت‌ساز صفحه اصلی» → `np.widgets.index` (اول لیست، بعد builder)
+  - trait مشترک `InteractsWithWidgetTemplates` (منطق options/لاگ یکجا)
+- **widget-form (صفحه کامل)**: select نوع → گرید کارت‌های کلیک‌شدنی
+
+### ۳) مشکل clone/pull کاربر (ریشه‌ای)
+`.gitattributes` قبلی `* text=auto` داشت → روی ویندوز minified assets خروجی بیلد CRLF می‌شدند → تداخل‌های فانتومی و خطای overwrite هنگام pull. فیکس: `public/admin-panel/** -text` (بعد از قانون‌های eol)، باینری‌ها explicit binary، سورس‌ها eol=lf، `/admin-panel.hot` به gitignore.
+
+### ۴) وریفای
+- build نهایی: 0 warning/0 error (11.2s)
+- مرورگر: لیست ابزارک‌ها + هر دو مودال + ایجاد واقعی بنر تکی + ویرایش/فعال‌سازی ✓، builder خانه (preview زنده ابزارک فعال) ✓، builder مقالات ✓، درخت دسته‌ها: هر ۴ حالت درگ با کالیبره DB ✓، فرم نوشته: کارت‌ها + is-active دقیق (فقط «نوشته جدید») ✓، تنظیمات قالب بخش‌بندی ✓، ثبت مدیر (طرح + redirect قدیمی 302) ✓
