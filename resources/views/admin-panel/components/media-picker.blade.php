@@ -108,9 +108,10 @@
     @enderror
 
     {{-- مودال فایل‌منیجر (iframe) --}}
+    {{-- فاز ۱۶: lg:pr-[17rem] — مودال زیر سایدبار ثابت راست نرود (دکمه بستن همیشه در دسترس) --}}
     <div x-show="open"
          x-cloak
-         class="fixed inset-0 z-[70] flex items-center justify-center p-2 sm:p-6"
+         class="fixed inset-0 z-[70] flex items-center justify-center p-2 sm:p-6 lg:pr-[17rem]"
          role="dialog"
          aria-modal="true"
          aria-label="مدیریت فایل‌ها"

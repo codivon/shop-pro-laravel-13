@@ -4,18 +4,16 @@ namespace App\Livewire\Admin\Themes;
 
 use Livewire\Attributes\Title;
 use Livewire\Component;
-use Livewire\WithFileUploads;
 
 #[Title('تنظیمات قالب')]
 class ThemeSettings extends Component
 {
-    use WithFileUploads;
-
-    /** مقادیر تنظیمات (input/select/editor/inline-editor) — کلیدها عیناً کلیدهای options قالب */
+    /**
+     * مقادیر تنظیمات (input/select/editor/inline-editor/file) — کلیدها عیناً کلیدهای options قالب.
+     * فاز ۱۶: فیلدهای file هم مثل بقیه یک «مسیر رشته‌ای» هستند که با انتخابگر رسانه
+     * (File Manager سایت) پر می‌شود — مطابق درخواست «تصاویر از فایل‌های خود سایت».
+     */
     public array $settings = [];
-
-    /** فایل‌های تنظیمات (file) — کلید => TemporaryUploadedFile */
-    public array $settingFiles = [];
 
     public function mount(): void
     {
@@ -23,8 +21,8 @@ class ThemeSettings extends Component
 
         // پیش‌بارگذاری مقادیر فعلی از options
         foreach ($this->settingsFields() as $setting) {
-            if (in_array($setting['input-type'] ?? '', ['input', 'editor', 'inline-editor', 'select'])) {
-                $this->settings[$setting['key']] = option($setting['key']);
+            if (in_array($setting['input-type'] ?? '', ['input', 'editor', 'inline-editor', 'select', 'file'])) {
+                $this->settings[$setting['key']] = (string) option($setting['key']);
             }
         }
     }
@@ -47,7 +45,7 @@ class ThemeSettings extends Component
 
         $settingsFields = $this->settingsFields();
 
-        // فیلدهای فایل
+        // عنوان فارسی فیلدهای فایل (برای لاگ)
         $fileFields = [];
         foreach ($settingsFields as $setting) {
             if (isset($setting['input-type']) && $setting['input-type'] === 'file') {
@@ -55,75 +53,52 @@ class ThemeSettings extends Component
             }
         }
 
-        // ========== 1. بررسی تغییرات فایل‌ها ==========
-        $fileChanges = [];
-        foreach ($fileFields as $key => $title) {
-            $file = $this->settingFiles[$key] ?? null;
-
-            if ($file) {
-                // امنیتی: اعتبارسنجی نوع/حجم فایل آپلودی (تصویر) — جلوگیری از آپلود فایل اجرایی
-                $this->validate(
-                    ['settingFiles.'.$key => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp,gif,svg', 'extensions:jpg,jpeg,png,webp,gif,svg', 'max:8192']],
-                    [],
-                    ['settingFiles.'.$key => $title]
-                );
-
-                $oldFile = option($key);
-
-                $imageName = time() . '_' . $key . '.' . strtolower($file->getClientOriginalExtension());
-                $file->move(public_path('uploads/themes/'), $imageName);
-
-                if ($oldFile && file_exists(public_path($oldFile))) {
-                    unlink(public_path($oldFile));
-                }
-
-                $newFile = '/uploads/themes/' . $imageName;
-                option_update($key, $newFile);
-
-                $fileChanges[$key] = [
-                    'old'   => $oldFile ?: 'بدون فایل',
-                    'new'   => $newFile,
-                    'title' => $title,
-                ];
-            }
-        }
-
-        if (!empty($fileChanges)) {
-            $allChanges['file_uploads'] = $fileChanges;
-        }
-
-        // ========== 2. بررسی تغییرات تنظیمات ==========
+        // ========== بررسی تغییرات همه تنظیمات (شامل مسیر فایل‌های انتخابی از رسانه‌ها) ==========
         $optionChanges = [];
+        $fileChanges = [];
 
         foreach ($this->settings as $key => $value) {
-            // اگر فیلد فایل است، قبلاً بررسی شده
-            if (isset($fileFields[$key])) {
+            $oldValue = (string) option($key);
+
+            if ($oldValue == $value) {
                 continue;
             }
 
-            $oldValue = option($key);
+            $title = $this->getThemeFieldTitle($key, $settingsFields);
 
-            if ($oldValue != $value) {
-                $optionChanges[$key] = [
-                    'old'   => $oldValue ?: 'خالی',
-                    'new'   => $value ?: 'خالی',
-                    'title' => $this->getThemeFieldTitle($key, $settingsFields),
-                ];
+            $entry = [
+                'old'   => $oldValue ?: 'خالی',
+                'new'   => $value ?: 'خالی',
+                'title' => $title,
+            ];
+
+            if (isset($fileFields[$key])) {
+                // فایل جدید: فایل قبلی اگر داخل uploads/themes و متعلق به همین کلید بود حذف می‌شود
+                if ($oldValue && str_starts_with($oldValue, '/uploads/themes/') && file_exists(public_path($oldValue))) {
+                    @unlink(public_path($oldValue));
+                }
+                $fileChanges[$key] = $entry;
+            } else {
+                $optionChanges[$key] = $entry;
             }
 
             option_update($key, $value);
         }
 
-        if (!empty($optionChanges)) {
+        if (! empty($fileChanges)) {
+            $allChanges['file_selected'] = $fileChanges;
+        }
+
+        if (! empty($optionChanges)) {
             $allChanges['option_settings'] = $optionChanges;
         }
 
-        // ========== 3. ثبت لاگ (پورت دقیق) ==========
+        // ========== ثبت لاگ (پورت دقیق) ==========
         $changeDetails = [];
 
-        if (isset($allChanges['file_uploads'])) {
-            foreach ($allChanges['file_uploads'] as $change) {
-                $changeDetails[] = "{$change['title']} آپلود شد";
+        if (isset($allChanges['file_selected'])) {
+            foreach ($allChanges['file_selected'] as $change) {
+                $changeDetails[] = "{$change['title']} تغییر کرد";
             }
         }
 
@@ -133,7 +108,7 @@ class ThemeSettings extends Component
             }
         }
 
-        if (!empty($changeDetails)) {
+        if (! empty($changeDetails)) {
             $logMessage = "مدیر {$adminName} تنظیمات قالب را به‌روزرسانی کرد: " . implode('، ', $changeDetails);
 
             activity()
@@ -146,11 +121,10 @@ class ThemeSettings extends Component
                 ->log($logMessage);
         }
 
-        // پیش‌بارگذاری مجدد (فایل‌ها پس از آپلود خالی شوند)
-        $this->reset('settingFiles');
+        // پیش‌بارگذاری مجدد مقادیر
         foreach ($this->settingsFields() as $setting) {
-            if (in_array($setting['input-type'] ?? '', ['input', 'editor', 'inline-editor', 'select'])) {
-                $this->settings[$setting['key']] = option($setting['key']);
+            if (in_array($setting['input-type'] ?? '', ['input', 'editor', 'inline-editor', 'select', 'file'])) {
+                $this->settings[$setting['key']] = (string) option($setting['key']);
             }
         }
 

@@ -9,15 +9,15 @@
     @switch($option['input-type'])
 
         @case('input')
-            {{-- پورت back/widgets/partials/input.blade.php --}}
-            <div class="{{ $option['class'] ?? '' }}">
+            {{-- پورت back/widgets/partials/input.blade.php — فاز ۱۶: عرض یکنواخت w-full --}}
+            <div class="{{ ap_clean_legacy_class($option['class'] ?? null) ?: 'w-full' }}">
                 <label class="mb-1.5 block text-xs font-semibold" for="option-input-{{ $optionKey }}">
                     {{ $option['title'] }}
                 </label>
                 <input id="option-input-{{ $optionKey }}"
                        type="{{ $option['type'] ?? 'text' }}"
                        wire:model="optionValues.{{ $optionKey }}"
-                       class="ap-input"
+                       class="ap-input w-full"
                        value="{{ $this->optionValue($optionKey) ?? $option['default'] ?? '' }}"
                        {!! $option['attributes'] ?? '' !!}>
                 @isset($option['help'])
@@ -28,14 +28,14 @@
             @break
 
         @case('select')
-            {{-- پورت back/widgets/partials/select.blade.php --}}
-            <div class="{{ $option['class'] ?? '' }}">
+            {{-- پورت back/widgets/partials/select.blade.php — فاز ۱۶: عرض یکنواخت w-full --}}
+            <div class="{{ ap_clean_legacy_class($option['class'] ?? null) ?: 'w-full' }}">
                 <label class="mb-1.5 block text-xs font-semibold" for="option-select-{{ $optionKey }}">
                     {{ $option['title'] }}
                 </label>
                 <select id="option-select-{{ $optionKey }}"
                         wire:model="optionValues.{{ $optionKey }}"
-                        class="ap-input"
+                        class="ap-input w-full"
                         {!! $option['attributes'] ?? '' !!}>
                     @foreach ($option['options'] as $item)
                         <option value="{{ $item['value'] }}" @selected($this->optionValue($optionKey) == $item['value'])>
@@ -51,8 +51,8 @@
             @break
 
         @case('file')
-            {{-- پورت back/widgets/partials/file.blade.php + آپلود WithFileUploads --}}
-            <div class="{{ $option['class'] ?? '' }}">
+            {{-- پورت back/widgets/partials/file.blade.php + آپلود WithFileUploads — فاز ۱۶: عرض یکنواخت --}}
+            <div class="{{ ap_clean_legacy_class($option['class'] ?? null) ?: 'w-full' }}">
                 <label class="mb-1.5 block text-xs font-semibold" for="option-file-{{ $optionKey }}">
                     {{ $option['title'] }}
                 </label>
@@ -96,7 +96,8 @@
                     : $this->productCategories;
                 $selectedIds = is_array($this->optionValues[$optionKey] ?? null) ? $this->optionValues[$optionKey] : [];
             @endphp
-            <div class="sm:col-span-2">
+            {{-- فاز ۱۶: col-span-full (سازگار با گرید تک‌ستونه مودال و گرید دوستونه فرم) --}}
+            <div class="col-span-full">
                 <label class="mb-1.5 block text-xs font-semibold">{{ $option['title'] }}</label>
                 {{-- فاز ۱۱: انتخابگر کارتی به‌جای چک‌باکس خام --}}
                 <div class="max-h-72 overflow-y-auto rounded-xl border border-line p-3 dark:border-night-line">

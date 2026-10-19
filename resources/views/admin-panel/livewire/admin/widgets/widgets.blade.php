@@ -192,9 +192,10 @@
     </div>
 
     {{-- ================= مودال ۱: انتخاب نوع ابزارک ================= --}}
+    {{-- فاز ۱۶: z-[75] بالاتر از مودال مشخصات (z-[65]) — چون از داخل مودال ویرایش هم باز می‌شود --}}
     <div x-data="{ open: @entangle('showTypeModal') }"
          x-show="open" x-cloak
-         class="fixed inset-0 z-[60] flex items-end justify-center p-0 sm:items-center sm:p-4">
+         class="fixed inset-0 z-[75] flex items-end justify-center p-0 sm:items-center sm:p-4">
         <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" x-show="open" x-on:click="open = false" x-transition.opacity aria-hidden="true"></div>
         <div x-show="open" x-on:click.stop
              x-transition:enter="transition ease-out duration-200"
@@ -371,7 +372,8 @@
                             <x-admin-panel::icon name="settings-2" class="size-3.5 text-brand-600 dark:text-brand-400" />
                             تنظیمات تخصصی این ابزارک
                         </p>
-                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        {{-- فاز ۱۶: تک‌ستونه — هر فیلد یک ردیف کامل و منظم --}}
+                        <div class="grid grid-cols-1 gap-4">
                             @include('admin-panel::livewire.admin.widgets.partials.template-options', [
                                 'options' => $typeTemplate['options'],
                                 'widget'  => $this->modalWidget,

@@ -905,3 +905,74 @@ button [wire\:loading][style]:not([style*="display: none"]):not([style*="display
 .dark .pkg-prose h1, .dark .pkg-prose h2, .dark .pkg-prose h3, .dark .pkg-prose h4 {
     color: var(--color-night-ink-1, #f8fafc);
 }
+
+/* ------------------------------------------------------------------
+ | فاز ۱۶ — بازخورد لودینگ سراسری
+ | روی هر عنصر کلیک‌شدنی که درخواست Livewire راه می‌اندازد (wire:click /
+ | wire:submit / لینک‌های wire:navigate) یک اسپینر + محو‌شدگی لحظه‌ای نشان
+ | داده می‌شود؛ به‌همراه نوار پیشرفت باریک بالای صفحه در طول هر درخواست.
+ ------------------------------------------------------------------ */
+
+/* نوار پیشرفت بالای صفحه */
+#ap-top-progress {
+    position: fixed;
+    top: 0;
+    inset-inline-start: 0;
+    height: 3px;
+    width: 0;
+    z-index: 9999;
+    background: linear-gradient(90deg, var(--color-brand-500, #10b981), var(--color-brand-400, #34d399));
+    border-radius: 0 9999px 9999px 0;
+    opacity: 0;
+    transition: width 0.25s ease, opacity 0.3s ease;
+    pointer-events: none;
+    box-shadow: 0 0 10px rgb(16 185 129 / 0.55);
+}
+#ap-top-progress.is-active {
+    opacity: 1;
+    width: 82%;
+}
+#ap-top-progress.is-finishing {
+    width: 100% !important;
+    opacity: 1;
+    transition: width 0.15s ease;
+}
+#ap-top-progress.is-done {
+    opacity: 0;
+    width: 100% !important;
+}
+
+/* عنصر کلیک‌شده در حال انتظار پاسخ سرور */
+.ap-clicking {
+    opacity: 0.65 !important;
+    pointer-events: none !important;
+    position: relative;
+}
+.ap-clicking::after {
+    content: "";
+    display: inline-block;
+    width: 0.9em;
+    height: 0.9em;
+    margin-inline-start: 0.45em;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 9999px;
+    vertical-align: -0.15em;
+    animation: ap-click-spin 0.6s linear infinite;
+    flex-shrink: 0;
+}
+
+/* برای عناصری که فقط آیکون دارند، اسپینر جای متن خالی می‌نشیند */
+button.ap-clicking.icon-only span,
+a.ap-clicking.icon-only span {
+    display: none;
+}
+
+@keyframes ap-click-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* حالت تاریک — رنگ برند روشن‌تر */
+.dark #ap-top-progress {
+    background: linear-gradient(90deg, var(--color-brand-400, #34d399), var(--color-brand-300, #6ee7b7));
+}

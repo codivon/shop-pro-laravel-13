@@ -32,7 +32,7 @@
                 <x-admin-panel::icon name="plus" class="size-4.5 text-brand-600 dark:text-brand-400" />
                 لینک جدید
             </h2>
-            <form wire:submit="createLink" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <form wire:submit="storeLink" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                     <label class="mb-1.5 block text-xs font-semibold" for="link-create-title">عنوان <span class="text-red-500">*</span></label>
                     <input id="link-create-title" type="text" wire:model="createTitle" class="ap-input !py-2" placeholder="عنوان لینک…">
@@ -55,7 +55,7 @@
                     @error('createGroupId') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                 </div>
                 <div class="flex items-end">
-                    <button type="submit" wire:loading.attr="disabled" wire:target="createLink" class="ap-btn w-full !py-2">
+                    <button type="submit" wire:loading.attr="disabled" wire:target="storeLink" class="ap-btn w-full !py-2">
                         <x-admin-panel::icon name="plus" class="size-4" />
                         ایجاد لینک
                     </button>
@@ -122,7 +122,7 @@
                                     <td class="px-3 py-3">
                                         <div class="flex items-center gap-0.5">
                                             @can('links.update')
-                                                <button type="button" wire:click="editLink({{ $link->id }})"
+                                                <button type="button" wire:click="openEdit({{ $link->id }})"
                                                         class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10"
                                                         title="ویرایش لینک" aria-label="ویرایش">
                                                     <x-admin-panel::icon name="pencil" class="size-4" />
@@ -228,7 +228,7 @@
     </div>
 
     {{-- لودینگ --}}
-    <div wire:loading wire:target="createLink, updateLink, delete, moveUp, moveDown"
+    <div wire:loading wire:target="storeLink, updateLink, delete, moveUp, moveDown"
          class="pointer-events-none fixed bottom-6 start-6 z-[65] flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 shadow-pop dark:border-night-line dark:bg-night-3">
         <svg class="size-4 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />

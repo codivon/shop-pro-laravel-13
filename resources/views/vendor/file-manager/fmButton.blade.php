@@ -9,9 +9,10 @@
 
     <title>{{ config('app.name', 'File Manager') }}</title>
 
-    <!-- Styles -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+    <!-- Styles — فاز ۱۶: همه دارایی‌ها لوکال (CDN جی‌اس‌دلیور در ایران فیلتر است و فایل‌منیجر را به‌هم می‌ریزد) -->
+    {{-- نکته: آیکون‌های خود فایل‌منیجر FontAwesome (fas fa-*) هستند نه bootstrap-icons --}}
+    <link rel="stylesheet" href="{{ asset('vendor/file-manager/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/file-manager/css/fontawesome.min.css') }}">
     <link href="{{ asset('vendor/file-manager/css/file-manager.css') }}" rel="stylesheet">
 </head>
 <body>

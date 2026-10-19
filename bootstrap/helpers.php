@@ -1661,3 +1661,30 @@ if (!function_exists('module_is_ready')) {
         }
     }
 }
+
+if (!function_exists('ap_clean_legacy_class')) {
+    /**
+     * فاز ۱۶ — حذف کلاس‌های ستونِ بوت‌استرپ (col، col-6، col-md-3، col-xl-4 و…)
+     * از کلاس‌های دریافتی از کانفیگ قالب/ماژول‌ها.
+     *
+     * چرا: تیلویند ۴ برای هر عدد یک ابزارک داینامیک col-* می‌سازد
+     * (مثلاً .col-6 { grid-column: 6 }) — پس کلاس قدیمی «col-6» بوت‌استرپ در
+     * گریدهای تیلویند، آیتم را به ستون ۶ می‌برد و چیدمان کارت/فرم را به‌هم می‌ریزد.
+     * کلاس‌های معتبر تیلویند مثل col-span-2 دست‌نخورده می‌مانند.
+     */
+    function ap_clean_legacy_class(?string $class): string
+    {
+        if (!$class) {
+            return '';
+        }
+
+        // فقط ستون‌های بوت‌استرپ: col / col-N / col-{bp} / col-{bp}-N (N ∈ 1..12)
+        $clean = preg_replace(
+            '/\bcol(?:-(?:1[0-2]|[1-9])|-(?:sm|md|lg|xl|xxl)(?:-(?:1[0-2]|[1-9]))?)(?=\s|$)/i',
+            '',
+            $class
+        );
+
+        return trim((string) preg_replace('/\s+/', ' ', (string) $clean));
+    }
+}

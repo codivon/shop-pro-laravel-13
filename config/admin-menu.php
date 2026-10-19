@@ -37,26 +37,14 @@ return [
                     'icon' => 'layout-dashboard',
                 ],
                 [
-                    'label' => 'نشست‌های فعال',
-                    'route' => 'np.sessions.index',
-                    'permission' => 'sessions.index',
-                    'icon' => 'monitor',
-                ],
-                // «دستگاه‌های بلاک شده» حذف شد (فاز ۱۳ به‌درخواست کاربر) — لیست بلاک‌شده‌ها
-                // همچنان به‌صورت تب داخل np.sessions.index در دسترس است.
-                [
-                    'label' => 'مانیتور سیستم',
-                    'route' => 'np.pulse.index',
-                    'permission' => 'pulse.monitor',
-                    'icon' => 'activity',
-                    'live' => true,
-                ],
-                [
                     'label' => 'فعالیت‌های اخیر',
                     'route' => 'np.activity-log.index',
                     'permission' => 'activity-log.index',
                     'icon' => 'history',
                 ],
+                // فاز ۱۶: «نشست‌های فعال» و «مانیتور سیستم» به گروه «امور مدیریتی» منتقل شدند
+                // (ابزارهای سیستمی‌اند نه نمای کلی). «دستگاه‌های بلاک شده» حذف شد (فاز ۱۳
+                // به‌درخواست کاربر) — لیست بلاک‌شده‌ها به‌صورت تب داخل np.sessions.index در دسترس است.
                 [
                     'label' => 'پکیج‌ها',
                     'icon' => 'package',
@@ -77,190 +65,6 @@ return [
                 ],
             ],
         ],
-
-        /*
-        |------------------
-        | مدیریت محتوا
-        |------------------
-        */
-        [
-            'key' => 'content',
-            'title' => 'مدیریت محتوا',
-            'items' => [
-                [
-                    'label' => 'وبلاگ',
-                    'icon' => 'notebook-pen',
-                    'children' => [
-                        [
-                            'label' => 'لیست مطالب',
-                            'route' => 'np.posts.index',
-                            'permission' => 'posts.index',
-                            'icon' => 'list',
-                        ],
-                        [
-                            'label' => 'نوشته جدید',
-                            'route' => 'np.posts.create',
-                            'permission' => 'posts.create',
-                            'icon' => 'plus',
-                        ],
-                        [
-                            'label' => 'دسته‌بندی‌ها',
-                            'route' => 'np.categories.post',
-                            'permission' => 'posts.category',
-                            'icon' => 'folder-tree',
-                        ],
-                    ],
-                ],
-                [
-                    'label' => 'دیدگاه‌ها',
-                    'route' => 'np.comments.posts',
-                    'permission' => 'posts.comments',
-                    'icon' => 'message-square',
-                ],
-                [
-                    'label' => 'تگ‌ها',
-                    'route' => 'np.tags.index',
-                    'permission' => 'tags',
-                    'icon' => 'tags',
-                ],
-                [
-                    'label' => 'جستجوها',
-                    'route' => 'np.searches.index',
-                    'permission' => 'searches',
-                    'icon' => 'search',
-                ],
-                [
-                    'label' => 'صفحات',
-                    'icon' => 'file-text',
-                    'children' => [
-                        [
-                            'label' => 'لیست صفحات',
-                            'route' => 'np.pages.index',
-                            'permission' => 'pages.index',
-                            'icon' => 'list',
-                        ],
-                        [
-                            'label' => 'صفحه جدید',
-                            'route' => 'np.pages.create',
-                            'permission' => 'pages.create',
-                            'icon' => 'plus',
-                        ],
-                    ],
-                ],
-            ],
-        ],
-
-        /*
-        |------------------
-        | امور ظاهری
-        |------------------
-        */
-        [
-            'key' => 'appearance',
-            'title' => 'امور ظاهری',
-            'items' => [
-                [
-                    'label' => 'قالب',
-                    'icon' => 'layout-template',
-                    'children' => [
-                        [
-                            'label' => 'لیست قالب‌ها',
-                            'route' => 'np.themes.index',
-                            'permission' => 'themes.index',
-                            'icon' => 'list',
-                        ],
-                        [
-                            'label' => 'آپلود قالب جدید',
-                            'route' => 'np.themes.create',
-                            'permission' => 'themes.create',
-                            'icon' => 'upload',
-                        ],
-                        [
-                            'label' => 'تنظیمات قالب',
-                            'route' => 'np.themes.settings',
-                            'permission' => 'themes.settings',
-                            'icon' => 'settings-2',
-                        ],
-                        [
-                            // فاز ۱۱: ورود اول به لیست ابزارک‌ها؛ ویجت‌ساز تعاملی از همان صفحه در دسترس است
-                            'label' => 'ابزارک‌های صفحه اصلی',
-                            'route' => 'np.widgets.index',
-                            'permission' => 'themes.settings',
-                            'icon' => 'layout-panel-top',
-                            'active_routes' => ['np.widgets.index', 'np.widgets.create', 'np.widgets.edit', 'np.widgets.builder'],
-                        ],
-                        [
-                            'label' => 'ابزارک‌های مقالات',
-                            'route' => 'np.posts-widgets.index',
-                            'permission' => 'themes.settings',
-                            'active_routes' => ['np.posts-widgets.index', 'np.posts-widgets.create', 'np.posts-widgets.edit', 'np.widgets.posts-builder'],
-                            'icon' => 'layout-panel-left',
-                        ],
-                    ],
-                ],
-                [
-                    'label' => 'اسلایدرها',
-                    'icon' => 'image-play',
-                    'children' => [
-                        [
-                            'label' => 'لیست اسلایدرها',
-                            'route' => 'np.sliders.index',
-                            'permission' => 'sliders.index',
-                            'icon' => 'list',
-                        ],
-                        [
-                            'label' => 'اسلایدر جدید',
-                            'route' => 'np.sliders.create',
-                            'permission' => 'sliders.create',
-                            'icon' => 'plus',
-                        ],
-                    ],
-                ],
-                [
-                    'label' => 'بنرها',
-                    'icon' => 'panel-top',
-                    'children' => [
-                        [
-                            'label' => 'لیست بنرها',
-                            'route' => 'np.banners.index',
-                            'permission' => 'banners.index',
-                            'icon' => 'list',
-                        ],
-                        [
-                            'label' => 'بنر جدید',
-                            'route' => 'np.banners.create',
-                            'permission' => 'banners.create',
-                            'icon' => 'plus',
-                        ],
-                    ],
-                ],
-                [
-                    'label' => 'لینک‌های فوتر',
-                    'icon' => 'link-2',
-                    'children' => [
-                        [
-                            'label' => 'لیست لینک‌ها',
-                            'route' => 'np.links.index',
-                            'permission' => 'links.index',
-                            'icon' => 'list',
-                        ],
-                        [
-                            'label' => 'گروه‌های لینک',
-                            'route' => 'np.links.groups',
-                            'permission' => 'links.groups',
-                            'icon' => 'folder',
-                        ],
-                    ],
-                ],
-                [
-                    'label' => 'منوها',
-                    'route' => 'np.menus.index',
-                    'permission' => 'menus',
-                    'icon' => 'menu',
-                ],
-            ],
-        ],
-
         /*
         |------------------
         | عملیات محصولات
@@ -271,18 +75,7 @@ return [
             'title' => 'عملیات محصولات',
             'items' => [
                 [
-                    'label' => 'انبارداری',
-                    'icon' => 'warehouse',
-                    'children' => [
-                        [
-                            'label' => 'لیست انبارها',
-                            'route' => 'np.warehouses.index',
-                            'permission' => 'warehouses.index',
-                            'icon' => 'list',
-                        ],
-                    ],
-                ],
-                [
+                    // فاز ۱۶: «محصولات» اولین آیتم گروه (پرکاربردترین بخش فروشگاه)
                     'label' => 'محصولات',
                     'icon' => 'shopping-bag',
                     'children' => [
@@ -421,78 +214,21 @@ return [
                         ],
                     ],
                 ],
-            ],
-        ],
-
-        /*
-        |------------------
-        | امور فروشندگان
-        |------------------
-        */
-        [
-            // فاز ۱۲: فقط وقتی سیستم چند فروشندگی فعال است نمایش داده می‌شود
-            'vendor' => true,
-            'key' => 'sellers',
-            'title' => 'امور فروشندگان',
-            'items' => [
                 [
-                    'label' => 'فروشندگان',
-                    'icon' => 'store',
+                    // فاز ۱۶: «انبارداری» به انتهای گروه منتقل شد (کاربرد تخصصی‌تر)
+                    'label' => 'انبارداری',
+                    'icon' => 'warehouse',
                     'children' => [
                         [
-                            'label' => 'لیست فروشندگان',
-                            'route' => 'np.sellers.index',
-                            'permission' => 'sellers.index',
+                            'label' => 'لیست انبارها',
+                            'route' => 'np.warehouses.index',
+                            'permission' => 'warehouses.index',
                             'icon' => 'list',
                         ],
-                        [
-                            'label' => 'محصولات فروشندگان',
-                            'route' => 'np.sellers.products',
-                            'permission' => 'sellers.products',
-                            'icon' => 'package-2',
-                        ],
-                        [
-                            'label' => 'سفارشات فروشندگان',
-                            'route' => 'np.sellers.orders',
-                            'permission' => 'sellers.orders',
-                            'icon' => 'receipt',
-                        ],
-                    ],
-                ],
-                [
-                    'label' => 'تنظیمات فروشندگان',
-                    'icon' => 'settings',
-                    'permission' => 'sellers',
-                    'children' => [
-                        [
-                            'label' => 'چرا ما',
-                            'route' => 'np.settings.seller-hero',
-                            'permission' => null,
-                            'icon' => 'sparkles',
-                        ],
-                        [
-                            'label' => 'نمایش میزان کمیسیون',
-                            'route' => 'np.settings.seller-commission',
-                            'permission' => null,
-                            'icon' => 'percent',
-                        ],
-                        [
-                            'label' => 'سوالات پر تکرار',
-                            'route' => 'np.settings.seller-question',
-                            'permission' => null,
-                            'icon' => 'message-circle-question',
-                        ],
-                        [
-                            'label' => 'قرارداد الکترونیک',
-                            'route' => 'np.settings.seller-econtract',
-                            'permission' => null,
-                            'icon' => 'file-signature',
-                        ],
                     ],
                 ],
             ],
         ],
-
         /*
         |------------------
         | امور مالی و سفارشات
@@ -587,6 +323,44 @@ return [
                     ],
                 ],
                 [
+                    'label' => 'پرداخت',
+                    'icon' => 'wallet',
+                    'children' => [
+                        [
+                            'label' => 'لیست تراکنش‌ها',
+                            'route' => 'np.transactions.index',
+                            'permission' => 'payments.transactions.index',
+                            'icon' => 'credit-card',
+                        ],
+                        [
+                            'label' => 'تاریخچه کیف پول',
+                            'route' => 'np.wallet-histories.index',
+                            'permission' => 'payments.wallet-histories.index',
+                            'icon' => 'history',
+                        ],
+                        [
+                            'label' => 'لیست کمیسیون فروشندگان',
+                            'route' => 'np.transactions.seller-deposits',
+                            'permission' => 'payments.transactions.seller_deposit',
+                            'icon' => 'coins',
+                            'vendor' => true,
+                        ],
+                        [
+                            'label' => 'لیست ارزها',
+                            'route' => 'np.currencies.index',
+                            'permission' => 'payments.currencies',
+                            'icon' => 'banknote',
+                        ],
+                    ],
+                ],
+                [
+                    'label' => 'صف پرداخت سهم‌ها',
+                    'route' => 'np.request-deposit.index',
+                    'permission' => 'request_deposit',
+                    'icon' => 'hourglass',
+                    'vendor' => true,
+                ],
+                [
                     'label' => 'گزارشات',
                     'icon' => 'bar-chart-3',
                     'children' => [
@@ -634,47 +408,260 @@ return [
                         ],
                     ],
                 ],
+            ],
+        ],
+        /*
+        |------------------
+        | امور فروشندگان
+        |------------------
+        */
+        [
+            // فاز ۱۲: فقط وقتی سیستم چند فروشندگی فعال است نمایش داده می‌شود
+            'vendor' => true,
+            'key' => 'sellers',
+            'title' => 'امور فروشندگان',
+            'items' => [
                 [
-                    'label' => 'پرداخت',
-                    'icon' => 'wallet',
+                    'label' => 'فروشندگان',
+                    'icon' => 'store',
                     'children' => [
                         [
-                            'label' => 'لیست تراکنش‌ها',
-                            'route' => 'np.transactions.index',
-                            'permission' => 'payments.transactions.index',
-                            'icon' => 'credit-card',
+                            'label' => 'لیست فروشندگان',
+                            'route' => 'np.sellers.index',
+                            'permission' => 'sellers.index',
+                            'icon' => 'list',
                         ],
                         [
-                            'label' => 'تاریخچه کیف پول',
-                            'route' => 'np.wallet-histories.index',
-                            'permission' => 'payments.wallet-histories.index',
-                            'icon' => 'history',
+                            'label' => 'محصولات فروشندگان',
+                            'route' => 'np.sellers.products',
+                            'permission' => 'sellers.products',
+                            'icon' => 'package-2',
                         ],
                         [
-                            'label' => 'لیست کمیسیون فروشندگان',
-                            'route' => 'np.transactions.seller-deposits',
-                            'permission' => 'payments.transactions.seller_deposit',
-                            'icon' => 'coins',
-                            'vendor' => true,
-                        ],
-                        [
-                            'label' => 'لیست ارزها',
-                            'route' => 'np.currencies.index',
-                            'permission' => 'payments.currencies',
-                            'icon' => 'banknote',
+                            'label' => 'سفارشات فروشندگان',
+                            'route' => 'np.sellers.orders',
+                            'permission' => 'sellers.orders',
+                            'icon' => 'receipt',
                         ],
                     ],
                 ],
                 [
-                    'label' => 'صف پرداخت سهم‌ها',
-                    'route' => 'np.request-deposit.index',
-                    'permission' => 'request_deposit',
-                    'icon' => 'hourglass',
-                    'vendor' => true,
+                    'label' => 'تنظیمات فروشندگان',
+                    'icon' => 'settings',
+                    'permission' => 'sellers',
+                    'children' => [
+                        [
+                            'label' => 'چرا ما',
+                            'route' => 'np.settings.seller-hero',
+                            'permission' => null,
+                            'icon' => 'sparkles',
+                        ],
+                        [
+                            'label' => 'نمایش میزان کمیسیون',
+                            'route' => 'np.settings.seller-commission',
+                            'permission' => null,
+                            'icon' => 'percent',
+                        ],
+                        [
+                            'label' => 'سوالات پر تکرار',
+                            'route' => 'np.settings.seller-question',
+                            'permission' => null,
+                            'icon' => 'message-circle-question',
+                        ],
+                        [
+                            'label' => 'قرارداد الکترونیک',
+                            'route' => 'np.settings.seller-econtract',
+                            'permission' => null,
+                            'icon' => 'file-signature',
+                        ],
+                    ],
                 ],
             ],
         ],
-
+        /*
+        |------------------
+        | مدیریت محتوا
+        |------------------
+        */
+        [
+            'key' => 'content',
+            'title' => 'مدیریت محتوا',
+            'items' => [
+                [
+                    'label' => 'وبلاگ',
+                    'icon' => 'notebook-pen',
+                    'children' => [
+                        [
+                            'label' => 'لیست مطالب',
+                            'route' => 'np.posts.index',
+                            'permission' => 'posts.index',
+                            'icon' => 'list',
+                        ],
+                        [
+                            'label' => 'نوشته جدید',
+                            'route' => 'np.posts.create',
+                            'permission' => 'posts.create',
+                            'icon' => 'plus',
+                        ],
+                        [
+                            'label' => 'دسته‌بندی‌ها',
+                            'route' => 'np.categories.post',
+                            'permission' => 'posts.category',
+                            'icon' => 'folder-tree',
+                        ],
+                    ],
+                ],
+                // فاز ۱۶: «صفحات» بلافاصله بعد از وبلاگ (محتوای اصلی سایت)
+                [
+                    'label' => 'صفحات',
+                    'icon' => 'file-text',
+                    'children' => [
+                        [
+                            'label' => 'لیست صفحات',
+                            'route' => 'np.pages.index',
+                            'permission' => 'pages.index',
+                            'icon' => 'list',
+                        ],
+                        [
+                            'label' => 'صفحه جدید',
+                            'route' => 'np.pages.create',
+                            'permission' => 'pages.create',
+                            'icon' => 'plus',
+                        ],
+                    ],
+                ],
+                [
+                    'label' => 'دیدگاه‌ها',
+                    'route' => 'np.comments.posts',
+                    'permission' => 'posts.comments',
+                    'icon' => 'message-square',
+                ],
+                [
+                    'label' => 'تگ‌ها',
+                    'route' => 'np.tags.index',
+                    'permission' => 'tags',
+                    'icon' => 'tags',
+                ],
+                // فاز ۱۶: «جستجوها» ابزار تحلیلی است — به انتهای گروه منتقل شد
+                [
+                    'label' => 'جستجوها',
+                    'route' => 'np.searches.index',
+                    'permission' => 'searches',
+                    'icon' => 'search',
+                ],
+            ],
+        ],
+        /*
+        |------------------
+        | امور ظاهری
+        |------------------
+        */
+        [
+            'key' => 'appearance',
+            'title' => 'امور ظاهری',
+            'items' => [
+                [
+                    'label' => 'قالب',
+                    'icon' => 'layout-template',
+                    'children' => [
+                        [
+                            'label' => 'لیست قالب‌ها',
+                            'route' => 'np.themes.index',
+                            'permission' => 'themes.index',
+                            'icon' => 'list',
+                        ],
+                        [
+                            'label' => 'آپلود قالب جدید',
+                            'route' => 'np.themes.create',
+                            'permission' => 'themes.create',
+                            'icon' => 'upload',
+                        ],
+                        [
+                            'label' => 'تنظیمات قالب',
+                            'route' => 'np.themes.settings',
+                            'permission' => 'themes.settings',
+                            'icon' => 'settings-2',
+                        ],
+                        [
+                            // فاز ۱۱: ورود اول به لیست ابزارک‌ها؛ ویجت‌ساز تعاملی از همان صفحه در دسترس است
+                            'label' => 'ابزارک‌های صفحه اصلی',
+                            'route' => 'np.widgets.index',
+                            'permission' => 'themes.settings',
+                            'icon' => 'layout-panel-top',
+                            'active_routes' => ['np.widgets.index', 'np.widgets.create', 'np.widgets.edit', 'np.widgets.builder'],
+                        ],
+                        [
+                            'label' => 'ابزارک‌های مقالات',
+                            'route' => 'np.posts-widgets.index',
+                            'permission' => 'themes.settings',
+                            'active_routes' => ['np.posts-widgets.index', 'np.posts-widgets.create', 'np.posts-widgets.edit', 'np.widgets.posts-builder'],
+                            'icon' => 'layout-panel-left',
+                        ],
+                    ],
+                ],
+                [
+                    // فاز ۱۶: «منوها» بلافاصله بعد از قالب (ساختار ناوبری سایت)
+                    'label' => 'منوها',
+                    'route' => 'np.menus.index',
+                    'permission' => 'menus',
+                    'icon' => 'menu',
+                ],
+                [
+                    'label' => 'اسلایدرها',
+                    'icon' => 'image-play',
+                    'children' => [
+                        [
+                            'label' => 'لیست اسلایدرها',
+                            'route' => 'np.sliders.index',
+                            'permission' => 'sliders.index',
+                            'icon' => 'list',
+                        ],
+                        [
+                            'label' => 'اسلایدر جدید',
+                            'route' => 'np.sliders.create',
+                            'permission' => 'sliders.create',
+                            'icon' => 'plus',
+                        ],
+                    ],
+                ],
+                [
+                    'label' => 'بنرها',
+                    'icon' => 'panel-top',
+                    'children' => [
+                        [
+                            'label' => 'لیست بنرها',
+                            'route' => 'np.banners.index',
+                            'permission' => 'banners.index',
+                            'icon' => 'list',
+                        ],
+                        [
+                            'label' => 'بنر جدید',
+                            'route' => 'np.banners.create',
+                            'permission' => 'banners.create',
+                            'icon' => 'plus',
+                        ],
+                    ],
+                ],
+                [
+                    'label' => 'لینک‌های فوتر',
+                    'icon' => 'link-2',
+                    'children' => [
+                        [
+                            'label' => 'لیست لینک‌ها',
+                            'route' => 'np.links.index',
+                            'permission' => 'links.index',
+                            'icon' => 'list',
+                        ],
+                        [
+                            'label' => 'گروه‌های لینک',
+                            'route' => 'np.links.groups',
+                            'permission' => 'links.groups',
+                            'icon' => 'folder',
+                        ],
+                    ],
+                ],
+            ],
+        ],
         /*
         |------------------
         | امور پشتیبانی
@@ -740,7 +727,6 @@ return [
                 ],
             ],
         ],
-
         /*
         |------------------
         | امور کاربران و مدیران
@@ -812,7 +798,6 @@ return [
                 ],
             ],
         ],
-
         /*
         |------------------
         | امور مدیریتی
@@ -822,6 +807,20 @@ return [
             'key' => 'management',
             'title' => 'امور مدیریتی',
             'items' => [
+                // فاز ۱۶: «نشست‌های فعال» و «مانیتور سیستم» از نمای کلی به امور مدیریتی منتقل شدند
+                [
+                    'label' => 'نشست‌های فعال',
+                    'route' => 'np.sessions.index',
+                    'permission' => 'sessions.index',
+                    'icon' => 'monitor',
+                ],
+                [
+                    'label' => 'مانیتور سیستم',
+                    'route' => 'np.pulse.index',
+                    'permission' => 'pulse.monitor',
+                    'icon' => 'activity',
+                    'live' => true,
+                ],
                 [
                     'label' => 'درون‌ریزی',
                     'icon' => 'file-spreadsheet',

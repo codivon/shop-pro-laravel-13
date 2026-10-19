@@ -112,12 +112,12 @@
                                             && in_array('yes', array_column($setting['options'], 'value'), true)
                                             && in_array('no', array_column($setting['options'], 'value'), true);
                                     @endphp
-                                    <div class="{{ $setting['class'] ?? '' }}">
+                                    <div class="{{ ap_clean_legacy_class($setting['class'] ?? null) }} min-w-0">
                                         <label class="mb-1.5 block text-xs font-semibold">{{ $setting['title'] }}</label>
 
                                         @if ($isYesNo)
-                                            {{-- سوییچ دوتایی بله/خیر --}}
-                                            <div class="inline-flex w-full rounded-xl border border-line bg-surface-2 p-1 dark:border-night-line dark:bg-night-3" role="group" aria-label="{{ $setting['title'] }}">
+                                            {{-- سوییچ دوتایی بله/خیر — فاز ۱۶: عرض کامل و هم‌عرض با فیلدهای متن --}}
+                                            <div class="flex w-full rounded-xl border border-line bg-surface-2 p-1 dark:border-night-line dark:bg-night-3" role="group" aria-label="{{ $setting['title'] }}">
                                                 @foreach ($setting['options'] as $opt)
                                                     <button type="button"
                                                             wire:click="$set('settings.{{ $setting['key'] }}', '{{ $opt['value'] }}')"
@@ -130,7 +130,7 @@
                                                 @endforeach
                                             </div>
                                         @else
-                                            <select wire:model="settings.{{ $setting['key'] }}" class="ap-input !py-2">
+                                            <select wire:model="settings.{{ $setting['key'] }}" class="ap-input w-full !py-2">
                                                 @foreach (($setting['options'] ?? []) as $opt)
                                                     <option value="{{ $opt['value'] }}">{{ $opt['title'] }}</option>
                                                 @endforeach
@@ -140,38 +140,28 @@
                                     @break
 
                                 @case('input')
-                                    <div class="{{ $setting['class'] ?? '' }}">
+                                    <div class="{{ ap_clean_legacy_class($setting['class'] ?? null) }} min-w-0">
                                         <label class="mb-1.5 block text-xs font-semibold">{{ $setting['title'] }}</label>
-                                        <input type="text" wire:model="settings.{{ $setting['key'] }}" class="ap-input !py-2">
+                                        <input type="text" wire:model="settings.{{ $setting['key'] }}" class="ap-input w-full !py-2">
                                     </div>
                                     @break
 
                                 @case('file')
-                                    <div class="{{ $setting['class'] ?? '' }}">
+                                    {{-- فاز ۱۶: فیلدهای تصویری قالب از رسانه‌های سایت (فایل‌منیجر) انتخاب می‌شوند — هم‌راستا با درخواست «تصاویر از فایل‌های خود سایت» --}}
+                                    <div class="md:col-span-2 {{ ap_clean_legacy_class($setting['class'] ?? null) }} min-w-0">
                                         <label class="mb-1.5 block text-xs font-semibold">{{ $setting['title'] }}</label>
-                                        <div class="rounded-xl border border-line bg-surface-2 p-3 transition-colors focus-within:border-brand-500/60 dark:border-night-line dark:bg-night-3/60">
-                                            <input type="file" wire:model="settingFiles.{{ $setting['key'] }}"
-                                                   class="block w-full cursor-pointer bg-transparent text-xs text-ink-2
-                                                          file:me-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-brand-600 file:px-3 file:py-1.5
-                                                          file:text-xs file:font-semibold file:text-white hover:file:bg-brand-700">
-                                        @if (!empty(option($setting['key'])))
-                                            <p class="mt-2 flex items-center gap-2 border-t border-line pt-2 text-[11px] text-ink-3 dark:border-night-line dark:text-night-ink-2">
-                                                <x-admin-panel::icon name="check-circle" class="size-3.5 shrink-0 text-emerald-500" />
-                                                فایل فعلی:
-                                                @if (preg_match('/\.(png|jpe?g|gif|webp|svg)$/i', (string) option($setting['key'])))
-                                                    <img src="{{ asset(option($setting['key'])) }}" alt="{{ $setting['title'] }}"
-                                                         class="size-9 rounded-lg border border-line object-cover dark:border-night-line">
-                                                @endif
-                                                <a href="{{ option($setting['key']) }}" target="_blank" rel="noopener" class="ltr truncate text-brand-600 hover:underline dark:text-brand-400">{{ option($setting['key']) }}</a>
-                                            </p>
-                                        @endif
-                                        </div>
+                                        <x-admin-panel::media-picker
+                                            wireModel="settings.{{ $setting['key'] }}"
+                                            :value="$settings[$setting['key']] ?? ''"
+                                            hint="تصویر را از رسانه‌های سایت انتخاب کنید — می‌توانید فایل جدید هم آپلود کنید"
+                                            height="h-40 sm:h-48"
+                                        />
                                     </div>
                                     @break
 
                                 @case('editor')
                                 @case('inline-editor')
-                                    <div class="md:col-span-2 {{ $setting['class'] ?? '' }}">
+                                    <div class="md:col-span-2 {{ ap_clean_legacy_class($setting['class'] ?? null) }}">
                                         <label class="mb-1.5 block text-xs font-semibold">{{ $setting['title'] }}</label>
                                         <textarea wire:model="settings.{{ $setting['key'] }}" rows="4" class="ap-input !py-2">{{ $settings[$setting['key']] ?? '' }}</textarea>
                                     </div>

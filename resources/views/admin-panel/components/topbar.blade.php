@@ -51,12 +51,10 @@
                 </span>
             </button>
 
-            {{-- اعلان‌ها --}}
-            <a href="{{ route('admin.notifications') }}"
-               class="relative rounded-xl p-2.5 text-ink-2 transition-colors hover:bg-surface-3 hover:text-ink dark:text-night-ink-2 dark:hover:bg-night-3 dark:hover:text-night-ink"
-               aria-label="اعلان‌ها" title="اعلان‌ها">
-                <x-admin-panel::icon name="bell" class="size-5" />
-            </a>
+            {{-- اعلان‌ها — فاز ۱۶: دراپ‌داون اعلان‌های اخیر + شمارنده (به‌جای لینک به پنل قدیمی) --}}
+            @if (auth('adminPanel')->user()?->can('notifications.panel'))
+                <livewire:admin.notifications.header-notifications />
+            @endif
 
             <span class="mx-1 hidden h-6 w-px bg-line sm:block dark:bg-night-line" aria-hidden="true"></span>
 

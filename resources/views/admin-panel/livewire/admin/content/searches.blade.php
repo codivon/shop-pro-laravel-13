@@ -113,7 +113,7 @@
                             <td class="px-3 py-3 fa-digits text-center text-ink-3 dark:text-night-ink-2">{{ self::jdate($search->first_searched) }}</td>
                             <td class="px-3 py-3">
                                 <div class="flex items-center justify-center gap-0.5">
-                                    <button type="button" wire:click="showDetails({{ $index }})"
+                                    <button type="button" wire:click="openDetails({{ $index }})"
                                             class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10"
                                             title="جزئیات" aria-label="جزئیات">
                                         <x-admin-panel::icon name="users" class="size-4" />
@@ -306,7 +306,7 @@
     </div>
 
     {{-- لودینگ --}}
-    <div wire:loading wire:target="showDetails, destroy, multipleDestroy"
+    <div wire:loading wire:target="openDetails, destroy, multipleDestroy"
          class="pointer-events-none fixed bottom-6 start-6 z-[65] flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 shadow-pop dark:border-night-line dark:bg-night-3">
         <svg class="size-4 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />

@@ -105,14 +105,30 @@
     wgOpen: false,
     wgQuery: '',
     wgFilter: 'all',
+    wgCopied: '',
     wgItems: @js($wgItems),
     get wgVisible() {
         const q = this.wgQuery.trim().toLowerCase();
         return this.wgItems.filter((it) => (this.wgFilter === 'all' || it.cat === this.wgFilter) && (!q || (it.search || '').includes(q)));
     },
-    wgCopy(sc) {
+    wgCopy(sc, key) {
+        const done = () => {
+            this.wgCopied = key;
+            setTimeout(() => { if (this.wgCopied === key) this.wgCopied = ''; }, 2500);
+        };
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(sc).catch(() => {});
+            navigator.clipboard.writeText(sc).then(done).catch(() => { done(); });
+        } else {
+            // پشتیبان برای مرورگرهای بدون Clipboard API
+            const ta = document.createElement('textarea');
+            ta.value = sc;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); } catch (e) {}
+            document.body.removeChild(ta);
+            done();
         }
         try {
             window.ApEditor?.instance?.model?.change(w => {
@@ -251,7 +267,7 @@
                         <x-admin-panel::icon name="layout-template" class="size-5" />
                     </span>
                     <div>
-                        <h3 id="wg-modal-title" class="text-sm font-extrabold">گالیــری ویجت‌ها و فرم‌ها</h3>
+                        <h3 id="wg-modal-title" class="text-sm font-extrabold">گالری ویجت‌ها و فرم‌ها</h3>
                         <p class="mt-0.5 flex items-center gap-1 text-[11px] text-ink-3 dark:text-night-ink-2">
                             <x-admin-panel::icon name="layout-panel-top" class="size-3.5" />
                             <span class="fa-digits">{{ $wgTotalFa }}</span> مورد در گالری
@@ -320,10 +336,21 @@
                                     </p>
                                 </template>
                                 <code class="truncate rounded-lg bg-surface-2 px-2 py-1 text-center text-[11px] text-ink-2 dark:bg-night-2 dark:text-night-ink-2" dir="ltr" x-text="item.sc"></code>
-                                <button type="button" x-on:click="wgCopy(item.sc)"
-                                        class="ap-btn mt-auto !py-2 bg-brand-600 text-[11.5px] text-white hover:bg-brand-700">
-                                    <x-admin-panel::icon name="clipboard-list" class="size-3.5" />
-                                    کپی شورتکد
+                                <button type="button" x-on:click="wgCopy(item.sc, item.key)"
+                                        class="ap-btn mt-auto !py-2 text-[11.5px] font-bold transition-colors"
+                                        :class="wgCopied === item.key ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-brand-600 text-white hover:bg-brand-700'">
+                                    <template x-if="wgCopied === item.key">
+                                        <span class="inline-flex items-center gap-1.5">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="size-3.5"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            کپی شد ✓
+                                        </span>
+                                    </template>
+                                    <template x-if="wgCopied !== item.key">
+                                        <span class="inline-flex items-center gap-1.5">
+                                            <x-admin-panel::icon name="clipboard-list" class="size-3.5" />
+                                            کپی شورتکد
+                                        </span>
+                                    </template>
                                 </button>
                             </div>
                         </div>

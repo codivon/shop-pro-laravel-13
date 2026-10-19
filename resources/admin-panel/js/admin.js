@@ -451,7 +451,11 @@ document.addEventListener('alpine:init', () => {
         items: [],
         init() {
             window.addEventListener('ap-toast', (e) => {
-                const t = { ...e.detail, visible: false };
+                // فاز ۱۶ — باگ اصلی: t یک آبجکت خام بود و t.visible = true از طریق
+                // پروکسی واکنش‌گرای Alpine نمی‌گذشت؛ نتیجه: هیچ توستی هرگز نمایش
+                // داده نمی‌شد (visible برای همیشه false می‌ماند). با Alpine.reactive
+                // جهش visible اثر واکنشی دارد.
+                const t = Alpine.reactive({ ...e.detail, visible: false });
                 this.items.push(t);
                 requestAnimationFrame(() => { t.visible = true; });
                 setTimeout(() => this.remove(t), t.duration);
@@ -471,32 +475,50 @@ document.addEventListener('alpine:init', () => {
         search: '',
         init() {
             window.addEventListener('ap-close-sidebar', () => { this.open = false; });
+            // فاز ۱۶: هنگام جستجو در منو، همه گروه‌ها باز شوند تا نتایج زیرمنو دیده شوند
+            this.$watch('search', (value) => {
+                if (value && value.trim()) {
+                    window.dispatchEvent(new CustomEvent('ap-menu-open-all'));
+                }
+            });
             this.restorePosition();
         },
 
         /* بعد از هر ناوبری/رفرش: بازگشت به نقطه منوی فعال (یا آخرین اسکرول) */
         restorePosition() {
             this.$nextTick(() => {
-                setTimeout(() => {
+                // فاز ۱۶: چند مرحله‌ای — گروه‌های والدِ آیتم فعال خودشان در init باز
+                // می‌شوند؛ اینجا فقط اسکرول روی آیتم فعال را تضمین می‌کنیم (با تلاش مجدد
+                // چون باز شدن گروه و رندر Alpine ممکن است کمی طول بکشد)
+                let attempts = 0;
+                const scrollToActive = () => {
                     const nav = this.$refs.nav;
                     if (!nav) return;
-                    // فاز ۱۲: آکاردئون‌ها به‌صورت پیش‌فرض بسته‌اند؛ اگر آیتم فعال داخل گروه بسته
-                    // است (display:none) به آن اسکرول نمی‌کنیم و سراغ اسکرول ذخیره‌شده می‌رویم
                     const active = nav.querySelector('.ap-menu-link.is-active');
-                    const visible = active && active.offsetParent !== null && active.getBoundingClientRect().width > 0;
-                    if (visible) {
+
+                    if (active) {
+                        const visible = active.offsetParent !== null && active.getBoundingClientRect().width > 0;
+                        if (!visible && attempts < 10) {
+                            // گروه والد هنوز باز نشده — تلاش مجدد
+                            attempts++;
+                            setTimeout(scrollToActive, 60);
+                            return;
+                        }
                         const navRect = nav.getBoundingClientRect();
                         const r = active.getBoundingClientRect();
                         // اگر آیتم فعال دیده نمی‌شود، به یک‌سوم بالای کادر برسان
                         if (r.top < navRect.top + 8 || r.bottom > navRect.bottom - 8) {
-                            nav.scrollTop = Math.max(0, nav.scrollTop + (r.top - navRect.top) - navRect.height / 3);
+                            const target = Math.max(0, nav.scrollTop + (r.top - navRect.top) - navRect.height / 3);
+                            nav.scrollTo({ top: target, behavior: 'smooth' });
                         }
+                        try { sessionStorage.removeItem('ap-sidebar-scroll'); } catch (e) {}
                     } else {
                         const saved = parseInt(sessionStorage.getItem('ap-sidebar-scroll') || '0', 10);
                         if (saved > 0) nav.scrollTop = saved;
                     }
                     try { sessionStorage.setItem('ap-sidebar-scroll', String(nav.scrollTop)); } catch (e) {}
-                }, 80);
+                };
+                setTimeout(scrollToActive, 100);
             });
         },
 
@@ -510,6 +532,16 @@ document.addEventListener('alpine:init', () => {
     /* آکاردئون گروه منو */
     Alpine.data('apMenuGroup', (openByDefault = false) => ({
         open: openByDefault,
+        init() {
+            // فاز ۱۶: اگر آیتم فعال داخل این گروه است، گروه باز بماند
+            // (قبلاً همه گروه‌ها بسته می‌شدند و کاربر در صفحه «دسته‌بندی وبلاگ»
+            // منوی وبلاگ را بسته می‌دید)
+            if (!this.open && this.$el.querySelector('.ap-menu-link.is-active')) {
+                this.open = true;
+            }
+            // هنگام جستجو در منو همه گروه‌ها باز شوند
+            window.addEventListener('ap-menu-open-all', () => { this.open = true; });
+        },
         toggle() { this.open = !this.open; },
     }));
 
@@ -863,27 +895,97 @@ window.apMediaPicker = (initial = '') => ({
         if (!window.Livewire) return;
 
         // پیام لحظه‌ای برای خطاهای اعتبارسنجی در همه فرم‌ها (در کنار خطای زیر فیلد)
+        // فاز ۱۶: تعداد خطاها هم در پیام نشان داده می‌شود
         let lastErrorToast = 0;
-        const showValidationError = () => {
+        const showValidationError = (count) => {
             const now = Date.now();
             if (now - lastErrorToast < 1500) return; // ضد تکرار
             lastErrorToast = now;
-            window.ApToast && window.ApToast.error('لطفاً خطاهای مشخص‌شده در فرم را برطرف کنید.');
+            const n = ApFormat.faDigits(count || 0);
+            const message = count > 1
+                ? `${n} خطای اعتبارسنجی وجود دارد — لطفاً خطاهای مشخص‌شده زیر فیلدها را برطرف کنید.`
+                : 'خطای اعتبارسنجی — لطفاً خطای مشخص‌شده زیر فیلد را برطرف کنید.';
+            window.ApToast && window.ApToast.error(message, { duration: 5000 });
         };
 
         // ۱) خطای اعتبارسنجی اکشن‌ها: memo.errors در snapshot موفق (HTTP 200 + errors)
         window.Livewire.hook('commit', ({ succeed }) => {
             succeed(({ snapshot }) => {
                 const errors = snapshot && snapshot.memo && snapshot.memo.errors;
-                if (errors && Object.keys(errors).length) showValidationError();
+                if (errors && Object.keys(errors).length) showValidationError(Object.keys(errors).length);
             });
         });
 
         // ۲) پشتیبان: پاسخ واقعی HTTP 422 (آپلود فایل و …)
         window.Livewire.hook('request', ({ respond }) => {
             respond(({ status }) => {
-                if (status === 422) showValidationError();
+                if (status === 422) showValidationError(1);
             });
+        });
+
+        /* --------------------------------------------------------------
+         | فاز ۱۶ — بازخورد لودینگ سراسری
+         | هر کلیکی که درخواست Livewire می‌سازد (wire:click / wire:submit)
+         | روی خود عنصر کلاس ap-clicking می‌گیرد (اسپینر + محو) و نوار
+         | پیشرفت بالای صفحه فعال می‌شود؛ برای wire:navigate هم همین‌طور.
+         | نوار فقط برای تعامل کاربر نشان داده می‌شود (نه wire:poll پس‌زمینه).
+         -------------------------------------------------------------- */
+        let pending = 0;
+        let lastUserClickAt = 0;
+
+        const getBar = () => {
+            let el = document.getElementById('ap-top-progress');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'ap-top-progress';
+                el.setAttribute('aria-hidden', 'true');
+                document.body.appendChild(el);
+            }
+            return el;
+        };
+        const barStart = () => { const bar = getBar(); bar.classList.remove('is-done', 'is-finishing'); bar.classList.add('is-active'); };
+        const barFinish = () => {
+            const bar = getBar();
+            bar.classList.remove('is-active');
+            bar.classList.add('is-finishing');
+            setTimeout(() => { bar.classList.add('is-done'); bar.classList.remove('is-finishing'); }, 180);
+        };
+        const clearClicking = () => {
+            document.querySelectorAll('.ap-clicking').forEach((el) => el.classList.remove('ap-clicking'));
+        };
+
+        // ثبت کلیک روی عناصر دارای اکشن Livewire (یا فرزند آن‌ها)
+        const BUSY_SELECTOR = '[wire\\:click], [wire\\:submit]';
+        document.addEventListener('click', (event) => {
+            const target = event.target.closest(BUSY_SELECTOR);
+            if (!target) return;
+            // دکمه‌های disabled قبلاً wire:loading.attr=disabled دارند — کافی است
+            if (target.disabled) return;
+            lastUserClickAt = Date.now();
+            clearClicking();
+            target.classList.add('ap-clicking');
+        }, true);
+
+        // ناوبری wire:navigate — جدا از کامیت‌ها
+        document.addEventListener('livewire:navigating', barStart);
+        document.addEventListener('livewire:navigated', () => { barFinish(); clearClicking(); });
+
+        // شمارش درخواست‌های فعال: نوار بالای صفحه + پاک‌سازی اسپینرها
+        window.Livewire.hook('commit', ({ succeed, fail }) => {
+            const isUserInitiated = (Date.now() - lastUserClickAt) < 2000;
+
+            pending++;
+            if (isUserInitiated) barStart();
+
+            const done = () => {
+                pending = Math.max(0, pending - 1);
+                if (pending === 0) {
+                    if (isUserInitiated) barFinish();
+                    clearClicking();
+                }
+            };
+            succeed(done);
+            fail(done);
         });
     };
 

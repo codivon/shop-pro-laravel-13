@@ -102,8 +102,10 @@ class SearchIndex extends Component
     }
 
     /* ---------------- جزئیات (پورت ۱:۱ details قدیمی) ---------------- */
-
-    public function showDetails(int $index): void
+    // فاز ۱۶: نام اکشن از showDetails به openDetails تغییر کرد — چون پراپرتی
+    // هم‌نام $showDetails پرچم مودال است و در پروکسی Livewire پراپرتی بر متد
+    // اولویت دارد (w.showDetails «not a function») و دکمه جزئیات هیچ کاری نمی‌کرد.
+    public function openDetails(int $index): void
     {
         auth('adminPanel')->user()?->can('searches') ?: abort(403);
 

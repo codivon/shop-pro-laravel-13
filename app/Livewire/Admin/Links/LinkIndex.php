@@ -82,8 +82,10 @@ class LinkIndex extends Component
     }
 
     /* ---------------- ایجاد (پورت ۱:۱ store قدیمی) ---------------- */
-
-    public function createLink(): void
+    // فاز ۱۶: نام اکشن‌های createLink/editLink به storeLink/openEdit تغییر کرد —
+    // پراپرتی‌های هم‌نام ($createLink / $editLink فیلدهای فرم) در پروکسی Livewire
+    // بر متد اولویت دارند و wire:submit/wire:click «not a function» می‌شد.
+    public function storeLink(): void
     {
         auth('adminPanel')->user()?->can('links.create') ?: abort(403);
 
@@ -120,7 +122,7 @@ class LinkIndex extends Component
 
     /* ---------------- ویرایش (پورت ۱:۱ update قدیمی) ---------------- */
 
-    public function editLink(int $id): void
+    public function openEdit(int $id): void
     {
         auth('adminPanel')->user()?->can('links.update') ?: abort(403);
 
