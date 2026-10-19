@@ -97,6 +97,16 @@ use App\Livewire\Admin\Messages\MessageBirthday;
 use App\Livewire\Admin\Support\ContactIndex;
 use App\Livewire\Admin\Support\NewsletterIndex;
 use App\Livewire\Admin\Notifications\NotificationIndex;
+use App\Livewire\Admin\Finance\CurrencyIndex;
+use App\Livewire\Admin\Settings\Holidays;
+use App\Livewire\Admin\Geo\ProvinceIndex;
+use App\Livewire\Admin\Geo\CityIndex;
+use App\Livewire\Admin\Shipping\CarrierIndex;
+use App\Livewire\Admin\Shipping\TariffIndex;
+use App\Livewire\Admin\Content\SearchIndex;
+use App\Livewire\Admin\Settings\Robots;
+use App\Livewire\Admin\Settings\Redirects;
+use App\Livewire\Admin\Settings\Apikeys;
 use App\Http\Controllers\Back\FormController as LegacyFormController;
 use App\Http\Controllers\AdminPanel\LogoutController;
 use App\Http\Controllers\Back\OrderController as LegacyOrderController;
@@ -397,6 +407,36 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
         Route::get('newsletters', NewsletterIndex::class)->name('newsletters.index');
 
         Route::get('notifications', NotificationIndex::class)->name('notifications.index');
+
+        /*
+        |----------------------
+        | ارز، تعطیلات، جغرافیا (فاز ۷-ب)
+        |----------------------
+        | {province} شهرها با query ?province={id} فیلتر می‌شوند (بدون پارامتر روت).
+        */
+        Route::get('currencies', CurrencyIndex::class)->name('currencies.index');
+        Route::get('holidays', Holidays::class)->name('holidays.index');
+        Route::get('provinces', ProvinceIndex::class)->name('provinces.index');
+        Route::get('cities', CityIndex::class)->name('cities.index');
+
+        /*
+        |----------------------
+        | حمل‌ونقل و جستجو (فاز ۷-ب)
+        |----------------------
+        | تعرفه‌ها با query ?carrier={id}.
+        */
+        Route::get('carriers', CarrierIndex::class)->name('carriers.index');
+        Route::get('tariffs', TariffIndex::class)->name('tariffs.index');
+        Route::get('searches', SearchIndex::class)->name('searches.index');
+
+        /*
+        |----------------------
+        | robots / ریدایرکت / کلید API (فاز ۷-ب)
+        |----------------------
+        */
+        Route::get('robots', Robots::class)->name('robots.index');
+        Route::get('redirects', Redirects::class)->name('redirects.index');
+        Route::get('apikeys', Apikeys::class)->name('apikeys.index');
 
         // سایر بخش‌ها در فازهای بعدی اضافه می‌شوند:
         // فاز ۷: پشتیبانی/سیستم / ...

@@ -129,7 +129,7 @@ return [
                 ],
                 [
                     'label' => 'جستجوها',
-                    'route' => 'admin.searches.index',
+                    'route' => 'np.searches.index',
                     'permission' => 'searches',
                     'icon' => 'search',
                 ],
@@ -452,25 +452,25 @@ return [
                     'children' => [
                         [
                             'label' => 'لیست حمل و نقل‌ها',
-                            'route' => 'admin.carriers.index',
+                            'route' => 'np.carriers.index',
                             'permission' => null,
                             'icon' => 'list',
                         ],
                         [
                             'label' => 'لیست استان‌ها',
-                            'route' => 'admin.provinces.index',
+                            'route' => 'np.provinces.index',
                             'permission' => 'carriers.provinces.index',
                             'icon' => 'map',
                         ],
                         [
                             'label' => 'استان جدید',
-                            'route' => 'admin.provinces.create',
+                            'route' => 'np.provinces.index',
                             'permission' => 'carriers.provinces.create',
                             'icon' => 'plus',
                         ],
                         [
                             'label' => 'شهر جدید',
-                            'route' => 'admin.cities.create',
+                            'route' => 'np.cities.index',
                             'permission' => 'carriers.cities.create',
                             'icon' => 'plus',
                         ],
@@ -711,7 +711,7 @@ return [
                         ],
                         [
                             'label' => 'لیست ارزها',
-                            'route' => 'admin.currencies.index',
+                            'route' => 'np.currencies.index',
                             'permission' => 'payments.currencies',
                             'icon' => 'banknote',
                         ],
@@ -969,7 +969,7 @@ return [
                         ],
                         [
                             'label' => 'ریدایرکت‌ها',
-                            'route' => 'admin.redirects.index',
+                            'route' => 'np.redirects.index',
                             'permission' => 'redirects.index',
                             'icon' => 'arrow-right-left',
                         ],
@@ -987,7 +987,7 @@ return [
                         ],
                         [
                             'label' => 'کلیدهای وب سرویس',
-                            'route' => 'admin.apikeys.index',
+                            'route' => 'np.apikeys.index',
                             'permission' => 'apikeys.index',
                             'icon' => 'key-square',
                         ],
@@ -1020,7 +1020,7 @@ return [
                         ],
                         [
                             'label' => 'تنظیمات Robots',
-                            'route' => 'admin.robots.index',
+                            'route' => 'np.robots.index',
                             'permission' => null,
                             'icon' => 'bot',
                         ],
