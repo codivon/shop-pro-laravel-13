@@ -1,5 +1,8 @@
 {{-- لینک‌های فوتر — گروه‌بندی از config('front.linkGroups') + کارت ایجاد + مودال ویرایش + ترتیب ↑↓ --}}
 @php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
+@php
     $groupsList = $this->groups;
 @endphp
 <div class="mx-auto max-w-6xl space-y-5">

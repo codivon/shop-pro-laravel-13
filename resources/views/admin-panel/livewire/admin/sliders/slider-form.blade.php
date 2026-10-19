@@ -1,5 +1,8 @@
 {{-- فرم ایجاد/ویرایش اسلایدر — پنل جدید (فاز ۶) — پورت ۱:۱ back/sliders/create|edit + _image_uploader + _pages_section + _checkbox_grid --}}
 @php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
+@php
     $pageOptions  = $this->pageOptions;
     $groupOptions = $this->groupOptions;
 @endphp

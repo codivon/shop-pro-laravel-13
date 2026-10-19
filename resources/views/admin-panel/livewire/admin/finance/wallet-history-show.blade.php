@@ -1,4 +1,7 @@
 {{-- جزئیات تراکنش کیف پول — پورت back/wallets/history.blade.php (+ بخش‌های requestDeposit/history: نام/شماره کارت-شبا) --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-3xl space-y-5">
 
     {{-- سربرگ --}}

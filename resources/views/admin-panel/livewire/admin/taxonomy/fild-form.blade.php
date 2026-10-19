@@ -1,4 +1,7 @@
 {{-- ویرایش فیلد اختصاصی — پنل جدید (فاز ۵) | پورت back/filds/edit --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-4xl">
     <form wire:submit="save" class="space-y-6" x-on:keydown.enter="if ($event.target.tagName !== 'TEXTAREA') { $event.preventDefault(); }">
 

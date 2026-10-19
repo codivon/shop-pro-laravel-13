@@ -1,4 +1,7 @@
 {{-- فرم ایجاد/ویرایش تخفیف — پنل جدید (فاز ۴) --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-7xl" x-data="{ tab: 'info' }">
 
     <form wire:submit="save" class="space-y-6"

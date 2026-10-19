@@ -1,5 +1,8 @@
 {{-- درخت دسته‌بندی‌ها — پنل جدید (فاز ۵) — پورت ProductController::categories / PostController::categories --}}
 @php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
+@php
     $isProduct  = $type === 'productcat';
     $permission = $isProduct ? 'products.category' : 'posts.category';
     $pageTitle  = $isProduct ? 'دسته‌بندی محصولات' : 'دسته‌بندی وبلاگ';

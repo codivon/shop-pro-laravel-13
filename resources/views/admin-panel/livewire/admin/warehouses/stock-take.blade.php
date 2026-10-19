@@ -1,4 +1,7 @@
 {{-- سرشماری انبار — پنل جدید (فاز ۷-ب۳) — پورت stockTakeData + stockTake (مودال قدیمی show → صفحه مستقل) --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-7xl space-y-5">
 
     {{-- سربرگ --}}

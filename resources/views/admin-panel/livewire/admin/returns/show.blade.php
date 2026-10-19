@@ -1,5 +1,8 @@
 {{-- جزئیات مرجوعی — پنل جدید (فاز ۴) پورت back/returns/show.blade.php --}}
 @php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
+@php
     $statusInfo = \App\Models\ReturnRequest::statusLabels()[$returnRequest->status] ?? ['label' => $returnRequest->status];
     $item = $returnRequest->orderItem;
     $timeline = $this->timeline();

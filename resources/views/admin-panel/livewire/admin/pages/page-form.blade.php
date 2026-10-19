@@ -1,5 +1,8 @@
 {{-- فرم ایجاد/ویرایش صفحه — پنل جدید (فاز ۶) — پورت ۱:۱ PageController@store/update --}}
 @php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
+@php
     $isEdit = $editing;
 @endphp
 

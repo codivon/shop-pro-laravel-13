@@ -1,4 +1,7 @@
 {{-- مشاهده تیکت + گفتگو + ارسال پاسخ — پورت back/tickets/show.blade.php — پنل جدید (فاز ۷) --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-5xl space-y-5">
 
     {{-- هدر: اطلاعات تیکت --}}

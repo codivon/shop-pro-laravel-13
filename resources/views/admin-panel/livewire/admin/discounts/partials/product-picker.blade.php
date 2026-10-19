@@ -1,4 +1,7 @@
 {{-- چیپ‌یاب محصولات — قابل استفاده مجدد (فاز ۴ تخفیف‌ها) — هرگز همه محصولات لود نمی‌شود --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 @props([
     'label' => 'انتخاب محصولات',
     'placeholder' => 'جستجو بر اساس عنوان محصول…',

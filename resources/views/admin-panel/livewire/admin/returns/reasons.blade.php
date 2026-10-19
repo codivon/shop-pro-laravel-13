@@ -1,4 +1,7 @@
 {{-- دلایل مرجوعی — پنل جدید (فاز ۴) پورت back/returns/reasons.blade.php --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-5xl space-y-5">
 
     {{-- سربرگ --}}

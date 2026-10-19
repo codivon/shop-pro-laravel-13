@@ -1,4 +1,7 @@
 {{-- جزئیات درخواست برداشت — پورت back/requestDeposit/history.blade.php --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-3xl space-y-5">
 
     {{-- سربرگ --}}

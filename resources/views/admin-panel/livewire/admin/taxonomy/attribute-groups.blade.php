@@ -1,4 +1,7 @@
 {{-- لیست گروه‌های ویژگی + ایجاد سریع + مودال ویرایش + ترتیب — پنل جدید (فاز ۵) --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-5xl space-y-5">
 
     {{-- سربرگ --}}

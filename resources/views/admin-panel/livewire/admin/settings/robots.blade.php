@@ -1,4 +1,7 @@
 {{-- مدیریت robots.txt — پورت back/settings/robots (فاز ۷-ب۲) — فقط سازنده --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-6xl space-y-5">
 
     {{-- سربرگ --}}

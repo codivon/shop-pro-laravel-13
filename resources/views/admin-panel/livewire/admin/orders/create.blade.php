@@ -1,4 +1,7 @@
 {{-- ثبت سفارش دستی — پنل جدید (فاز ۲) | پورت back/orders/create --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-6xl space-y-5">
 
     {{-- سربرگ --}}

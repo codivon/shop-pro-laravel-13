@@ -1,4 +1,7 @@
 {{-- سوالات متداول — پنل جدید (فاز ۶) — پورت ۱:۱ back/faqs/index.blade.php (جدول + مودال ایجاد/ویرایش + حذف تکی/گروهی) --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-6xl space-y-5">
 
     {{-- سربرگ --}}

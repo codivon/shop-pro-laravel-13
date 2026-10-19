@@ -1,4 +1,7 @@
 {{-- مدیریت دسترسی‌ها — پنل جدید (فاز ۷-ج) — پورت ۱:۱ back/permissions/index.blade.php + PermissionController --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-6xl space-y-5">
 
     {{-- سربرگ --}}

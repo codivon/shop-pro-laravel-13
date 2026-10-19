@@ -1,4 +1,7 @@
 {{-- مدیریت دیدگاه‌ها (پرسش و پاسخ‌ها) — پورت back/comments/{index,show}.blade.php — پنل جدید (فاز ۶) --}}
+@php
+    $errors = $errors ?? (new \Illuminate\Support\ViewErrorBag())->put('default', new \Illuminate\Support\MessageBag());
+@endphp
 <div class="mx-auto max-w-7xl space-y-5">
 
     {{-- سربرگ --}}
