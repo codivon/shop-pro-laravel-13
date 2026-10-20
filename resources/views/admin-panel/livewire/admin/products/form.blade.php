@@ -45,7 +45,7 @@
                     <p class="mb-3 text-xs leading-5 text-ink-2 dark:text-night-ink-2" x-data>
                         <span x-show="$wire.scraperProvider === 'torob'">
                             آدرس کامل صفحه محصول در ترب را وارد کنید (مثال: <code dir="ltr">torob.com/p/xxxxxx/نام-محصول</code>).
-                            عنوان، قیمت، تصاویر، دسته‌بندی و مشخصات به صورت خودکار پر می‌شود.
+                            عنوان، قیمت، تصاویر گالری، تنوع قیمت (مثلا بر اساس اینچ/سایز)، ویژگی‌ها، دسته‌بندی و برند به صورت خودکار پر می‌شود.
                         </span>
                         <span x-show="$wire.scraperProvider === 'digikala'" x-cloak>
                             کد محصول دیجی‌کالا را از انتهای آدرس صفحه محصول وارد کنید (مثال: dkp-12345678 → ۱۲۳۴۵۶۷۸).

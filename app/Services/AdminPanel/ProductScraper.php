@@ -320,10 +320,10 @@ class ProductScraper
         }
     }
 
-    /* ============================ ترب (فاز ۲۱/۲۳) ============================ */
+    /* ============================ ترب (فاز ۲۱/۲۳/۲۴) ============================ */
 
     /**
-     * دریافت محصول از ترب — بازنویسی کامل در فاز ۲۳
+     * دریافت محصول از ترب — بازنویسی کامل در فاز ۲۳، تکمیل در فاز ۲۴
      *
      * دلایل «هیچ چیز نمی‌گیرد» در نسخه‌ی قبلی:
      *  ۱) پاسخ خطای API (مثل {"status":404} یا {"message":"..."}) چون کلید detail
@@ -333,11 +333,21 @@ class ProductScraper
      *  ۳) URL تصاویر نسبی (//gt.torob.com/...) رد می‌شد؛
      *  ۴) هدرهای callApi شبیه مرورگر نبود → ترب 403/490 می‌داد.
      *
-     * استراتژی چندلایه‌ی جدید:
-     *  ۱) API رسمی ترب (۴ اندپوینت + اعتبارسنجی محتوای پاسخ)
-     *  ۲) HTML صفحه → پارس __NEXT_DATA__ (گردشگر بازگشتی به دنبال گره محصول)
-     *  ۳) HTML صفحه → پارس JSON-LD (schema.org Product)
-     *  ۴) اگر هیچ لایه‌ای داده نداد → خطای توضیحی با کد وضعیت هر لایه (هرگز silent!)
+     * فاز ۲۴ — «اطلاعات ناقص»: پیلود جدید ترب (verified با API زنده):
+     *  - اندپوینت جدید /v4/base-product/details/ (جمع!) به‌جای detail
+     *  - تصاویر: image_url + image_count؛ گالری از کل پیلود جمع‌آوری می‌شود
+     *    (پیمایش بازگشتی همه‌ی کلیدهای image_url/image1/image2/thumb_url...)
+     *  - «تنوع قیمت بر اساس اینچ/سایز» ← آرایه variants[] (تب‌های تنوع؛ هر آیتم
+     *    یک محصول همان خانواده با قیمت خودش) → ردیف‌های تنوع + گروه ویژگی
+     *  - «ویژگی‌ها» ← key_specs[] و structural_specs.headers[] → specGroups
+     *  - دسته‌بندی ← breadcrumbs (آخرین لینک)
+     *
+     * استراتژی چندلایه‌ای:
+     *  ۱) API ترب — اندپوینت details (جمع) و detail (قدیمی) + اعتبارسنجی محتوا
+     *  ۲) API جستجوی ترب با نام محصول (از اسلاگ URL) → more_info_url → details
+     *  ۳) HTML صفحه → پارس __NEXT_DATA__ (گردشگر بازگشتی به دنبال گره محصول)
+     *  ۴) HTML صفحه → پارس JSON-LD (schema.org Product)
+     *  ۵) اگر هیچ لایه‌ای داده نداد → خطای توضیحی با وضعیت هر لایه (هرگز silent!)
      */
     public function fetchTorob(string $urlOrCode): array
     {
@@ -368,13 +378,14 @@ class ProductScraper
                 mkdir('uploads/tmp', 0775, true);
             }
 
-            // ---------- ۱) API ترب ----------
+            // ---------- ۱) API ترب (اندپوینت جدید details + قدیمی detail) ----------
             $product = null;
             $attempts = [];
 
             $endpoints = [
+                "https://api.torob.com/v4/base-product/details/?source=next_desktop&prk={$prk}",
+                "https://api.torob.com/v4/base-product/details/?prk={$prk}",
                 "https://api.torob.com/v4/base-product/detail/?source=next_desktop&prk={$prk}",
-                "https://api.torob.com/v4/base-product/detail2/?source=next_desktop&prk={$prk}",
                 "https://api.torob.com/v4/base-product/detail/?prk={$prk}",
                 "https://api.torob.com/v2/base-product/detail/?prk={$prk}",
             ];
@@ -395,7 +406,12 @@ class ProductScraper
                 }
             }
 
-            // ---------- ۲ و ۳) صفحه HTML → __NEXT_DATA__ / JSON-LD ----------
+            // ---------- ۲) جستجوی ترب با نام محصول (از اسلاگ آدرس) ----------
+            if (! $product) {
+                $product = $this->torobSearchFallback($urlOrCode, $prk, $attempts);
+            }
+
+            // ---------- ۳ و ۴) صفحه HTML → __NEXT_DATA__ / JSON-LD ----------
             $nextData = null;
             $jsonLd = null;
 
@@ -516,24 +532,22 @@ class ProductScraper
             $price = (int) preg_replace('/[^\d]/', '', (string) $jsonLd['price']);
         }
 
+        if (! $price) {
+            // پیلود جدید گاهی قیمت را فقط در price_text فارسی می‌فرستد (۹۵٫۸۰۰٫۰۰۰)
+            $price = $this->torobToman($product['price_text'] ?? $product['price_string'] ?? null);
+        }
+
         // ---------- تصاویر ----------
+        // گالری از کل پیلود جمع‌آوری می‌شود: کلیدهای اصلی + پیمایش بازگشتی
+        // (products_info.result / results / variants / more_info و هر شکل دیگر)
         $imageUrls = [];
 
-        foreach (['image1', 'image_url', 'image', 'main_image', 'image2'] as $key) {
+        foreach (['image_url', 'image1', 'image2', 'image', 'main_image', 'thumb_url'] as $key) {
             $val = $product[$key] ?? null;
             $this->collectTorobImageUrl($val, $imageUrls);
         }
 
-        // تصاویر پیشنهادی فروشندگان (results[*].image_url) — عکس همان محصول
-        foreach ((array) ($product['results'] ?? []) as $offer) {
-            if (is_array($offer)) {
-                $this->collectTorobImageUrl($offer['image_url'] ?? null, $imageUrls);
-            }
-
-            if (count($imageUrls) >= 12) {
-                break;
-            }
-        }
+        $this->collectTorobImagesRecursive($product, $imageUrls, 0);
 
         if (! $imageUrls && ! empty($jsonLd['image'])) {
             foreach ((array) $jsonLd['image'] as $img) {
@@ -582,7 +596,29 @@ class ProductScraper
 
         // ---------- دسته‌بندی ----------
         $categoryId = null;
-        $categoryName = $pick(['category_name', 'category_title']);
+        $categoryName = null;
+
+        // فاز ۲۴: مسیر دسته در پیلود جدید در breadcrumbs است (آخرین لینک = دسته برگ)
+        if (! empty($product['breadcrumbs']) && is_array($product['breadcrumbs'])) {
+            foreach (array_reverse($product['breadcrumbs']) as $crumb) {
+                $crumbTitle = is_array($crumb) ? ($crumb['title'] ?? null) : null;
+                $crumbId = is_array($crumb) ? ($crumb['cat_id'] ?? $crumb['id'] ?? null) : null;
+
+                if ($crumbTitle && (string) $crumbId !== '0' && (string) $crumbId !== '') {
+                    $categoryName = $crumbTitle;
+
+                    break;
+                }
+            }
+        }
+
+        if (! $categoryName) {
+            $categoryName = $pick(['category_name', 'category_title']);
+        }
+
+        if (! $categoryName && isset($product['torob_category']) && is_array($product['torob_category'])) {
+            $categoryName = $product['torob_category']['title'] ?? $product['torob_category']['name'] ?? null;
+        }
 
         if (! $categoryName && isset($product['category']) && is_array($product['category'])) {
             $categoryName = $product['category']['title'] ?? $product['category']['name'] ?? null;
@@ -607,34 +643,16 @@ class ProductScraper
             $categoryId = $category->id;
         }
 
-        // ---------- مشخصات فنی ----------
-        $specGroups = [];
-        $rawSpecs = $product['extra_info'] ?? $product['specifications'] ?? $product['specs'] ?? [];
+        // ---------- مشخصات فنی (ویژگی‌ها) ----------
+        // فاز ۲۴: key_specs + structural_specs (پیلود جدید) + شکل‌های قدیمی
+        $specGroups = $this->torobSpecGroups($product, $title);
 
-        if (is_array($rawSpecs)) {
-            $rows = [];
+        // ---------- تنوع قیمت (مثلا بر اساس اینچ/سایز) ----------
+        // فاز ۲۴: آرایه variants[] ترب (تب‌های تنوع) → ردیف‌های تنوع فرم
+        $variantRows = $this->torobVariantRows($product);
 
-            foreach ($rawSpecs as $spec) {
-                if (is_array($spec)) {
-                    $name = $spec['key'] ?? $spec['title'] ?? $spec['name'] ?? null;
-                    $value = $spec['value'] ?? $spec['body'] ?? null;
-                } elseif (is_string($spec) && str_contains($spec, ':')) {
-                    [$name, $value] = array_map('trim', explode(':', $spec, 2));
-                } else {
-                    continue;
-                }
-
-                if ($name && $value !== null && $value !== '') {
-                    $rows[] = ['name' => trim((string) $name), 'value' => trim((string) $value), 'special' => false];
-                }
-            }
-
-            if ($rows) {
-                $specGroups[] = [
-                    'name' => 'مشخصات ' . ($title ?: 'محصول'),
-                    'specifications' => $rows,
-                ];
-            }
+        if (! $variantRows) {
+            $variantRows = $price ? [['attributes' => [], 'price' => $price]] : [];
         }
 
         // ---------- توضیحات ----------
@@ -650,10 +668,15 @@ class ProductScraper
             $brandName = $brandName['name'] ?? $brandName['title'] ?? null;
         }
 
+        if (! $brandName && ! empty($jsonLd['brand'])) {
+            $brand = $jsonLd['brand'];
+            $brandName = is_array($brand) ? ($brand['name'] ?? null) : $brand;
+        }
+
         return [
             'title' => $title ? (string) $title : null,
             'price' => $price,
-            'variantRows' => $price ? [['attributes' => [], 'price' => $price]] : [],
+            'variantRows' => $variantRows,
             'galleryFiles' => $galleryFiles,
             'baseImage' => $baseImage,
             'categoryId' => $categoryId,
@@ -663,6 +686,422 @@ class ProductScraper
             'metaTitle' => $title ? (string) $title : null,
             'metaDescription' => $description ? mb_substr(strip_tags((string) $description), 0, 300) : null,
         ];
+    }
+
+    /**
+     * فاز ۲۴ — لایه‌ی پشتیبان: جستجوی ترب با نام محصول (از اسلاگ آدرس)
+     *
+     * اندپوینت details گاهی به search_id نیاز دارد که فقط در ردیف‌های جستجو
+     * فرستاده می‌شود؛ اسلاگ آدرس torob.com/p/{prk}/{نام-محصول}/ را به کوئری
+     * جستجو تبدیل می‌کنیم و از ردیفِ همین prk، لینک آماده‌ی more_info_url
+     * (شامل prk + search_id) را باز می‌کنیم.
+     */
+    protected function torobSearchFallback(string $urlOrCode, string $prk, array &$attempts): ?array
+    {
+        $query = null;
+
+        if (preg_match('~torob\.com/p/[A-Za-z0-9-]+/([^/?#]+)/?~iu', $urlOrCode, $m)) {
+            $query = rawurldecode($m[1]);
+            $query = trim(str_replace(['-', '_', '+'], ' ', $query));
+        }
+
+        if (! $query || mb_strlen($query) < 3) {
+            return null;
+        }
+
+        try {
+            $search = $this->callApi('https://api.torob.com/v4/base-product/search/?q=' . rawurlencode($query) . '&size=12&sort=popularity');
+            $rows = $search['results'] ?? [];
+
+            if (! is_array($rows)) {
+                $attempts['search'] = 'بدون نتیجه';
+
+                return null;
+            }
+
+            foreach ($rows as $row) {
+                if (! is_array($row) || strcasecmp((string) ($row['random_key'] ?? ''), $prk) !== 0) {
+                    continue;
+                }
+
+                $moreUrl = $row['more_info_url'] ?? null;
+
+                if (! is_string($moreUrl) || ! str_contains($moreUrl, 'api.torob.com')) {
+                    $attempts['search'] = 'ردیف پیدا شد اما more_info_url ندارد';
+
+                    return null;
+                }
+
+                try {
+                    $candidate = $this->callApi($moreUrl);
+
+                    if ($this->isTorobProductPayload($candidate)) {
+                        return $candidate;
+                    }
+
+                    $attempts['search'] = 'پاسخ details نامعتبر بود';
+                } catch (\Throwable $e) {
+                    $attempts['search'] = $e->getMessage();
+                }
+
+                return null;
+            }
+
+            $attempts['search'] = 'محصول در نتایج جستجو پیدا نشد';
+        } catch (\Throwable $e) {
+            $attempts['search'] = $e->getMessage();
+        }
+
+        return null;
+    }
+
+    /**
+     * فاز ۲۴ — پیمایش بازگشتی کل پیلود برای جمع‌آوری همه‌ی تصاویر گالری
+     *
+     * گالری در شکل‌های مختلف می‌آید (image_url/image1/image2/thumb_url/...
+     * در products_info.result یا results یا variants یا more_info) — همه جمع می‌شود.
+     */
+    protected function collectTorobImagesRecursive($node, array &$out, int $depth): void
+    {
+        if ($depth > 14 || count($out) >= 14) {
+            return;
+        }
+
+        if (is_array($node)) {
+            foreach ($node as $key => $val) {
+                if (is_string($key) && preg_match('/^(image_url|image1|image2|images|gallery|photos|image|main_image|thumb_url|desktop_image_url|image_path)$/i', (string) $key)) {
+                    $this->collectTorobImageUrl($val, $out);
+                }
+
+                if (is_array($val)) {
+                    $this->collectTorobImagesRecursive($val, $out, $depth + 1);
+                }
+            }
+        }
+    }
+
+    /**
+     * فاز ۲۴ — ویژگی‌ها (مشخصات فنی) از پیلود جدید و قدیمی ترب
+     *
+     * پیلود جدید:
+     *  key_specs: [{header, items: [{key|title, value}]}]
+     *  structural_specs: {headers: [{header, specs: {کلید: مقدار}}]}
+     * مقدار ممکن است آرایه باشد (با «،» می‌پیوندیم) یا نشانه‌ی بخش «title» (حذف).
+     */
+    protected function torobSpecGroups(array $product, $title): array
+    {
+        $groups = [];
+
+        $specValue = function ($value): ?string {
+            if (is_array($value)) {
+                $parts = [];
+
+                foreach ($value as $item) {
+                    if (is_string($item) || is_numeric($item)) {
+                        $text = trim((string) $item);
+
+                        if ($text !== '' && $text !== 'title') {
+                            $parts[] = $text;
+                        }
+                    }
+                }
+
+                return $parts ? implode('، ', $parts) : null;
+            }
+
+            if (is_string($value) || is_numeric($value)) {
+                $text = trim((string) $value);
+
+                return ($text !== '' && $text !== 'title') ? $text : null;
+            }
+
+            return null;
+        };
+
+        // key_specs — جدول «ویژگی‌های کلیدی»
+        if (! empty($product['key_specs']) && is_array($product['key_specs'])) {
+            foreach ($product['key_specs'] as $block) {
+                if (! is_array($block)) {
+                    continue;
+                }
+
+                $header = trim((string) ($block['header'] ?? '')) ?: 'مشخصات';
+                $rows = [];
+
+                foreach ((array) ($block['items'] ?? []) as $item) {
+                    if (! is_array($item)) {
+                        continue;
+                    }
+
+                    $name = trim((string) ($item['key'] ?? $item['title'] ?? ''));
+                    $value = $specValue($item['value'] ?? null);
+
+                    if ($name !== '' && $value) {
+                        $rows[] = ['name' => $name, 'value' => $value, 'special' => false];
+                    }
+                }
+
+                if ($rows) {
+                    $groups[] = ['name' => $header, 'specifications' => $rows];
+                }
+            }
+        }
+
+        // structural_specs — جدول‌های ساختاری صفحه محصول
+        $structural = $product['structural_specs'] ?? null;
+
+        if (is_array($structural) && ! empty($structural['headers']) && is_array($structural['headers'])) {
+            foreach ($structural['headers'] as $block) {
+                if (! is_array($block)) {
+                    continue;
+                }
+
+                $header = trim((string) ($block['header'] ?? '')) ?: 'مشخصات';
+                $rows = [];
+
+                foreach ((array) ($block['specs'] ?? []) as $name => $value) {
+                    $valueText = $specValue($value);
+                    $name = trim((string) $name);
+
+                    if ($name !== '' && $valueText) {
+                        $rows[] = ['name' => $name, 'value' => $valueText, 'special' => false];
+                    }
+                }
+
+                if ($rows) {
+                    $groups[] = ['name' => $header, 'specifications' => $rows];
+                }
+            }
+        }
+
+        // شکل‌های قدیمی (extra_info / specifications / specs)
+        if (! $groups) {
+            $rawSpecs = $product['extra_info'] ?? $product['specifications'] ?? $product['specs'] ?? [];
+
+            if (is_array($rawSpecs)) {
+                $rows = [];
+
+                foreach ($rawSpecs as $spec) {
+                    if (is_array($spec)) {
+                        $name = $spec['key'] ?? $spec['title'] ?? $spec['name'] ?? null;
+                        $value = $specValue($spec['value'] ?? $spec['body'] ?? null);
+                    } elseif (is_string($spec) && str_contains($spec, ':')) {
+                        [$name, $value] = array_map('trim', explode(':', $spec, 2));
+                        $value = $value !== '' ? $value : null;
+                    } else {
+                        continue;
+                    }
+
+                    if ($name && $value) {
+                        $rows[] = ['name' => trim((string) $name), 'value' => trim((string) $value), 'special' => false];
+                    }
+                }
+
+                if ($rows) {
+                    $groups[] = [
+                        'name' => 'مشخصات ' . ($title ?: 'محصول'),
+                        'specifications' => $rows,
+                    ];
+                }
+            }
+        }
+
+        return $groups;
+    }
+
+    /**
+     * فاز ۲۴ — «تنوع قیمت بر اساس اینچ/سایز/رنگ» از آرایه variants[] ترب
+     *
+     * هر تب تنوع = {title, items: [محصولات همان خانواده با قیمت خودشان]}.
+     * پرمخاطب‌ترین تب (بیشترین آیتم قیمت‌دار) به ردیف‌های تنوع فرم تبدیل می‌شود:
+     *  - پیشوند/پسوند مشترک همه‌ی آیتم‌ها حذف می‌شود تا مقدار ویژگی بماند
+     *    («تلویزیون ... سایز 43 اینچ ...» → 43)
+     *  - گروه ویژگی به نام خودِ تب ساخته می‌شود (type=checkbox) و ویژگی‌ها داخل آن
+     *  - قیمت هر آیتم = قیمت ردیف (ارقام فارسی price_text هم پارس می‌شود)
+     *  - مقدار تکراری → ارزان‌ترین قیمت برنده است (نه ردیف تکراری)
+     */
+    protected function torobVariantRows(array $product): array
+    {
+        $variantGroups = $product['variants'] ?? [];
+
+        if (! is_array($variantGroups)) {
+            return [];
+        }
+
+        $best = null;
+
+        foreach ($variantGroups as $group) {
+            if (! is_array($group) || empty($group['title']) || ! is_array($group['items'] ?? null)) {
+                continue;
+            }
+
+            $items = [];
+
+            foreach ($group['items'] as $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+
+                $itemPrice = $this->torobToman($item['price'] ?? null);
+
+                if (! $itemPrice) {
+                    $itemPrice = $this->torobToman($item['price_text'] ?? $item['price_string'] ?? null);
+                }
+
+                $name = trim((string) ($item['name1'] ?? $item['title1'] ?? $item['name'] ?? ''));
+
+                if ($itemPrice > 0 && $name !== '') {
+                    $items[] = ['name' => $name, 'price' => $itemPrice];
+                }
+            }
+
+            if (count($items) < 2) {
+                continue;
+            }
+
+            if ($best === null || count($items) > count($best['items'])) {
+                $best = ['title' => trim((string) $group['title']), 'items' => $items];
+            }
+        }
+
+        if (! $best) {
+            return [];
+        }
+
+        $best['items'] = array_slice($best['items'], 0, 30);
+
+        // پیشوند و پسوند مشترک همه‌ی آیتم‌ها → بخش متمایز هر آیتم = مقدار ویژگی
+        [$prefixLen, $suffixLen] = $this->torobSharedEdges(array_column($best['items'], 'name'));
+
+        $attributeGroup = AttributeGroup::where('name', $best['title'])->first();
+
+        if (! $attributeGroup) {
+            $attributeGroup = AttributeGroup::create([
+                'name' => $best['title'],
+                'type' => 'checkbox',
+            ]);
+        }
+
+        $rows = [];
+        $seen = [];
+
+        foreach ($best['items'] as $item) {
+            $value = mb_substr($item['name'], $prefixLen, mb_strlen($item['name']) - $prefixLen - $suffixLen);
+
+            // برش کاراکتری (UTF-8) جداکننده‌های ابتدا/انتها — trim بایتی فارسی را خراب می‌کند
+            $value = preg_replace('#^[\s\-–—|،,/]+|[\s\-–—|،,/]+$#u', '', $value) ?? '';
+
+            if ($value === '' || mb_strlen($value) > 60) {
+                $value = mb_substr($item['name'], 0, 60);
+            }
+
+            // مقدار تکراری (مثلا دو فروشنده برای یک سایز) → ارزان‌ترین قیمت
+            if (isset($seen[$value])) {
+                $idx = $seen[$value];
+
+                if ($item['price'] < $rows[$idx]['price']) {
+                    $rows[$idx]['price'] = (int) $item['price'];
+                }
+
+                continue;
+            }
+
+            $attribute = Attribute::where([
+                'attribute_group_id' => $attributeGroup->id,
+                'name' => $value,
+            ])->first();
+
+            if (! $attribute) {
+                $attribute = Attribute::create([
+                    'attribute_group_id' => $attributeGroup->id,
+                    'name' => $value,
+                ]);
+            }
+
+            $seen[$value] = count($rows);
+            $rows[] = [
+                'attributes' => [$attribute->id],
+                'price' => (int) $item['price'],
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * طول پیشوند و پسوند مشترک همه‌ی رشته‌ها (برای استخراج بخش متمایز نام تنوع‌ها)
+     */
+    protected function torobSharedEdges(array $names): array
+    {
+        $names = array_values(array_filter($names, fn ($n) => is_string($n) && $n !== ''));
+
+        if (count($names) < 2) {
+            return [0, 0];
+        }
+
+        $first = $names[0];
+        $prefix = '';
+
+        for ($i = 0; $i < mb_strlen($first); $i++) {
+            $char = mb_substr($first, $i, 1);
+
+            foreach ($names as $name) {
+                if (mb_substr($name, $i, 1) !== $char) {
+                    break 2;
+                }
+            }
+
+            $prefix .= $char;
+        }
+
+        $minLen = min(array_map('mb_strlen', $names));
+        $suffix = '';
+
+        for ($i = 1; $i <= $minLen - mb_strlen($prefix); $i++) {
+            $char = mb_substr($first, mb_strlen($first) - $i, 1);
+
+            foreach ($names as $name) {
+                if (mb_substr($name, mb_strlen($name) - $i, 1) !== $char) {
+                    break 2;
+                }
+            }
+
+            $suffix = $char . $suffix;
+        }
+
+        return [mb_strlen($prefix), mb_strlen($suffix)];
+    }
+
+    /**
+     * فاز ۲۴ — تبدیل قیمت ترب به عدد تومان
+     * ارقام فارسی/عربی و جداکننده‌های «٬ ٫ , فاصله» و واژه‌ی «تومان» پشتیبانی می‌شود
+     */
+    protected function torobToman($value): int
+    {
+        if (is_int($value) || is_float($value)) {
+            return (int) round((float) $value);
+        }
+
+        if (! is_string($value) || trim($value) === '') {
+            return 0;
+        }
+
+        $map = [
+            '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+            '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+            '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+            '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+        ];
+
+        $text = strtr(trim($value), $map);
+
+        if (! preg_match('/\d[\d٬,\s٫\.]*/u', $text, $m)) {
+            return 0;
+        }
+
+        $digits = preg_replace('/[^\d]/u', '', $m[0]);
+
+        return $digits !== '' ? (int) $digits : 0;
     }
 
     /**
@@ -693,22 +1132,22 @@ class ProductScraper
         }
     }
 
-    /** استخراج کد prk از آدرس یا ورودی مستقیم */
+    /** استخراج کد prk از آدرس یا ورودی مستقیم (فاز ۲۴: prk می‌تواند UUID با خط تیره باشد) */
     protected function extractTorobKey(string $input): ?string
     {
         $input = trim($input);
 
-        if (preg_match('#torob\.com/(?:m/)?p/([A-Za-z0-9]+)#i', $input, $m)) {
-            return $m[1];
+        if (preg_match('~torob\.com/(?:m/)?p/([A-Za-z0-9-]+)~iu', $input, $m)) {
+            return trim($m[1], '-');
         }
 
         // آدرس کوتاهی مثل torob.com/p/xxx بدون دامنه یا فقط کد
-        if (preg_match('#^/?p/([A-Za-z0-9]+)#i', $input, $m)) {
-            return $m[1];
+        if (preg_match('~^/?p/([A-Za-z0-9-]+)~iu', $input, $m)) {
+            return trim($m[1], '-');
         }
 
-        if (preg_match('/^[A-Za-z0-9]{6,40}$/', $input)) {
-            return $input;
+        if (preg_match('/^[A-Za-z0-9-]{6,60}$/', $input)) {
+            return trim($input, '-');
         }
 
         return null;

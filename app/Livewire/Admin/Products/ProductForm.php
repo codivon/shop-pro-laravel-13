@@ -799,7 +799,7 @@ class ProductForm extends Component
             $this->specificationGroup = $result['specGroups'];
 
             if (! $this->spec_type) {
-                $this->spec_type = 'دریافتی از دیجی‌کالا';
+                $this->spec_type = $this->scraperProvider === 'torob' ? 'دریافتی از ترب' : 'دریافتی از دیجی‌کالا';
             }
         }
 
