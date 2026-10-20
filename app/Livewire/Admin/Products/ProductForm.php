@@ -622,12 +622,12 @@ class ProductForm extends Component
             : 'nullable|unique:products,slug';
 
         $rules = [
-            'title' => 'required|string|max:191',
+            'title' => 'required|string|max:500', // فاز ۲۵ — حداقل ۲۵۵/۵۰۰ کاراکتر
             'title_en' => 'nullable|string|max:191',
             'category_id' => 'required|exists:categories,id',
             'image' => 'nullable|image',
-            'image_alt' => 'nullable|string|max:191',
-            'slug' => $uniqueSlug,
+            'image_alt' => 'nullable|string|max:500',
+            'slug' => $uniqueSlug . '|max:500',
             'spec_type' => 'required_with:specificationGroup',
             'extraCategories' => 'nullable|array',
             'extraCategories.*' => 'exists:categories,id',
@@ -673,9 +673,10 @@ class ProductForm extends Component
     {
         return [
             'title.required' => 'عنوان محصول الزامی است',
-            'title.max' => 'عنوان محصول حداکثر ۱۹۱ کاراکتر می‌تواند باشد',
+            'title.max' => 'عنوان محصول حداکثر ۵۰۰ کاراکتر می‌تواند باشد',
             'category_id.required' => 'دسته‌بندی محصول الزامی است',
             'slug.unique' => 'این Slug قبلاً ثبت شده است',
+            'slug.max' => 'اسلاگ حداکثر ۵۰۰ کاراکتر می‌تواند باشد',
             'spec_type.required_with' => 'نوع مشخصات در صورت انتخاب گروه مشخصات الزامی است',
             'type.required' => 'نوع محصول الزامی است',
             'type.in' => 'نوع محصول باید فیزیکی یا دانلودی باشد',
@@ -821,6 +822,12 @@ class ProductForm extends Component
 
         $source = $this->scraperProvider === 'torob' ? 'ترب' : 'دیجی‌کالا';
 
+        // فاز ۲۵ — رنگ/دسته‌بندی/برندِ تازه‌ساخته‌شده بلافاصله در لیست‌های فرم دیده شود
+        // (لیست‌ها قبلاً ۶۰ ثانیه کش می‌شدند و کاربر مجبور به رفرش صفحه بود)
+        \Illuminate\Support\Facades\Cache::forget('np.pform.categories.' . app()->getLocale());
+        \Illuminate\Support\Facades\Cache::forget('np.pform.attr_groups.' . app()->getLocale());
+        unset($this->categories, $this->attributeGroups);
+
         $this->dispatch('toast', message: "محصول از {$source} دریافت شد. لطفا اطلاعات را بازبینی، تصاویر را بررسی و انبار را انتخاب کنید.", type: 'success');
     }
 
@@ -848,34 +855,42 @@ class ProductForm extends Component
 
     protected function storeProduct(ProductPersistence $persistence): void
     {
-        $product = Product::create([
-            'title' => $this->title,
-            'title_en' => $this->title_en,
-            'category_id' => $this->category_id,
-            'spec_type_id' => $this->resolveSpecTypeId(),
-            'size_type_id' => $this->size_type_id ?: null, // فاز ۲۱ — مقدار خالی = null
-            'weight' => $this->type === 'physical' ? $this->weight : null,
-            'unit' => $this->type === 'physical' ? $this->unit : null,
-            'price_type' => 'multiple-price',
-            'type' => $this->type,
-            'seller_id' => $this->seller_id ?: null, // فاز ۲۱ — مقدار خالی = null
-            'shipping_nature' => $this->shipping_nature ?: null, // فاز ۲۱ — ستون enum است؛ مقدار خالی خطای Data truncated می‌دهد
-            'description' => $this->description,
-            'short_description' => $this->short_description,
-            'special' => $this->special,
-            'slug' => $this->slug ?: $this->title,
-            'meta_title' => $this->meta_title,
-            'image_alt' => $this->image_alt,
-            'meta_description' => $this->meta_description,
-            'published' => $this->published,
-            'status' => $this->status,
-            'publish_date' => ProductPersistence::jdate($this->publish_date),
-            'special_end_date' => ProductPersistence::jdate($this->special_end_date),
-            'currency_id' => $this->currency_id ?: null, // فاز ۲۱ — مقدار خالی = null
-            'rounding_amount' => $this->rounding_amount,
-            'rounding_type' => $this->rounding_type,
-            'lang' => app()->getLocale(),
-        ]);
+        try {
+            $product = Product::create([
+                'title' => $this->title,
+                'title_en' => $this->title_en,
+                'category_id' => $this->category_id,
+                'spec_type_id' => $this->resolveSpecTypeId(),
+                'size_type_id' => $this->size_type_id ?: null, // فاز ۲۱ — مقدار خالی = null
+                'weight' => $this->type === 'physical' ? $this->weight : null,
+                'unit' => $this->type === 'physical' ? $this->unit : null,
+                'price_type' => 'multiple-price',
+                'type' => $this->type,
+                'seller_id' => $this->seller_id ?: null, // فاز ۲۱ — مقدار خالی = null
+                'shipping_nature' => $this->shipping_nature ?: null, // فاز ۲۱ — ستون enum است؛ مقدار خالی خطای Data truncated می‌دهد
+                'description' => $this->description,
+                'short_description' => $this->short_description,
+                'special' => $this->special,
+                'slug' => $this->slug ?: SlugService::createSlug(Product::class, 'slug', $this->title), // فاز ۲۵ — اسلاگ فارسی یکتا
+                'meta_title' => $this->meta_title,
+                'image_alt' => $this->image_alt,
+                'meta_description' => $this->meta_description,
+                'published' => $this->published,
+                'status' => $this->status,
+                'publish_date' => ProductPersistence::jdate($this->publish_date),
+                'special_end_date' => ProductPersistence::jdate($this->special_end_date),
+                'currency_id' => $this->currency_id ?: null, // فاز ۲۱ — مقدار خالی = null
+                'rounding_amount' => $this->rounding_amount,
+                'rounding_type' => $this->rounding_type,
+                'lang' => app()->getLocale(),
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($this->handleSqlError($e)) {
+                return;
+            }
+
+            throw $e;
+        }
 
         // برند
         $persistence->updateProductBrand($product, $this->brand);
@@ -952,33 +967,41 @@ class ProductForm extends Component
         // تغییرات قیمت‌ها برای لاگ (قبل از ذخیره)
         $priceChanges = $this->getPriceChangesLog($product);
 
-        $product->update([
-            'title' => $this->title,
-            'title_en' => $this->title_en,
-            'category_id' => $this->category_id,
-            'spec_type_id' => $this->resolveSpecTypeId(),
-            'size_type_id' => $this->size_type_id ?: null, // فاز ۲۱ — مقدار خالی = null
-            'weight' => $this->type === 'physical' ? $this->weight : null,
-            'unit' => $this->type === 'physical' ? $this->unit : null,
-            'price_type' => 'multiple-price',
-            'type' => $this->type,
-            'seller_id' => $this->seller_id ?: null, // فاز ۲۱ — مقدار خالی = null
-            'shipping_nature' => $this->shipping_nature ?: null, // فاز ۲۱ — ستون enum است؛ مقدار خالی خطای Data truncated می‌دهد
-            'description' => $this->description,
-            'short_description' => $this->short_description,
-            'special' => $this->special,
-            'slug' => $this->slug ?: $this->title,
-            'meta_title' => $this->meta_title,
-            'image_alt' => $this->image_alt,
-            'meta_description' => $this->meta_description,
-            'published' => $this->published,
-            'status' => $this->status,
-            'publish_date' => ProductPersistence::jdate($this->publish_date),
-            'special_end_date' => ProductPersistence::jdate($this->special_end_date),
-            'currency_id' => $this->currency_id ?: null, // فاز ۲۱ — مقدار خالی = null
-            'rounding_amount' => $this->rounding_amount,
-            'rounding_type' => $this->rounding_type,
-        ]);
+        try {
+            $product->update([
+                'title' => $this->title,
+                'title_en' => $this->title_en,
+                'category_id' => $this->category_id,
+                'spec_type_id' => $this->resolveSpecTypeId(),
+                'size_type_id' => $this->size_type_id ?: null, // فاز ۲۱ — مقدار خالی = null
+                'weight' => $this->type === 'physical' ? $this->weight : null,
+                'unit' => $this->type === 'physical' ? $this->unit : null,
+                'price_type' => 'multiple-price',
+                'type' => $this->type,
+                'seller_id' => $this->seller_id ?: null, // فاز ۲۱ — مقدار خالی = null
+                'shipping_nature' => $this->shipping_nature ?: null, // فاز ۲۱ — ستون enum است؛ مقدار خالی خطای Data truncated می‌دهد
+                'description' => $this->description,
+                'short_description' => $this->short_description,
+                'special' => $this->special,
+                'slug' => $this->slug ?: SlugService::createSlug(Product::class, 'slug', $this->title), // فاز ۲۵ — اسلاگ فارسی یکتا
+                'meta_title' => $this->meta_title,
+                'image_alt' => $this->image_alt,
+                'meta_description' => $this->meta_description,
+                'published' => $this->published,
+                'status' => $this->status,
+                'publish_date' => ProductPersistence::jdate($this->publish_date),
+                'special_end_date' => ProductPersistence::jdate($this->special_end_date),
+                'currency_id' => $this->currency_id ?: null, // فاز ۲۱ — مقدار خالی = null
+                'rounding_amount' => $this->rounding_amount,
+                'rounding_type' => $this->rounding_type,
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($this->handleSqlError($e)) {
+                return;
+            }
+
+            throw $e;
+        }
 
         $persistence->updateProductBrand($product, $this->brand);
         $persistence->updateProductPrices($product, $this->normalizePrices());
@@ -1055,6 +1078,40 @@ class ProductForm extends Component
     }
 
     /* ============================ پردازش داده‌ها ============================ */
+
+    /**
+     * فاز ۲۵ — پیام فارسیِ خوانا برای خطاهای دیتابیس (به‌جای صفحه‌ی 500)
+     *
+     * مهم‌ترین حالت: SQLSTATE[22001] / خطای ۱۴۰۶ MySQL —
+     * «Data too long for column ...» که در دریافت از دیجی‌کالا با عنوان‌های
+     * خیلی بلند رخ می‌داد. حالا پیام مشخص به کاربر نشان داده می‌شود.
+     *
+     * @return bool آیا خطا مدیریت شد (true = جریان ذخیره متوقف شود)
+     */
+    protected function handleSqlError(\Illuminate\Database\QueryException $e): bool
+    {
+        $sqlState = (string) ($e->errorInfo[0] ?? '');
+        $driverCode = (int) ($e->errorInfo[1] ?? 0);
+
+        if ($sqlState === '22001' || $driverCode === 1406) {
+            $this->addError('title', 'یکی از مقادیر بیش از حد طولانی است (معمولاً عنوان یا اسلاگ). لطفاً آن‌ها را کوتاه‌تر کنید و دوباره ذخیره کنید.');
+            $this->addError('slug', 'اسلاگ یا عنوان واردشده برای دیتابیس بیش از حد طولانی است — کوتاه‌ترش کنید.');
+
+            $this->dispatch('toast', message: 'خطا: مقدار یکی از فیلدها (عنوان/اسلاگ) بیش از حد مجاز طولانی است. لطفاً کوتاهش کنید و دوباره ذخیره کنید.', type: 'error');
+
+            return true;
+        }
+
+        if ($sqlState === '23000' || $driverCode === 1062) {
+            $this->addError('slug', 'این اسلاگ قبلاً استفاده شده است — لطفاً مقدار دیگری وارد کنید یا اسلاگ را خودکار بسازید.');
+
+            $this->dispatch('toast', message: 'خطا: اسلاگ تکراری است. لطفاً اسلاگ دیگری وارد کنید.', type: 'error');
+
+            return true;
+        }
+
+        return false;
+    }
 
     /**
      * ساخت id نوع مشخصات (spec_type) — پورت helper spec_type()

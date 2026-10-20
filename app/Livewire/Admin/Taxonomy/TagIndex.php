@@ -3,7 +3,6 @@
 namespace App\Livewire\Admin\Taxonomy;
 
 use App\Models\Tag;
-use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
@@ -126,10 +125,10 @@ class TagIndex extends Component
             'name.unique'   => 'این عنوان قبلاً ثبت شده است.',
         ]);
 
-        // پورت store قدیمی؛ اسلاگ خالی توسط پکیج Sluggable تکمیل/یکتاسازی می‌شود
+        // پورت store قدیمی؛ اسلاگ با هلپر فارسی ساخته می‌شود (فاز ۲۵)
         Tag::create([
             'name' => $this->name,
-            'slug' => Str::slug($this->name),
+            'slug' => sluggable_helper_function($this->name),
             'lang' => app()->getLocale(),
         ]);
 
@@ -171,7 +170,7 @@ class TagIndex extends Component
 
         $tag->update([
             'name' => $this->editingName,
-            'slug' => Str::slug($this->editingName),
+            'slug' => sluggable_helper_function($this->editingName),
         ]);
 
         $this->reset('editingTag', 'editingName');

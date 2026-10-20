@@ -4,17 +4,11 @@ namespace App\Http\Controllers\Back;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
-use App\Models\User;
-use App\Providers\AppServiceProvider;
 use Carbon\Carbon;
-use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 
@@ -73,45 +67,12 @@ class InstallController extends Controller
             'role_id' => '1',
             'admin_id' => $admin->id
         ]);
-        change_env('ADMIN_ROUTE_PREFIX', $request->admin_route_prefix);
 
-
-        $this->configApplication();
-
-        // امنیتی: ثبت نشان نصب‌شده — مسیرهای /install و /update عمومی برای همیشه بسته می‌شوند
-        try { touch(storage_path('installed')); } catch (\Throwable $e) { report($e); }
+        // فاز ۲۵ — کارهای پس از نصب در سرویس مشترک (پنل جدید هم همین را صدا می‌زند)
+        app(\App\Services\SetupFinalizer::class)->finalize($request->admin_route_prefix);
 
         Auth::guard('adminPanel')->login($admin);
 
         return response()->json(['admin_prefix' => $request->admin_route_prefix, 'redirect' => url('/admin/' . $request->admin_route_prefix)]);
-    }
-
-    private function configApplication()
-    {
-        AppServiceProvider::loadTheme();
-
-        Artisan::call('shop:link');
-        Artisan::call('theme:config');
-
-        change_env('SESSION_DRIVER', 'database');
-        change_env('QUEUE_CONNECTION', 'database');
-        option_update('app_debug_mode', 'on');
-
-        Artisan::call('optimize');
-
-        try {
-            Http::withHeaders([
-                'Accept'       => 'application/json',
-                'Content-Type' => 'application/json'
-            ])->get(config('general.api_url') . '/shop/installed', [
-                'host'         => url('/') ?: config('app.url'),
-                'time'         => now(),
-                'script'       => 'shop',
-                'server_ip'    => request()->server('SERVER_ADDR'),
-                'installer_ip' => request()->ip(),
-            ]);
-        } catch (Exception $e) {
-            // just continue
-        }
     }
 }

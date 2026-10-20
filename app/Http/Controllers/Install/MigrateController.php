@@ -55,44 +55,15 @@ class MigrateController extends Controller
         return storage_path('app/installer-seeded');
     }
 
-    /**
-     * فاز ۲۳ — اگر هیچ مدیری وجود نداشت، مدیر پیش‌فرض بساز
-     * (admin / admin1234 — صفحه‌ی «پایان نصب» کاربر را به تغییر آن مکلف می‌کند)
+    /*
+     * فاز ۲۵ — ساخت «مدیر پیش‌فرض» حذف شد.
+     *
+     * از این پس آخرین مرحله‌ی نصب، صفحه‌ی «ثبت‌نام مدیر» است (/setup):
+     * مدیر خودش نام کاربری/گذرواژه/آدرس اختصاصی پنل را انتخاب می‌کند و
+     * همه‌ی کارهای پس از نصب (شورت‌کات استایل فرنت در public، theme:config،
+     * optimize و…) همان‌جا انجام می‌شود.
+     * صفحه‌ی «نصب کامل شد» دکمه‌ای برای هدایت به این صفحه دارد.
      */
-    protected function createDefaultAdmin(BufferedOutput $output): void
-    {
-        try {
-            if (! \Schema::hasTable('admins') || DB::table('admins')->count() > 0) {
-                return;
-            }
-
-            $adminId = DB::table('admins')->insertGetId([
-                'first_name' => 'مدیر',
-                'last_name' => 'سایت',
-                'username' => 'admin',
-                'email' => 'admin@example.com',
-                'password' => \Illuminate\Support\Facades\Hash::make('admin1234'),
-                'level' => 'admin',
-                'status' => 'ACTIVE',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            $role = DB::table('roles')->orderBy('id')->first();
-
-            if ($role && \Schema::hasTable('admin_role')) {
-                DB::table('admin_role')->insertOrIgnore([
-                    'admin_id' => $adminId,
-                    'role_id' => $role->id,
-                ]);
-            }
-
-            $output->writeln('مدیر پیش‌فرض ایجاد شد (admin / admin1234) — بعد از ورود رمز را عوض کنید.');
-        } catch (\Throwable $e) {
-            // ساخت مدیر اختیاری است — خطا نباید نصب را متوقف کند
-            $output->writeln('admin skip: '.$e->getMessage());
-        }
-    }
 
     public function index()
     {
@@ -151,8 +122,17 @@ class MigrateController extends Controller
                 Artisan::call('db:seed', ['--force' => true], $output);
                 @file_put_contents($this->seedMarkerPath(), now()->toDateTimeString());
 
-                // فاز ۲۳ — مدیر پیش‌فرض: بدون آن ورود به پنل پس از نصب غیرممکن بود
-                $this->createDefaultAdmin($output);
+                // فاز ۲۵ — مدیر پیش‌فرض ساخته نمی‌شود؛ مدیر در صفحه‌ی ثبت‌نام (/setup) ساخته می‌شود
+
+                // فاز ۲۵ — درایور سشن/صف همین‌جا (بعد از ساخت جداول) دیتابیسی می‌شود
+                // تا سشن ثبت‌نامِ مدیر در صفحه‌ی بعد، واقعاً در جدول sessions ذخیره شود
+                // و ورود خودکار پس از ثبت‌نام از بین نرود.
+                try {
+                    change_env('SESSION_DRIVER', 'database');
+                    change_env('QUEUE_CONNECTION', 'database');
+                } catch (\Throwable $e) {
+                    $output->writeln('env skip: ' . $e->getMessage());
+                }
 
                 return response()->json([
                     'phase' => 'seed',
@@ -167,6 +147,16 @@ class MigrateController extends Controller
 
             // دیتابیس از قبل داده دارد (نصب ناقص قبلی یا اجرای مجدد) → سید رد می‌شود
             @file_put_contents($this->seedMarkerPath(), now()->toDateTimeString());
+
+            // فاز ۲۵ — در این مسیر هم درایور سشن/صف دیتابیسی شود (نصب ناقص قبلی)
+            try {
+                if (config('session.driver') !== 'database') {
+                    change_env('SESSION_DRIVER', 'database');
+                    change_env('QUEUE_CONNECTION', 'database');
+                }
+            } catch (\Throwable $e) {
+                // غیرحیاتی
+            }
 
             // ---------- همه‌چیز انجام شد ----------
             return response()->json([

@@ -93,6 +93,17 @@ Route::middleware('install')->group(function () {
     Route::get('install/migrate-step', [\App\Http\Controllers\Install\MigrateController::class, 'step'])->name('install.migrate-step');
 });
 
+/*
+| فاز ۲۵ — ثبت‌نام اولین مدیر (صفحه‌ی جدید هم‌سبک با پنل جدید)
+| پس از اتمام نصب (جداول + سیدر)، دکمه‌ی صفحه‌ی «نصب کامل شد» مدیر را به همین
+| مسیر هدایت می‌کند. با ساخت اولین مدیر، این صفحه به‌صورت خودکار 404 می‌شود.
+| (نسخه‌ی قدیمی در admin-old/{prefix}/setup با نام admin.register حفظ شده است)
+*/
+Route::get('setup', \App\Livewire\Admin\Auth\Register::class)
+    ->name('register')
+    ->middleware(['CheckUserNotExists']);
+Route::get('register', fn () => redirect()->route('register'))->name('register.legacy');
+
 Route::group(['as' => 'admin.', 'prefix' => 'admin-old/' . admin_route_prefix()], function () {
 
     Route::get('login', [AdminLoginController::class, 'showLoginForm'])->name('login');
@@ -730,4 +741,5 @@ Route::get('/captcha/image', [\App\Http\Controllers\CaptchaController::class, 'i
 /*Route::post('/bale/webhook', [BaleWebhookController::class, 'handle'])
     ->name('bale.webhook');*/
 Route::get('packages/payment/callback', [PackagePaymentController::class, 'callback'])->name('admin.packages.payment.callback');
+
 

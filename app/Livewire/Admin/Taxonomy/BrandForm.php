@@ -4,7 +4,6 @@ namespace App\Livewire\Admin\Taxonomy;
 
 use App\Models\Brand;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -41,7 +40,8 @@ class BrandForm extends Component
 
     public function generateSlug(): void
     {
-        $this->slug = Str::slug($this->name) ?: trim($this->name);
+        // فاز ۲۵ — اسلاگ فارسی (Str::slug حروف فارسی را حذف می‌کرد)
+        $this->slug = sluggable_helper_function($this->name) ?: trim($this->name);
     }
 
     /* ---------------- ذخیره (پورت ۱:۱ update قدیمی) ---------------- */

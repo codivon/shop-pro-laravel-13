@@ -5,7 +5,6 @@ namespace App\Livewire\Admin\Taxonomy;
 use App\Models\Brand;
 use App\Models\Product;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
@@ -90,7 +89,8 @@ class BrandIndex extends Component
 
     public function generateCreateSlug(): void
     {
-        $this->createSlug = Str::slug($this->createName) ?: trim($this->createName);
+        // فاز ۲۵ — اسلاگ فارسی (Str::slug حروف فارسی را حذف می‌کرد)
+        $this->createSlug = sluggable_helper_function($this->createName) ?: trim($this->createName);
     }
 
     /* ---------------- ایجاد (پورت ۱:۱ store قدیمی) ---------------- */

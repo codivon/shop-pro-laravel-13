@@ -27,7 +27,8 @@ class AdminLoginController extends Controller
                 return view('back.auth.login');
             }
         }else{
-            return redirect()->route('admin.register');
+            // فاز ۲۵ — هدایت به صفحه‌ی جدید ثبت‌نام مدیر (/setup)
+            return redirect()->route('register');
         }
     }
 

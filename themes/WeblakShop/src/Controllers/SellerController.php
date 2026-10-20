@@ -75,7 +75,8 @@ class SellerController extends Controller
 
     private function generateUniqueSlug(string $businessName): string
     {
-        $slug = Str::slug($businessName);
+        // فاز ۲۵ — اسلاگ فارسی (Str::slug حروف فارسی را حذف می‌کرد)
+        $slug = sluggable_helper_function($businessName) ?: trim($businessName);
         if (Seller::where('slug', $slug)->exists()) {
             $lastId = Seller::latest()->first()->id ?? 0;
             return $slug . ($lastId + 1);

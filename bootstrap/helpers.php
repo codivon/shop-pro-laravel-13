@@ -585,7 +585,7 @@ function sanitize_rich_text(?string $html): ?string
     return $html;
 }
 
-function change_env($key, $value)
+function change_env($key, $value, bool $cacheConfig = true)
 {
     /*
      * امنیتی (env-injection): مقدار نباید شامل کاراکترهای خط جدید یا نویسه‌های
@@ -605,43 +605,56 @@ function change_env($key, $value)
         $value = '"' . str_replace('"', '\\"', $value) . '"';
     }
 
-    // Read .env-file
-    $env = file_get_contents(base_path() . '/.env');
+    /*
+     * فاز ۲۵ — بازنویسی «خط‌به‌خط» به‌جای split روی همه‌ی فاصله‌ها
+     *
+     * قبلاً preg_split('/\s+/') کل فایل را تکه‌تکه می‌کرد؛ در نتیجه کامنت‌های
+     * چندکلمه‌ای .env (مثل «# Security flags (Phase 15)») به خط‌های بی‌معنی
+     * می‌شکستند و بعد از ثبت‌نام مدیر، پارسر dotenv با خطای
+     * «Failed to parse dotenv file. Encountered an invalid name»
+     * کل برنامه را ۵۰۰ می‌کرد. حالا فقط خط‌های KEY=VALUE بازنویسی می‌شوند
+     * و کامنت‌ها/خط‌های خالی دست‌نخورده باقی می‌مانند.
+     */
+    $envPath = base_path() . '/.env';
 
-    // Split string on every " " and write into array
-    $env = preg_split('/\s+/', $env);
+    if (!file_exists($envPath)) {
+        return false;
+    }
+
+    $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
     $key_exists = false;
 
-    // Loop through .env-data
-    foreach ($env as $env_key => $env_value) {
+    foreach ($lines as $env_key => $line) {
+        $trimmed = ltrim($line);
 
-        // Turn the value into an array and stop after the first split
-        // So it's not possible to split e.g. the App-Key by accident
-        $entry = explode("=", $env_value, 2);
+        // حفظ کامنت‌ها و خط‌های خالی
+        if ($trimmed === '' || $trimmed[0] === '#' || $trimmed[0] === ';') {
+            continue;
+        }
 
-        // Check, if new key fits the actual .env-key
-        if ($entry[0] == $key) {
-            // If yes, overwrite it with the new one
-            $env[$env_key] = $key . "=" . $value;
+        $entry = explode("=", $line, 2);
+
+        if (trim((string) $entry[0]) === $key) {
+            $lines[$env_key] = $key . "=" . $value;
             $key_exists = true;
-        } else {
-            // If not, keep the old one
-            $env[$env_key] = $env_value;
+            break;
         }
     }
 
     if (!$key_exists) {
-        $env[] = $key . "=" . $value;
+        $lines[] = $key . "=" . $value;
     }
 
-    // Turn the array back to an String
-    $env = implode("\n", $env);
-
     // And overwrite the .env with the new data
-    file_put_contents(base_path() . '/.env', $env);
+    file_put_contents($envPath, implode("\n", $lines) . "\n");
 
-    Artisan::call('config:cache');
+    // فاز ۲۵ — کش کانفیگ اختیاری است: در جریان درخواستِ فعال، config:cache
+    // یک نمونه‌ی دوم Application را بوت می‌کند و Facadeها را جابه‌جا می‌کند
+    // که برای ادامه‌ی همان درخواست (مثل افکت ریدایرکت Livewire) خطرناک است.
+    if ($cacheConfig) {
+        Artisan::call('config:cache');
+    }
 
     return true;
 }

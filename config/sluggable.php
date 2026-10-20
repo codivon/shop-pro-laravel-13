@@ -25,7 +25,8 @@ return [
      * want to make sure your slugs aren't too long.
      */
 
-    'maxLength' => null,
+    // فاز ۲۵ — سقف طول اسلاگ (ستون‌ها ۵۰۰ کاراکتر شدند؛ کمی حاشیه امن می‌گذاریم)
+    'maxLength' => 480,
 
     /*
      * If you are setting a maximum length on your slugs, you may not want the
@@ -58,7 +59,14 @@ return [
      *    'method' => array('Str','slug'),
      */
 
-    'method' => null,
+    // فاز ۲۵ — اسلاگ فارسی: موتور پیش‌فرض (cocur/slugify) حروف فارسی را حذف می‌کرد
+    // و خروجی بی‌معنیِ انگلیسی («k-mt-o-khr-...») تولید می‌شد.
+    // حالا از هلپرِ تست‌شده‌ی پروژه استفاده می‌شود که حروف فارسی را حفظ می‌کند.
+    //
+    // مهم: نام تابع (رشته) به‌جای closure — closure در config:cache سریالایز
+    // نمی‌شود و کل کش کانفیگ با خطای «sluggable.method is non-serializable»
+    // می‌شکند (این خطا در مرحله‌ی ثبت‌نام/نصب هم خودش را نشان می‌داد).
+    'method' => 'sluggable_helper_function',
 
     // Separator to use when generating slugs.  Defaults to a hyphen.
 

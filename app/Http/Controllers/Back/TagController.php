@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Back;
 use App\Http\Controllers\Controller;
 use App\Models\Tag;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class TagController extends Controller
 {
@@ -42,7 +41,7 @@ class TagController extends Controller
 
         $tag = Tag::create([
             'name' => $request->name,
-            'slug' => Str::slug($request->name),
+            'slug' => sluggable_helper_function($request->name), // فاز ۲۵ — اسلاگ فارسی
         ]);
 
         if ($request->ajax()) {
@@ -60,7 +59,7 @@ class TagController extends Controller
 
         $tag->update([
             'name' => $request->name,
-            'slug' => Str::slug($request->name),
+            'slug' => sluggable_helper_function($request->name), // فاز ۲۵ — اسلاگ فارسی
         ]);
 
         if ($request->ajax()) {
