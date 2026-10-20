@@ -102,6 +102,11 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->booted(function () {
             $this->registerTaggableObservers();
+
+            // ★ فاز ۲۲: پس از پایان مایگریشن (نصب/آپدیت) کش وجود جدول redirects باطل شود
+            $this->app['events']->listen(\Illuminate\Database\Events\MigrationsEnded::class, function () {
+                \Illuminate\Support\Facades\Cache::forget('redirects.table_exists');
+            });
         });
 
         $this->registerObservers();

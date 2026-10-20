@@ -120,7 +120,18 @@
                     <x-admin-panel::icon name="clock" class="size-4 text-brand-600" />
                     درخواست‌های کند
                 </h3>
-                <span class="fa-digits ap-badge bg-red-50 text-red-600 dark:bg-red-500/12 dark:text-red-400">{{ count($slowRequests) }} مورد</span>
+                <div class="flex items-center gap-1.5">
+                    <span class="fa-digits ap-badge bg-red-50 text-red-600 dark:bg-red-500/12 dark:text-red-400">{{ count($slowRequests) }} مورد</span>
+                    @if (count($slowRequests))
+                        <button type="button" wire:click="downloadSlowRequests" wire:loading.attr="disabled" wire:target="downloadSlowRequests"
+                                title="دانلود گزارش درخواست‌های کند (متنی — قابل ارسال به پشتیبانی)"
+                                class="flex size-7 items-center justify-center rounded-lg text-ink-3 transition hover:bg-surface-2 hover:text-brand-600 dark:text-night-ink-2 dark:hover:bg-night-3 dark:hover:text-brand-400">
+                            <x-admin-panel::icon name="download" class="size-4" wire:loading.remove wire:target="downloadSlowRequests" />
+                            <svg class="size-4 animate-spin" wire:loading wire:target="downloadSlowRequests" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                            <span class="sr-only">دانلود گزارش</span>
+                        </button>
+                    @endif
+                </div>
             </div>
             <div class="max-h-80 overflow-y-auto">
                 @if (count($slowRequests))
@@ -137,7 +148,12 @@
                             @foreach ($slowRequests as $req)
                                 <tr>
                                     <td class="px-3 py-2"><span class="ltr ap-badge bg-surface-2 font-mono text-ink-2 dark:bg-night-3 dark:text-night-ink-2">{{ strtolower($req['method'] ?? 'GET') }}</span></td>
-                                    <td class="max-w-[200px] px-3 py-2"><span class="ltr block truncate" title="{{ $req['uri'] ?? '' }}">{{ $req['uri'] ?? '' }}</span></td>
+                                    <td class="max-w-[200px] px-3 py-2">
+                                        <span class="ltr block truncate" title="{{ $req['uri'] ?? '' }}@if(!empty($req['via'])) — {{ $req['via'] }}@endif">{{ $req['uri'] ?? '' }}</span>
+                                        @if (!empty($req['livewire']))
+                                            <span class="ltr block truncate text-[9px] text-ink-3 dark:text-night-ink-2" title="{{ $req['via'] ?? '' }}">Livewire update</span>
+                                        @endif
+                                    </td>
                                     <td class="fa-digits px-3 py-2 {{ ($req['duration'] ?? 0) > 2000 ? 'font-bold text-red-500' : '' }}">{{ number_format($req['duration'] ?? 0) }}</td>
                                     <td class="px-3 py-2 text-[10px] text-ink-3 dark:text-night-ink-2">{{ $req['time_ago'] ?? '' }}</td>
                                 </tr>
@@ -159,7 +175,18 @@
                     <x-admin-panel::icon name="database" class="size-4 text-brand-600" />
                     کوئری‌های کند
                 </h3>
-                <span class="fa-digits ap-badge bg-amber-50 text-amber-600 dark:bg-amber-500/12 dark:text-amber-400">{{ count($slowQueries) }} مورد</span>
+                <div class="flex items-center gap-1.5">
+                    <span class="fa-digits ap-badge bg-amber-50 text-amber-600 dark:bg-amber-500/12 dark:text-amber-400">{{ count($slowQueries) }} مورد</span>
+                    @if (count($slowQueries))
+                        <button type="button" wire:click="downloadSlowQueries" wire:loading.attr="disabled" wire:target="downloadSlowQueries"
+                                title="دانلود گزارش کوئری‌های کند (متنی — قابل ارسال به پشتیبانی)"
+                                class="flex size-7 items-center justify-center rounded-lg text-ink-3 transition hover:bg-surface-2 hover:text-brand-600 dark:text-night-ink-2 dark:hover:bg-night-3 dark:hover:text-brand-400">
+                            <x-admin-panel::icon name="download" class="size-4" wire:loading.remove wire:target="downloadSlowQueries" />
+                            <svg class="size-4 animate-spin" wire:loading wire:target="downloadSlowQueries" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                            <span class="sr-only">دانلود گزارش</span>
+                        </button>
+                    @endif
+                </div>
             </div>
             <div class="max-h-80 overflow-y-auto">
                 @if (count($slowQueries))
@@ -174,7 +201,12 @@
                         <tbody class="divide-y divide-line dark:divide-night-line">
                             @foreach ($slowQueries as $q)
                                 <tr>
-                                    <td class="max-w-[280px] px-3 py-2"><span class="ltr block truncate font-mono text-[10px]" title="{{ $q['sql'] ?? '' }}">{{ \Illuminate\Support\Str::limit($q['sql'] ?? '', 80) }}</span></td>
+                                    <td class="max-w-[280px] px-3 py-2">
+                                        <span class="ltr block truncate font-mono text-[10px]" title="{{ $q['sql'] ?? '' }}">{{ \Illuminate\Support\Str::limit($q['sql'] ?? '', 80) }}</span>
+                                        @if (!empty($q['source']))
+                                            <span class="ltr block truncate text-[9px] text-ink-3 dark:text-night-ink-2" title="{{ $q['source'] }}">{{ $q['source'] }}</span>
+                                        @endif
+                                    </td>
                                     <td class="fa-digits px-3 py-2 {{ ($q['duration'] ?? 0) > 1000 ? 'font-bold text-red-500' : '' }}">{{ number_format($q['duration'] ?? 0) }}</td>
                                     <td class="px-3 py-2 text-[10px] text-ink-3 dark:text-night-ink-2">{{ $q['time_ago'] ?? '' }}</td>
                                 </tr>

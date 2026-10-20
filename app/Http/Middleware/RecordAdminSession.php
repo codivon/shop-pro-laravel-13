@@ -11,10 +11,28 @@ use Illuminate\Support\Facades\Session;
 
 class RecordAdminSession
 {
+    /**
+     * ★ فاز ۲۲ (بهینه‌سازی کوئری‌های کند):
+     * این میدلور روی «هر درخواست ادمین + هر آپدیت Livewire» اجرا می‌شد و
+     * updateOrCreate آن ۲ تا ۳ کوئری (select + update/insert) در هر درخواست اجرا می‌کرد.
+     * اکنون: ثبت/بروزرسانی حداکثر هر ۶۰ ثانیه به‌ازای هر نشست انجام می‌شود
+     * (دقت last_activity برای نمایش «نشست‌های فعال» کاملاً کافی است) و
+     * در مسیر گرم به‌جای select+update فقط یک UPDATE اجرا می‌شود.
+     */
+    protected const THROTTLE_SECONDS = 60;
+
     public function handle(Request $request, Closure $next)
     {
 
         if (Auth::guard('adminPanel')->check() && !$request->is('admin/login*') && !$request->is('admin/logout')) {
+            $lastSync = $request->session()->get('_admin_session_sync_at');
+
+            if ($lastSync && (now()->getTimestamp() - (int) $lastSync) < self::THROTTLE_SECONDS) {
+                return $next($request); // در پنجره ۶۰ ثانیه قبلی ثبت شده — صفر کوئری
+            }
+
+            $request->session()->put('_admin_session_sync_at', now()->getTimestamp());
+
             $sessionId = Session::getId();
             $deviceInfo = DeviceHelper::detect($request);
             $adminId = Auth::guard('adminPanel')->id();
@@ -22,24 +40,30 @@ class RecordAdminSession
             // تولید اثر انگشت یکتا بر اساس دستگاه + مرورگر + IP
             $deviceFingerprint = $this->generateDeviceFingerprint($request);
 
-            // بروزرسانی یا ایجاد نشست (بدون حذف قبلی)
-            AdminSession::updateOrCreate(
-                [
+            $payload = [
+                'session_id' => $sessionId,
+                'device_name' => $deviceInfo['device_name'],
+                'device_type' => $deviceInfo['device_type'],
+                'browser' => $deviceInfo['browser'],
+                'platform' => $deviceInfo['platform'],
+                'ip_address' => $deviceInfo['ip_address'],
+                'user_agent' => $deviceInfo['user_agent'],
+                'last_activity' => now(),
+                'is_active' => true
+            ];
+
+            // بروزرسانی یا ایجاد نشست — مسیر گرم: فقط یک UPDATE (بدون SELECT)
+            $updated = AdminSession::query()
+                ->where('admin_id', $adminId)
+                ->where('device_fingerprint', $deviceFingerprint)
+                ->update($payload);
+
+            if (!$updated) {
+                AdminSession::create($payload + [
                     'admin_id' => $adminId,
                     'device_fingerprint' => $deviceFingerprint,
-                ],
-                [
-                    'session_id' => $sessionId,
-                    'device_name' => $deviceInfo['device_name'],
-                    'device_type' => $deviceInfo['device_type'],
-                    'browser' => $deviceInfo['browser'],
-                    'platform' => $deviceInfo['platform'],
-                    'ip_address' => $deviceInfo['ip_address'],
-                    'user_agent' => $deviceInfo['user_agent'],
-                    'last_activity' => now(),
-                    'is_active' => true
-                ]
-            );
+                ]);
+            }
         }
 
         return $next($request);

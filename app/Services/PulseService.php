@@ -8,7 +8,7 @@ use Morilog\Jalali\Jalalian;
 
 class PulseService
 {
-    protected int $cacheTtl = 15;
+    protected int $cacheTtl = 30;
 
     public function getDashboardData(): array
     {
@@ -337,29 +337,67 @@ class PulseService
     public function getSlowRequests(): array
     {
         return Cache::remember('pulse.slow_requests', $this->cacheTtl, function () {
-            try {
-                return DB::table('pulse_entries')
-                    ->where('type', 'slow_request')
-                    ->where('timestamp', '>=', \now()->subDay()->timestamp)
-                    ->orderByDesc('value')
-                    ->limit(50)
-                    ->get(['timestamp', 'key', 'value'])
-                    ->map(function ($row) {
-                        $parts   = \explode(' ', $row->key ?? '', 2);
-                        $method  = \count($parts) === 2 ? \strtoupper($parts[0]) : 'GET';
-                        $uri     = \count($parts) === 2 ? $parts[1] : ($row->key ?? '-');
-                        return [
-                            'method'   => $method,
-                            'uri'      => $uri,
-                            'duration' => (int) ($row->value ?? 0),
-                            'time'     => Jalalian::fromDateTime(\date('Y-m-d H:i:s', $row->timestamp))->format('Y-m-d H:i:s'),
-                            'time_ago' => Jalalian::fromDateTime(\date('Y-m-d H:i:s', $row->timestamp))->ago(),
-                        ];
-                    })->toArray();
-            } catch (\Exception $e) {
-                return [];
-            }
+            return $this->fetchSlowRequests(50);
         });
+    }
+
+    /**
+     * نسخه بدون کش برای گزارش دانلودی (دیتای تازه — حداکثر ۱۰۰ مورد)
+     */
+    public function exportSlowRequests(int $limit = 100): array
+    {
+        return $this->fetchSlowRequests($limit);
+    }
+
+    protected function fetchSlowRequests(int $limit): array
+    {
+        try {
+            return DB::table('pulse_entries')
+                ->where('type', 'slow_request')
+                ->where('timestamp', '>=', \now()->subDay()->timestamp)
+                ->orderByDesc('value')
+                ->limit($limit)
+                ->get(['timestamp', 'key', 'value'])
+                ->map(fn ($row) => $this->mapSlowRequestRow($row))
+                ->toArray();
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * ★ کلید درخواست کند در Pulse یک JSON آرایه است: ["POST", "\/uri", "via ...|Controller@class"]
+     *   (قبلاً با explode(' ') پارس می‌شد → برای ردیف‌های livewire خراب نمایش داده می‌شد)
+     */
+    protected function mapSlowRequestRow($row): array
+    {
+        $key    = $row->key ?? '';
+        $method = 'GET';
+        $uri    = $key !== '' ? $key : '-';
+        $via    = null;
+
+        $parsed = json_decode($key, true);
+        if (is_array($parsed)) {
+            $method = \strtoupper((string) ($parsed[0] ?? 'GET'));
+            $uri    = (string) ($parsed[1] ?? '-');
+            $via    = isset($parsed[2]) ? (string) $parsed[2] : null;
+        } else {
+            $parts = \explode(' ', $key, 2);
+            if (\count($parts) === 2) {
+                $method = \strtoupper($parts[0]);
+                $uri    = $parts[1];
+            }
+        }
+
+        return [
+            'method'   => $method,
+            'uri'      => $uri,
+            'via'      => $via,
+            'livewire' => $via !== null && \str_contains($via, 'via '),
+            'duration' => (int) ($row->value ?? 0),
+            'time'     => Jalalian::fromDateTime(\date('Y-m-d H:i:s', $row->timestamp))->format('Y-m-d H:i:s'),
+            'time_ago' => Jalalian::fromDateTime(\date('Y-m-d H:i:s', $row->timestamp))->ago(),
+        ];
     }
 
     // =====================================================
@@ -369,25 +407,56 @@ class PulseService
     public function getSlowQueries(): array
     {
         return Cache::remember('pulse.slow_queries', $this->cacheTtl, function () {
-            try {
-                return DB::table('pulse_entries')
-                    ->where('type', 'slow_query')
-                    ->where('timestamp', '>=', \now()->subDay()->timestamp)
-                    ->orderByDesc('value')
-                    ->limit(50)
-                    ->get(['timestamp', 'key', 'value'])
-                    ->map(function ($row) {
-                        return [
-                            'sql'      => $row->key ?? '-',
-                            'duration' => (int) ($row->value ?? 0),
-                            'time'     => Jalalian::fromDateTime(\date('Y-m-d H:i:s', $row->timestamp))->format('Y-m-d H:i:s'),
-                            'time_ago' => Jalalian::fromDateTime(\date('Y-m-d H:i:s', $row->timestamp))->ago(),
-                        ];
-                    })->toArray();
-            } catch (\Exception $e) {
-                return [];
-            }
+            return $this->fetchSlowQueries(50);
         });
+    }
+
+    /**
+     * نسخه بدون کش برای گزارش دانلودی (دیتای تازه — حداکثر ۱۰۰ مورد)
+     */
+    public function exportSlowQueries(int $limit = 100): array
+    {
+        return $this->fetchSlowQueries($limit);
+    }
+
+    protected function fetchSlowQueries(int $limit): array
+    {
+        try {
+            return DB::table('pulse_entries')
+                ->where('type', 'slow_query')
+                ->where('timestamp', '>=', \now()->subDay()->timestamp)
+                ->orderByDesc('value')
+                ->limit($limit)
+                ->get(['timestamp', 'key', 'value'])
+                ->map(fn ($row) => $this->mapSlowQueryRow($row))
+                ->toArray();
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * ★ کلید کوئری کند در Pulse یک JSON آرایه است: ["select ...", "app\/Providers\/X.php:44"]
+     */
+    protected function mapSlowQueryRow($row): array
+    {
+        $key    = $row->key ?? '';
+        $sql    = $key;
+        $source = null;
+
+        $parsed = json_decode($key, true);
+        if (is_array($parsed)) {
+            $sql    = (string) ($parsed[0] ?? $key);
+            $source = isset($parsed[1]) ? (string) $parsed[1] : null;
+        }
+
+        return [
+            'sql'      => $sql !== '' ? $sql : '-',
+            'source'   => $source,
+            'duration' => (int) ($row->value ?? 0),
+            'time'     => Jalalian::fromDateTime(\date('Y-m-d H:i:s', $row->timestamp))->format('Y-m-d H:i:s'),
+            'time_ago' => Jalalian::fromDateTime(\date('Y-m-d H:i:s', $row->timestamp))->ago(),
+        ];
     }
 
     // =====================================================
