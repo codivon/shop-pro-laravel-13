@@ -108,54 +108,58 @@
     @enderror
 
     {{-- مودال فایل‌منیجر (iframe) --}}
-    {{-- فاز ۱۷: وسط صفحه + z-[200] بالاتر از همه مودال‌ها (widgets z-[80]) تا همیشه روی همه باشد --}}
-    <div x-show="open"
-         x-cloak
-         class="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-6"
-         role="dialog"
-         aria-modal="true"
-         aria-label="مدیریت فایل‌ها"
-         x-on:keydown.escape.window="open = false">
-        <div class="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" x-on:click="open = false" x-transition.opacity aria-hidden="true"></div>
-
+    {{-- فاز ۱۸: x-teleport به body — مودال همیشه بالای سایدبار/هدر و همه مودال‌ها باشد.
+         قبلاً داخل سلسله‌مراتب صفحه رندر می‌شد و اگر پدری stacking context می‌ساخت
+         (sticky/transform/backdrop)، مودال زیر سایدبار و هدر می‌افتد. --}}
+    <template x-teleport="body">
         <div x-show="open"
-             x-on:click.stop
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0 scale-95"
-             x-transition:enter-end="opacity-100 scale-100"
-             class="relative flex h-full w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-pop dark:border-night-line dark:bg-night-2">
+             x-cloak
+             class="fixed inset-0 z-[300] flex items-center justify-center p-2 sm:p-6"
+             role="dialog"
+             aria-modal="true"
+             aria-label="مدیریت فایل‌ها"
+             x-on:keydown.escape.window="open = false">
+            <div class="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" x-on:click="open = false" x-transition.opacity aria-hidden="true"></div>
 
-            {{-- سربرگ مودال --}}
-            <div class="flex items-center justify-between gap-3 border-b border-line px-4 py-3 dark:border-night-line">
-                <div class="flex items-center gap-2">
-                    <span class="flex size-9 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
-                        <x-admin-panel::icon name="folder-open" class="size-4.5" />
-                    </span>
-                    <div>
-                        <h3 class="text-sm font-bold">مدیریت فایل‌های سایت</h3>
-                        <p class="text-[11px] text-ink-3 dark:text-night-ink-2">فایل را انتخاب کنید یا از دکمه‌های بالای فایل‌منیجر آپلود کنید</p>
+            <div x-show="open"
+                 x-on:click.stop
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 class="relative flex h-full w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-pop dark:border-night-line dark:bg-night-2">
+
+                {{-- سربرگ مودال --}}
+                <div class="flex items-center justify-between gap-3 border-b border-line px-4 py-3 dark:border-night-line">
+                    <div class="flex items-center gap-2">
+                        <span class="flex size-9 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
+                            <x-admin-panel::icon name="folder-open" class="size-4.5" />
+                        </span>
+                        <div>
+                            <h3 class="text-sm font-bold">مدیریت فایل‌های سایت</h3>
+                            <p class="text-[11px] text-ink-3 dark:text-night-ink-2">فایل را انتخاب کنید یا از دکمه‌های بالای فایل‌منیجر آپلود کنید</p>
+                        </div>
                     </div>
-                </div>
-                <button type="button" x-on:click="open = false" class="ap-btn-ghost !p-2" title="بستن">
-                    <x-admin-panel::icon name="x" class="size-4.5" />
-                </button>
-            </div>
-
-            {{-- بدنه — فایل‌منیجر --}}
-            <div class="relative flex-1">
-                <div x-show="open && loading" class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-surface dark:bg-night-2">
-                    <svg class="size-7 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
-                    </svg>
-                    <p class="text-xs font-semibold text-ink-3 dark:text-night-ink-2">در حال باز کردن مدیریت فایل‌ها…</p>
+                    <button type="button" x-on:click="open = false" class="ap-btn-ghost !p-2" title="بستن">
+                        <x-admin-panel::icon name="x" class="size-4.5" />
+                    </button>
                 </div>
 
-                <iframe x-bind:src="open ? @js($fmUrl) : ''"
-                        x-on:load="loading = false"
-                        title="File Manager"
-                        class="h-full min-h-[420px] w-full bg-white"
-                        referrerpolicy="same-origin"></iframe>
+                {{-- بدنه — فایل‌منیجر --}}
+                <div class="relative flex-1">
+                    <div x-show="open && loading" class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-surface dark:bg-night-2">
+                        <svg class="size-7 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                            <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
+                        </svg>
+                        <p class="text-xs font-semibold text-ink-3 dark:text-night-ink-2">در حال باز کردن مدیریت فایل‌ها…</p>
+                    </div>
+
+                    <iframe x-bind:src="open ? @js($fmUrl) : ''"
+                            x-on:load="loading = false"
+                            title="File Manager"
+                            class="h-full min-h-[420px] w-full bg-white"
+                            referrerpolicy="same-origin"></iframe>
+                </div>
             </div>
         </div>
-    </div>
+    </template>
 </div>

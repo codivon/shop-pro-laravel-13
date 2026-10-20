@@ -36,8 +36,8 @@
                 <button type="button" class="ap-tab relative whitespace-nowrap" x-on:click="tab = 'provider'"
                         x-bind:aria-selected="(tab === 'provider').toString()" role="tab"
                         x-bind:class="tab === 'provider' ? 'is-active' : ''">
-                    <x-admin-panel::icon name="plug" class="size-4" />
-                    ارائه‌دهنده و پترن‌ها
+                    <x-admin-panel::icon name="hash" class="size-4" />
+                    پترن‌های ارسال
                 </button>
             </div>
         </div>
@@ -81,7 +81,7 @@
                 <p class="mt-3 flex items-start gap-2 rounded-xl border border-sky-200 bg-sky-50 p-3 text-[12px] leading-6 text-sky-800 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-300">
                     <x-admin-panel::icon name="info" class="mt-0.5 size-4 shrink-0" />
                     <span>
-                        با تغییر ارائه‌دهنده، تب «ارائه‌دهنده و پترن‌ها» برای همان سرویس فعال می‌شود؛ اطلاعات اتصال و کد پترن‌ها را از پنل همان سرویس دریافت و وارد کنید.
+                        با تغییر ارائه‌دهنده، اطلاعات اتصال در همین تب و کدهای پترن در تب «پترن‌های ارسال» برای همان سرویس تغییر می‌کند؛ اطلاعات را از پنل همان سرویس دریافت و وارد کنید.
                     </span>
                 </p>
             </div>
@@ -98,6 +98,42 @@
                     <input id="sms-admin-mobile" type="text" dir="ltr" wire:model="sms.admin_mobile_number" class="ap-input font-mono" placeholder="09xxxxxxxxx">
                     <p class="mt-1.5 text-[11px] text-ink-3 dark:text-night-ink-2">پیامک‌های سیستمیِ مخصوص مدیر (مثل ثبت سفارش جدید) به این شماره ارسال می‌شود.</p>
                 </div>
+            </div>
+
+            {{-- اطلاعات اتصال به پنل — فاز ۱۸: به تب اول منتقل شد و بسته به ارائه‌دهنده انتخابی تغییر می‌کند --}}
+            <div class="ap-card p-4 sm:p-6">
+                <h3 class="mb-1 flex items-center gap-2 text-sm font-bold">
+                    <span class="flex size-8 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
+                        <x-admin-panel::icon name="plug" class="size-4" />
+                    </span>
+                    اطلاعات اتصال به پنل
+                </h3>
+                <p class="mb-4 text-xs text-ink-3 dark:text-night-ink-2">
+                    این بخش بسته به ارائه‌دهنده‌ی انتخاب‌شده در بالا تغییر می‌کند؛ اطلاعات را از پنل همان سرویس دریافت کنید.
+                </p>
+
+                @foreach (\App\Livewire\Admin\Settings\SmsSettings::providers() as $providerKey => $providerName)
+                    <div x-show="provider === @js($providerKey)" x-cloak class="space-y-3" wire:key="sms-cred-general-{{ $providerKey }}">
+                        <div class="mb-1 flex items-center gap-2">
+                            <span class="ap-badge bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-400">{{ $providerName }}</span>
+                            <span class="ltr text-[10px] text-ink-3 dark:text-night-ink-2">{{ $providerKey }}</span>
+                        </div>
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                            @foreach (\App\Livewire\Admin\Settings\SmsSettings::credentials($providerKey) as $credential)
+                                <div>
+                                    <label class="mb-1.5 block text-xs font-semibold" for="cred-general-{{ $providerKey }}-{{ $loop->index }}">{{ $credential['label'] }}</label>
+                                    <input id="cred-general-{{ $providerKey }}-{{ $loop->index }}" type="text" dir="ltr" wire:model="sms.{{ $credential['key'] }}" class="ap-input font-mono" autocomplete="off">
+                                </div>
+                            @endforeach
+                        </div>
+                        <p class="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] leading-6 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
+                            <x-admin-panel::icon name="info" class="mt-0.5 size-4 shrink-0" />
+                            <span>
+                                پس از ذخیره، سامانه پیامک‌های رویدادی را از همین پنل ارسال می‌کند. کدهای پترن مربوط به {{ $providerName }} در تب «پترن‌های ارسال» وارد می‌شود.
+                            </span>
+                        </p>
+                    </div>
+                @endforeach
             </div>
         </div>
 
@@ -152,25 +188,7 @@
             @foreach (\App\Livewire\Admin\Settings\SmsSettings::providers() as $providerKey => $providerName)
                 <div x-show="provider === @js($providerKey)" x-cloak class="space-y-5" wire:key="sms-provider-{{ $providerKey }}">
 
-                    {{-- اطلاعات اتصال --}}
-                    <div class="ap-card p-4 sm:p-6">
-                        <h3 class="mb-4 flex items-center gap-2 text-sm font-bold">
-                            <span class="flex size-8 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
-                                <x-admin-panel::icon name="plug" class="size-4" />
-                            </span>
-                            اطلاعات اتصال به پنل {{ $providerName }}
-                        </h3>
-                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                            @foreach (\App\Livewire\Admin\Settings\SmsSettings::credentials($providerKey) as $credential)
-                                <div>
-                                    <label class="mb-1.5 block text-xs font-semibold" for="cred-{{ $providerKey }}-{{ $loop->index }}">{{ $credential['label'] }}</label>
-                                    <input id="cred-{{ $providerKey }}-{{ $loop->index }}" type="text" dir="ltr" wire:model="sms.{{ $credential['key'] }}" class="ap-input font-mono" autocomplete="off">
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    {{-- پترن‌ها — گروه‌بندی مثل قدیمی --}}
+                    {{-- پترن‌ها — گروه‌بندی مثل قدیمی (اطلاعات اتصال از فاز ۱۸ به تب اول منتقل شد) --}}
                     @foreach ([
                         'پترن‌های ثبت‌نام و احراز هویت' => ['seller_register', 'user_register', 'user_verify'],
                         'پترن‌های پرداخت سفارش' => ['order_paid', 'seller_order_paid', 'user_order_paid'],
@@ -243,7 +261,7 @@
 
         {{-- نوار ذخیره --}}
         <div class="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface/95 p-3.5 shadow-lg backdrop-blur dark:border-night-line dark:bg-night-2/95">
-            <span class="text-[11px] text-ink-3 dark:text-night-ink-2">پترن‌ها را از پنل ارائه‌دهنده دریافت و در تب «ارائه‌دهنده و پترن‌ها» وارد کنید.</span>
+            <span class="text-[11px] text-ink-3 dark:text-night-ink-2">اطلاعات اتصال در تب اول و کد پترن‌ها در تب «پترن‌های ارسال» وارد می‌شود.</span>
             <button type="submit" class="ap-btn-primary !py-2.5">
                 <span wire:loading.remove wire:target="save" class="flex items-center gap-2">
                     <x-admin-panel::icon name="check-circle" class="size-4" />

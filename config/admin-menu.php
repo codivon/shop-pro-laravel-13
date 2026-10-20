@@ -910,7 +910,7 @@ return [
                             'icon' => 'folder-open',
                         ],
                         [
-                            'label' => 'لیست بکاپ‌ها',
+                            'label' => 'پشتیبان‌گیری',
                             'route' => 'np.backups.index',
                             'permission' => 'backups.index',
                             'icon' => 'archive',

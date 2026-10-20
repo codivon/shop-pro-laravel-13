@@ -79,16 +79,16 @@ class FloatingWidget extends Component
         }
     }
 
-    /** شبکه‌های اجتماعی + رنگ آیکون برای نمایش (پورت آرایه‌های chat_items/social_items قدیمی) */
+    /** شبکه‌های اجتماعی + رنگ/آیکون برای نمایش (پورت آرایه‌های chat_items/social_items قدیمی) */
     public function socialNetworks(): array
     {
         return [
-            'whatsapp'  => ['label' => 'واتساپ',       'color' => '#25D366', 'placeholder_url' => 'https://wa.me/989123456789'],
-            'telegram'  => ['label' => 'تلگرام',       'color' => '#2AABEE', 'placeholder_url' => 'https://t.me/username'],
-            'instagram' => ['label' => 'اینستاگرام',   'color' => '#E1306C', 'placeholder_url' => 'https://instagram.com/yourpage'],
-            'twitter'   => ['label' => 'توییتر/ایکس',  'color' => '#000000', 'placeholder_url' => 'https://x.com/yourpage'],
-            'youtube'   => ['label' => 'یوتیوب',       'color' => '#FF0000', 'placeholder_url' => 'https://youtube.com/@yourchannel'],
-            'linkedin'  => ['label' => 'لینکدین',      'color' => '#0077B5', 'placeholder_url' => 'https://linkedin.com/company/yourpage'],
+            'whatsapp'  => ['label' => 'واتساپ',       'color' => '#25D366', 'icon' => 'message-circle', 'placeholder_url' => 'https://wa.me/989123456789'],
+            'telegram'  => ['label' => 'تلگرام',       'color' => '#2AABEE', 'icon' => 'send',           'placeholder_url' => 'https://t.me/username'],
+            'instagram' => ['label' => 'اینستاگرام',   'color' => '#E1306C', 'icon' => 'instagram',      'placeholder_url' => 'https://instagram.com/yourpage'],
+            'twitter'   => ['label' => 'توییتر/ایکس',  'color' => '#000000', 'icon' => 'twitter',        'placeholder_url' => 'https://x.com/yourpage'],
+            'youtube'   => ['label' => 'یوتیوب',       'color' => '#FF0000', 'icon' => 'youtube',        'placeholder_url' => 'https://youtube.com/@yourchannel'],
+            'linkedin'  => ['label' => 'لینکدین',      'color' => '#0077B5', 'icon' => 'linkedin',       'placeholder_url' => 'https://linkedin.com/company/yourpage'],
         ];
     }
 

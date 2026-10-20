@@ -40,7 +40,7 @@ class Gateways extends Component
         foreach ($gateways as $gateway) {
             $this->form[$gateway->id] = [
                 'name' => (string) $gateway->name,
-                'ordering' => (string) $gateway->ordering,
+                'ordering' => (string) ($gateway->ordering !== null ? $gateway->ordering : 0),
                 'is_active' => (bool) $gateway->is_active,
                 'configs' => [],
             ];
@@ -51,10 +51,12 @@ class Gateways extends Component
         }
     }
 
-    /** پورت دقیق $gwList ویوی قدیمی — فیلدهای هر درگاه */
+    /** پورت دقیق $gwList ویوی قدیمی — فیلدهای هر درگاه (فاز ۱۸: + فیلد لوگو برای همه) */
     public static function gatewayFields(string $key): array
     {
-        return match ($key) {
+        $logo = [['name' => 'logo', 'label' => 'لوگوی درگاه (تصویر بانک)', 'type' => 'image']];
+
+        $fields = match ($key) {
             'payir' => [
                 ['name' => 'merchantId', 'label' => 'api کد', 'type' => 'text'],
             ],
@@ -97,6 +99,30 @@ class Gateways extends Component
                 ['name' => 'merchantId', 'label' => 'کد پذیرنده', 'type' => 'text'],
             ],
             default => [],
+        };
+
+        // فیلد لوگو اول لیست می‌آید (همه‌ی درگاه‌ها پشتیبانی می‌کنند)
+        array_unshift($fields, ...$logo);
+
+        return $fields;
+    }
+
+    /** فاز ۱۸: هویت بصری هر درگاه (رنگ برند) — برای کارت‌ها و آواتار حرف‌اول */
+    public static function gatewayBranding(string $key): array
+    {
+        return match ($key) {
+            'behpardakht' => ['color' => '#E11D48', 'bank' => 'بانک ملت'],
+            'payir'       => ['color' => '#0D9488', 'bank' => 'pay.ir'],
+            'zarinpal'    => ['color' => '#FFB800', 'bank' => 'زرین‌پال'],
+            'toman'       => ['color' => '#7C3AED', 'bank' => 'toman.ir'],
+            'payping'     => ['color' => '#F97316', 'bank' => 'پی‌پینگ'],
+            'irankish'    => ['color' => '#DC2626', 'bank' => 'ایران کیش'],
+            'saman'       => ['color' => '#0EA5A4', 'bank' => 'بانک سامان'],
+            'sepehr'      => ['color' => '#16A34A', 'bank' => 'بانک صادرات'],
+            'idpay'       => ['color' => '#0EA5E9', 'bank' => 'idpay'],
+            'sadad'       => ['color' => '#B91C1C', 'bank' => 'بانک ملی'],
+            'zibal'       => ['color' => '#111827', 'bank' => 'زیبال'],
+            default       => ['color' => '#64748B', 'bank' => ''],
         };
     }
 
@@ -263,6 +289,7 @@ class Gateways extends Component
                 if (isset($changes['configs'])) {
                     foreach ($changes['configs'] as $configKey => $configChange) {
                         $configNames = [
+                            'logo' => 'لوگوی درگاه',
                             'merchantId' => 'کد درگاه',
                             'terminalId' => 'کد پایانه',
                             'acceptorId' => 'کد پذیرنده',
