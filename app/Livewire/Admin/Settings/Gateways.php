@@ -163,167 +163,175 @@ class Gateways extends Component
         ];
     }
 
-    /* ---------------- ذخیره (پورت updateGateways) ---------------- */
+    /* ---------------- ذخیره هر درگاه در مودال (فاز ۲۰) ----------------
+     * تغییر معماری از «فرم سراسری + ذخیره‌ی همه» به «مودال هر درگاه + ذخیره‌ی همان»
+     * — سوییچ فعال/غیرفعال هم مستقیم روی کارت ذخیره می‌شود (toggleActive).
+     * لاگ فعالیتِ تغییرات، پورت دقیق همان updateGateways قدیمی است.
+     */
 
-    public function save(): void
+    /** ذخیره‌ی تنظیمات یک درگاه از مودال کارت */
+    public function saveGateway(int $id): void
     {
         auth('adminPanel')->user()?->can('settings.gateway') ?: abort(403);
 
-        $active_ids = [];
-        $allChanges = [];
+        $gateway = Gateway::find($id);
+        $request_gateway = $this->form[$id] ?? null;
 
-        foreach ($this->form as $id => $request_gateway) {
-            if (empty($request_gateway['is_active'])) {
-                continue;
-            }
+        if (! $gateway || $request_gateway === null) {
+            $this->dispatch('toast', message: 'درگاه یافت نشد.', type: 'error');
 
-            $active_ids[] = (int) $id;
-            $gateway = Gateway::find($id);
-
-            if (! $gateway) {
-                continue;
-            }
-
-            // مقادیر قدیمی (پورت دقیق)
-            $oldData = [
-                'name' => $gateway->name,
-                'ordering' => $gateway->ordering,
-                'is_active' => $gateway->is_active,
-                'configs' => [],
-            ];
-
-            foreach ($gateway->configs as $config) {
-                $oldData['configs'][$config->key] = $config->value;
-            }
-
-            // مقادیر جدید — فقط فیلدهای تعریف‌شده‌ی همان درگاه
-            $newConfigs = [];
-            foreach ($this->gatewayFields($gateway->key) as $field) {
-                $newConfigs[$field['name']] = (string) ($request_gateway['configs'][$field['name']] ?? '');
-            }
-
-            $newData = [
-                'name' => (string) $request_gateway['name'],
-                'ordering' => (string) $request_gateway['ordering'],
-                'is_active' => true,
-                'configs' => $newConfigs,
-            ];
-
-            // بررسی تغییرات
-            $gatewayChanges = [];
-
-            if ($oldData['name'] != $newData['name']) {
-                $gatewayChanges['name'] = ['old' => $oldData['name'], 'new' => $newData['name']];
-            }
-
-            if ($oldData['ordering'] != $newData['ordering']) {
-                $gatewayChanges['ordering'] = ['old' => $oldData['ordering'], 'new' => $newData['ordering']];
-            }
-
-            if ($oldData['is_active'] != $newData['is_active']) {
-                $gatewayChanges['is_active'] = [
-                    'old' => $oldData['is_active'] ? 'فعال' : 'غیرفعال',
-                    'new' => $newData['is_active'] ? 'فعال' : 'غیرفعال',
-                ];
-            }
-
-            foreach ($newData['configs'] as $key => $newValue) {
-                $oldValue = $oldData['configs'][$key] ?? null;
-                if ($oldValue != $newValue) {
-                    $gatewayChanges['configs'][$key] = ['old' => $oldValue, 'new' => $newValue];
-                }
-            }
-
-            foreach ($oldData['configs'] as $key => $oldValue) {
-                if (! isset($newData['configs'][$key])) {
-                    $gatewayChanges['configs'][$key] = ['old' => $oldValue, 'new' => 'حذف شده'];
-                }
-            }
-
-            if (! empty($gatewayChanges)) {
-                $allChanges[$gateway->name] = $gatewayChanges;
-            }
-
-            // آپدیت (پورت دقیق)
-            $gateway->update([
-                'name' => $newData['name'],
-                'ordering' => $newData['ordering'],
-                'is_active' => true,
-            ]);
-
-            foreach ($newData['configs'] as $key => $value) {
-                $gateway->configs()->updateOrCreate(['key' => $key], ['value' => $value]);
-            }
+            return;
         }
 
-        // غیرفعال کردن درگاه‌هایی که در لیست نیستند
-        $deactivatedGateways = Gateway::whereNotIn('id', $active_ids)->get();
-        foreach ($deactivatedGateways as $gateway) {
-            if ($gateway->is_active) {
-                $allChanges[$gateway->name] = [
-                    'is_active' => ['old' => 'فعال', 'new' => 'غیرفعال'],
-                ];
-            }
-        }
+        // سوییچ فعال/غیرفعال مستقل است — وضعیت فعلی DB حفظ می‌شود
+        $request_gateway['is_active'] = (bool) $gateway->is_active;
 
-        Gateway::whereNotIn('id', $active_ids)->update(['is_active' => false]);
+        $changes = $this->persistGateway($gateway, $request_gateway);
+        $this->logGatewayChanges($gateway, $changes);
 
-        // لاگ کامل (پورت دقیق)
-        if (! empty($allChanges)) {
-            $adminName = auth('adminPanel')->user()->full_name ?? auth('adminPanel')->user()->name ?? 'مدیر';
-
-            $logDetails = [];
-            foreach ($allChanges as $gatewayName => $changes) {
-                $changeText = "درگاه «{$gatewayName}»: ";
-                $fieldChanges = [];
-
-                if (isset($changes['name'])) {
-                    $fieldChanges[] = "نام از «{$changes['name']['old']}» به «{$changes['name']['new']}»";
-                }
-                if (isset($changes['ordering'])) {
-                    $fieldChanges[] = "ترتیب از {$changes['ordering']['old']} به {$changes['ordering']['new']}";
-                }
-                if (isset($changes['is_active'])) {
-                    $fieldChanges[] = "وضعیت از {$changes['is_active']['old']} به {$changes['is_active']['new']}";
-                }
-                if (isset($changes['configs'])) {
-                    foreach ($changes['configs'] as $configKey => $configChange) {
-                        $configNames = [
-                            'logo' => 'لوگوی درگاه',
-                            'merchantId' => 'کد درگاه',
-                            'terminalId' => 'کد پایانه',
-                            'acceptorId' => 'کد پذیرنده',
-                            'username' => 'نام کاربری',
-                            'password' => 'رمز عبور',
-                            'key' => 'کلید',
-                            'shop_slug' => 'شناسه فروشگاه',
-                            'auth_code' => 'کد احراز هویت',
-                            'pubKey' => 'کلید عمومی',
-                        ];
-                        $configName = $configNames[$configKey] ?? $configKey;
-                        $fieldChanges[] = "{$configName} از «{$configChange['old']}» به «{$configChange['new']}»";
-                    }
-                }
-
-                $logDetails[] = $changeText.implode('، ', $fieldChanges);
-            }
-
-            $fullLogMessage = "مدیر {$adminName} تنظیمات درگاه‌های پرداخت را به‌روزرسانی کرد: ".implode('; ', $logDetails);
-
-            activity()
-                ->causedBy(auth('adminPanel')->user())
-                ->withProperties([
-                    'action' => 'تنظیمات درگاه‌های پرداخت را به‌روزرسانی کرد',
-                    'changes' => $allChanges,
-                    'ip' => request()->ip(),
-                ])
-                ->log($fullLogMessage);
-        }
-
-        // همگام‌سازی وضعیت فرم با DB
         $this->loadForm();
 
-        $this->dispatch('toast', message: 'تنظیمات درگاه‌های پرداخت ذخیره شد.', type: 'success');
+        $this->dispatch('gw-saved'); // بستن مودال کارت (Alpine)
+        $this->dispatch('toast', message: 'تنظیمات درگاه «'.$gateway->name.'» ذخیره شد.', type: 'success');
+    }
+
+    /** سوییچ فعال/غیرفعال روی کارت — ذخیره‌ی فوری */
+    public function toggleActive(int $id): void
+    {
+        auth('adminPanel')->user()?->can('settings.gateway') ?: abort(403);
+
+        $gateway = Gateway::find($id);
+
+        if (! $gateway) {
+            $this->dispatch('toast', message: 'درگاه یافت نشد.', type: 'error');
+
+            return;
+        }
+
+        $gateway->update(['is_active' => ! $gateway->is_active]);
+
+        activity()
+            ->causedBy(auth('adminPanel')->user())
+            ->withProperties([
+                'action' => $gateway->is_active ? 'فعال‌سازی درگاه پرداخت' : 'غیرفعال‌سازی درگاه پرداخت',
+                'ip' => request()->ip(),
+            ])
+            ->log('مدیر درگاه «'.$gateway->name.'» را '.($gateway->is_active ? 'فعال' : 'غیرفعال').' کرد.');
+
+        $this->loadForm();
+
+        $this->dispatch('toast', message: 'درگاه «'.$gateway->name.'» '.($gateway->is_active ? 'فعال' : 'غیرفعال').' شد.', type: 'success');
+    }
+
+    /**
+     * نوشتن نام/ترتیب/کانفیگ‌های یک درگاه + ساخت آرایه‌ی تغییرات (پورت دقیق updateGateways)
+     *
+     * @return array تغییرات برای لاگ
+     */
+    private function persistGateway(Gateway $gateway, array $request_gateway): array
+    {
+        $gatewayChanges = [];
+
+        // مقادیر قدیمی (پورت دقیق)
+        $oldData = [
+            'name' => $gateway->name,
+            'ordering' => $gateway->ordering,
+            'configs' => [],
+        ];
+
+        foreach ($gateway->configs as $config) {
+            $oldData['configs'][$config->key] = $config->value;
+        }
+
+        // مقادیر جدید — فقط فیلدهای تعریف‌شده‌ی همان درگاه
+        $newConfigs = [];
+        foreach ($this->gatewayFields($gateway->key) as $field) {
+            $newConfigs[$field['name']] = (string) ($request_gateway['configs'][$field['name']] ?? '');
+        }
+
+        $newData = [
+            'name' => (string) ($request_gateway['name'] ?? $gateway->name),
+            'ordering' => (string) ($request_gateway['ordering'] ?? '0'),
+            'configs' => $newConfigs,
+        ];
+
+        if ($oldData['name'] != $newData['name']) {
+            $gatewayChanges['name'] = ['old' => $oldData['name'], 'new' => $newData['name']];
+        }
+
+        if ($oldData['ordering'] != $newData['ordering']) {
+            $gatewayChanges['ordering'] = ['old' => $oldData['ordering'], 'new' => $newData['ordering']];
+        }
+
+        foreach ($newData['configs'] as $key => $newValue) {
+            $oldValue = $oldData['configs'][$key] ?? null;
+            if ($oldValue != $newValue) {
+                $gatewayChanges['configs'][$key] = ['old' => $oldValue, 'new' => $newValue];
+            }
+        }
+
+        foreach ($oldData['configs'] as $key => $oldValue) {
+            if (! isset($newData['configs'][$key])) {
+                $gatewayChanges['configs'][$key] = ['old' => $oldValue, 'new' => 'حذف شده'];
+            }
+        }
+
+        $gateway->update([
+            'name' => $newData['name'],
+            'ordering' => $newData['ordering'],
+        ]);
+
+        foreach ($newData['configs'] as $key => $value) {
+            $gateway->configs()->updateOrCreate(['key' => $key], ['value' => $value]);
+        }
+
+        return $gatewayChanges;
+    }
+
+    /** لاگ فعالیت تغییرات درگاه (پورت دقیق) */
+    private function logGatewayChanges(Gateway $gateway, array $changes): void
+    {
+        if (empty($changes)) {
+            return;
+        }
+
+        $adminName = auth('adminPanel')->user()->full_name ?? auth('adminPanel')->user()->name ?? 'مدیر';
+
+        $fieldChanges = [];
+
+        if (isset($changes['name'])) {
+            $fieldChanges[] = "نام از «{$changes['name']['old']}» به «{$changes['name']['new']}»";
+        }
+
+        if (isset($changes['ordering'])) {
+            $fieldChanges[] = "ترتیب از {$changes['ordering']['old']} به {$changes['ordering']['new']}";
+        }
+
+        foreach ($changes['configs'] ?? [] as $configKey => $configChange) {
+            $configNames = [
+                'logo' => 'لوگوی درگاه',
+                'merchantId' => 'کد درگاه',
+                'terminalId' => 'کد پایانه',
+                'acceptorId' => 'کد پذیرنده',
+                'username' => 'نام کاربری',
+                'password' => 'رمز عبور',
+                'key' => 'کلید',
+                'shop_slug' => 'شناسه فروشگاه',
+                'auth_code' => 'کد احراز هویت',
+                'pubKey' => 'کلید عمومی',
+            ];
+            $configName = $configNames[$configKey] ?? $configKey;
+            $fieldChanges[] = "{$configName} از «{$configChange['old']}» به «{$configChange['new']}»";
+        }
+
+        activity()
+            ->causedBy(auth('adminPanel')->user())
+            ->withProperties([
+                'action' => 'تنظیمات درگاه پرداخت را به‌روزرسانی کرد',
+                'changes' => [$gateway->name => $changes],
+                'ip' => request()->ip(),
+            ])
+            ->log("مدیر {$adminName} تنظیمات درگاه «{$gateway->name}» را به‌روزرسانی کرد: ".implode('، ', $fieldChanges));
     }
 
     public function render()

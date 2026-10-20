@@ -940,11 +940,11 @@ return [
                             'icon' => 'settings',
                         ],
                         [
-                            'label' => 'لاگ سیستم',
+                            'label' => 'لاگ های سیستم',
                             'route' => 'np.logs.index',
                             'permission' => null,
                             'icon' => 'scroll-text',
-                            'external' => true,
+                            // فاز ۲۰: دیگر تب جدید باز نمی‌شود — صفحه‌ی داخلی با دانلود/پاک‌سازی لاگ
                         ],
                         [
                             'label' => 'تنظیمات Robots',

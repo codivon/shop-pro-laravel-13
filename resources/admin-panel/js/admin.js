@@ -113,11 +113,32 @@ window.apRoundPrice = apRoundPrice;
  | جستجوی منو (سایدبار)
  ------------------------------------------------------------------ */
 window.apMenuSearch = {
-    norm(s) { return (s || '').replace(/\u200c/g, ' ').toLowerCase().trim(); },
+    /* فاز ۲۰ — نرمال‌سازی کامل‌تر: ی/ک عربی، همزه/آ، ة، ارقام فارسی/عربی و فاصله‌ها */
+    norm(s) {
+        return (s || '')
+            .replace(/\u200c/g, ' ')
+            .replace(/ي/g, 'ی')
+            .replace(/ك/g, 'ک')
+            .replace(/[أإآٱ]/g, 'ا')
+            .replace(/ة/g, 'ه')
+            .replace(/ؤ/g, 'و')
+            .replace(/ئ/g, 'ی')
+            .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+            .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+            .replace(/\s+/g, ' ')
+            .toLowerCase()
+            .trim();
+    },
     has(text, q) {
         const query = this.norm(q);
         if (!query) return true;
         return this.norm(text).includes(query);
+    },
+    /* فاز ۲۰ — هر آیتمِ منو جداگانه چک می‌شود تا یک منو، منوهای بی‌ربطِ هم‌گروه را هم نیاورد */
+    hasArray(texts, q) {
+        const query = this.norm(q);
+        if (!query) return true;
+        return (texts || []).some((t) => this.norm(t).includes(query));
     },
 };
 

@@ -63,7 +63,15 @@ class BackupIndex extends Component
         return $this->service->incomingFiles();
     }
 
-    /** لیست بکاپ‌ها (نام فایل، تاریخ، اندازه) */
+    /**
+     * لیست بکاپ‌ها (نام فایل، تاریخ، اندازه)
+     *
+     * فاز ۲۰ — رفع باگ 404 دانلود/حذف: برای فایل‌های ریشه‌ی دیسک، strrpos('/') مقدار
+     * false برمی‌گرداند و false+1=1 می‌شود؛ یعنی substr اولین حرف نام فایل را حذف می‌کرد
+     * («backup-….zip» → «ackup-….zip») و چون چنین فایلی وجود نداشت، exists() شکست می‌خورد
+     * و abort(404) رخ می‌داد. حالا از basename() استفاده می‌شود و فایل‌های پوشه‌ی
+     * incoming (ورودی‌های بازیابی — نه بکاپ ساخته‌شده) از فهرست حذف شده‌اند.
+     */
     public function getBackupsProperty()
     {
         $files = Storage::disk('backup')->allFiles();
@@ -75,10 +83,15 @@ class BackupIndex extends Component
                 continue;
             }
 
+            // پوشه‌ی incoming فقط ورودی بازیابی است — در فهرست «بکاپ‌های ساخته‌شده» نمی‌آید
+            if (str_starts_with($file, 'incoming/')) {
+                continue;
+            }
+
             $backups[] = [
                 'path' => $file,
                 'date' => Storage::disk('backup')->lastModified($file),
-                'name' => substr($file, strrpos($file, '/') + 1),
+                'name' => basename($file),
                 'size' => number_format(Storage::disk('backup')->size($file) / 1048576, 2).' mb',
             ];
         }
@@ -215,17 +228,46 @@ class BackupIndex extends Component
 
     /* ---------------- دانلود / حذف (پورت ۱:۱ قدیمی) ---------------- */
 
+    /**
+     * فاز ۲۰ — رفع 404: مسیر واقعی فایل بر اساس نام (basename) در کل دیسک resolve
+     * می‌شود (بکاپ‌ها ممکن است در ریشه یا زیرپوشه باشند)؛ سپس BinaryFileResponse
+     * (پشتیبانی داخلی Livewire 4 برای دانلود از اکشن) برگردانده می‌شود.
+     */
     public function download(string $backup): mixed
     {
         auth('adminPanel')->user()?->can('backups.download') ?: abort(403);
 
-        $filename = basename($backup);
+        $path = $this->resolveBackupPath($backup);
 
-        if (!Storage::disk('backup')->exists($filename)) {
+        if ($path === null) {
             abort(404);
         }
 
-        return Storage::disk('backup')->download($filename);
+        return Storage::disk('backup')->download($path, basename($backup));
+    }
+
+    /** یافتن مسیر واقعی یک بکاپ فقط با نام فایل (ضد مسیردهی — basename) */
+    private function resolveBackupPath(string $backup): ?string
+    {
+        $filename = basename($backup);
+
+        if ($filename === '' || $filename === '.' || $filename === '..') {
+            return null;
+        }
+
+        // ۱) ریشه‌ی دیسک (محل پیش‌فرض SiteBackupService)
+        if (Storage::disk('backup')->exists($filename)) {
+            return $filename;
+        }
+
+        // ۲) جستجو در کل دیسک بر اساس basename
+        foreach (Storage::disk('backup')->allFiles() as $file) {
+            if (basename($file) === $filename) {
+                return $file;
+            }
+        }
+
+        return null;
     }
 
     public function confirmDelete(string $backup): void
@@ -246,13 +288,16 @@ class BackupIndex extends Component
             return;
         }
 
-        $filename = basename($backup);
+        // فاز ۲۰ — رفع 404 حذف: resolve مسیر واقعی با basename (مثل download)
+        $path = $this->resolveBackupPath($backup);
 
-        if (!Storage::disk('backup')->exists($filename)) {
-            abort(404);
+        if ($path === null) {
+            $this->dispatch('toast', message: 'فایل پشتیبان یافت نشد؛ ممکن است قبلاً حذف شده باشد.', type: 'error');
+
+            return;
         }
 
-        Storage::disk('backup')->delete($filename);
+        Storage::disk('backup')->delete($path);
 
         $this->dispatch('toast', message: 'فایل پشتیبان با موفقیت حذف شد.', type: 'success');
     }

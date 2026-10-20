@@ -29,7 +29,11 @@
 <aside
     class="fixed inset-y-0 right-0 z-50 flex w-[17rem] flex-col border-l border-line bg-surface transition-transform duration-300 lg:translate-x-0
            dark:border-night-line dark:bg-night-2"
-    x-data="apSidebar"
+    {{-- فاز ۲۰ — رفع «در موبایل سایدبار باز نمی‌شود»: این aside قبلاً x-data="apSidebar"
+         خودش را داشت؛ یعنی دو اسکوپ جدا وجود داشت (wrapper در layout + اینجا). همبرگر
+         موبایل، openِ wrapper را true می‌کرد اما openِ همین aside همچنان false می‌ماند و
+         منو با translate-x-full بیرون صفحه می‌ماند. حالا بدون x-data، از اسکوپِ wrapper
+         (layout.blade.php) ارث‌بری می‌شود — همبرگر/پوشش/دکمه بستن همه یک state دارند. --}}
     x-bind:class="open ? 'translate-x-0' : 'translate-x-full'"
     aria-label="منوی اصلی پنل مدیریت"
 >
@@ -76,12 +80,17 @@
 
                 if ($visibleItems->isEmpty()) continue;
 
-                $groupText = $group['title'] . ' ' . $visibleItems->map(function ($i) {
-                    return $i['label'] . ' ' . collect($i['children'] ?? [])->pluck('label')->implode(' ');
-                })->implode(' ');
+                /*
+                | فاز ۲۰ — جستجوی دقیق منو: به‌جای متن تختِ کل گروه (که جفت‌شدن کلمات دو
+                | منوی مختلف در آن فالس‌پازیو می‌ساخت)، متنِ هر آیتم به‌صورت جداگانه
+                | چک می‌شود و فقط آیتم‌های منطبق + گروهِ دارای منطبق نمایش داده می‌شوند.
+                */
+                $groupItemTexts = $visibleItems->map(function ($i) {
+                    return $i['label'].' '.collect($i['children'] ?? [])->pluck('label')->implode(' ');
+                })->values();
             @endphp
 
-            <div x-show="search === '' || window.apMenuSearch.has({{ \Illuminate\Support\Js::from($groupText) }}, search)"
+            <div x-show="window.apMenuSearch.hasArray(@js([$group['title'], ...$groupItemTexts->all()]), search)"
                  x-transition.opacity.duration.150ms>
                 <p class="ap-menu-title">{{ $group['title'] }}</p>
 
@@ -95,7 +104,9 @@
                                     ->values();
                             @endphp
                             @if ($childItems->isNotEmpty())
-                                <li>
+                                @php $parentLabel = $item['label']; @endphp
+                                {{-- فاز ۲۰ — پدر در جستجو فقط وقتی دیده می‌شود که خودش یا یکی از فرزندانش منطبق باشد --}}
+                                <li x-show="search === '' || window.apMenuSearch.has(@js($parentLabel), search) || @js($childItems->pluck('label')->values()->all()).some((t) => window.apMenuSearch.has(t, search))">
                                     <div x-data="apMenuGroup(false)">
                                         <button type="button" class="ap-menu-link w-full" x-on:click="toggle()"
                                                 :aria-expanded="open.toString()" aria-haspopup="true">
@@ -108,15 +119,19 @@
                                                 <x-admin-panel::icon name="chevron-left" class="size-4 opacity-60" />
                                             </span>
                                         </button>
-                                        <div x-show="open" x-transition:enter="transition ease-out duration-200"
+                                        {{-- فاز ۲۰ — حین جستجو زیرمنو همیشه باز می‌ماند تا آیتم منطبق دیده شود؛ با پاک‌کردن جستجو، حالت باز/بسته‌ی قبلی بازمی‌گردد (state تغییری نکرده) --}}
+                                        <div x-show="open || search !== ''" x-transition:enter="transition ease-out duration-200"
                                              x-transition:enter-start="opacity-0 -translate-y-1"
                                              x-transition:enter-end="opacity-100 translate-y-0"
                                              x-transition:leave="transition ease-in duration-150"
                                              x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
                                             <ul class="mt-0.5 space-y-0.5 ms-4 border-s-2 border-line/70 ps-2.5 dark:border-night-line/70">
                                                 {{-- فاز ۱۹: @each اسکوپ را پاس نمی‌دهد؛ foreach + include تا $menuParamKeys به menu-item برسد --}}
+                                                {{-- فاز ۲۰ — هر فرزند فقط با لیبل خودش (یا لیبل پدر) در جستجو دیده می‌شود --}}
                                                 @foreach ($childItems as $item)
-                                                    @include('admin-panel::components.menu-item', ['item' => $item])
+                                                    <li x-show="search === '' || window.apMenuSearch.has(@js($parentLabel), search) || window.apMenuSearch.has(@js($item['label']), search)">
+                                                        @include('admin-panel::components.menu-item', ['item' => $item])
+                                                    </li>
                                                 @endforeach
                                             </ul>
                                         </div>
@@ -124,7 +139,8 @@
                                 </li>
                             @endif
                         @else
-                            <li>
+                            {{-- فاز ۲۰ — آیتم برگ فقط با لیبل خودش در جستجو دیده می‌شود --}}
+                            <li x-show="search === '' || window.apMenuSearch.has(@js($item['label']), search)">
                                 @include('admin-panel::components.menu-item', ['item' => $item])
                             </li>
                         @endif
