@@ -33,7 +33,8 @@
         <div class="grid grid-cols-1 gap-5 lg:grid-cols-4">
 
             {{-- ستون اصلی: تب‌ها --}}
-            <div class="ap-card overflow-hidden lg:col-span-3" x-data="{ tab: 'base' }">
+            {{-- فاز ۲۶ — overflow-hidden حذف شد: پنل انتخابگر دسته‌بندی را کلیپ می‌کرد --}}
+            <div class="ap-card lg:col-span-3" x-data="{ tab: 'base' }">
                 <div class="flex gap-1 overflow-x-auto border-b border-line bg-surface-2 px-2 pt-2 dark:border-night-line dark:bg-night-3/50" role="tablist">
                     <button type="button" class="ap-tab relative whitespace-nowrap" x-on:click="tab = 'base'"
                             x-bind:aria-selected="(tab === 'base').toString()" role="tab"

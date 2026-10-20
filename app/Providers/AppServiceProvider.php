@@ -43,6 +43,17 @@ class AppServiceProvider extends ServiceProvider
             \App\Http\Controllers\Install\DatabaseController::class
         );
 
+        /*
+         * فاز ۲۶ — نصب‌کننده: کنترلر «نصب کامل شد» بدون key:generate.
+         * نسخه‌ی پکیج در هر بازدید از /install/final دستور key:generate --force
+         * اجرا می‌کرد؛ APP_KEY عوض می‌شد → کوکی‌های سشن نامعتبر و هش endpoint
+         * لایووایر (وابسته به APP_KEY) با route:cache ناسازگار → پنل ۴۰۴ می‌شد.
+         */
+        $this->app->bind(
+            \RachidLaasri\LaravelInstaller\Controllers\FinalController::class,
+            \App\Http\Controllers\Install\FinalController::class
+        );
+
         // نما (views) پنل مدیریت جدید — admin-panel::*
         $this->loadViewsFrom(resource_path('views/admin-panel'), 'admin-panel');
 

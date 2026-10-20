@@ -238,6 +238,14 @@ trait InteractsWithPackages
                 $licenseKey = $purchase['license_key'] ?? null;
             }
 
+            /*
+             * فاز ۲۶ — درخواست کاربر: از لحظه‌ی درخواست نصب تا نتیجه (نصب/خطا)،
+             * پکیج باید «در حال نصب» نمایش داده شود (نه «در صف»). markPending رکورد
+             * را از همین لحظه در وضعیت updating می‌گذارد تا کارت و مودال پیشرفت
+             * فوراً وضعیت درست را نشان دهند.
+             */
+            InstalledModule::markPending($slug, null, $version, $licenseKey);
+
             InstallPackageJob::dispatch(
                 $slug,
                 $licenseKey,
@@ -246,7 +254,7 @@ trait InteractsWithPackages
                 null  // downloadToken از داخل job گرفته می‌شود
             );
 
-            $this->dispatch('toast', message: 'پکیج در صف نصب قرار گرفت.', type: 'success');
+            $this->dispatch('toast', message: 'نصب پکیج آغاز شد — تا پایان، وضعیت «در حال نصب» نمایش داده می‌شود.', type: 'success');
             $this->afterInstallQueued($slug);
         } catch (\Exception $e) {
             $this->dispatch('toast', message: $e->getMessage(), type: 'error');
@@ -331,7 +339,7 @@ trait InteractsWithPackages
             'had_license' => !empty($subscription['license_key']),
         ]);
 
-        $this->dispatch('toast', message: 'پکیج در صف نصب قرار گرفت.', type: 'success');
+        $this->dispatch('toast', message: 'نصب پکیج آغاز شد — تا پایان، وضعیت «در حال نصب» نمایش داده می‌شود.', type: 'success');
         $this->afterInstallQueued($slug);
     }
 
@@ -364,6 +372,8 @@ trait InteractsWithPackages
             return;
         }
 
+        InstalledModule::markPending($slug, $purchase->package_name, null, $purchase->license_key);
+
         InstallPackageJob::dispatch(
             $slug,
             $purchase->license_key,
@@ -377,18 +387,28 @@ trait InteractsWithPackages
             'purchase_id' => $purchase->id,
         ]);
 
-        $this->dispatch('toast', message: 'پکیج در صف نصب قرار گرفت.', type: 'success');
+        $this->dispatch('toast', message: 'نصب پکیج آغاز شد — تا پایان، وضعیت «در حال نصب» نمایش داده می‌شود.', type: 'success');
         $this->afterInstallQueued($slug);
     }
 
     /**
-     * هوک پس از صف‌شدن نصب — کامپوننت لیست، کارت را به حالت «در صف/در حال نصب» می‌برد
+     * هوک پس از صف‌شدن نصب — کامپوننت لیست، مودال پیشرفت را باز می‌کند
      */
     protected function afterInstallQueued(string $slug): void
     {
         if (method_exists($this, 'refreshAfterInstall')) {
             $this->refreshAfterInstall($slug);
         }
+    }
+
+    /**
+     * فاز ۲۶ — آپدیت ماژول هم مثل نصب: از همین لحظه «در حال نصب» نمایش داده شود
+     */
+    protected function markUpdatingBeforeDispatch(string $slug, ?string $version = null): void
+    {
+        $module = InstalledModule::where('slug', $slug)->first();
+
+        InstalledModule::markPending($slug, $module->name ?? null, $version ?? $module->version ?? null, $module->license_key ?? null);
     }
 
     /**

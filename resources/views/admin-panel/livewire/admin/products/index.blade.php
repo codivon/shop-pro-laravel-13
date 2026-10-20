@@ -21,7 +21,9 @@
     </div>
 
     {{-- کارت فیلترها — بازطراحی مدرن (فاز ۲۱) --}}
-    <div class="ap-card overflow-hidden" x-data="{ open: false }">
+    {{-- فاز ۲۶ — overflow-hidden حذف شد: پنل بازشوی انتخابگر دسته‌بندی (absolute) را
+         کلیپ می‌کرد و منوی دسته‌بندی‌ها هرگز دیده نمی‌شد --}}
+    <div class="ap-card" x-data="{ open: false }">
 
         {{-- نوار اصلی (همیشه دیده می‌شود) --}}
         <div class="flex flex-wrap items-center gap-2.5 p-4 sm:p-5">

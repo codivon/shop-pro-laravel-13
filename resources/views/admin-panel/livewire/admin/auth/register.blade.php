@@ -66,8 +66,10 @@
                     <label for="username" class="mb-1.5 block text-[13px] font-semibold">نام کاربری</label>
                     <div class="relative">
                         <x-admin-panel::icon name="users" class="pointer-events-none absolute inset-y-0 end-3.5 my-auto size-4.5 text-ink-3" />
+                        {{-- فاز ۲۶ — dir=ltr روی خودِ اینپوت است؛ padding باید فیزیکی (pl) باشد وگرنه
+                             متن تایپ‌شده زیر آیکونِ سمت چپ می‌رود --}}
                         <input id="username" type="text" wire:model.blur="username" dir="ltr" autocomplete="username"
-                               placeholder="admin" class="ap-input pe-10 text-start {{ $errors->has('username') ? '!border-red-400 focus:!ring-red-400/15' : '' }}">
+                               placeholder="admin" class="ap-input pl-10 text-start {{ $errors->has('username') ? '!border-red-400 focus:!ring-red-400/15' : '' }}">
                     </div>
                     @error('username') <p class="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                 </div>
@@ -97,10 +99,12 @@
                         <label for="password" class="mb-1.5 block text-[13px] font-semibold">گذرواژه</label>
                         <div class="relative">
                             <x-admin-panel::icon name="key-round" class="pointer-events-none absolute inset-y-0 end-3.5 my-auto size-4.5 text-ink-3" />
+                            {{-- فاز ۲۶ — ps-11 برای دکمه‌ی چشم (سمت شروع/راست) + pe-10 برای آیکون کلید (سمت پایان/چپ)
+                                 تا متن تایپ‌شده هرگز زیر آیکون‌ها نرود --}}
                             <input id="password" x-model="pw" wire:model.blur="password"
                                    :type="show1 ? 'text' : 'password'" autocomplete="new-password"
                                    placeholder="حداقل ۸ کاراکتر"
-                                   class="ap-input pe-16 {{ $errors->has('password') ? '!border-red-400 focus:!ring-red-400/15' : '' }}">
+                                   class="ap-input ps-11 pe-10 {{ $errors->has('password') ? '!border-red-400 focus:!ring-red-400/15' : '' }}">
                             <button type="button" x-on:click="show1 = !show1" aria-label="نمایش گذرواژه"
                                     class="absolute inset-y-0 start-2.5 my-auto flex size-8 items-center justify-center rounded-lg text-ink-3 transition-colors hover:text-brand-600 dark:hover:text-brand-400">
                                 <span x-show="!show1"><x-admin-panel::icon name="eye" class="size-4" /></span>
@@ -125,7 +129,7 @@
                             <input id="password_confirmation" x-model="pw2" wire:model.blur="password_confirmation"
                                    :type="show2 ? 'text' : 'password'" autocomplete="new-password"
                                    placeholder="تکرار گذرواژه"
-                                   class="ap-input pe-16 {{ $errors->has('password_confirmation') ? '!border-red-400 focus:!ring-red-400/15' : '' }}">
+                                   class="ap-input ps-11 pe-10 {{ $errors->has('password_confirmation') ? '!border-red-400 focus:!ring-red-400/15' : '' }}">
                             <button type="button" x-on:click="show2 = !show2" aria-label="نمایش گذرواژه"
                                     class="absolute inset-y-0 start-2.5 my-auto flex size-8 items-center justify-center rounded-lg text-ink-3 transition-colors hover:text-brand-600 dark:hover:text-brand-400">
                                 <span x-show="!show2"><x-admin-panel::icon name="eye" class="size-4" /></span>

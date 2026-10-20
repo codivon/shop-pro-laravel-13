@@ -267,8 +267,10 @@ window.ApEditor = {
                 /* مدیا و سایر ابزارها */
                 MediaEmbed, AutoMediaEmbed, PasteFromOffice, FindAndReplace, SourceEditing, ShowBlocks,
                 SpecialCharacters, SpecialCharactersEssentials, HtmlEmbed, WordCount, Fullscreen, Emoji,
-                /* فاز ۲۳ — ابزارهای بیشتر: درج تصویر از URL، زبان بخش متن (MultiLevelList تجاری است و در بیلد GPL نیست) */
-                ImageInsert, ImageInsertViaUrl, TextPartLanguage,
+                /* فاز ۲۳ — ابزارهای بیشتر: درج تصویر از URL
+                   (فاز ۲۶: TextPartLanguage حذف شد — به درخواست کاربر)
+                   (MultiLevelList تجاری است و در بیلد GPL نیست) */
+                ImageInsert, ImageInsertViaUrl,
                 /* فاز ۱۲ — تکمیل شکاف قابلیت‌ها: نشانک/انتخاب همه/استایل‌های آماده/تبدیل خودکار نویسه‌ها/خودفرمت‌کن + GHS برای ذخیره کلاس استایل‌ها */
                 SelectAll, Style, TextTransformation, Autoformat, GeneralHtmlSupport,
             } = await import('ckeditor5');
@@ -290,7 +292,7 @@ window.ApEditor = {
                     Image, ImageToolbar, ImageUpload, ImageInsert, ImageInsertViaUrl, ImageResize, AutoImage, ImageStyle, ImageCaption, PictureEditing,
                     MediaEmbed, AutoMediaEmbed, PasteFromOffice, FindAndReplace, SourceEditing, ShowBlocks,
                     SpecialCharacters, SpecialCharactersEssentials, HtmlEmbed, WordCount, Fullscreen, Emoji,
-                    TextPartLanguage, SelectAll, Style, TextTransformation, Autoformat, GeneralHtmlSupport,
+                    SelectAll, Style, TextTransformation, Autoformat, GeneralHtmlSupport,
                 ],
                 toolbar: {
                     /* فاز ۲۱ — همه آیتم‌ها همیشه نمایش داده می‌شوند (چند ردیفه مثل پنل قدیمی)،
@@ -298,7 +300,7 @@ window.ApEditor = {
                     items: [
                         'heading', 'style', '|',
                         'bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript', 'code', '|',
-                        'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor', 'highlight', 'textPartLanguage', '|',
+                        'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor', 'highlight', '|',
                         'link', 'bookmark', '|',
                         'bulletedList', 'numberedList', 'todoList', 'outdent', 'indent', '|',
                         'alignment', '|',

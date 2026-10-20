@@ -116,7 +116,8 @@
         @endif
 
         {{-- تب‌ها --}}
-        <div class="ap-card overflow-hidden">
+        {{-- فاز ۲۶ — overflow-hidden حذف شد: پنل انتخابگر دسته‌بندی را کلیپ می‌کرد --}}
+        <div class="ap-card">
             <div class="flex gap-1 overflow-x-auto border-b border-line bg-surface-2 px-2 pt-2 dark:border-night-line dark:bg-night-3/50" role="tablist">
                 @foreach ([
                     'basics' => ['info', 'اطلاعات کلی'],

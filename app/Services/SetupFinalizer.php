@@ -31,6 +31,64 @@ use Illuminate\Support\Facades\Http;
  */
 class SetupFinalizer
 {
+    /**
+     * فاز ۲۶ — تأیید نهایی شورت‌کات استایل فرانت در public.
+     *
+     * برای هر لینک تعریف‌شده در config('front.links') و config('filesystems.links')
+     * بررسی می‌شود که در public واقعاً موجود و سالم باشد؛ در غیر این صورت
+     * پوشه‌ی والد ساخته و محتوا مستقیم کپی می‌شود. خطاها گزارش می‌شوند اما
+     * هرگز زنجیره‌ی نصب را نمی‌شکنند.
+     */
+    protected function ensureThemeLinks(): void
+    {
+        $links = [];
+
+        foreach ([(array) config('filesystems.links'), (array) config('front.links')] as $group) {
+            foreach ($group as $link => $target) {
+                $links[(string) $link] = (string) $target;
+            }
+        }
+
+        foreach ($links as $link => $target) {
+            try {
+                // symlink سالم؟ کاری نکن
+                if (is_link($link) && file_exists($link)) {
+                    continue;
+                }
+
+                // symlink شکسته = جا باز شود
+                if (is_link($link)) {
+                    @unlink($link);
+                }
+
+                // پوشه‌ی واقعیِ کپی‌شده که محتوا دارد؟ کاری نکن
+                if (is_dir($link)) {
+                    $entries = @scandir($link);
+
+                    if (is_array($entries) && count($entries) > 2) {
+                        continue;
+                    }
+                }
+
+                // والد + خود مسیر تضمین‌شده ساخته شوند (علت اصلی شکست بی‌صدای قبلی)
+                if (!is_dir(dirname($link))) {
+                    @mkdir(dirname($link), 0755, true);
+                }
+
+                if (!is_dir($link)) {
+                    @mkdir($link, 0755, true);
+                }
+
+                if (is_dir($target)) {
+                    \Illuminate\Support\Facades\File::copyDirectory($target, $link);
+                    \Illuminate\Support\Facades\Log::info('SetupFinalizer: theme assets copied to public', ['link' => $link]);
+                }
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+    }
+
     public function finalize(string $adminPrefix): void
     {
         /*
@@ -44,7 +102,11 @@ class SetupFinalizer
         change_env('ADMIN_ROUTE_PREFIX', $adminPrefix, false);
 
         // ۲) ثبت تم فعال
-        AppServiceProvider::loadTheme();
+        try {
+            AppServiceProvider::loadTheme();
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         // ۳) شورت‌کات استایل فرانت در public (symlink تم + storage)
         try {
@@ -52,6 +114,16 @@ class SetupFinalizer
         } catch (\Throwable $e) {
             report($e);
         }
+
+        /*
+         * فاز ۲۶ — گارانتی شورت‌کات استایل فرانت در public:
+         * روی برخی هاست‌های اشتراکی (symlink غیرفعال، proc_open بسته، نبود پوشه‌ی والد)
+         * ساخت لینک شکست می‌خورد و کاربر فرانت را بدون استایل می‌دید. اینجا بعد از
+         * shop:link «تأیید» می‌کنیم که همه‌ی لینک‌های تم واقعاً در public موجودند؛
+         * اگر نبودند، محتوا مستقیم کپی می‌شود (همان کاری که پنل قدیمی با
+         * configApplication() → shop:link می‌کرد، ولی با گارانتی).
+         */
+        $this->ensureThemeLinks();
 
         // ۴) پیکربندی اولیه تم
         try {

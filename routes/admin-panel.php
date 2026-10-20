@@ -138,7 +138,6 @@ use App\Livewire\Admin\System\Developer;
 use App\Livewire\Admin\System\BaleSettings;
 use App\Livewire\Admin\Packages\PackageIndex;
 use App\Livewire\Admin\Packages\PackageInstalled;
-use App\Livewire\Admin\Packages\PackageShow;
 use App\Livewire\Admin\Packages\PackagePaymentCallback;
 use App\Livewire\Admin\Themes\ThemeIndex;
 use App\Livewire\Admin\Themes\ThemeSettings;
@@ -574,7 +573,7 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
         */
         Route::get('packages/payment/callback', PackagePaymentCallback::class)->name('packages.payment.callback');
         Route::get('packages/installed', PackageInstalled::class)->name('packages.installed');
-        Route::get('packages/{slug}', PackageShow::class)->name('packages.show');
+        // فاز ۲۶ — تک‌صفحه packages/{slug} حذف شد؛ جزئیات پکیج در مودال لیست باز می‌شود (مثل پنل قدیمی)
         Route::get('packages', PackageIndex::class)->name('packages.index');
         Route::get('themes/settings', ThemeSettings::class)->name('themes.settings');
         Route::get('themes', ThemeIndex::class)->name('themes.index');

@@ -166,9 +166,15 @@ return [
     | to the server if the browser has a HTTPS connection. This will keep
     | the cookie from being sent to you if it can not be done securely.
     |
+    | فاز ۲۶ — قبلاً «true» هاردکد بود؛ روی هاست‌هایی که با HTTP سرو می‌کنند
+    | مرورگر هرگز کوکی سشن را ارسال نمی‌کرد → ورود/ثبت‌نام مدیر و همه‌ی
+    | حالت‌های Livewire از بین می‌رفت (هر درخواست = سشن جدید خالی).
+    | حالا از .env خوانده می‌شود: روی سایت‌های HTTPS مقدار
+    | SESSION_SECURE_COOKIE=true را در .env بگذارید.
+    |
     */
 
-    'secure' => true,
+    'secure' => env('SESSION_SECURE_COOKIE', false),
 
     /*
     |--------------------------------------------------------------------------

@@ -17,7 +17,7 @@
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <a href="{{ route('np.packages.installed') }}" class="ap-btn-outline !py-2">
-                    <x-admin-panel::icon name="layout-grid" class="size-4" />
+                    <x-admin-panel::icon name="layers" class="size-4" />
                     ماژول‌های نصب‌شده
                 </a>
                 <button type="button" wire:click="checkUpdates" wire:loading.attr="disabled" wire:target="checkUpdates"
@@ -235,18 +235,13 @@
                             @endif
                         </div>
 
-                        {{-- مُهر نصب‌شده / در حال نصب --}}
+                        {{-- مُهر نصب‌شده / در حال نصب (فاز ۲۶: «در صف» حذف شد — تا نتیجه، وضعیت «در حال نصب» است) --}}
                         @if ($pendingState)
                             <div class="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-slate-950/60 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm">
-                                @if ($pendingState === 'running')
-                                    <svg class="size-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
-                                    </svg>
-                                    در حال نصب...
-                                @else
-                                    <x-admin-panel::icon name="clock" class="size-3.5" />
-                                    در صف نصب
-                                @endif
+                                <svg class="size-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
+                                </svg>
+                                در حال نصب...
                             </div>
                         @elseif ($isInstalled)
                             <div class="absolute end-3 bottom-3 flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-bold text-white shadow">
@@ -255,12 +250,12 @@
                             </div>
                         @endif
 
-                        {{-- اورلی مشاهده جزئیات --}}
-                        <a href="{{ route('np.packages.show', ['slug' => $slug]) }}" wire:navigate
-                           class="absolute inset-0 flex items-center justify-center gap-2 bg-slate-950/55 text-[13px] font-bold text-white opacity-0 backdrop-blur-[2px] transition-opacity duration-200 group-hover:opacity-100">
+                        {{-- اورلی مشاهده جزئیات — فاز ۲۶: مودال جزئیات مثل پنل قدیمی (تک‌صفحه حذف شد) --}}
+                        <button type="button" wire:click="openDetail('{{ $slug }}')"
+                                class="absolute inset-0 flex items-center justify-center gap-2 bg-slate-950/55 text-[13px] font-bold text-white opacity-0 backdrop-blur-[2px] transition-opacity duration-200 group-hover:opacity-100">
                             <x-admin-panel::icon name="eye" class="size-4.5" />
                             مشاهده جزئیات
-                        </a>
+                        </button>
                     </div>
 
                     {{-- بدنه کارت --}}
@@ -312,21 +307,18 @@
                             </div>
 
                             <div class="flex shrink-0 items-center gap-1.5">
-                                @if ($pendingState === 'queued')
-                                    <button type="button" disabled class="ap-btn !px-3 !py-1.5 !text-xs opacity-70">
-                                        <x-admin-panel::icon name="clock" class="size-3.5" /> در صف نصب
-                                    </button>
-                                @elseif ($pendingState === 'running')
-                                    <button type="button" disabled class="ap-btn !px-3 !py-1.5 !text-xs opacity-70">
+                                @if ($pendingState)
+                                    {{-- فاز ۲۶: تا مشخص شدن نتیجه‌ی صف، پکیج «در حال نصب» است --}}
+                                    <button type="button" wire:click="openDetail('{{ $slug }}')" class="ap-btn !px-3 !py-1.5 !text-xs opacity-80">
                                         <svg class="size-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
                                             <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
                                         </svg>
                                         در حال نصب...
                                     </button>
                                 @elseif ($hasUpdate)
-                                    <a href="{{ route('np.packages.show', ['slug' => $slug]) }}" wire:navigate class="ap-btn-primary !px-3 !py-1.5 !text-xs">
+                                    <button type="button" wire:click="openDetail('{{ $slug }}')" class="ap-btn-primary !px-3 !py-1.5 !text-xs">
                                         <x-admin-panel::icon name="arrow-up" class="size-3.5" /> آپدیت
-                                    </a>
+                                    </button>
                                 @elseif ($isInstalled)
                                     <span class="flex items-center gap-1 text-[11px] font-bold text-emerald-600">
                                         <x-admin-panel::icon name="check" class="size-3.5" /> به‌روز
@@ -658,6 +650,589 @@
 
                 <div class="mt-5">
                     <button type="button" x-on:click="paymentModal=false" class="ap-btn-primary w-full">بستن</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- ====================== --}}
+    {{-- فاز ۲۶ — مودال جزئیات پکیج (پورت package-detail-modal + modal.js قدیمی) --}}
+    {{-- ====================== --}}
+    @if ($detailOpen)
+        <div class="fixed inset-0 z-[90] flex items-center justify-center p-4"
+             x-on:keydown.escape.window="closeDetail()" role="dialog" aria-modal="true" aria-label="جزئیات پکیج">
+            <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" wire:click="closeDetail" aria-hidden="true"></div>
+
+            <div class="relative flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-pop dark:border-night-line dark:bg-night-2">
+
+                {{-- هدر --}}
+                <div class="flex items-center justify-between gap-3 border-b border-line px-5 py-4 dark:border-night-line">
+                    <h3 class="flex min-w-0 items-center gap-2 text-sm font-bold">
+                        <span class="flex size-8 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
+                            <x-admin-panel::icon name="package" class="size-4" />
+                        </span>
+                        <span class="truncate">
+                            {{ $detail['name'] ?? ($detailLoading ? 'در حال دریافت اطلاعات…' : 'جزئیات پکیج') }}
+                        </span>
+                    </h3>
+                    <button type="button" wire:click="closeDetail" class="ap-btn-ghost !p-2" title="بستن (Esc)">
+                        <x-admin-panel::icon name="x" class="size-4.5" />
+                    </button>
+                </div>
+
+                {{-- بدنه --}}
+                <div class="flex-1 overflow-y-auto p-5">
+                    @if ($detailLoading)
+                        <div class="flex flex-col items-center justify-center gap-3 py-14">
+                            <svg class="size-8 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
+                            </svg>
+                            <p class="text-[13px] font-semibold text-ink-2 dark:text-night-ink-2">در حال دریافت اطلاعات پکیج…</p>
+                        </div>
+                    @elseif ($detailError)
+                        <div class="flex flex-col items-center gap-3 py-10 text-center">
+                            <span class="flex size-12 items-center justify-center rounded-2xl bg-red-50 text-red-500 dark:bg-red-500/10 dark:text-red-400">
+                                <x-admin-panel::icon name="triangle-alert" class="size-6" />
+                            </span>
+                            <p class="text-sm font-bold">خطا در دریافت اطلاعات پکیج</p>
+                            <code class="ltr max-w-lg overflow-auto whitespace-pre-wrap rounded-lg bg-red-50 p-2 text-[11px] text-red-700 dark:bg-red-500/10 dark:text-red-300">{{ $detailError }}</code>
+                            <button type="button" wire:click="closeDetail" class="ap-btn-outline mt-1 !py-2">بستن</button>
+                        </div>
+                    @elseif ($detail)
+                        @php
+                            $dPlans = $detail['active_pricing_plans'] ?? $detail['pricing_plans'] ?? $detail['plans'] ?? [];
+                            $dInstalled = $detail['installed'] ?? null;
+                            $dImages = $detail['images'] ?? [];
+                            $dChangelog = $detail['changelog'] ?? null;
+                            $dVersions = $detail['versions'] ?? [];
+                            $dThumb = \App\Support\PackageMedia::thumbnailUrl($detail);
+                        @endphp
+
+                        {{-- هیرو --}}
+                        <div class="flex flex-wrap items-start gap-4 rounded-2xl border border-line bg-gradient-to-l from-brand-500/8 to-transparent p-4 dark:border-night-line dark:from-brand-500/8">
+                            @if ($dThumb)
+                                <img src="{{ $dThumb }}" alt="{{ $detail['name'] ?? '' }}" class="size-20 shrink-0 rounded-xl object-cover"
+                                     onerror="this.style.display='none'">
+                            @else
+                                <span class="flex size-20 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/12 dark:text-brand-400">
+                                    <x-admin-panel::icon name="package" class="size-9" />
+                                </span>
+                            @endif
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <h4 class="text-base font-extrabold">{{ $detail['name'] ?? '' }}</h4>
+                                    <span class="fa-digits rounded-lg bg-surface-2 px-2 py-0.5 text-[10px] font-bold text-ink-2 dark:bg-night-3 dark:text-night-ink-2">
+                                        v{{ $detail['latestVersion'] ?? '—' }}
+                                    </span>
+                                    @if (!empty($detail['is_free']))
+                                        <span class="ap-badge bg-emerald-500 text-white">رایگان</span>
+                                    @else
+                                        <span class="ap-badge bg-amber-500 text-white">پولی</span>
+                                    @endif
+                                    @if (!empty($detail['subscription']['is_free_with_subscription']))
+                                        <span class="ap-badge bg-violet-500 text-white">
+                                            <x-admin-panel::icon name="award" class="size-3" /> رایگان با اشتراک
+                                        </span>
+                                    @endif
+                                    @if ($dInstalled && $dInstalled['status'] === 'installed')
+                                        <span class="ap-badge bg-brand-600 text-white">نصب‌شده v{{ $dInstalled['version'] }}</span>
+                                    @endif
+                                </div>
+
+                                <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+                                    @if (!empty($detail['author']))
+                                        <span class="ap-badge bg-surface-2 text-ink-2 dark:bg-night-3 dark:text-night-ink-2">
+                                            <x-admin-panel::icon name="user" class="size-3" /> {{ $detail['author'] }}
+                                        </span>
+                                    @endif
+                                    @if (!empty($detail['category']))
+                                        <span class="ap-badge bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-400">
+                                            <x-admin-panel::icon name="tag" class="size-3" /> {{ $detail['category'] }}
+                                        </span>
+                                    @endif
+                                    @if (!empty($detail['downloads']))
+                                        <span class="ap-badge bg-surface-2 text-ink-2 dark:bg-night-3 dark:text-night-ink-2">
+                                            <x-admin-panel::icon name="download" class="size-3" />
+                                            <span class="fa-digits">{{ number_format($detail['downloads']) }}</span> دانلود
+                                        </span>
+                                    @endif
+                                </div>
+
+                                @if (!empty($detail['short_description']))
+                                    <div class="ap-rich mt-2.5 text-[13px] leading-6 text-ink-2 dark:text-night-ink-2">
+                                        {!! sanitize_rich_text($detail['short_description']) !!}
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- هشدار لایسنس منقضی (پورت confirm-license-warning) --}}
+                        @if ($detailWarning)
+                            <div class="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-[13px] text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
+                                <x-admin-panel::icon name="triangle-alert" class="mt-0.5 size-4 shrink-0" />
+                                <span>{{ $detailWarning }}</span>
+                            </div>
+                        @endif
+
+                        {{-- وضعیت لایسنس فعال (پورت modal-license-section) --}}
+                        @if ($detailMode === 'license' && !$dInstalled)
+                            <div class="mt-4 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/25 dark:bg-emerald-500/10">
+                                <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white">
+                                    <x-admin-panel::icon name="shield" class="size-4.5" />
+                                </span>
+                                <div class="text-[13px]">
+                                    <p class="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400">
+                                        <x-admin-panel::icon name="check-circle" class="size-4" />
+                                        قبلاً خریداری شده — بدون پرداخت نصب می‌شود
+                                    </p>
+                                    <p class="mt-1 text-emerald-700/80 dark:text-emerald-400/80">لایسنس شما برای این پکیج فعال است</p>
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- وضعیت اشتراک فعال (پورت modal-subscription-section) --}}
+                        @if ($detailMode === 'subscription' && !$dInstalled)
+                            <div class="mt-4 flex items-start gap-3 rounded-xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-500/25 dark:bg-violet-500/10">
+                                <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-violet-500 text-white">
+                                    <x-admin-panel::icon name="award" class="size-4.5" />
+                                </span>
+                                <div class="text-[13px]">
+                                    <p class="flex items-center gap-1.5 font-bold text-violet-700 dark:text-violet-400">
+                                        <x-admin-panel::icon name="check-circle" class="size-4" />
+                                        این پکیج با اشتراک شما رایگان است
+                                    </p>
+                                    <p class="mt-1 text-violet-700/80 dark:text-violet-400/80">
+                                        طرح: <strong>{{ $detail['subscription']['plan_name'] ?? 'اشتراک' }}</strong>
+                                        @if (!empty($detail['subscription']['days_remaining']))
+                                            — <span class="fa-digits">{{ $detail['subscription']['days_remaining'] }}</span> روز باقی‌مانده
+                                        @endif
+                                    </p>
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- گالری --}}
+                        @if (count($dImages))
+                            <div class="mt-5">
+                                <h5 class="mb-2 flex items-center gap-1.5 text-[13px] font-bold">
+                                    <x-admin-panel::icon name="images" class="size-4 text-brand-600 dark:text-brand-400" />
+                                    گالری تصاویر <span class="fa-digits text-ink-3">({{ count($dImages) }})</span>
+                                </h5>
+                                <div class="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                                    @foreach ($dImages as $img)
+                                        @php $url = is_array($img) ? ($img['url'] ?? $img['path'] ?? '') : $img; @endphp
+                                        @if ($url)
+                                            <a href="{{ $url }}" target="_blank" rel="noopener" class="block aspect-video overflow-hidden rounded-xl border border-line bg-surface-2 dark:border-night-line dark:bg-night-3">
+                                                <img src="{{ $url }}" alt="" loading="lazy" class="size-full object-cover transition-transform hover:scale-105">
+                                            </a>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- توضیحات کامل --}}
+                        @if (!empty($detail['long_description']) || !empty($detail['description']))
+                            <div class="mt-5">
+                                <h5 class="mb-2 flex items-center gap-1.5 text-[13px] font-bold">
+                                    <x-admin-panel::icon name="file-text" class="size-4 text-brand-600 dark:text-brand-400" />
+                                    توضیحات کامل
+                                </h5>
+                                <div class="ap-rich max-h-64 overflow-y-auto rounded-xl border border-line bg-surface-2/50 p-4 text-[13px] leading-7 text-ink-2 dark:border-night-line dark:bg-night-3/40 dark:text-night-ink-2">
+                                    {!! sanitize_rich_text($detail['long_description'] ?? $detail['description']) !!}
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- تغییرات نسخه آخر (پورت what_added/changed/fixed) --}}
+                        @if (!empty($dVersions[0]))
+                            @php $latestV = $dVersions[0]; @endphp
+                            @if (!empty($latestV['what_added']) || !empty($latestV['what_changed']) || !empty($latestV['what_fixed']))
+                                <div class="mt-5">
+                                    <h5 class="mb-2 flex items-center gap-1.5 text-[13px] font-bold">
+                                        <x-admin-panel::icon name="info" class="size-4 text-brand-600 dark:text-brand-400" />
+                                        تغییرات نسخه v{{ $latestV['version'] ?? '' }}
+                                    </h5>
+                                    <div class="space-y-2">
+                                        @if (!empty($latestV['what_added']))
+                                            <div class="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-[12.5px] leading-6 dark:border-emerald-500/20 dark:bg-emerald-500/8">
+                                                <strong class="text-emerald-700 dark:text-emerald-400">قابلیت‌های جدید:</strong>
+                                                <span class="text-ink-2 dark:text-night-ink-2">{!! nl2br(e($latestV['what_added'])) !!}</span>
+                                            </div>
+                                        @endif
+                                        @if (!empty($latestV['what_changed']))
+                                            <div class="rounded-xl border border-sky-200 bg-sky-50/60 p-3 text-[12.5px] leading-6 dark:border-sky-500/20 dark:bg-sky-500/8">
+                                                <strong class="text-sky-700 dark:text-sky-400">تغییرات:</strong>
+                                                <span class="text-ink-2 dark:text-night-ink-2">{!! nl2br(e($latestV['what_changed'])) !!}</span>
+                                            </div>
+                                        @endif
+                                        @if (!empty($latestV['what_fixed']))
+                                            <div class="rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-[12.5px] leading-6 dark:border-amber-500/20 dark:bg-amber-500/8">
+                                                <strong class="text-amber-700 dark:text-amber-400">رفع باگ:</strong>
+                                                <span class="text-ink-2 dark:text-night-ink-2">{!! nl2br(e($latestV['what_fixed'])) !!}</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
+                        @endif
+
+                        {{-- تاریخچه نسخه‌ها (پورت changelog) --}}
+                        @if (!empty($dChangelog))
+                            <div class="mt-5">
+                                <h5 class="mb-2 flex items-center gap-1.5 text-[13px] font-bold">
+                                    <x-admin-panel::icon name="history" class="size-4 text-brand-600 dark:text-brand-400" />
+                                    تاریخچه نسخه‌ها
+                                </h5>
+                                <ul class="max-h-44 space-y-1.5 overflow-y-auto rounded-xl border border-line bg-surface-2/50 p-3.5 text-[12.5px] leading-6 dark:border-night-line dark:bg-night-3/40">
+                                    @forelse ($dChangelog as $ver => $changes)
+                                        <li class="flex gap-2">
+                                            <strong class="fa-digits shrink-0 text-brand-600 dark:text-brand-400">v{{ $ver }}:</strong>
+                                            <span class="text-ink-2 dark:text-night-ink-2">{!! nl2br(e(is_array($changes) ? implode(' — ', $changes) : $changes)) !!}</span>
+                                        </li>
+                                    @empty
+                                        <li class="text-ink-3">—</li>
+                                    @endforelse
+                                </ul>
+                            </div>
+                        @endif
+
+                        {{-- پیش‌نیازها --}}
+                        @if (!empty($detail['requirements']))
+                            <div class="mt-5">
+                                <h5 class="mb-2 flex items-center gap-1.5 text-[13px] font-bold">
+                                    <x-admin-panel::icon name="list" class="size-4 text-brand-600 dark:text-brand-400" />
+                                    پیش‌نیازها
+                                </h5>
+                                <ul class="flex flex-wrap gap-1.5">
+                                    @foreach ($detail['requirements'] as $req => $ver)
+                                        <li class="ap-kbd">{{ $req }} ≥ {{ $ver }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        {{-- وضعیت نصب (پورت pkg-status-box) --}}
+                        @if ($dInstalled)
+                            <div class="mt-5">
+                                <h5 class="mb-2 flex items-center gap-1.5 text-[13px] font-bold">
+                                    <x-admin-panel::icon name="settings" class="size-4 text-brand-600 dark:text-brand-400" />
+                                    وضعیت نصب
+                                </h5>
+                                @if ($dInstalled['status'] === 'updating')
+                                    <div class="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3.5 dark:border-amber-500/25 dark:bg-amber-500/10">
+                                        <svg class="size-5 animate-spin text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                            <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
+                                        </svg>
+                                        <span class="text-[13px] font-bold text-amber-800 dark:text-amber-300">در حال نصب/آپدیت…</span>
+                                    </div>
+                                @elseif ($dInstalled['status'] === 'failed')
+                                    <div class="rounded-xl border border-red-200 bg-red-50 p-3.5 dark:border-red-500/25 dark:bg-red-500/10">
+                                        <p class="flex items-center gap-2 text-[13px] font-bold text-red-700 dark:text-red-400">
+                                            <x-admin-panel::icon name="triangle-alert" class="size-4" />
+                                            نصب با خطا مواجه شد
+                                        </p>
+                                        @if ($dInstalled['last_error'])
+                                            <p class="mt-1 text-[12px] leading-5 text-red-600/90 dark:text-red-300/90">{{ $dInstalled['last_error'] }}</p>
+                                        @endif
+                                    </div>
+                                @else
+                                    <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 dark:border-emerald-500/25 dark:bg-emerald-500/10">
+                                        <p class="flex items-center gap-2 text-[13px] font-bold text-emerald-700 dark:text-emerald-400">
+                                            <x-admin-panel::icon name="check-circle" class="size-4" />
+                                            نصب‌شده — نسخه <span class="fa-digits">{{ $dInstalled['version'] }}</span>
+                                            @if ($dInstalled['is_active'])
+                                                <span class="ap-badge bg-emerald-500 text-white">فعال</span>
+                                            @else
+                                                <span class="ap-badge bg-amber-400 text-amber-950">غیرفعال</span>
+                                            @endif
+                                        </p>
+                                        @if ($dInstalled['license_expires_at'])
+                                            <p class="mt-1 text-[12px] text-emerald-800/80 dark:text-emerald-300/80">
+                                                انقضای لایسنس: {{ $dInstalled['license_expires_human'] ?: $dInstalled['license_expires_at'] }}
+                                                @if ($dInstalled['is_expired']) <strong class="text-red-500">(منقضی شده)</strong> @endif
+                                            </p>
+                                        @endif
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
+
+                        {{-- پلن‌های قیمت‌گذاری (پورت modal-plans-section) --}}
+                        @if (!$dInstalled && $detailMode === 'paid' && count($dPlans) > 0)
+                            @php
+                                $dMinPrice = null;
+                                foreach ($dPlans as $p) { $fp = $this->planFinalPrice($p); $dMinPrice = $dMinPrice === null ? $fp : min($dMinPrice, $fp); }
+                            @endphp
+                            <div class="mt-5">
+                                <h5 class="mb-2 flex items-center gap-1.5 text-[13px] font-bold">
+                                    <x-admin-panel::icon name="tag" class="size-4 text-brand-600 dark:text-brand-400" />
+                                    طرح‌های قیمت‌گذاری <span class="text-[11px] font-medium text-ink-3">یک طرح انتخاب کنید</span>
+                                </h5>
+                                <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                                    @foreach ($dPlans as $plan)
+                                        @php
+                                            $fp = $this->planFinalPrice($plan);
+                                            $isCheapest = $fp === $dMinPrice;
+                                            $hasDiscount = isset($plan['discount_price']) && $plan['discount_price'] !== null && $plan['discount_price'] < ($plan['price'] ?? 0);
+                                        @endphp
+                                        <button type="button" wire:click="setDetailPlan({{ (int) $plan['id'] }})"
+                                                class="relative rounded-xl border-2 p-3.5 text-start transition-all {{ $detailPlanId === (int) $plan['id'] ? 'border-brand-500 bg-brand-50/60 dark:bg-brand-500/10' : 'border-line bg-surface hover:border-brand-300 dark:border-night-line dark:bg-night-3 dark:hover:border-brand-500/40' }}">
+                                            <span class="absolute end-3 top-3 flex size-4 items-center justify-center rounded-full border-2 {{ $detailPlanId === (int) $plan['id'] ? 'border-brand-500 bg-brand-500' : 'border-line dark:border-night-line' }}">
+                                                @if ($detailPlanId === (int) $plan['id'])
+                                                    <span class="size-1.5 rounded-full bg-white"></span>
+                                                @endif
+                                            </span>
+                                            <p class="text-[13px] font-bold">{{ $plan['name'] ?? 'پلن' }}</p>
+                                            <p class="mt-0.5 flex items-center gap-1 text-[11px] text-ink-3 dark:text-night-ink-2">
+                                                <x-admin-panel::icon name="clock" class="size-3" />
+                                                {{ $this->planDurationLabel($plan) }}
+                                            </p>
+                                            <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                                                @if (!empty($plan['is_one_time']))
+                                                    <span class="ap-badge bg-sky-50 text-sky-700 dark:bg-sky-500/12 dark:text-sky-400">یک‌بار مصرف</span>
+                                                @endif
+                                                @if ($isCheapest)
+                                                    <span class="ap-badge bg-emerald-50 text-emerald-700 dark:bg-emerald-500/12 dark:text-emerald-400">ارزان‌ترین</span>
+                                                @endif
+                                            </div>
+                                            <div class="mt-2">
+                                                @if ($fp === 0)
+                                                    <span class="text-sm font-extrabold text-emerald-600">رایگان</span>
+                                                @else
+                                                    <span class="text-sm">
+                                                        <span class="fa-digits text-ink-3 line-through dark:text-night-ink-2" @if(!$hasDiscount) hidden @endif>{{ number_format($plan['price'] ?? 0) }}</span>
+                                                        <span class="fa-digits ms-1 font-extrabold">{{ number_format($fp) }}</span>
+                                                        <span class="ms-0.5 text-[10px] text-ink-3 dark:text-night-ink-2">تومان</span>
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            @if (!empty($plan['description']))
+                                                <p class="mt-1.5 text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">{{ $plan['description'] }}</p>
+                                            @endif
+                                        </button>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- لاگ‌های اخیر (پورت pkg-logs-table) --}}
+                        @if (count($detailLogs))
+                            <div class="mt-5">
+                                <h5 class="mb-2 flex items-center gap-1.5 text-[13px] font-bold">
+                                    <x-admin-panel::icon name="list" class="size-4 text-brand-600 dark:text-brand-400" />
+                                    لاگ‌های اخیر
+                                </h5>
+                                <div class="max-h-56 overflow-y-auto rounded-xl border border-line dark:border-night-line">
+                                    <table class="w-full text-[12px]">
+                                        <thead class="sticky top-0 bg-surface-2 text-ink-3 dark:bg-night-3">
+                                            <tr>
+                                                <th class="px-3 py-2 text-start font-bold">عملیات</th>
+                                                <th class="px-3 py-2 text-start font-bold">از → به</th>
+                                                <th class="px-3 py-2 text-start font-bold">وضعیت</th>
+                                                <th class="px-3 py-2 text-start font-bold">تاریخ</th>
+                                                <th class="px-3 py-2 text-start font-bold">پیام</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-line dark:divide-night-line">
+                                            @foreach ($detailLogs as $log)
+                                                <tr>
+                                                    <td class="px-3 py-2">
+                                                        @switch($log['action'])
+                                                            @case('install') <span class="ap-badge bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-400">نصب</span> @break
+                                                            @case('update') <span class="ap-badge bg-sky-50 text-sky-700 dark:bg-sky-500/12 dark:text-sky-400">آپدیت</span> @break
+                                                            @case('uninstall') <span class="ap-badge bg-red-50 text-red-700 dark:bg-red-500/12 dark:text-red-400">حذف</span> @break
+                                                            @default <span class="ap-badge bg-surface-2 text-ink-2">{{ $log['action'] }}</span>
+                                                        @endswitch
+                                                    </td>
+                                                    <td class="fa-digits px-3 py-2 text-ink-2 dark:text-night-ink-2">{{ $log['from_version'] ?: '—' }} → {{ $log['to_version'] ?: '—' }}</td>
+                                                    <td class="px-3 py-2">
+                                                        @if ($log['status'] === 'running')
+                                                            <span class="ap-badge bg-amber-50 text-amber-700 dark:bg-amber-500/12 dark:text-amber-400"><span class="size-1.5 animate-pulse rounded-full bg-amber-500"></span> در حال اجرا</span>
+                                                        @elseif ($log['status'] === 'success')
+                                                            <span class="ap-badge bg-emerald-50 text-emerald-700 dark:bg-emerald-500/12 dark:text-emerald-400">موفق</span>
+                                                        @else
+                                                            <span class="ap-badge bg-red-50 text-red-700 dark:bg-red-500/12 dark:text-red-400">ناموفق</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="px-3 py-2 text-ink-3">{{ $log['created_at'] }}</td>
+                                                    <td class="max-w-44 truncate px-3 py-2 text-ink-2 dark:text-night-ink-2" title="{{ $log['message'] }}">{{ $log['message'] ?: '—' }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        @endif
+                    @endif
+                </div>
+
+                {{-- فوتر: قیمت + عملیات (پورت modal footer قدیمی) --}}
+                @if ($detail && !$detailLoading && !$detailError)
+                    @php
+                        $dInstalled = $detail['installed'] ?? null;
+                        $dPlans = $detail['active_pricing_plans'] ?? $detail['pricing_plans'] ?? $detail['plans'] ?? [];
+                        $selectedPlan = collect($dPlans)->firstWhere('id', $detailPlanId);
+                        $selectedFree = $selectedPlan ? ($this->planFinalPrice($selectedPlan) === 0) : !empty($detail['is_free']);
+                    @endphp
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-surface-2/40 px-5 py-4 dark:border-night-line dark:bg-night-3/40">
+                        {{-- قیمت --}}
+                        <div class="text-sm">
+                            @if ($dInstalled && $dInstalled['status'] === 'updating')
+                                <span class="flex items-center gap-2 font-bold text-amber-600 dark:text-amber-400">
+                                    <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" /></svg>
+                                    در حال نصب…
+                                </span>
+                            @elseif (!$dInstalled && $detailMode === 'subscription')
+                                <span class="flex items-center gap-1 font-extrabold text-violet-600 dark:text-violet-400">
+                                    <x-admin-panel::icon name="award" class="size-4" /> رایگان با اشتراک
+                                </span>
+                            @elseif (!$dInstalled && $detailMode === 'license')
+                                <span class="flex items-center gap-1 font-extrabold text-emerald-600 dark:text-emerald-400">
+                                    <x-admin-panel::icon name="shield" class="size-4" /> لایسنس فعال — بدون پرداخت
+                                </span>
+                            @elseif ($selectedFree)
+                                <span class="font-extrabold text-emerald-600">رایگان</span>
+                            @elseif ($selectedPlan)
+                                <span class="fa-digits font-extrabold">{{ number_format($this->planFinalPrice($selectedPlan)) }}</span>
+                                <span class="text-[11px] text-ink-3">تومان</span>
+                            @elseif (!empty($detail['is_free']))
+                                <span class="font-extrabold text-emerald-600">رایگان</span>
+                            @else
+                                <span class="fa-digits font-extrabold">{{ number_format($detail['min_price'] ?? ($detail['price'] ?? 0)) }}</span>
+                                <span class="text-[11px] text-ink-3">تومان</span>
+                            @endif
+                        </div>
+
+                        {{-- عملیات --}}
+                        <div class="flex flex-wrap items-center gap-2">
+                            @if (!$dInstalled)
+                                <button type="button" wire:click="installFromDetail"
+                                        class="ap-btn-primary min-w-32"
+                                        @if ($detailMode === 'paid' && count($dPlans) && !$detailPlanId) disabled @endif>
+                                    <x-admin-panel::icon name="{{ $detailMode === 'subscription' ? 'award' : ($detailMode === 'license' ? 'shield' : ($selectedFree ? 'download' : 'credit-card')) }}" class="size-4" />
+                                    {{ $detailMode === 'subscription' ? 'نصب با اشتراک' : ($detailMode === 'license' ? 'بررسی و نصب' : ($selectedFree ? 'نصب پکیج' : 'پرداخت و نصب')) }}
+                                </button>
+                            @elseif ($dInstalled['status'] === 'updating')
+                                <button type="button" disabled class="ap-btn min-w-32 opacity-70">
+                                    <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" /></svg>
+                                    در حال نصب…
+                                </button>
+                            @else
+                                @if ($detail['has_update'] ?? false)
+                                    <button type="button" wire:click="updateFromDetail" class="ap-btn-primary min-w-32" @if ($dInstalled['is_expired']) disabled @endif>
+                                        <x-admin-panel::icon name="arrow-up" class="size-4" />
+                                        آپدیت به v{{ $detail['latestVersion'] }}
+                                    </button>
+                                    @if ($dInstalled['is_expired'])
+                                        <span class="text-[11px] font-bold text-red-500">لایسنس منقضی</span>
+                                    @endif
+                                @else
+                                    <span class="flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-[12px] font-bold text-emerald-700 dark:bg-emerald-500/12 dark:text-emerald-400">
+                                        <x-admin-panel::icon name="check" class="size-3.5" /> آخرین نسخه نصب شده
+                                    </span>
+                                @endif
+
+                                @if ($detailConfirmingUninstall)
+                                    <span class="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-2.5 py-1.5 text-[12px] font-bold text-red-700 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-400">
+                                        مطمئنید؟
+                                        <button type="button" wire:click="uninstallFromDetail" class="rounded-lg bg-red-600 px-2 py-1 text-white hover:bg-red-700">بله، حذف شود</button>
+                                        <button type="button" wire:click="cancelDetailUninstall" class="rounded-lg px-2 py-1 hover:bg-red-100 dark:hover:bg-red-500/20">انصراف</button>
+                                    </span>
+                                @else
+                                    <button type="button" wire:click="toggleFromDetail" class="ap-btn-outline !py-2">
+                                        <x-admin-panel::icon name="{{ $dInstalled['is_active'] ? 'eye-off' : 'eye' }}" class="size-4" />
+                                        {{ $dInstalled['is_active'] ? 'غیرفعال‌سازی' : 'فعال‌سازی' }}
+                                    </button>
+                                    <button type="button" wire:click="confirmDetailUninstall" class="ap-btn-ghost !py-2 !text-red-600 hover:!bg-red-50 dark:hover:!bg-red-500/10">
+                                        <x-admin-panel::icon name="trash-2" class="size-4" />
+                                        حذف
+                                    </button>
+                                @endif
+                            @endif
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
+
+    {{-- ====================== --}}
+    {{-- فاز ۲۶ — مودال نوار پیشرفت نصب (پورت pkg-install-progress در progress.js قدیمی) --}}
+    {{-- ====================== --}}
+    @if ($progressSlug)
+        @php
+            $pPercent = $progressState['percent'] ?? 15;
+            $pStep = $progressState['step'] ?? 0;
+            $pStatus = $progressState['status'] ?? 'installing';
+            $pMessage = $progressState['message'] ?? 'در حال نصب — لطفاً صبر کنید…';
+            $pDone = $pStatus === 'installed';
+            $pFailed = $pStatus === 'failed';
+        @endphp
+        <div class="fixed bottom-5 start-1/2 z-[95] w-[min(92vw,34rem)] -translate-x-1/2 rtl:translate-x-1/2"
+             wire:poll.2s="pollProgress" wire:key="pkg-progress"
+             role="status" aria-live="polite">
+            <div class="overflow-hidden rounded-2xl border p-4 shadow-pop transition-colors {{ $pDone ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-500/25 dark:bg-emerald-500/10' : ($pFailed ? 'border-red-200 bg-red-50 dark:border-red-500/25 dark:bg-red-500/10' : 'border-line bg-surface dark:border-night-line dark:bg-night-2') }}">
+                {{-- سربرگ --}}
+                <div class="flex items-center gap-3">
+                    <span class="flex size-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-lg {{ $pDone ? 'bg-emerald-500 shadow-emerald-500/30' : ($pFailed ? 'bg-red-500 shadow-red-500/30' : 'bg-brand-500 shadow-brand-500/30') }}">
+                        @if ($pDone)
+                            <x-admin-panel::icon name="check" class="size-5" />
+                        @elseif ($pFailed)
+                            <x-admin-panel::icon name="x" class="size-5" />
+                        @else
+                            <svg class="size-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
+                            </svg>
+                        @endif
+                    </span>
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-[13.5px] font-extrabold">
+                            @if ($pDone) نصب کامل شد!
+                            @elseif ($pFailed) خطا در نصب
+                            @else در حال نصب <span class="text-brand-600 dark:text-brand-400">«{{ $progressName }}»</span>
+                            @endif
+                        </p>
+                        <p class="mt-0.5 truncate text-[11.5px] text-ink-3 dark:text-night-ink-2">{{ $pMessage }}</p>
+                    </div>
+                    <button type="button" wire:click="dismissProgress" class="ap-btn-ghost !p-1.5" title="بستن"
+                            aria-label="بستن نوار پیشرفت">
+                        <x-admin-panel::icon name="x" class="size-4" />
+                    </button>
+                </div>
+
+                {{-- نوار پیشرفت --}}
+                <div class="mt-3.5 flex items-center gap-2.5">
+                    <div class="h-2 flex-1 overflow-hidden rounded-full bg-surface-3 dark:bg-night-3">
+                        <div class="h-full rounded-full transition-all duration-500 {{ $pFailed ? 'bg-red-500' : ($pDone ? 'bg-emerald-500' : 'bg-gradient-to-l from-brand-500 to-emerald-500') }}"
+                             style="width: {{ $pPercent }}%"></div>
+                    </div>
+                    <span class="fa-digits w-9 text-end text-[11px] font-extrabold text-ink-2 dark:text-night-ink-2">{{ $pPercent }}٪</span>
+                </div>
+
+                {{-- مراحل --}}
+                <div class="mt-3 grid grid-cols-6 gap-1">
+                    @foreach (self::$progressSteps as $i => $step)
+                        @php
+                            $stepDone = $pDone || $i < $pStep;
+                            $stepActive = !$pDone && !$pFailed && $i === $pStep;
+                        @endphp
+                        <div class="flex flex-col items-center gap-1">
+                            <span class="flex size-7 items-center justify-center rounded-lg border transition-colors
+                                {{ $stepDone ? 'border-emerald-300 bg-emerald-100 text-emerald-600 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-400'
+                                    : ($stepActive ? 'border-brand-300 bg-brand-50 text-brand-600 dark:border-brand-500/40 dark:bg-brand-500/15 dark:text-brand-400'
+                                    : 'border-line bg-surface-2 text-ink-3 dark:border-night-line dark:bg-night-3 dark:text-night-ink-2') }}">
+                                @if ($stepDone)
+                                    <x-admin-panel::icon name="check" class="size-3.5" />
+                                @elseif ($stepActive)
+                                    <svg class="size-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" /></svg>
+                                @else
+                                    <x-admin-panel::icon name="{{ $step['icon'] }}" class="size-3.5" />
+                                @endif
+                            </span>
+                            <span class="text-[9.5px] font-bold {{ $stepDone || $stepActive ? 'text-ink-2 dark:text-night-ink-2' : 'text-ink-3 dark:text-night-ink-2' }}">{{ $step['label'] }}</span>
+                        </div>
+                    @endforeach
                 </div>
             </div>
         </div>

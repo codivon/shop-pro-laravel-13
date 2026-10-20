@@ -329,6 +329,27 @@ body {
     font-family: var(--font-sans);
 }
 
+/* فاز ۲۶ — دراپ‌داون‌های نوار ابزار (مخصوصاً «اندازه فونت» با ۱۸ گزینه):
+   ارتفاع ثابت + اسکرول تا پنل از صفحه بیرون نزند؛ عرض هم‌اندازه‌ی دکمه بماند
+   و آیتم‌ها (مثل «۱۴px») کامل دیده شوند */
+.ck.ck-dropdown__panel-visible .ck.ck-list {
+    max-height: 280px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* اسکرول‌بار ظریف هم‌سبک پنل */
+    scrollbar-width: thin;
+    scrollbar-color: var(--ck-color-list-background-on, #ddd) transparent;
+}
+
+/* فاز ۲۶ — عرض ثابت پنل اندازه فونت تا گزینه‌ها جا بگیرند ولی پنل عریض‌تر
+   از دکمه نشود؛ (پنل فونت‌فمیلی/استایل دست‌نخورده می‌ماند) */
+.ck.ck-dropdown__panel-visible .ck.ck-list .ck-button__label {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 :root:root {
     /* فونت محتوای ویرایشگر = فونت پنل (وزیرمتن) */
     --ck-content-font-family: var(--font-sans);

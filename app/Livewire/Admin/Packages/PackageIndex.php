@@ -2,11 +2,13 @@
 
 namespace App\Livewire\Admin\Packages;
 
+use App\Jobs\UpdatePackageJob;
 use App\Livewire\Admin\Packages\Concerns\InteractsWithPackages;
 use App\Models\InstalledModule;
 use App\Models\ModuleInstallLog;
 use App\Models\PackageCache;
 use App\Models\PackagePurchase;
+use App\Services\PackageInstallerService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Title;
@@ -62,6 +64,49 @@ class PackageIndex extends Component
 
     /** نتیجه بررسی آپدیت‌ها (پورت checkUpdates قدیمی) */
     public array $updateResults = [];
+
+    /* ---------------- فاز ۲۶ — مودال جزئیات پکیج (جایگزین تک‌صفحه packages/{slug}) ---------------- */
+
+    public bool $detailOpen = false;
+
+    public bool $detailLoading = false;
+
+    public ?string $detailError = null;
+
+    /** داده‌ی پکیج + enrichهای نصب (پورت renderDetail در modal.js قدیمی) */
+    public ?array $detail = null;
+
+    public array $detailLogs = [];
+
+    /** paid | license | subscription — نتیجه‌ی checkPurchaseState */
+    public string $detailMode = 'paid';
+
+    public ?string $detailWarning = null;
+
+    /** پلن انتخاب‌شده داخل مودال (پیش‌فرض: ارزان‌ترین مثل قدیمی) */
+    public ?int $detailPlanId = null;
+
+    /** تأیید حذف داخل مودال */
+    public bool $detailConfirmingUninstall = false;
+
+    /* ---------------- فاز ۲۶ — مودال نوار پیشرفت نصب (پورت progress.js قدیمی) ---------------- */
+
+    public ?string $progressSlug = null;
+
+    public ?string $progressName = null;
+
+    /** وضعیت لحظه‌ای نصب: percent/step/status/message/error */
+    public array $progressState = [];
+
+    /** مراحل نمایش داده‌شده در نوار پیشرفت (پورت steps آرایه‌ی progress.js قدیمی) */
+    public static array $progressSteps = [
+        ['key' => 'download',  'label' => 'دانلود',       'icon' => 'download'],
+        ['key' => 'verify',    'label' => 'تأیید',        'icon' => 'shield'],
+        ['key' => 'extract',   'label' => 'استخراج',      'icon' => 'archive'],
+        ['key' => 'migrate',   'label' => 'دیتابیس',      'icon' => 'database'],
+        ['key' => 'publish',   'label' => 'انتشار',       'icon' => 'cloud-upload'],
+        ['key' => 'finalize',  'label' => 'نهایی‌سازی',  'icon' => 'check-circle'],
+    ];
 
     public function mount(): void
     {
@@ -235,12 +280,21 @@ class PackageIndex extends Component
         $this->loadPackages();
     }
 
-    /* ---------------- نصب و پیشرفت (فاز ۱۷ — تجربه قدیمی) ---------------- */
+    /* ---------------- نصب و پیشرفت (فاز ۱۷ + ۲۶ — تجربه قدیمی) ---------------- */
 
-    /** پس از صف‌شدن نصب، کارت‌ها فوراً به حالت «در صف نصب» می‌روند */
+    /**
+     * فاز ۲۶ — پس از صف‌شدن نصب: لیست رفرش + مودال نوار پیشرفت باز می‌شود.
+     * کارت پکیج از همین لحظه «در حال نصب» است تا وضعیت صف مشخص شود (نصب/خطا).
+     */
     public function refreshAfterInstall(?string $slug = null): void
     {
         $this->loadPackages();
+
+        if ($slug !== null) {
+            $this->progressSlug = $slug;
+            $this->progressName = InstalledModule::where('slug', $slug)->value('name') ?: $slug;
+            $this->pollProgress();
+        }
     }
 
     /**
@@ -273,6 +327,341 @@ class PackageIndex extends Component
 
                 $this->dispatch('toast', message: 'نصب «' . $slug . '» ناموفق بود.' . ($lastError ? ' (' . \Illuminate\Support\Str::limit($lastError, 120) . ')' : ''), type: 'error');
             }
+        }
+    }
+
+    /* ---------------- فاز ۲۶ — polling مودال پیشرفت (پورت progress.js قدیمی) ---------------- */
+
+    /**
+     * هر ۲ ثانیه از blade با wire:poll صدا زده می‌شود (فقط وقتی مودال پیشرفت باز است).
+     * وضعیت InstalledModule + آخرین لاگ → درصد و مرحله؛ پایان = toast + بستن مودال.
+     */
+    public function pollProgress(): void
+    {
+        if (empty($this->progressSlug)) {
+            return;
+        }
+
+        $slug = $this->progressSlug;
+        $module = InstalledModule::where('slug', $slug)->first();
+        $lastLog = ModuleInstallLog::where('module_slug', $slug)->latest()->first();
+
+        $status = $module?->status;
+        $percent = 15;
+        $stepIndex = 0; // دانلود
+        $done = false;
+        $failed = false;
+        $message = 'در حال نصب — لطفاً صبر کنید…';
+
+        if ($lastLog) {
+            if ($lastLog->status === ModuleInstallLog::STATUS_RUNNING) {
+                $percent = max($percent, 55);
+                $stepIndex = 2; // استخراج
+            } elseif ($lastLog->status === ModuleInstallLog::STATUS_SUCCESS) {
+                $percent = 100;
+            } elseif ($lastLog->status === ModuleInstallLog::STATUS_FAILED) {
+                $percent = 100;
+                $failed = true;
+                $message = $lastLog->message ?: 'خطا در نصب پکیج';
+            }
+        }
+
+        if ($status === InstalledModule::STATUS_UPDATING) {
+            $percent = max($percent, 35);
+        } elseif ($status === InstalledModule::STATUS_INSTALLED) {
+            $percent = 100;
+            $done = true;
+        } elseif ($status === InstalledModule::STATUS_FAILED) {
+            $percent = 100;
+            $failed = true;
+            $message = $module->last_error ?: $message;
+        }
+
+        if ($done) {
+            $stepIndex = count(self::$progressSteps); // همه مراحل کامل
+            $message = 'نصب با موفقیت کامل شد';
+        }
+
+        $this->progressState = [
+            'percent'   => $percent,
+            'step'      => $stepIndex,
+            'status'    => $failed ? 'failed' : ($done ? 'installed' : 'installing'),
+            'message'   => $message,
+            'error'     => $failed ? $message : null,
+        ];
+
+        if ($done || $failed) {
+            $name = $this->progressName ?: $slug;
+
+            $this->dispatch('toast', message: $done
+                ? "نصب «{$name}» با موفقیت کامل شد."
+                : "نصب «{$name}» ناموفق بود." . ($failed && $message ? ' (' . \Illuminate\Support\Str::limit($message, 120) . ')' : ''),
+                type: $done ? 'success' : 'error');
+
+            $this->progressSlug = null;
+            $this->progressName = null;
+            $this->progressState = [];
+            $this->loadPackages();
+        }
+    }
+
+    /** بستن دستی نوار پیشرفت (بدون قطع polling وضعیت‌های دیگر — polling با خالی شدن progressSlug متوقف می‌شود) */
+    public function dismissProgress(): void
+    {
+        $this->progressSlug = null;
+        $this->progressName = null;
+        $this->progressState = [];
+    }
+
+    /* ---------------- فاز ۲۶ — مودال جزئیات (جایگزین تک‌صفحه packages/{slug}) ---------------- */
+
+    /**
+     * باز کردن مودال جزئیات — دقیقاً مثل مودال پنل قدیمی (modal.js):
+     * جزئیات کامل + گالری + توضیحات + تاریخچه نسخه + پیش‌نیاز + وضعیت نصب + لاگ‌ها + پلن‌ها
+     */
+    public function openDetail(string $slug): void
+    {
+        auth('adminPanel')->user()?->can('packages.index') ?: abort(403);
+
+        $this->detailOpen = true;
+        $this->detailLoading = true;
+        $this->detailError = null;
+        $this->detail = null;
+        $this->detailLogs = [];
+        $this->detailWarning = null;
+        $this->detailMode = 'paid';
+        $this->detailPlanId = null;
+        $this->detailConfirmingUninstall = false;
+
+        try {
+            $cacheKey = 'packages.detail.' . $slug;
+
+            $data = Cache::remember($cacheKey, now()->addMinutes(config('packages.cache.detail_ttl')), function () use ($slug) {
+                return $this->api()->getPackage($slug);
+            });
+
+            $package = $data['data'] ?? $data;
+
+            // اصلاح اعتبار اشتراک (به دلیل کش شدن detail — پورت show قدیمی)
+            if (!empty($package['subscription']['subscription_expires_at'])) {
+                $exp = \Carbon\Carbon::parse($package['subscription']['subscription_expires_at']);
+                $package['subscription']['days_remaining'] = max(0, (int) round(now()->diffInDays($exp)));
+                if ($exp->isPast()) {
+                    $package['subscription']['is_free_with_subscription'] = false;
+                }
+            }
+
+            // خرید قبلی معتبر؟ (پورت purchased قدیمی)
+            $package['purchased'] = PackagePurchase::where('package_slug', $slug)
+                ->where('status', PackagePurchase::STATUS_PAID)
+                ->whereNotNull('license_key')
+                ->exists();
+
+            // اطلاعات نصب محلی
+            $installed = InstalledModule::where('slug', $slug)->first();
+            $activeVersions = $package['active_versions'] ?? [];
+
+            if (!empty($activeVersions)) {
+                usort($activeVersions, fn ($a, $b) => version_compare($b['version'], $a['version']));
+                $latestVersion = $activeVersions[0]['version'];
+            } else {
+                $latestVersion = $package['latest_version']['version'] ?? $package['version'] ?? '';
+            }
+
+            $package['installed'] = $installed ? [
+                'version'               => $installed->version,
+                'status'                => $installed->status,
+                'is_active'             => $installed->is_active,
+                'is_expired'            => $installed->isExpired(),
+                'license_expires_at'    => $installed->license_expires_at?->toDateTimeString(),
+                'license_expires_human' => $this->jexpiry($installed->license_expires_at?->toDateTimeString()),
+                'last_error'            => $installed->last_error,
+            ] : null;
+            $package['latestVersion'] = $latestVersion;
+            $package['has_update'] = $installed && $latestVersion !== ''
+                && version_compare($latestVersion, (string) $installed->version, '>');
+
+            // لاگ‌های اخیر (پورت show قدیمی)
+            $this->detailLogs = ModuleInstallLog::where('module_slug', $slug)
+                ->latest()
+                ->limit(10)
+                ->get()
+                ->map(fn ($log) => [
+                    'id'           => $log->id,
+                    'action'       => $log->action,
+                    'from_version' => $log->from_version,
+                    'to_version'   => $log->to_version,
+                    'status'       => $log->status,
+                    'message'      => $log->message,
+                    'created_at'   => $log->created_at->diffForHumans(),
+                ])
+                ->all();
+
+            $this->detail = $package;
+
+            // پلن پیش‌فرض: ارزان‌ترین (پورت modal.js قدیمی)
+            $plans = $package['active_pricing_plans'] ?? $package['pricing_plans'] ?? $package['plans'] ?? [];
+            $this->detailPlanId = self::cheapestPlanId($plans);
+
+            // وضعیت خرید/اشتراک (پورت checkModalLicense/applyModalSubscriptionMode قدیمی)
+            $subscription = $package['subscription'] ?? null;
+
+            if (!$installed && ($subscription['is_free_with_subscription'] ?? false)) {
+                $this->detailMode = 'subscription';
+            } else {
+                $state = $this->checkPurchaseState($slug);
+
+                if (($state['mode'] ?? 'paid') === 'license') {
+                    $this->detailMode = 'license';
+                } else {
+                    $this->detailMode = 'paid';
+                    $this->detailWarning = $state['warning'] ?? null;
+                }
+            }
+        } catch (RuntimeException $e) {
+            $this->detailError = $e->getMessage();
+        } catch (\Throwable $e) {
+            report($e);
+            $this->detailError = 'خطا در دریافت اطلاعات پکیج.';
+        } finally {
+            $this->detailLoading = false;
+        }
+    }
+
+    public function closeDetail(): void
+    {
+        $this->detailOpen = false;
+        $this->detailConfirmingUninstall = false;
+    }
+
+    /** انتخاب پلن داخل مودال (پورت کلیک روی pkg-plan-card قدیمی) */
+    public function setDetailPlan(int $planId): void
+    {
+        $this->detailPlanId = $planId;
+        $this->detailWarning = null;
+    }
+
+    /**
+     * دکمه‌ی نصب داخل مودال جزئیات — مسیر همان confirmInstall مودال تأیید است؛
+     * بعد از موفقیت مودال جزئیات بسته و مودال پیشرفت باز می‌شود.
+     */
+    public function installFromDetail(): void
+    {
+        if (empty($this->detail['slug'])) {
+            return;
+        }
+
+        $slug = $this->detail['slug'];
+
+        // جلوگیری از نصب تکراری وقتی در حال نصب است
+        $installed = InstalledModule::where('slug', $slug)->first();
+        if ($installed && $installed->status === InstalledModule::STATUS_UPDATING) {
+            $this->dispatch('toast', message: 'نصب این پکیج همچنان در جریان است.', type: 'error');
+            return;
+        }
+
+        match ($this->detailMode) {
+            'subscription' => $this->startInstall($slug, null, true, false),
+            'license'      => $this->startInstall($slug, null, false, true),
+            default        => $this->startInstall($slug, $this->detailPlanId),
+        };
+
+        /*
+         * اگر نصب آغاز شده باشد (رکورد updating ساخته شده) یا مسیر پرداخت فعال باشد،
+         * مودال بسته می‌شود و مودال پیشرفت/درگاه جای آن را می‌گیرد؛ اگر خطا رخ داده
+         * باشد مودال باز می‌ماند تا پیام خطا دیده شود.
+         */
+        $pending = InstalledModule::where('slug', $slug)
+            ->where('status', InstalledModule::STATUS_UPDATING)
+            ->exists();
+
+        if ($pending || $this->detailMode !== 'paid') {
+            $this->closeDetail();
+        }
+    }
+
+    /** آپدیت از داخل مودال جزئیات (پورت modal-btn-update قدیمی) */
+    public function updateFromDetail(): void
+    {
+        if (empty($this->detail['slug'])) {
+            return;
+        }
+
+        $slug = $this->detail['slug'];
+
+        $installed = InstalledModule::where('slug', $slug)->first();
+
+        if (!$installed) {
+            $this->dispatch('toast', message: 'ماژول نصب نشده است.', type: 'error');
+            return;
+        }
+
+        if ($installed->status === InstalledModule::STATUS_UPDATING) {
+            $this->dispatch('toast', message: 'آپدیت قبلی همچنان در حال اجراست.', type: 'error');
+            return;
+        }
+
+        if ($installed->isExpired()) {
+            $this->dispatch('toast', message: 'لایسنس ماژول منقضی شده است. ابتدا آن را تمدید کنید.', type: 'error');
+            return;
+        }
+
+        // فاز ۲۶ — آپدیت هم از لحظه‌ی درخواست «در حال نصب» نمایش داده شود
+        $this->markUpdatingBeforeDispatch($slug);
+
+        UpdatePackageJob::dispatch($slug, auth('adminPanel')->id());
+
+        $this->closeDetail();
+        $this->refreshAfterInstall($slug);
+    }
+
+    /** فعال/غیرفعال از داخل مودال (پورت modal-btn-toggle قدیمی) */
+    public function toggleFromDetail(): void
+    {
+        if (empty($this->detail['slug'])) {
+            return;
+        }
+
+        $slug = $this->detail['slug'];
+
+        try {
+            $installed = app(PackageInstallerService::class)->toggleActivation($slug);
+
+            $this->dispatch('toast', message: $installed->is_active ? 'ماژول فعال شد.' : 'ماژول غیرفعال شد.', type: 'success');
+            $this->openDetail($slug); // رفرش داده‌های مودال
+        } catch (\Throwable $e) {
+            $this->dispatch('toast', message: $e->getMessage(), type: 'error');
+        }
+    }
+
+    /** تأیید دو مرحله‌ای حذف داخل مودال (پورت Swal confirm قدیمی) */
+    public function confirmDetailUninstall(): void
+    {
+        $this->detailConfirmingUninstall = true;
+    }
+
+    public function cancelDetailUninstall(): void
+    {
+        $this->detailConfirmingUninstall = false;
+    }
+
+    public function uninstallFromDetail(): void
+    {
+        if (empty($this->detail['slug'])) {
+            return;
+        }
+
+        $slug = $this->detail['slug'];
+        $this->detailConfirmingUninstall = false;
+
+        try {
+            app(PackageInstallerService::class)->uninstall($slug, auth('adminPanel')->id());
+
+            $this->dispatch('toast', message: 'ماژول با موفقیت حذف شد.', type: 'success');
+            $this->closeDetail();
+            $this->loadPackages();
+        } catch (\Throwable $e) {
+            $this->dispatch('toast', message: 'حذف ناموفق بود: ' . $e->getMessage(), type: 'error');
         }
     }
 
