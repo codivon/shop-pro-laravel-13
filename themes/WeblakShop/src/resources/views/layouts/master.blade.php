@@ -319,7 +319,7 @@
 
                     @include('front::partials.cart')
 
-                    @if(auth()->check())
+                    @if(auth('web')->check())
 
                         <a class="login-link">
                             <div class="btn-login">
@@ -332,10 +332,10 @@
                                                 <img src="{{theme_asset('images/svg/user-profile.svg')}}" alt="profile">
                                             </div>
                                             <div class="header-profile-dropdown-user-info">
-                                                <p class="header-profile-dropdown-user-name">@if(auth()->user()->fullname!== null)
-                                                        {{auth()->user()->fullname}}
+                                                <p class="header-profile-dropdown-user-name">@if(auth('web')->user()->fullname!== null)
+                                                        {{auth('web')->user()->fullname}}
                                                     @else
-                                                        {{auth()->user()->mobile}}
+                                                        {{auth('web')->user()->mobile}}
                                                     @endif
                                                     <span class="header-profile-dropdown-user-profile-link">مشاهده حساب
                                                         کاربری</span>
@@ -348,7 +348,7 @@
                                                         پول</span>
                                                     <div class="header-profile-dropdown-account-item-amount">
                                                         <span
-                                                            class="header-profile-dropdown-account-item-amount-number">{{ !auth()->user()->isAdmin() ? number_format(auth()->user()->getWallet()->balance()) : '0' }}
+                                                            class="header-profile-dropdown-account-item-amount-number">{{ !auth('web')->user()->isAdmin() ? number_format(auth('web')->user()->getWallet()->balance()) : '0' }}
                                                         </span>
                                                         تومان
                                                     </div>
@@ -395,7 +395,7 @@
                             @endif
                         </div>
 
-                        @if(auth()->check())
+                        @if(auth('web')->check())
                         <div class="btn-login-responsive">
 
                             @include('front::partials.notifications')
@@ -410,7 +410,7 @@
 
                         <div class="question-faq btn-login-responsive">
 
-                            @if(auth()->check())
+                            @if(auth('web')->check())
                                 <span class="mdi mdi-account"></span>
                                 <div class="dropdown-menu-login">
                                     <div class="header-profile-dropdown-account">
@@ -421,10 +421,10 @@
                                                          alt="profile">
                                                 </div>
                                                 <div class="header-profile-dropdown-user-info">
-                                                    <p class="header-profile-dropdown-user-name">@if(auth()->user()->fullname!=" ")
-                                                            {{auth()->user()->fullname}}
+                                                    <p class="header-profile-dropdown-user-name">@if(auth('web')->user()->fullname!=" ")
+                                                            {{auth('web')->user()->fullname}}
                                                         @else
-                                                            {{auth()->user()->mobile}}
+                                                            {{auth('web')->user()->mobile}}
                                                         @endif
                                                         <a href="{{ route('front.user.profile') }}"
                                                            class="header-profile-dropdown-user-profile-link">مشاهده

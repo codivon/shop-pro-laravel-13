@@ -24,6 +24,22 @@
     };
     foreach ($menu as $g) $collectParamKeys($g['items']);
     $menuParamKeys = collect($menuParamKeys)->map(fn ($keys) => array_values(array_unique($keys)))->all();
+
+    /*
+    | فاز ۲۱ — رفع «در صفحه افزودن محصول، منوی لیست محصول کلاس is-active می‌گیرد»:
+    | همه روت‌هایی که خودشان آیتم منو دارند (مثل np.products.create). وقتی صفحه‌ی جاری
+    | آیتم اختصاصی در منو دارد، آیتم «لیست» همان خانواده نباید هم‌زمان روشن شود؛
+    | قاعده‌ی خانواده (*.index فقط برای صفحات بدون آیتم اختصاصی مثل edit/show).
+    */
+    $menuExactRoutes = [];
+    $collectExactRoutes = function ($items) use (&$collectExactRoutes, &$menuExactRoutes) {
+        foreach ($items as $it) {
+            if (! empty($it['route'])) $menuExactRoutes[] = $it['route'];
+            if (! empty($it['children'])) $collectExactRoutes($it['children']);
+        }
+    };
+    foreach ($menu as $g) $collectExactRoutes($g['items']);
+    $menuExactRoutes = array_values(array_unique($menuExactRoutes));
 @endphp
 
 <aside
@@ -130,7 +146,7 @@
                                                 {{-- فاز ۲۰ — هر فرزند فقط با لیبل خودش (یا لیبل پدر) در جستجو دیده می‌شود --}}
                                                 @foreach ($childItems as $item)
                                                     <li x-show="search === '' || window.apMenuSearch.has(@js($parentLabel), search) || window.apMenuSearch.has(@js($item['label']), search)">
-                                                        @include('admin-panel::components.menu-item', ['item' => $item])
+                                                        @include('admin-panel::components.menu-item', ['item' => $item, 'menuExactRoutes' => $menuExactRoutes])
                                                     </li>
                                                 @endforeach
                                             </ul>
@@ -141,7 +157,7 @@
                         @else
                             {{-- فاز ۲۰ — آیتم برگ فقط با لیبل خودش در جستجو دیده می‌شود --}}
                             <li x-show="search === '' || window.apMenuSearch.has(@js($item['label']), search)">
-                                @include('admin-panel::components.menu-item', ['item' => $item])
+                                @include('admin-panel::components.menu-item', ['item' => $item, 'menuExactRoutes' => $menuExactRoutes])
                             </li>
                         @endif
                     @endforeach

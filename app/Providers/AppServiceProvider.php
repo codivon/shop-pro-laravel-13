@@ -36,6 +36,13 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(PulseService::class, fn() => new PulseService());
 
+        // فاز ۲۱ — نصب‌کننده: مایگریشن‌ها مرحله‌به‌مرحله (قابل توقف/ادامه) اجرا شوند
+        // به‌جای اجرای همه در یک درخواست که روی هاست Timeout می‌خورد
+        $this->app->bind(
+            \RachidLaasri\LaravelInstaller\Controllers\DatabaseController::class,
+            \App\Http\Controllers\Install\DatabaseController::class
+        );
+
         // نما (views) پنل مدیریت جدید — admin-panel::*
         $this->loadViewsFrom(resource_path('views/admin-panel'), 'admin-panel');
 

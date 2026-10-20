@@ -84,6 +84,15 @@ use App\Http\Controllers\Back\ReturnController;
 require __DIR__ . '/auth.php';
 Route::get('province/get-cities', [ProvinceController::class, 'getCities'])->name('provinces.get-cities');
 
+/*
+| فاز ۲۱ — نصب‌کننده: اجرای مرحله‌به‌مرحله‌ی دیتابیس با AJAX (رفع صفحه‌ی سیاه/Timeout روی هاست)
+| محافظت با همان middleware «install» پکیج (پس از نصب، 403 می‌دهد).
+*/
+Route::middleware('install')->group(function () {
+    Route::get('install/migrate', [\App\Http\Controllers\Install\MigrateController::class, 'index'])->name('install.migrate');
+    Route::get('install/migrate-step', [\App\Http\Controllers\Install\MigrateController::class, 'step'])->name('install.migrate-step');
+});
+
 Route::group(['as' => 'admin.', 'prefix' => 'admin-old/' . admin_route_prefix()], function () {
 
     Route::get('login', [AdminLoginController::class, 'showLoginForm'])->name('login');

@@ -9,7 +9,7 @@
 
     <form wire:submit="save" class="space-y-6" x-on:keydown.enter.prevent>
 
-        {{-- دریافت از دیجی‌کالا (فقط ایجاد) --}}
+        {{-- دریافت از دیجی‌کالا / ترب (فقط ایجاد) — فاز ۲۱: ترب فعال شد --}}
         @if (! $isEditing)
             <div class="ap-card p-4 sm:p-5" x-data="{ open: false }">
                 <button type="button" class="flex w-full items-center justify-between text-start" x-on:click="open = !open">
@@ -17,7 +17,7 @@
                         <span class="flex size-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-500/12 dark:text-rose-400">
                             <x-admin-panel::icon name="download" class="size-4.5" />
                         </span>
-                        دریافت محصول از دیجی‌کالا
+                        دریافت محصول از دیجی‌کالا / ترب
                     </span>
                     <span class="ap-chevron" :class="open ? 'is-open' : ''">
                         <x-admin-panel::icon name="chevron-left" class="size-4 text-ink-3" />
@@ -28,14 +28,35 @@
                      x-transition:enter="transition ease-out duration-200"
                      x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
                      class="pt-4">
-                    <p class="mb-3 text-xs leading-5 text-ink-2 dark:text-night-ink-2">
-                        کد محصول دیجی‌کالا را از انتهای آدرس صفحه محصول وارد کنید (مثال: dkp-12345678 → ۱۲۳۴۵۶۷۸).
-                        عنوان، قیمت‌ها با رنگ‌ها، تصاویر، مشخصات فنی، برند و سئو به صورت خودکار پر می‌شود.
+                    {{-- انتخاب منبع --}}
+                    <div class="mb-3 grid max-w-xs grid-cols-2 gap-2" role="radiogroup" aria-label="منبع دریافت محصول">
+                        <label class="flex cursor-pointer items-center justify-center gap-2 rounded-xl border p-2.5 text-[13px] font-semibold transition-all has-checked:border-brand-500 has-checked:bg-brand-50 has-checked:text-brand-700 dark:has-checked:bg-brand-500/12 dark:has-checked:text-brand-400 border-line dark:border-night-line">
+                            <input type="radio" value="digikala" wire:model.live="scraperProvider" class="sr-only">
+                            <x-admin-panel::icon name="shopping-bag" class="size-4" />
+                            دیجی‌کالا
+                        </label>
+                        <label class="flex cursor-pointer items-center justify-center gap-2 rounded-xl border p-2.5 text-[13px] font-semibold transition-all has-checked:border-brand-500 has-checked:bg-brand-50 has-checked:text-brand-700 dark:has-checked:bg-brand-500/12 dark:has-checked:text-brand-400 border-line dark:border-night-line">
+                            <input type="radio" value="torob" wire:model.live="scraperProvider" class="sr-only">
+                            <x-admin-panel::icon name="search-check" class="size-4" />
+                            ترب
+                        </label>
+                    </div>
+
+                    <p class="mb-3 text-xs leading-5 text-ink-2 dark:text-night-ink-2" x-data>
+                        <span x-show="$wire.scraperProvider === 'torob'">
+                            آدرس کامل صفحه محصول در ترب را وارد کنید (مثال: <code dir="ltr">torob.com/p/xxxxxx/نام-محصول</code>).
+                            عنوان، قیمت، تصاویر، دسته‌بندی و مشخصات به صورت خودکار پر می‌شود.
+                        </span>
+                        <span x-show="$wire.scraperProvider === 'digikala'" x-cloak>
+                            کد محصول دیجی‌کالا را از انتهای آدرس صفحه محصول وارد کنید (مثال: dkp-12345678 → ۱۲۳۴۵۶۷۸).
+                            عنوان، قیمت‌ها با رنگ‌ها، تصاویر، مشخصات فنی، برند و سئو به صورت خودکار پر می‌شود.
+                        </span>
                     </p>
                     <div class="flex flex-wrap items-start gap-2">
                         <div class="min-w-48 flex-1">
-                            <input type="text" wire:model="scraperSiteCode" inputmode="numeric"
-                                   placeholder="کد محصول (dkp)" class="ap-input fa-digits" aria-label="کد محصول دیجی‌کالا">
+                            <input type="text" wire:model="scraperSiteCode" :inputmode="$wire.scraperProvider === 'torob' ? 'url' : 'numeric'"
+                                   :placeholder="$wire.scraperProvider === 'torob' ? 'https://torob.com/p/…' : 'کد محصول (dkp)'"
+                                   class="ap-input fa-digits" aria-label="کد یا آدرس محصول">
                             @error('scraperSiteCode') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <button type="button" wire:click="fetchFromSite" wire:loading.attr="disabled"
@@ -51,10 +72,11 @@
                         </button>
                     </div>
 
-                    @if (count($scraperImages))
+                    @if (count($scraperImages) || $scraperBaseImage)
                         <p class="mt-3 flex items-center gap-2 text-xs font-semibold text-brand-700 dark:text-brand-400">
                             <x-admin-panel::icon name="check-circle" class="size-4" />
-                            <span class="fa-digits">{{ count($scraperImages) }}</span> تصویر دانلود شد و پس از ذخیره به گالری اضافه می‌شود.
+                            <span class="fa-digits">{{ count($scraperImages) + ($scraperBaseImage ? 1 : 0) }}</span>
+                            تصویر دانلود شد — در تب «تصاویر» قابل مشاهده و حذف است.
                         </p>
                     @endif
                 </div>
@@ -513,11 +535,12 @@
                                     </div>
                                     <div>
                                         <label class="mb-1.5 block text-xs font-semibold">حداکثر خرید</label>
-                                        <input type="number" min="1" wire:model="prices.{{ $i }}.cart_max" class="ap-input fa-digits">
+                                        {{-- فاز ۲۱ — min=1 مقدار ۰ (نامحدود) را invalid می‌کرد و کل فرم غیرقابل ارسال می‌شد --}}
+                                        <input type="number" min="0" wire:model="prices.{{ $i }}.cart_max" class="ap-input fa-digits">
                                     </div>
                                     <div>
                                         <label class="mb-1.5 block text-xs font-semibold">حداقل خرید</label>
-                                        <input type="number" min="1" wire:model="prices.{{ $i }}.cart_min" class="ap-input fa-digits">
+                                        <input type="number" min="0" wire:model="prices.{{ $i }}.cart_min" class="ap-input fa-digits">
                                     </div>
                                     <div>
                                         <label class="mb-1.5 block text-xs font-semibold">وضعیت نمایش</label>
@@ -546,6 +569,16 @@
                         <label class="group relative flex aspect-square cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 border-dashed border-line bg-surface-2 transition-colors hover:border-brand-400 dark:border-night-line dark:bg-night-3/50">
                             @if ($image)
                                 <img src="{{ $image->temporaryUrl() }}" alt="پیش‌نمایش تصویر شاخص" class="absolute inset-0 size-full object-cover">
+                            @elseif ($scraperBaseImage && file_exists(public_path('uploads/tmp/' . $scraperBaseImage)))
+                                {{-- فاز ۲۱ — تصویر شاخص دریافتی از دیجی‌کالا/ترب --}}
+                                <img src="{{ asset('uploads/tmp/' . $scraperBaseImage) }}" alt="تصویر شاخص دریافتی" class="absolute inset-0 size-full object-cover">
+                                <span class="absolute top-1.5 start-1.5 rounded-md bg-rose-600 px-1.5 py-0.5 text-[9px] font-bold text-white">دریافتی</span>
+                                <div class="absolute inset-0 flex items-center justify-center bg-slate-950/55 opacity-0 transition-opacity group-hover:opacity-100">
+                                    <button type="button" wire:click="removeScraperBase"
+                                            class="rounded-lg bg-red-500/80 p-1.5 text-white transition-colors hover:bg-red-500" title="حذف تصویر دریافتی" aria-label="حذف تصویر شاخص دریافتی">
+                                        <x-admin-panel::icon name="trash-2" class="size-3.5" />
+                                    </button>
+                                </div>
                             @elseif ($isEditing && $product->image)
                                 <img src="{{ $product->imageUrl() }}" alt="تصویر فعلی محصول" class="absolute inset-0 size-full object-cover">
                             @else
@@ -585,6 +618,20 @@
                                         <button type="button" wire:click="moveExistingImage({{ $gi }}, 'down')"
                                                 class="rounded-lg bg-white/20 p-1.5 text-white transition-colors hover:bg-white/35" title="انتقال به چپ" aria-label="جابجایی">
                                             <x-admin-panel::icon name="chevron-left" class="size-3.5" />
+                                        </button>
+                                    </div>
+                                </div>
+                            @endforeach
+
+                            {{-- تصاویر دریافتی از دیجی‌کالا/ترب (فاز ۲۱ — پیش‌نمایش + امکان حذف پیش از ذخیره) --}}
+                            @foreach ($scraperImages as $si => $scraperImg)
+                                <div wire:key="si-{{ $si }}" class="group relative aspect-square overflow-hidden rounded-xl border border-rose-300 dark:border-rose-500/40">
+                                    <img src="{{ asset('uploads/tmp/' . $scraperImg) }}" alt="تصویر دریافتی" class="size-full object-cover" loading="lazy">
+                                    <span class="absolute top-1.5 start-1.5 rounded-md bg-rose-600 px-1.5 py-0.5 text-[9px] font-bold text-white">دریافتی</span>
+                                    <div class="absolute inset-0 flex items-center justify-center bg-slate-950/55 opacity-0 transition-opacity group-hover:opacity-100">
+                                        <button type="button" wire:click="removeScraperImage({{ $si }})"
+                                                class="rounded-lg bg-red-500/80 p-1.5 text-white transition-colors hover:bg-red-500" title="حذف" aria-label="حذف تصویر دریافتی">
+                                            <x-admin-panel::icon name="trash-2" class="size-3.5" />
                                         </button>
                                     </div>
                                 </div>

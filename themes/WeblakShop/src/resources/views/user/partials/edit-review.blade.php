@@ -36,7 +36,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    @if (auth()->user()->hasBoughtProduct($product))
+                                    @if (auth('web')->user()->hasBoughtProduct($product))
                                         <div class="col-12 mt-3">
                                             <div class="product-offer-question">
                                                 <div class="form-row-title mb-3">خرید این محصول را به دیگران ...</div>

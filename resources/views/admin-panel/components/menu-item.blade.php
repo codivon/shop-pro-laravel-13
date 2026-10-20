@@ -1,5 +1,6 @@
-{{-- یک آیتم منو (برگ) — $item از والد، $menuParamKeys از sidebar (فاز ۱۹) --}}
+{{-- یک آیتم منو (برگ) — $item از والد، $menuParamKeys از sidebar (فاز ۱۹)، $menuExactRoutes از sidebar (فاز ۲۱) --}}
 @php
+    $menuExactRoutes = $menuExactRoutes ?? [];
     $url = '#';
     $isActive = false;
     if (!empty($item['route'])) {
@@ -43,6 +44,9 @@
                     if (
                         str_ends_with($item['route'], '.index')
                         && $routeName && str_starts_with($routeName, $family . '.')
+                        /* فاز ۲۱ — اگر صفحه‌ی جاری آیتم اختصاصی در منو دارد (مثل np.products.create)،
+                           آیتم «لیست» خانواده روشن نشود؛ قاعده‌ی خانواده فقط برای صفحات بی‌آیتم (edit/show/…). */
+                        && ! in_array($routeName, $menuExactRoutes)
                     ) {
                         $isActive = $activeQuery ? $queryMatches() : $noConflict();
                     }

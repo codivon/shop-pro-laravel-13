@@ -20,83 +20,138 @@
         </a>
     </div>
 
-    {{-- کارت فیلترها --}}
-    <div class="ap-card p-4 sm:p-5" x-data="{ open: true }">
-        <button type="button" class="mb-1 flex w-full items-center justify-between text-start" x-on:click="open = !open">
-            <span class="flex items-center gap-2 text-sm font-bold">
-                <x-admin-panel::icon name="filter" class="size-4.5 text-brand-600 dark:text-brand-400" />
-                فیلتر محصولات
-            </span>
-            <span class="ap-chevron" :class="open ? 'is-open' : ''">
-                <x-admin-panel::icon name="chevron-left" class="size-4 text-ink-3" />
-            </span>
-        </button>
+    {{-- کارت فیلترها — بازطراحی مدرن (فاز ۲۱) --}}
+    <div class="ap-card overflow-hidden" x-data="{ open: false }">
 
-        <div x-show="open" x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
+        {{-- نوار اصلی (همیشه دیده می‌شود) --}}
+        <div class="flex flex-wrap items-center gap-2.5 p-4 sm:p-5">
+            <div class="relative min-w-52 flex-1">
+                <span class="pointer-events-none absolute inset-y-0 start-3.5 flex items-center text-ink-3">
+                    <x-admin-panel::icon name="search" class="size-4" />
+                </span>
+                <input type="text" wire:model.live.debounce.400ms="title" placeholder="جستجو در عنوان محصول…"
+                       class="ap-input !py-2.5 ps-10 text-[13px]">
+            </div>
+
+            <label class="flex items-center gap-2 text-xs font-semibold text-ink-3 dark:text-night-ink-2">
+                نمایش
+                <select wire:model.live="perPage" class="ap-input !w-auto !py-2.5 text-[13px]" aria-label="تعداد در صفحه">
+                    <option value="15">۱۵</option>
+                    <option value="30">۳۰</option>
+                    <option value="50">۵۰</option>
+                    <option value="100">۱۰۰</option>
+                </select>
+            </label>
+
+            <button type="button" wire:click="applyFilters" class="ap-btn-ghost !py-2.5">
+                <x-admin-panel::icon name="rotate-ccw" class="size-4" />
+                بازنشانی
+            </button>
+
+            <button type="button" x-on:click="open = !open"
+                    class="relative flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-[13px] font-bold transition-colors"
+                    :class="open ? 'bg-brand-600 text-white' : 'bg-brand-50 text-brand-700 hover:bg-brand-100 dark:bg-brand-500/12 dark:text-brand-400 dark:hover:bg-brand-500/20'"
+                    :aria-expanded="open.toString()">
+                <x-admin-panel::icon name="filter" class="size-4" />
+                فیلترها
+                <span class="fa-digits inline-flex size-5 items-center justify-center rounded-full text-[10px] font-extrabold"
+                      :class="open ? 'bg-white/25 text-white' : 'bg-brand-600 text-white dark:bg-brand-500'"
+                      x-text="ApFormat.faDigits(($wire.title ? 1 : 0) + ($wire.stock ? 1 : 0) + ($wire.published ? 1 : 0) + ($wire.special ? 1 : 0) + ($wire.status ? 1 : 0) + ($wire.categoryIds.length ? 1 : 0))"></span>
+            </button>
+        </div>
+
+        {{-- پنل پیشرفته --}}
+        <div x-show="open" x-cloak
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
              x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-             class="pt-4">
-            <form wire:submit.prevent="applyFilters" class="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-                <div class="sm:col-span-2">
-                    <label for="f-title" class="mb-1.5 block text-xs font-semibold">عنوان محصول</label>
-                    <input id="f-title" type="text" wire:model.live.debounce.400ms="title" placeholder="جستجو در عنوان..."
-                           class="ap-input !py-2 text-[13px]">
-                </div>
+             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0 -translate-y-2"
+             class="space-y-5 border-t border-line bg-surface-2/60 p-4 sm:p-5 dark:border-night-line dark:bg-night-3/40">
 
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {{-- وضعیت انتشار --}}
                 <div>
-                    <label for="f-stock" class="mb-1.5 block text-xs font-semibold">موجودی</label>
-                    <select id="f-stock" wire:model.live="stock" class="ap-input !py-2 text-[13px]">
-                        <option value="">همه</option>
-                        <option value="available">موجود</option>
-                        <option value="unavailable">ناموجود</option>
-                    </select>
+                    <p class="mb-2 text-xs font-bold text-ink-2 dark:text-night-ink-2">وضعیت انتشار</p>
+                    <div class="inline-flex rounded-xl border border-line bg-surface p-1 dark:border-night-line dark:bg-night-2">
+                        <button type="button" wire:click="$set('published','')" class="ap-pill" :class="$wire.published === '' ? 'is-active' : ''">همه</button>
+                        <button type="button" wire:click="$set('published','yes')" class="ap-pill" :class="$wire.published === 'yes' ? 'is-active' : ''">منتشر شده</button>
+                        <button type="button" wire:click="$set('published','no')" class="ap-pill" :class="$wire.published === 'no' ? 'is-active' : ''">پیش‌نویس</button>
+                    </div>
                 </div>
 
+                {{-- موجودی --}}
                 <div>
-                    <label for="f-published" class="mb-1.5 block text-xs font-semibold">وضعیت انتشار</label>
-                    <select id="f-published" wire:model.live="published" class="ap-input !py-2 text-[13px]">
-                        <option value="">همه</option>
-                        <option value="yes">منتشر شده</option>
-                        <option value="no">پیش‌نویس</option>
-                    </select>
+                    <p class="mb-2 text-xs font-bold text-ink-2 dark:text-night-ink-2">موجودی</p>
+                    <div class="inline-flex rounded-xl border border-line bg-surface p-1 dark:border-night-line dark:bg-night-2">
+                        <button type="button" wire:click="$set('stock','')" class="ap-pill" :class="$wire.stock === '' ? 'is-active' : ''">همه</button>
+                        <button type="button" wire:click="$set('stock','available')" class="ap-pill" :class="$wire.stock === 'available' ? 'is-active' : ''">موجود</button>
+                        <button type="button" wire:click="$set('stock','unavailable')" class="ap-pill" :class="$wire.stock === 'unavailable' ? 'is-active' : ''">ناموجود</button>
+                    </div>
                 </div>
 
+                {{-- محصول ویژه --}}
                 <div>
-                    <label for="f-special" class="mb-1.5 block text-xs font-semibold">محصول ویژه</label>
-                    <select id="f-special" wire:model.live="special" class="ap-input !py-2 text-[13px]">
-                        <option value="">همه</option>
-                        <option value="yes">ویژه</option>
-                        <option value="no">غیر ویژه</option>
-                    </select>
+                    <p class="mb-2 text-xs font-bold text-ink-2 dark:text-night-ink-2">محصول ویژه</p>
+                    <div class="inline-flex rounded-xl border border-line bg-surface p-1 dark:border-night-line dark:bg-night-2">
+                        <button type="button" wire:click="$set('special','')" class="ap-pill" :class="$wire.special === '' ? 'is-active' : ''">همه</button>
+                        <button type="button" wire:click="$set('special','yes')" class="ap-pill" :class="$wire.special === 'yes' ? 'is-active' : ''">ویژه</button>
+                        <button type="button" wire:click="$set('special','no')" class="ap-pill" :class="$wire.special === 'no' ? 'is-active' : ''">غیر ویژه</button>
+                    </div>
                 </div>
 
+                {{-- وضعیت تایید --}}
                 <div>
-                    <label for="f-status" class="mb-1.5 block text-xs font-semibold">وضعیت تایید</label>
-                    <select id="f-status" wire:model.live="status" class="ap-input !py-2 text-[13px]">
-                        <option value="">همه</option>
-                        <option value="Accept">تایید شده</option>
-                        <option value="Waiting">در انتظار تایید</option>
-                        <option value="Reject">تایید نشده</option>
-                    </select>
+                    <p class="mb-2 text-xs font-bold text-ink-2 dark:text-night-ink-2">وضعیت تایید</p>
+                    <div class="inline-flex rounded-xl border border-line bg-surface p-1 dark:border-night-line dark:bg-night-2">
+                        <button type="button" wire:click="$set('status','')" class="ap-pill" :class="$wire.status === '' ? 'is-active' : ''">همه</button>
+                        <button type="button" wire:click="$set('status','Accept')" class="ap-pill" :class="$wire.status === 'Accept' ? 'is-active' : ''">تایید شده</button>
+                        <button type="button" wire:click="$set('status','Waiting')" class="ap-pill" :class="$wire.status === 'Waiting' ? 'is-active' : ''">در انتظار</button>
+                        <button type="button" wire:click="$set('status','Reject')" class="ap-pill" :class="$wire.status === 'Reject' ? 'is-active' : ''">رد شده</button>
+                    </div>
                 </div>
+            </div>
 
-                <div class="lg:col-span-2 xl:col-span-2">
-                    <label for="f-cats" class="mb-1.5 block text-xs font-semibold">دسته‌بندی</label>
-                    <select id="f-cats" wire:model.live="categoryIds" multiple size="5" class="ap-input !py-2 text-[13px] h-auto max-h-36">
-                        @foreach ($this->categoryOptions as $opt)
-                            <option value="{{ $opt['id'] }}">{{ $opt['title'] }}</option>
-                        @endforeach
-                    </select>
-                </div>
+            {{-- دسته‌بندی‌ها — انتخابگر درختی (فاز ۲۱) --}}
+            <div>
+                <p class="mb-2 text-xs font-bold text-ink-2 dark:text-night-ink-2">دسته‌بندی‌ها</p>
+                <x-admin-panel::category-picker wireProp="categoryIds" :tree="$this->categoryOptions()" :multiple="true" placeholder="انتخاب دسته‌بندی‌ها…" />
+            </div>
+        </div>
 
-                <div class="flex items-end gap-2 xl:col-span-2">
-                    <button type="submit" class="ap-btn-outline !py-2">
-                        <x-admin-panel::icon name="rotate-ccw" class="size-4" />
-                        بازنشانی فیلترها
-                    </button>
-                </div>
-            </form>
+        {{-- چیپ‌های فیلتر فعال --}}
+        <div class="flex flex-wrap items-center gap-2 border-t border-line px-4 py-3 dark:border-night-line"
+             x-show="($wire.title || $wire.stock || $wire.published || $wire.special || $wire.status) && open === false" x-cloak>
+            <span class="text-xs font-semibold text-ink-3 dark:text-night-ink-2">فیلترهای فعال:</span>
+            <template x-if="$wire.title">
+                <button type="button" wire:click="$set('title','')" class="ap-filter-chip">
+                    <span>عنوان: <b x-text="$wire.title"></b></span>
+                    <x-admin-panel::icon name="x" class="size-3" />
+                </button>
+            </template>
+            <template x-if="$wire.published">
+                <button type="button" wire:click="$set('published','')" class="ap-filter-chip">
+                    <span>انتشار: <b x-text="$wire.published === 'yes' ? 'منتشر شده' : 'پیش‌نویس'"></b></span>
+                    <x-admin-panel::icon name="x" class="size-3" />
+                </button>
+            </template>
+            <template x-if="$wire.stock">
+                <button type="button" wire:click="$set('stock','')" class="ap-filter-chip">
+                    <span>موجودی: <b x-text="$wire.stock === 'available' ? 'موجود' : 'ناموجود'"></b></span>
+                    <x-admin-panel::icon name="x" class="size-3" />
+                </button>
+            </template>
+            <template x-if="$wire.special">
+                <button type="button" wire:click="$set('special','')" class="ap-filter-chip">
+                    <span>ویژه: <b x-text="$wire.special === 'yes' ? 'بله' : 'خیر'"></b></span>
+                    <x-admin-panel::icon name="x" class="size-3" />
+                </button>
+            </template>
+            <template x-if="$wire.status">
+                <button type="button" wire:click="$set('status','')" class="ap-filter-chip">
+                    <span>تایید: <b x-text="$wire.status === 'Accept' ? 'تایید شده' : ($wire.status === 'Waiting' ? 'در انتظار' : 'رد شده')"></b></span>
+                    <x-admin-panel::icon name="x" class="size-3" />
+                </button>
+            </template>
         </div>
     </div>
 

@@ -13,7 +13,7 @@
             </a>
             <div class="message-light">
                 <div class="massege-light">
-                    برای شماره همراه {{ auth()->user()->username }} کد تایید ارسال گردید
+                    برای شماره همراه {{ auth('web')->user()->username }} کد تایید ارسال گردید
                     <br>
                     <a href="{{ route('front.verify.showChangeUsername') }}" class="form-edit-number">
                         ویرایش شماره

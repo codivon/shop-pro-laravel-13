@@ -5,7 +5,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script>
 
     @php
-        $notifications = auth()->user()->unreadNotifications;
+        $notifications = auth('web')->user()->unreadNotifications;
         $unreadCount = $notifications->count();
         $notificationsRoute = route('front.notifications.index');
 

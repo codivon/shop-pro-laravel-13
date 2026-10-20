@@ -1,6 +1,6 @@
-@if(!auth()->user()->isAdmin())
+@if(!auth('web')->user()->isAdmin())
     @php
-        $notifications      = auth()->user()->unreadNotifications;
+        $notifications      = auth('web')->user()->unreadNotifications;
         $unreadCount        = $notifications->count();
         $notificationsRoute = route('front.notifications.index');
     @endphp

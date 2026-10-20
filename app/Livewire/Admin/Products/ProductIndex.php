@@ -87,33 +87,27 @@ class ProductIndex extends Component
 
     /* ---------------- منابع فرم فیلتر ---------------- */
 
+    /**
+     * درخت تو در توی دسته‌بندی‌ها برای انتخابگر درختی (فاز ۲۱ — به‌جای select چندتایی قدیمی)
+     */
     #[Computed(persist: true, seconds: 300)]
     public function categoryOptions(): array
     {
-        return $this->categoryTree();
-    }
+        $cats = Category::detectLang()->where('type', 'productcat')->orderBy('ordering')->get(['id', 'title', 'category_id']);
+        $byParent = $cats->groupBy(fn ($c) => (int) $c->category_id);
 
-    protected function categoryTree($parentId = null, $depth = 0): array
-    {
-        $query = Category::detectLang()->where('type', 'productcat')->orderBy('ordering');
+        $build = function ($parentId) use (&$build, $byParent): array {
+            return $byParent->get($parentId, collect())
+                ->map(fn ($c) => [
+                    'id' => (int) $c->id,
+                    'title' => $c->title,
+                    'children' => $build((int) $c->id),
+                ])
+                ->values()
+                ->toArray();
+        };
 
-        $query->when($parentId === null, fn ($q) => $q->whereNull('category_id'), fn ($q) => $q->where('category_id', $parentId));
-
-        $result = [];
-
-        foreach ($query->get(['id', 'title', 'category_id']) as $category) {
-            $result[] = [
-                'id' => $category->id,
-                'title' => str_repeat('— ', $depth) . $category->title,
-                'depth' => $depth,
-            ];
-
-            if ($depth < 5) {
-                $result = array_merge($result, $this->categoryTree($category->id, $depth + 1));
-            }
-        }
-
-        return $result;
+        return $build(0);
     }
 
     /* ---------------- آمار سربرگ ---------------- */

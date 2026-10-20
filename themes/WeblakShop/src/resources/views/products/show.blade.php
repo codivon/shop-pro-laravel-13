@@ -788,7 +788,7 @@
 
                                                     <div class="comments-summary-note">
                                                         <span>شما هم درباره این کالا دیدگاه ثبت کنید</span>
-                                                        @if (auth()->check())
+                                                        @if (auth('web')->check())
                                                             <button data-toggle="modal"
                                                                     data-target="#add-product-review-modal"
                                                                     class="dk-btn dk-btn-info">
@@ -902,7 +902,7 @@
 
             @include('front::products.partials.sizes-modal')
             <!--single-product------------------------->
-            @if (auth()->check())
+            @if (auth('web')->check())
                 @include('front::products.partials.add-review')
             @endif
         </div>

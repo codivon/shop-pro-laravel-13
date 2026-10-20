@@ -105,7 +105,10 @@ class ProductForm extends Component
     /** فروشنده ممکن است در هر تنوع تعیین شود */
     public bool $multiVendor = false;
 
-    /* ------------------------------ دریافت از دیجی‌کالا ------------------------------ */
+    /* ------------------------------ دریافت از دیجی‌کالا / ترب ------------------------------ */
+
+    /** منبع دریافت: digikala | torob (فاز ۲۱) */
+    public string $scraperProvider = 'digikala';
 
     public string $scraperSiteCode = '';
 
@@ -542,6 +545,37 @@ class ProductForm extends Component
         $this->existingGallery = array_values($this->existingGallery);
     }
 
+    /** فاز ۲۱ — حذف یکی از تصاویر دریافتی از دیجی‌کالا/ترب (پیش از ذخیره) */
+    public function removeScraperImage(int $i): void
+    {
+        if (! isset($this->scraperImages[$i])) {
+            return;
+        }
+
+        $path = public_path('uploads/tmp/' . $this->scraperImages[$i]);
+
+        if (file_exists($path)) {
+            @unlink($path);
+        }
+
+        unset($this->scraperImages[$i]);
+        $this->scraperImages = array_values($this->scraperImages);
+    }
+
+    /** فاز ۲۱ — حذف تصویر شاخص دریافتی (پیش از ذخیره) */
+    public function removeScraperBase(): void
+    {
+        if ($this->scraperBaseImage) {
+            $path = public_path('uploads/tmp/' . $this->scraperBaseImage);
+
+            if (file_exists($path)) {
+                @unlink($path);
+            }
+        }
+
+        $this->scraperBaseImage = null;
+    }
+
     /* ============================ اسلاگ ============================ */
 
     public function generateSlug(): void
@@ -688,13 +722,20 @@ class ProductForm extends Component
 
     public function fetchFromSite(ProductScraper $scraper): void
     {
-        $this->validateOnly('scraperSiteCode', ['scraperSiteCode' => 'required|numeric']);
+        // ترب: ورودی می‌تواند آدرس کامل صفحه محصول یا کد prk باشد (عددی نیست)
+        $rules = $this->scraperProvider === 'torob'
+            ? ['scraperSiteCode' => 'required|string']
+            : ['scraperSiteCode' => 'required|numeric'];
+
+        $this->validateOnly('scraperSiteCode', $rules);
 
         if ($this->getErrorBag()->has('scraperSiteCode')) {
             return;
         }
 
-        $result = $scraper->fetchDigikala($this->scraperSiteCode, true);
+        $result = $this->scraperProvider === 'torob'
+            ? $scraper->fetchTorob($this->scraperSiteCode)
+            : $scraper->fetchDigikala($this->scraperSiteCode, true);
 
         if (! empty($result['error'])) {
             $this->addError('scraperSiteCode', 'خطا در دریافت محصول: ' . $result['error']);
@@ -754,11 +795,13 @@ class ProductForm extends Component
         }
 
         if (! empty($result['galleryFiles'])) {
-            $this->scraperImages = $result['galleryFiles'];
-            $this->scraperBaseImage = $result['baseImage'];
+            $this->scraperImages = array_values(array_unique(array_merge($this->scraperImages, $result['galleryFiles'])));
+            $this->scraperBaseImage = $result['baseImage'] ?: $this->scraperBaseImage;
         }
 
-        $this->dispatch('toast', message: 'محصول از دیجی‌کالا دریافت شد. لطفا اطلاعات را بازبینی و انبار را انتخاب کنید.', type: 'success');
+        $source = $this->scraperProvider === 'torob' ? 'ترب' : 'دیجی‌کالا';
+
+        $this->dispatch('toast', message: "محصول از {$source} دریافت شد. لطفا اطلاعات را بازبینی، تصاویر را بررسی و انبار را انتخاب کنید.", type: 'success');
     }
 
     /* ============================ ذخیره ============================ */
@@ -790,13 +833,13 @@ class ProductForm extends Component
             'title_en' => $this->title_en,
             'category_id' => $this->category_id,
             'spec_type_id' => $this->resolveSpecTypeId(),
-            'size_type_id' => $this->size_type_id,
+            'size_type_id' => $this->size_type_id ?: null, // فاز ۲۱ — مقدار خالی = null
             'weight' => $this->type === 'physical' ? $this->weight : null,
             'unit' => $this->type === 'physical' ? $this->unit : null,
             'price_type' => 'multiple-price',
             'type' => $this->type,
-            'seller_id' => $this->seller_id,
-            'shipping_nature' => $this->shipping_nature,
+            'seller_id' => $this->seller_id ?: null, // فاز ۲۱ — مقدار خالی = null
+            'shipping_nature' => $this->shipping_nature ?: null, // فاز ۲۱ — ستون enum است؛ مقدار خالی خطای Data truncated می‌دهد
             'description' => $this->description,
             'short_description' => $this->short_description,
             'special' => $this->special,
@@ -808,7 +851,7 @@ class ProductForm extends Component
             'status' => $this->status,
             'publish_date' => ProductPersistence::jdate($this->publish_date),
             'special_end_date' => ProductPersistence::jdate($this->special_end_date),
-            'currency_id' => $this->currency_id,
+            'currency_id' => $this->currency_id ?: null, // فاز ۲۱ — مقدار خالی = null
             'rounding_amount' => $this->rounding_amount,
             'rounding_type' => $this->rounding_type,
             'lang' => app()->getLocale(),
@@ -894,13 +937,13 @@ class ProductForm extends Component
             'title_en' => $this->title_en,
             'category_id' => $this->category_id,
             'spec_type_id' => $this->resolveSpecTypeId(),
-            'size_type_id' => $this->size_type_id,
+            'size_type_id' => $this->size_type_id ?: null, // فاز ۲۱ — مقدار خالی = null
             'weight' => $this->type === 'physical' ? $this->weight : null,
             'unit' => $this->type === 'physical' ? $this->unit : null,
             'price_type' => 'multiple-price',
             'type' => $this->type,
-            'seller_id' => $this->seller_id,
-            'shipping_nature' => $this->shipping_nature,
+            'seller_id' => $this->seller_id ?: null, // فاز ۲۱ — مقدار خالی = null
+            'shipping_nature' => $this->shipping_nature ?: null, // فاز ۲۱ — ستون enum است؛ مقدار خالی خطای Data truncated می‌دهد
             'description' => $this->description,
             'short_description' => $this->short_description,
             'special' => $this->special,
@@ -912,7 +955,7 @@ class ProductForm extends Component
             'status' => $this->status,
             'publish_date' => ProductPersistence::jdate($this->publish_date),
             'special_end_date' => ProductPersistence::jdate($this->special_end_date),
-            'currency_id' => $this->currency_id,
+            'currency_id' => $this->currency_id ?: null, // فاز ۲۱ — مقدار خالی = null
             'rounding_amount' => $this->rounding_amount,
             'rounding_type' => $this->rounding_type,
         ]);
@@ -1060,7 +1103,7 @@ class ProductForm extends Component
         foreach ($this->prices as $i => $row) {
             $prices[] = [
                 'id' => $row['id'] ?? null,
-                'warehouse' => $row['warehouse'] ?? null,
+                'warehouse' => $row['warehouse'] ?: null, // فاز ۲۱ — مقدار خالی = null
                 'attributes' => array_values(array_map('intval', array_filter($row['attributes'] ?? []))),
                 'price' => (float) $row['price'],
                 'discount' => (int) ($row['discount'] ?? 0),

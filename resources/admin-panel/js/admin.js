@@ -290,22 +290,27 @@ window.ApEditor = {
                     SpecialCharacters, SpecialCharactersEssentials, HtmlEmbed, WordCount, Fullscreen, Emoji,
                     SelectAll, Style, TextTransformation, Autoformat, GeneralHtmlSupport,
                 ],
-                toolbar: [
-                    'heading', 'style', '|',
-                    'bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript', 'code', '|',
-                    'fontColor', 'fontBackgroundColor', 'highlight', 'fontFamily', 'fontSize', '|',
-                    'link', 'bookmark', '|',
-                    'bulletedList', 'numberedList', 'todoList', 'outdent', 'indent', '|',
-                    'alignment', '|',
-                    'blockQuote', 'codeBlock', '|',
-                    'uploadImage', 'insertTable', 'mediaEmbed', 'htmlEmbed', '|',
-                    'specialCharacters', 'horizontalLine', 'pageBreak', '|',
-                    'findAndReplace', 'selectAll', 'removeFormat', '|',
-                    'showBlocks', 'sourceEditing', '|',
-                    'fullscreen', '|',
-                    'emoji', '|',
-                    'undo', 'redo',
-                ],
+                toolbar: {
+                    /* فاز ۲۱ — همه آیتم‌ها همیشه نمایش داده می‌شوند (چند ردیفه مثل پنل قدیمی)،
+                       قبلاً آیتم‌های سرریز در دکمه ⋮ جمع می‌شدند و کاربر فکر می‌کرد ویرایشگر کامل نیست */
+                    items: [
+                        'heading', 'style', '|',
+                        'bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript', 'code', '|',
+                        'fontColor', 'fontBackgroundColor', 'highlight', 'fontFamily', 'fontSize', '|',
+                        'link', 'bookmark', '|',
+                        'bulletedList', 'numberedList', 'todoList', 'outdent', 'indent', '|',
+                        'alignment', '|',
+                        'blockQuote', 'codeBlock', '|',
+                        'uploadImage', 'insertTable', 'mediaEmbed', 'htmlEmbed', '|',
+                        'specialCharacters', 'horizontalLine', 'pageBreak', '|',
+                        'findAndReplace', 'selectAll', 'removeFormat', '|',
+                        'showBlocks', 'sourceEditing', '|',
+                        'fullscreen', '|',
+                        'emoji', '|',
+                        'undo', 'redo',
+                    ],
+                    shouldNotGroupWhenFull: true,
+                },
                 heading: {
                     options: [
                         { model: 'paragraph', title: 'متن', class: 'ck-heading_paragraph' },
@@ -380,6 +385,22 @@ window.ApEditor = {
             }
         } catch (error) {
             console.error('CKEditor init failed:', error);
+
+            /* فاز ۲۱ — پیام خطای قابل مشاهده به‌جای کادر خالی (مثلا هنگام 404 شدن chunk بعد از دیپلوی) */
+            container.innerHTML =
+                '<div style="padding:1rem;text-align:center;color:#dc2626;font-size:13px;font-weight:600">' +
+                'ویرایشگر بارگذاری نشد — صفحه را یک بار رفرش کنید.\n' +
+                '</div>';
+
+            /* یک تلاش مجدد خودکار (کش مرورگر/chunk تازه) */
+            if (!window.__apEditorRetried) {
+                window.__apEditorRetried = true;
+                setTimeout(() => {
+                    container.removeAttribute('data-ap-ready');
+                    container.innerHTML = '';
+                    window.ApEditor.init();
+                }, 1500);
+            }
         }
     },
 

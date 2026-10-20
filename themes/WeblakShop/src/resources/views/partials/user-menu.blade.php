@@ -1,5 +1,5 @@
 <!--start .author-author__info-->
-@if(auth()->check())
+@if(auth('web')->check())
 
     <ul class="nav float-left">
     <li class="nav-item account dropdown">
@@ -10,7 +10,7 @@
         </a>
         <div class="dropdown-menu dropdown-menu-sm dropdown-menu-left">
 
-            @if (auth()->user()->level == 'admin' || auth()->user()->level == 'creator')
+            @if (auth('web')->user()->level == 'admin' || auth('web')->user()->level == 'creator')
                 <a class="dropdown-item" href="{{ route('admin.dashboard') }}">
                     پنل مدیریت
                 </a>

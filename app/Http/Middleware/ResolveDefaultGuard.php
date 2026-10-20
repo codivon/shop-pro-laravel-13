@@ -21,6 +21,28 @@ class ResolveDefaultGuard
             return $next($request);
         }
 
+        /*
+        | فاز ۲۱ — رفع «در فرانت، کاربر معمولی لاگین نمایش داده می‌شود» + خطای FK جدول searches
+        |
+        | قبلاً این میدل‌ور روی «همه‌ی» درخواست‌ها اجرا می‌شد؛ اگر ادمین در پنل لاگین بود،
+        | گارد پیش‌فرض کل درخواست (حتی صفحات فروشگاه) adminPanel می‌شد. نتیجه:
+        |   ۱) هدر فرانت auth()->check() را برقرار می‌دید و ادمین را به‌عنوان «کاربر» نشان می‌داد.
+        |   ۲) لاگ جستجو شناسه‌ی ادمین را در searches.user_id می‌نشاند (FK به users → خطا 1452).
+        |
+        | حالا گارد فقط در بافت پنل‌ها و endpoint لایووایر تعیین می‌شود؛
+        | صفحات فروشگاه همیشه گارد پیش‌فرض (web) را می‌بینند.
+        */
+        $isPanelContext = $request->is('livewire/*')
+            || $request->is('livewire')
+            || $request->is('admin-old/*')
+            || $request->is('admin/' . admin_route_prefix() . '*')
+            || $request->is('sellers/*')
+            || $request->is('sellers');
+
+        if (! $isPanelContext) {
+            return $next($request);
+        }
+
         foreach (['adminPanel', 'seller', 'web'] as $guard) {
             if (Auth::guard($guard)->check()) {
                 config()->set('auth.defaults.guard', $guard);

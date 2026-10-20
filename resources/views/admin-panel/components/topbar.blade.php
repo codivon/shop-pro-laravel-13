@@ -128,7 +128,8 @@
                         <p class="truncate text-[13px] font-bold">{{ $admin->fullname }}</p>
                         <p class="mt-0.5 truncate text-[11px] text-ink-3 dark:text-night-ink-2">{{ $admin->email ?? '' }}</p>
                     </div>
-                    <a href="{{ route('admin.admin.profile.show') }}"
+                    {{-- فاز ۲۱ — صفحه پروفایل در پنل جدید است (قبلاً به پنل قدیمی می‌رفت) --}}
+                    <a href="{{ route('np.profile') }}" wire:navigate
                        class="mt-1.5 flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink dark:text-night-ink-2 dark:hover:bg-night-2 dark:hover:text-night-ink"
                        role="menuitem">
                         <x-admin-panel::icon name="user" class="size-4" />
@@ -141,7 +142,8 @@
                         پنل مدیریت قدیمی
                     </a>
                     @if ($admin->id === 1)
-                        <a href="{{ route('admin.cache-clear') }}"
+                        {{-- فاز ۲۱ — پاک‌سازی کش در پنل جدید (قبلاً به پنل قدیمی می‌رفت) --}}
+                        <a href="{{ route('np.cache-clear') }}"
                            class="flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink dark:text-night-ink-2 dark:hover:bg-night-2 dark:hover:text-night-ink"
                            role="menuitem">
                             <x-admin-panel::icon name="refresh-cw" class="size-4" />

@@ -11,6 +11,7 @@
 */
 
 use App\Livewire\Admin\Dashboard;
+use App\Livewire\Admin\Profile;
 use App\Livewire\Admin\Auth\Login;
 use App\Livewire\Admin\Products\ProductIndex;
 use App\Livewire\Admin\Products\ProductForm;
@@ -180,6 +181,28 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
 
         // نمای کلی
         Route::get('/', Dashboard::class)->name('dashboard');
+
+        /*
+        |----------------------
+        | پروفایل مدیر + پاک‌سازی کش (فاز ۲۱ — قبلاً لینک‌ها به پنل قدیمی می‌رفتند)
+        |----------------------
+        */
+        Route::get('profile', Profile::class)->name('profile');
+        Route::get('cache-clear', function () {
+            if (auth('adminPanel')->id() !== 1) {
+                abort(403);
+            }
+
+            \Artisan::call('config:clear');
+            \Artisan::call('cache:clear');
+            \Artisan::call('route:clear');
+            \Artisan::call('view:clear');
+
+            return redirect()->route('np.dashboard')->with('np-toast', [
+                'type' => 'success',
+                'message' => 'کش سیستم با موفقیت پاک شد.',
+            ]);
+        })->name('cache-clear');
 
         /*
         |----------------------
