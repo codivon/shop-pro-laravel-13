@@ -48,19 +48,38 @@
     <div class="ap-card overflow-hidden">
         <header class="flex flex-wrap items-center gap-1.5 border-b border-line px-4 py-3 dark:border-night-line">
             @foreach (['values' => 'ارزش سفارشات', 'counts' => 'تعداد سفارشات', 'users' => 'تعداد کاربران سفارش دهنده', 'products' => 'تعداد محصولات سفارشات'] as $key => $label)
+                @php
+                    // فاز ۱۷: تب لودشده → سوییچ بعدی فوری است (بدون رفت‌وبرگشت سرور)
+                    $loaded = $this->isTabLoaded($key);
+                    $clickAction = "tab = '{$key}'; resize('stats-orders-{$key}')";
+                    if (! $loaded) {
+                        $clickAction .= "; \$wire.loadTab('{$key}')";
+                    }
+                @endphp
                 <button type="button"
-                        x-on:click="tab = '{{ $key }}'; $wire.loadTab('{{ $key }}'); resize('stats-orders-{{ $key }}')"
+                        x-on:click="{{ $clickAction }}"
                         class="rounded-xl px-3.5 py-2 text-[13px] font-bold transition-colors"
                         :class="tab === '{{ $key }}'
                             ? 'bg-brand-600 text-white shadow-sm'
                             : 'bg-surface-2 text-ink-2 hover:bg-surface-3 dark:bg-night-3 dark:text-night-ink-2 dark:hover:bg-night-2'">
                     {{ $label }}
+                    @if ($loaded)
+                        <span class="ms-1 inline-block size-1.5 rounded-full bg-emerald-400 align-middle" title="آماده (کش‌شده)"></span>
+                    @endif
                 </button>
             @endforeach
         </header>
 
         @foreach (['values' => 'value', 'counts' => 'count', 'users' => 'user', 'products' => 'product'] as $key => $pane)
-            <div x-show="tab === '{{ $key }}'" x-cloak>
+            <div x-show="tab === '{{ $key }}'" x-cloak class="relative">
+                {{-- فاز ۱۷: اسکلت داخلی هنگام لود داده تب — فقط روی کارت نمودار، بدون نوار سراسری --}}
+                <div wire:loading wire:target="loadTab"
+                     class="absolute inset-x-0 top-0 z-10 flex items-center justify-center gap-2 rounded-b-xl bg-surface/80 py-2 text-[12px] font-semibold text-ink-3 backdrop-blur-sm dark:bg-night-2/80 dark:text-night-ink-2">
+                    <svg class="size-4 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
+                    </svg>
+                    در حال آماده‌سازی نمودار…
+                </div>
                 {{-- متریک‌ها (پورت ردیف‌های کل/میانگین/موفق/ناموفق قدیمی) --}}
                 <div class="grid grid-cols-2 gap-3 px-5 pt-5 lg:grid-cols-4">
                     <div class="rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">

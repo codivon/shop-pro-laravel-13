@@ -27,6 +27,14 @@ class PackageIndex extends Component
     #[Url(as: 'category', except: '')]
     public string $category = '';
 
+    /** گزینه‌های دسته‌بندی مثل قدیمی (index.blade.php قدیمی) */
+    public static array $categoryOptions = [
+        'shop'         => 'فروشگاه',
+        'payment'      => 'پرداخت',
+        'notification' => 'اعلان',
+        'seo'          => 'سئو',
+    ];
+
     #[Url(as: 'sort', except: '')]
     public string $sort = '';
 
@@ -216,6 +224,110 @@ class PackageIndex extends Component
     {
         $this->page = 1;
         $this->loadPackages();
+    }
+
+    public function resetFilters(): void
+    {
+        $this->search = '';
+        $this->category = '';
+        $this->sort = '';
+        $this->page = 1;
+        $this->loadPackages();
+    }
+
+    /* ---------------- نصب و پیشرفت (فاز ۱۷ — تجربه قدیمی) ---------------- */
+
+    /** پس از صف‌شدن نصب، کارت‌ها فوراً به حالت «در صف نصب» می‌روند */
+    public function refreshAfterInstall(?string $slug = null): void
+    {
+        $this->loadPackages();
+    }
+
+    /**
+     * polling وضعیت نصب‌های در جریان (پورت progress.js قدیمی)
+     * وقتی نصب کامل/ناموفق شد، پیام نتیجه + رفرش لیست
+     */
+    public function refreshPending(): void
+    {
+        if (empty($this->pendingSlugs)) {
+            return;
+        }
+
+        $watched = array_keys($this->pendingSlugs);
+        $this->loadPackages();
+
+        foreach ($watched as $slug) {
+            if (isset($this->pendingSlugs[$slug])) {
+                continue; // هنوز در جریان است
+            }
+
+            $module = InstalledModule::where('slug', $slug)->first();
+
+            if ($module && $module->status === InstalledModule::STATUS_INSTALLED) {
+                $this->dispatch('toast', message: 'نصب «' . ($module->name ?: $slug) . '» با موفقیت کامل شد.', type: 'success');
+            } else {
+                $lastError = ModuleInstallLog::where('module_slug', $slug)
+                    ->where('status', ModuleInstallLog::STATUS_FAILED)
+                    ->orderByDesc('created_at')
+                    ->value('message');
+
+                $this->dispatch('toast', message: 'نصب «' . $slug . '» ناموفق بود.' . ($lastError ? ' (' . \Illuminate\Support\Str::limit($lastError, 120) . ')' : ''), type: 'error');
+            }
+        }
+    }
+
+    /* ---------------- کمکی‌های پلن‌ها (پورت index.js قدیمی) ---------------- */
+
+    public static function planFinalPrice(array $plan): int
+    {
+        return (int) ($plan['discount_price'] ?? $plan['price'] ?? 0);
+    }
+
+    public static function planDurationLabel(array $plan): string
+    {
+        $months = (int) ($plan['duration_months'] ?? 0);
+        if ($months === 0) return 'نامحدود';
+        if ($months < 12) return "{$months} ماه";
+        $years = $months / 12;
+
+        return ($years === floor($years) ? floor($years) : $years) . ' سال';
+    }
+
+    /** ارزان‌ترین پلن (برای انتخاب پیش‌فرض مودال تأیید نصب) */
+    public static function cheapestPlanId(array $plans): ?int
+    {
+        if (empty($plans)) return null;
+
+        $cheapest = null;
+        foreach ($plans as $plan) {
+            if ($cheapest === null || self::planFinalPrice($plan) < self::planFinalPrice($cheapest)) {
+                $cheapest = $plan;
+            }
+        }
+
+        return $cheapest ? (int) ($cheapest['id'] ?? 0) ?: null : null;
+    }
+
+    /** وضعیت آپدیت هر پکیج — برای دکمه «آپدیت» کارت (پورت hasUpdate قدیمی) */
+    public function hasUpdate(string $slug, array $pkg, $installedVersion): bool
+    {
+        if ($installedVersion === null) return false;
+
+        $latest = $pkg['latest_version']['version'] ?? ($pkg['version'] ?? '');
+
+        return $latest !== '' && version_compare($latest, (string) $installedVersion, '>');
+    }
+
+    /** برچسب جلالی تاریخ انقضا برای مودال لایسنس/اشتراک */
+    public static function jexpiry(?string $date): ?string
+    {
+        if (empty($date)) return null;
+
+        try {
+            return jdate(\Carbon\Carbon::parse($date))->format('Y/m/d');
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /* ---------------- بررسی آپدیت همه ماژول‌ها (پورت checkUpdates قدیمی) ---------------- */

@@ -78,10 +78,18 @@ class PermissionIndex extends Component
 
     /* ---------------- ذخیره (پورت ۱:۱ update قدیمی) ---------------- */
 
-    public function save(): void
+    /**
+     * فاز ۱۷: وضعیت انتخاب سمت کلاینت (Alpine) نگه‌داری می‌شود؛ در ذخیره همان آرایه
+     * ارسال می‌شود (یک کامیت) — اگر null بود مثل قبل از خود پراپرتی استفاده می‌شود.
+     */
+    public function save(?array $selected = null): void
     {
         // پورت middleware CheckCreator
         $this->ensureCreator();
+
+        if ($selected !== null) {
+            $this->permission = array_map('strval', array_values($selected));
+        }
 
         $this->validate([
             'permission'   => 'required|array',

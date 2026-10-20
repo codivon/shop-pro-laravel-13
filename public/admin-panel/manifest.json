@@ -12,7 +12,7 @@
     "isDynamicEntry": true
   },
   "resources/admin-panel/css/admin.css": {
-    "file": "assets/admin-Dz7yLBzl.css",
+    "file": "assets/admin-CmXq_mp8.css",
     "src": "resources/admin-panel/css/admin.css",
     "isEntry": true
   },
@@ -37,7 +37,7 @@
     "src": "resources/admin-panel/fonts/Vazirmatn-SemiBold.woff2"
   },
   "resources/admin-panel/js/admin.js": {
-    "file": "assets/admin-yqVbEqlJ.js",
+    "file": "assets/admin-C37cUhB9.js",
     "name": "admin",
     "src": "resources/admin-panel/js/admin.js",
     "isEntry": true,

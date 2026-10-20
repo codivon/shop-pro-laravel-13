@@ -16,7 +16,7 @@
             <div class="mb-5 flex flex-wrap gap-1.5">
                 @foreach (['product' => 'بر اساس محصول', 'category' => 'بر اساس دسته بندی', 'brand' => 'بر اساس برند'] as $key => $label)
                     <button type="button"
-                            x-on:click="tab = '{{ $key }}'; $wire.set('type', '{{ $key }}')"
+                            x-on:click="tab = '{{ $key }}'; $wire.set('type', '{{ $key }}', false)"
                             class="rounded-xl px-3.5 py-2 text-[13px] font-bold transition-colors"
                             :class="tab === '{{ $key }}'
                                 ? 'bg-brand-600 text-white shadow-sm'

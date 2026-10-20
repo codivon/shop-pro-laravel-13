@@ -42,9 +42,22 @@ return [
                     'permission' => 'activity-log.index',
                     'icon' => 'history',
                 ],
-                // فاز ۱۶: «نشست‌های فعال» و «مانیتور سیستم» به گروه «امور مدیریتی» منتقل شدند
-                // (ابزارهای سیستمی‌اند نه نمای کلی). «دستگاه‌های بلاک شده» حذف شد (فاز ۱۳
-                // به‌درخواست کاربر) — لیست بلاک‌شده‌ها به‌صورت تب داخل np.sessions.index در دسترس است.
+                // فاز ۱۷: «نشست‌های فعال» و «مانیتور سیستم» طبق درخواست کاربر به بالای منو
+                // (نمای کلی) برگشتند. «دستگاه‌های بلاک شده» حذف شد (فاز ۱۳ به‌درخواست کاربر)
+                // — لیست بلاک‌شده‌ها به‌صورت تب داخل np.sessions.index در دسترس است.
+                [
+                    'label' => 'نشست‌های فعال',
+                    'route' => 'np.sessions.index',
+                    'permission' => 'sessions.index',
+                    'icon' => 'monitor',
+                ],
+                [
+                    'label' => 'مانیتور سیستم',
+                    'route' => 'np.pulse.index',
+                    'permission' => 'pulse.monitor',
+                    'icon' => 'activity',
+                    'live' => true,
+                ],
                 [
                     'label' => 'پکیج‌ها',
                     'icon' => 'package',
@@ -807,20 +820,7 @@ return [
             'key' => 'management',
             'title' => 'امور مدیریتی',
             'items' => [
-                // فاز ۱۶: «نشست‌های فعال» و «مانیتور سیستم» از نمای کلی به امور مدیریتی منتقل شدند
-                [
-                    'label' => 'نشست‌های فعال',
-                    'route' => 'np.sessions.index',
-                    'permission' => 'sessions.index',
-                    'icon' => 'monitor',
-                ],
-                [
-                    'label' => 'مانیتور سیستم',
-                    'route' => 'np.pulse.index',
-                    'permission' => 'pulse.monitor',
-                    'icon' => 'activity',
-                    'live' => true,
-                ],
+                // فاز ۱۷: «نشست‌های فعال» و «مانیتور سیستم» به نمای کلی برگشتند
                 [
                     'label' => 'درون‌ریزی',
                     'icon' => 'file-spreadsheet',
@@ -954,12 +954,8 @@ return [
                             'permission' => null,
                             'icon' => 'bot',
                         ],
-                        [
-                            'label' => 'بروزرسانی سیستم',
-                            'route' => 'np.developer.index',
-                            'permission' => null,
-                            'icon' => 'refresh-cw',
-                        ],
+                        // فاز ۱۷: «بروزرسانی سیستم» فعلاً از منو حذف شد (در جای دیگری در
+                        // دسترس است) — روت np.developer.index همچنان کار می‌کند.
                     ],
                 ],
             ],

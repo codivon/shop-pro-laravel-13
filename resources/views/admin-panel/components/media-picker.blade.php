@@ -108,10 +108,10 @@
     @enderror
 
     {{-- مودال فایل‌منیجر (iframe) --}}
-    {{-- فاز ۱۶: lg:pr-[17rem] — مودال زیر سایدبار ثابت راست نرود (دکمه بستن همیشه در دسترس) --}}
+    {{-- فاز ۱۷: وسط صفحه + z-[200] بالاتر از همه مودال‌ها (widgets z-[80]) تا همیشه روی همه باشد --}}
     <div x-show="open"
          x-cloak
-         class="fixed inset-0 z-[70] flex items-center justify-center p-2 sm:p-6 lg:pr-[17rem]"
+         class="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-6"
          role="dialog"
          aria-modal="true"
          aria-label="مدیریت فایل‌ها"

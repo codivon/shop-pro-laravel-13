@@ -16,9 +16,11 @@ class PackageApiService
 
     public function __construct()
     {
-        $this->baseUrl   = rtrim(config('packages.api.base_url'), '/');
-        $this->token     = config('packages.api.token');
-        $this->projectKey = config('packages.api.project_key');
+        // فاز ۱۷: با توکن/URL خالی (env ست‌نشده) هم سازه نباید Fatal بدهد —
+        // درخواست‌ها بعداً با RuntimeException گرفته می‌شوند و صفحه پیام خطا نشان می‌دهد
+        $this->baseUrl   = rtrim((string) config('packages.api.base_url'), '/');
+        $this->token     = (string) config('packages.api.token');
+        $this->projectKey = (string) config('packages.api.project_key');
         $this->timeout   = (int) config('packages.api.timeout', 30);
     }
 

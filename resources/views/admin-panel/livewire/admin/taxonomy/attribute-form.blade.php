@@ -14,11 +14,16 @@
                     <x-admin-panel::icon name="layers" class="size-5" />
                 </span>
                 <div>
-                    <h2 class="text-base font-extrabold">ویرایش ویژگی: {{ $name ?: '—' }}</h2>
-                    <p class="text-[11px] text-ink-3 dark:text-night-ink-2">
-                        شناسه: <span class="fa-digits">{{ number_format($attribute->id) }}</span>
-                        — گروه فعلی: {{ $attribute->group?->name ?? '—' }}
-                    </p>
+                    @if ($attribute)
+                        <h2 class="text-base font-extrabold">ویرایش ویژگی: {{ $name ?: '—' }}</h2>
+                        <p class="text-[11px] text-ink-3 dark:text-night-ink-2">
+                            شناسه: <span class="fa-digits">{{ number_format($attribute->id) }}</span>
+                            — گروه فعلی: {{ $attribute->group?->name ?? '—' }}
+                        </p>
+                    @else
+                        <h2 class="text-base font-extrabold">ایجاد ویژگی جدید</h2>
+                        <p class="text-[11px] text-ink-3 dark:text-night-ink-2">نام ویژگی و گروه آن را مشخص کنید.</p>
+                    @endif
                 </div>
             </div>
             <a href="{{ route('np.attribute-groups.index') }}" wire:navigate class="ap-btn-ghost !py-2">

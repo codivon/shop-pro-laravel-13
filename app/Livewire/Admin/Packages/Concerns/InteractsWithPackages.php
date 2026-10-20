@@ -129,6 +129,99 @@ trait InteractsWithPackages
     }
 
     /**
+     * بررسی وضعیت خرید/اشتراک یک پکیج (پورت checkPurchase قدیمی)
+     * خروجی برای مودال تأیید نصب پنل جدید — همان منطق اولویت‌ها:
+     * ۱) اشتراک فعال  ۲) خرید مستقیم با لایسنس معتبر  ۳) جریان عادی خرید
+     */
+    public function checkPurchaseState(string $slug): array
+    {
+        auth('adminPanel')->user()?->can('packages.index') ?: abort(403);
+
+        // ★ اولویت ۱: اشتراک فعال — از API (داده تازه، بدون کش)
+        try {
+            $apiPackage = $this->api()->getPackage($slug);
+            $apiPackage = $apiPackage['data'] ?? $apiPackage;
+            $subscription = $apiPackage['subscription'] ?? null;
+
+            if ($subscription && ($subscription['is_free_with_subscription'] ?? false)) {
+                $expiresAt = $subscription['subscription_expires_at'] ?? null;
+                $active = true;
+                if (!empty($expiresAt)) {
+                    try { $active = \Carbon\Carbon::parse($expiresAt)->isFuture(); }
+                    catch (\Throwable $e) { $active = false; }
+                }
+
+                if ($active) {
+                    return [
+                        'mode'           => 'subscription',
+                        'plan_name'      => $subscription['plan_name'] ?? null,
+                        'expires_at'     => $expiresAt,
+                        'expires_at_jalali' => $this->jexpiry($expiresAt),
+                        'days_remaining' => $subscription['days_remaining'] ?? null,
+                    ];
+                }
+
+                return [
+                    'mode'    => 'paid',
+                    'warning' => 'اشتراک شما منقضی شده است؛ برای نصب، پلن موردنظر را انتخاب کنید.',
+                ];
+            }
+        } catch (Throwable $e) {
+            // API در دسترس نیست → ادامه با بررسی خرید محلی
+        }
+
+        // اولویت ۲: خرید مستقیم قبلی
+        $purchase = PackagePurchase::query()
+            ->where('package_slug', $slug)
+            ->where('status', PackagePurchase::STATUS_PAID)
+            ->whereNotNull('license_key')
+            ->orderByDesc('paid_at')
+            ->first();
+
+        if (!$purchase) {
+            return ['mode' => 'paid'];
+        }
+
+        try {
+            $verify = $this->api()->verifyLicense($slug, $purchase->license_key);
+        } catch (Throwable $e) {
+            return [
+                'mode'    => 'paid',
+                'warning' => 'بررسی آنلاین لایسنس ناموفق بود. لطفاً مجدد تلاش کنید.',
+            ];
+        }
+
+        if (!($verify['valid'] ?? false) || ! $this->licenseHasTime($verify['expires_at'] ?? null, $purchase->license_expires_at)) {
+            return [
+                'mode'    => 'paid',
+                'warning' => $verify['message'] ?? 'لایسنس قبلی شما منقضی شده است. برای نصب، یکی از پلن‌ها را انتخاب کنید.',
+            ];
+        }
+
+        // لایسنس معتبر → نصب بدون پرداخت
+        $expiresAt = $verify['expires_at'] ?? $purchase->license_expires_at;
+
+        return [
+            'mode'           => 'license',
+            'expires_at'     => $expiresAt,
+            'expires_at_jalali' => $this->jexpiry($expiresAt),
+            'days_remaining' => $expiresAt ? (int) round(now()->diffInDays(\Carbon\Carbon::parse($expiresAt))) : null,
+        ];
+    }
+
+    /** تاریخ جلالی برای نمایش در مودال (null امن) */
+    protected function jexpiry(?string $date): ?string
+    {
+        if (empty($date)) return null;
+
+        try {
+            return jdate(\Carbon\Carbon::parse($date))->format('Y/m/d');
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
      * نصب پکیج رایگان (پورت dispatchInstall قدیمی)
      */
     protected function dispatchInstall(string $slug, ?string $version, ?int $pricingPlanId): void
@@ -154,6 +247,7 @@ trait InteractsWithPackages
             );
 
             $this->dispatch('toast', message: 'پکیج در صف نصب قرار گرفت.', type: 'success');
+            $this->afterInstallQueued($slug);
         } catch (\Exception $e) {
             $this->dispatch('toast', message: $e->getMessage(), type: 'error');
         }
@@ -238,6 +332,7 @@ trait InteractsWithPackages
         ]);
 
         $this->dispatch('toast', message: 'پکیج در صف نصب قرار گرفت.', type: 'success');
+        $this->afterInstallQueued($slug);
     }
 
     /**
@@ -283,6 +378,17 @@ trait InteractsWithPackages
         ]);
 
         $this->dispatch('toast', message: 'پکیج در صف نصب قرار گرفت.', type: 'success');
+        $this->afterInstallQueued($slug);
+    }
+
+    /**
+     * هوک پس از صف‌شدن نصب — کامپوننت لیست، کارت را به حالت «در صف/در حال نصب» می‌برد
+     */
+    protected function afterInstallQueued(string $slug): void
+    {
+        if (method_exists($this, 'refreshAfterInstall')) {
+            $this->refreshAfterInstall($slug);
+        }
     }
 
     /**

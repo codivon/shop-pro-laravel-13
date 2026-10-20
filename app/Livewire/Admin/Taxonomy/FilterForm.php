@@ -132,6 +132,50 @@ class FilterForm extends Component
         $this->rows[] = ['type' => 'static_filter', 'id' => null, 'active' => true, 'separator' => '', 'label' => ''];
     }
 
+    /**
+     * فاز ۱۷ — افزودن مستقیم یک مورد فیلترپذیر از مودال «افزودن مشخصات»
+     * (پورت filterable-plus قدیمی: کلیک + → ردیف با همان مورد ساخته می‌شود)
+     * جلوگیری از تکرار: همان type+id دوباره اضافه نمی‌شود.
+     */
+    public function addFilterableRow(string $type, int $id): void
+    {
+        $this->authorizeAccess();
+
+        if (! array_key_exists($type, self::ROW_TYPES)) {
+            return;
+        }
+
+        // جلوگیری از تکرار
+        foreach ($this->rows as $row) {
+            if ($row['type'] === $type && (int) $row['id'] === $id) {
+                $this->dispatch('toast', message: 'این مورد قبلاً به فیلتر اضافه شده است.', type: 'error');
+                return;
+            }
+        }
+
+        $label = match ($type) {
+            'static_filter'  => optional(StaticFilter::find($id))->title,
+            'attributeGroup' => optional(AttributeGroup::find($id))->name,
+            'specification'  => optional(Specification::find($id))->name,
+            default          => null,
+        };
+
+        if (! $label) {
+            $this->dispatch('toast', message: 'مورد انتخابی یافت نشد.', type: 'error');
+            return;
+        }
+
+        $this->rows[] = [
+            'type'      => $type,
+            'id'        => $id,
+            'active'    => true,
+            'separator' => '',
+            'label'     => (string) $label,
+        ];
+
+        $this->dispatch('toast', message: '«' . $label . '» به فیلتر اضافه شد.', type: 'success');
+    }
+
     public function removeRow(int $index): void
     {
         unset($this->rows[$index]);

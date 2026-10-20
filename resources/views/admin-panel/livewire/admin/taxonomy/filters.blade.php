@@ -1,92 +1,80 @@
-{{-- لیست فیلترها — پنل جدید (فاز ۵) | پورت back/filters/index --}}
+{{-- لیست فیلترها — فاز ۱۷: بازطراحی مدرن (کارت‌های شبکه‌ای) | پورت back/filters/index --}}
 <div class="mx-auto max-w-7xl space-y-5">
 
     {{-- سربرگ --}}
-    <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-2.5">
-            <span class="flex size-10 items-center justify-center rounded-xl bg-brand-600 text-white">
-                <x-admin-panel::icon name="filter" class="size-5" />
-            </span>
-            <div>
-                <h2 class="text-base font-extrabold">فیلترها</h2>
-                <p class="text-[11px] text-ink-3 dark:text-night-ink-2">مدیریت فیلترهای نمایش محصولات و فروشندگان</p>
+    <div class="relative overflow-hidden rounded-2xl border border-line bg-surface p-5 dark:border-night-line dark:bg-night-2 sm:p-6">
+        <div class="pointer-events-none absolute inset-0 bg-gradient-to-l from-brand-500/10 via-transparent to-amber-500/10" aria-hidden="true"></div>
+        <div class="relative flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <span class="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-amber-500 text-white shadow-lg shadow-brand-500/25">
+                    <x-admin-panel::icon name="filter" class="size-6" />
+                </span>
+                <div>
+                    <h2 class="text-lg font-extrabold">فیلترها</h2>
+                    <p class="text-[11px] text-ink-3 dark:text-night-ink-2">مدیریت فیلترهای نمایش محصولات و فروشندگان</p>
+                </div>
             </div>
+            @can('filters.create')
+                <a href="{{ route('np.filters.create') }}" wire:navigate class="ap-btn-primary !py-2.5">
+                    <x-admin-panel::icon name="plus" class="size-4" />
+                    فیلتر جدید
+                </a>
+            @endcan
         </div>
-        @can('filters.create')
-            <a href="{{ route('np.filters.create') }}" wire:navigate class="ap-btn-primary !py-2">
-                <x-admin-panel::icon name="plus" class="size-4" />
-                فیلتر جدید
-            </a>
-        @endcan
     </div>
 
-    {{-- جدول --}}
-    <div class="ap-card overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full min-w-4xl text-start text-[13px]">
-                <thead>
-                    <tr class="border-b border-line bg-surface-2 text-ink-2 dark:border-night-line dark:bg-night-3">
-                        <th class="w-16 px-3 py-3 text-start font-bold">#</th>
-                        <th class="px-3 py-3 text-start font-bold">عنوان فیلتر</th>
-                        <th class="px-3 py-3 text-center font-bold">نوع</th>
-                        <th class="px-3 py-3 text-center font-bold">تعداد موارد</th>
-                        <th class="w-24 px-3 py-3 text-center font-bold">عملیات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($this->filters as $filter)
-                        <tr wire:key="filter-{{ $filter->id }}"
-                            class="border-b border-line/60 transition-colors last:border-0 hover:bg-surface-2 dark:border-night-line/60 dark:hover:bg-night-3/60">
-                            <td class="px-3 py-3 fa-digits font-bold">{{ number_format($filter->id) }}</td>
-                            <td class="px-3 py-3 font-semibold">{{ $filter->title }}</td>
-                            <td class="px-3 py-3 text-center">
-                                @if ($filter->is_seller)
-                                    <span class="ap-badge bg-amber-50 text-amber-700 dark:bg-amber-500/12 dark:text-amber-400">فیلتر فروشندگان</span>
-                                @else
-                                    <span class="ap-badge bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-400">فیلتر محصولات</span>
-                                @endif
-                            </td>
-                            <td class="px-3 py-3 text-center">
-                                <span class="fa-digits inline-flex rounded-lg bg-surface-2 px-2.5 py-1 font-bold dark:bg-night-3">
-                                    {{ number_format($filter->related_count) }}
-                                </span>
-                            </td>
-                            <td class="px-3 py-3">
-                                <div class="flex items-center justify-center gap-0.5">
-                                    @can('filters.update')
-                                        <a href="{{ route('np.filters.edit', ['filter' => $filter]) }}" wire:navigate
-                                           class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10"
-                                           title="ویرایش" aria-label="ویرایش">
-                                            <x-admin-panel::icon name="pencil" class="size-4" />
-                                        </a>
-                                    @endcan
-                                    @can('filters.delete')
-                                        <button type="button" wire:click="confirmDelete({{ $filter->id }})"
-                                                class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
-                                                title="حذف" aria-label="حذف">
-                                            <x-admin-panel::icon name="trash-2" class="size-4" />
-                                        </button>
-                                    @endcan
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5">
-                                <div class="flex flex-col items-center gap-2 py-14 text-ink-3 dark:text-night-ink-2">
-                                    <x-admin-panel::icon name="filter" class="size-10 opacity-40" />
-                                    <p class="text-sm font-medium">فیلتری ثبت نشده است</p>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+    {{-- شبکه کارت‌ها --}}
+    @if ($this->filters->count())
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            @foreach ($this->filters as $filter)
+                <div class="ap-card group flex items-center gap-3 p-4 transition-all hover:border-brand-200 hover:shadow-card dark:hover:border-brand-500/25"
+                     wire:key="filter-{{ $filter->id }}">
+                    {{-- آیکون --}}
+                    <span class="flex size-11 shrink-0 items-center justify-center rounded-xl transition-colors {{ $filter->is_seller
+                        ? 'bg-amber-50 text-amber-600 dark:bg-amber-500/12 dark:text-amber-400'
+                        : 'bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400' }}">
+                        <x-admin-panel::icon name="{{ $filter->is_seller ? 'shopping-bag' : 'filter' }}" class="size-5" />
+                    </span>
+
+                    {{-- مشخصات --}}
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-[13px] font-bold">{{ $filter->title }}</p>
+                        <div class="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
+                            <span class="ap-badge {{ $filter->is_seller
+                                ? 'bg-amber-50 text-amber-700 dark:bg-amber-500/12 dark:text-amber-400'
+                                : 'bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-400' }}">
+                                {{ $filter->is_seller ? 'فیلتر فروشندگان' : 'فیلتر محصولات' }}
+                            </span>
+                            <span class="fa-digits ap-badge bg-surface-2 text-ink-2 dark:bg-night-3 dark:text-night-ink-2">
+                                {{ number_format($filter->related_count) }} مورد
+                            </span>
+                        </div>
+                    </div>
+
+                    {{-- عملیات --}}
+                    <div class="flex shrink-0 items-center gap-0.5">
+                        @can('filters.update')
+                            <a href="{{ route('np.filters.edit', ['filter' => $filter]) }}" wire:navigate
+                               class="rounded-lg p-2 text-ink-3 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10"
+                               title="ویرایش" aria-label="ویرایش {{ $filter->title }}">
+                                <x-admin-panel::icon name="pencil" class="size-4" />
+                            </a>
+                        @endcan
+                        @can('filters.delete')
+                            <button type="button" wire:click="confirmDelete({{ $filter->id }})"
+                                    class="rounded-lg p-2 text-ink-3 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
+                                    title="حذف" aria-label="حذف {{ $filter->title }}">
+                                <x-admin-panel::icon name="trash-2" class="size-4" />
+                            </button>
+                        @endcan
+                    </div>
+                </div>
+            @endforeach
         </div>
 
         {{-- صفحه‌بندی --}}
-        <div class="border-t border-line px-4 py-3 dark:border-night-line">
-            <div class="flex flex-wrap items-center justify-between gap-3">
+        @if ($this->filters->hasPages())
+            <div class="ap-card flex flex-wrap items-center justify-between gap-3 p-4">
                 <p class="text-xs text-ink-3 dark:text-night-ink-2">
                     نمایش <span class="fa-digits">{{ number_format($this->filters->firstItem() ?? 0) }}</span> تا
                     <span class="fa-digits">{{ number_format($this->filters->lastItem() ?? 0) }}</span> از
@@ -124,8 +112,22 @@
                     @endif
                 </nav>
             </div>
+        @endif
+    @else
+        <div class="ap-card flex flex-col items-center gap-3 p-12 text-center">
+            <span class="flex size-14 items-center justify-center rounded-2xl bg-surface-2 text-ink-3 dark:bg-night-3">
+                <x-admin-panel::icon name="filter" class="size-7 opacity-50" />
+            </span>
+            <p class="text-sm font-bold">فیلتری ثبت نشده است</p>
+            <p class="text-xs text-ink-3 dark:text-night-ink-2">اولین فیلتر را برای مدیریت نمایش محصولات بسازید.</p>
+            @can('filters.create')
+                <a href="{{ route('np.filters.create') }}" wire:navigate class="ap-btn-primary mt-1 !py-2">
+                    <x-admin-panel::icon name="plus" class="size-4" />
+                    ایجاد اولین فیلتر
+                </a>
+            @endcan
         </div>
-    </div>
+    @endif
 
     {{-- مودال تایید حذف --}}
     <div x-data="{ open: @entangle('confirmingDelete').live }"
@@ -154,12 +156,12 @@
         </div>
     </div>
 
-    {{-- لودینگ --}}
+    {{-- لودینگ حذف --}}
     <div wire:loading wire:target="delete"
          class="pointer-events-none fixed bottom-6 start-6 z-[65] flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 shadow-pop dark:border-night-line dark:bg-night-3">
         <svg class="size-4 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
         </svg>
-        <span class="text-[13px] font-semibold">در حال بارگذاری…</span>
+        <span class="text-[13px] font-semibold">در حال حذف…</span>
     </div>
 </div>

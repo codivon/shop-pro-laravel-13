@@ -564,6 +564,252 @@ document.addEventListener('alpine:init', () => {
         close() { this.open = false; },
     }));
 
+    /* ------------------------------------------------------------------
+     | مدیریت دسترسی‌ها (فاز ۱۷) — وضعیت انتخاب سمت کلاینت برای UI فوری
+     | (شمارنده زنده، کسکید والد/فرزند، جستجو) — ذخیره با یک کامیت ($wire.save(perms))
+     ------------------------------------------------------------------ */
+    Alpine.data('apPermissions', ({ initial = [], kids = {}, titles = {} }) => ({
+        perms: initial.map(Number),
+        kidsMap: kids,
+        titles,
+
+        match(title) {
+            const q = String(this.q ?? '').trim();
+            if (!q) return true;
+            return String(title ?? '').indexOf(q) !== -1;
+        },
+
+        kids(pid) {
+            return (this.kidsMap[pid] || []).map(Number);
+        },
+
+        isChecked(id) {
+            return this.perms.includes(Number(id));
+        },
+
+        childCount(pid) {
+            return this.kids(pid).filter((id) => this.isChecked(id)).length;
+        },
+
+        toggle(id) {
+            id = Number(id);
+            this.perms = this.isChecked(id)
+                ? this.perms.filter((v) => v !== id)
+                : [...this.perms, id];
+        },
+
+        toggleParent(pid) {
+            pid = Number(pid);
+            const kids = this.kids(pid);
+
+            if (this.isChecked(pid)) {
+                this.perms = this.perms.filter((v) => v !== pid && ! kids.includes(v));
+            } else {
+                this.perms = [...new Set([...this.perms, pid, ...kids])];
+            }
+        },
+
+        selectAll() {
+            this.perms = Object.keys(this.titles).map(Number);
+        },
+
+        clearAll() {
+            if (window.confirm('آیا از حذف انتخاب همه دسترسی‌ها مطمئن هستید؟ تا قبل از ذخیره هیچ تغییری اعمال نمی‌شود.')) {
+                this.perms = [];
+            }
+        },
+
+        async save() {
+            await this.$wire.save(this.perms);
+        },
+    }));
+
+    /* ------------------------------------------------------------------
+     | فرم فیلترها (فاز ۱۷) — مودال «افزودن مشخصات» با جستجوی زنده
+     | پورت add-filterable-modal قدیمی؛ افزودن مستقیم هر مورد با +
+     ------------------------------------------------------------------ */
+    Alpine.data('apFilterForm', () => ({
+        modalOpen: false,
+
+        openModal() {
+            this.modalOpen = true;
+            this.$nextTick(() => {
+                const input = document.getElementById('filterable-search');
+                if (input) { input.value = ''; input.dispatchEvent(new Event('input', { bubbles: true })); input.focus(); }
+            });
+        },
+
+        match(label, query) {
+            const q = String(query ?? '').trim().toLowerCase();
+            if (!q) return true;
+            return String(label ?? '').toLowerCase().includes(q);
+        },
+
+        rows() {
+            return this.$wire.rows || [];
+        },
+
+        added(item) {
+            return this.rows().some((r) => r.type === item.type && Number(r.id) === Number(item.id));
+        },
+
+        async add(item) {
+            if (this.added(item)) return;
+            await this.$wire.addFilterableRow(item.type, item.id);
+        },
+    }));
+
+    /* ------------------------------------------------------------------
+     | بازار پکیج‌ها — مودال تأیید نصب (فاز ۱۷ — پورت install-confirm قدیمی)
+     | جریان: نصب → بررسی وضعیت خرید/اشتراک (checkPurchaseState) → انتخاب پلن
+     | (پیش‌فرض ارزان‌ترین مثل قدیمی) → تأیید → startInstall با planId/اشتراک/لایسنس
+     ------------------------------------------------------------------ */
+    Alpine.data('pkgMarket', () => ({
+        modalOpen: false,
+        checking: false,
+        busy: false,
+        pkg: null,
+        mode: 'paid', // free | paid | license | subscription
+        plans: [],
+        planId: null,
+        license: null,
+        subscription: null,
+        warning: null,
+        // مودال نتیجه پرداخت (بعد از بازگشت از درگاه — session payment_result)
+        paymentModal: false,
+
+        formatPrice(v) {
+            return ApFormat.number(v);
+        },
+
+        selectedPlan() {
+            return this.plans.find((p) => p.id === this.planId) || null;
+        },
+
+        get confirmLabel() {
+            if (this.mode === 'license') return 'بررسی و نصب';
+            if (this.mode === 'subscription') return 'نصب با اشتراک';
+            if (this.mode === 'free') return 'نصب پکیج';
+            const plan = this.selectedPlan();
+            if (plan && plan.final_price === 0) return 'نصب پکیج';
+            return 'پرداخت و نصب';
+        },
+
+        buildPlans(raw) {
+            const plans = (raw || []).map((plan) => {
+                const price = parseInt(plan.price ?? 0) || 0;
+                const finalPrice = parseInt(plan.discount_price ?? plan.price ?? 0) || 0;
+                const months = parseInt(plan.duration_months ?? 0) || 0;
+                const duration = months === 0 ? 'نامحدود'
+                    : months < 12 ? months + ' ماه'
+                        : (months / 12 === Math.floor(months / 12) ? Math.floor(months / 12) : months / 12) + ' سال';
+
+                return {
+                    id: plan.id,
+                    name: plan.name || ('پلن #' + plan.id),
+                    price,
+                    final_price: finalPrice,
+                    price_label: ApFormat.number(price),
+                    final_label: ApFormat.number(finalPrice),
+                    has_discount: plan.discount_price !== null && plan.discount_price !== undefined && plan.discount_price < price,
+                    duration,
+                    description: plan.description || '',
+                    is_one_time: plan.is_one_time === true || plan.is_one_time === 1 || plan.is_one_time === '1',
+                    is_cheapest: false,
+                };
+            });
+
+            // ارزان‌ترین — مثل قدیمی نشان + انتخاب پیش‌فرض
+            if (plans.length) {
+                const cheapest = plans.reduce((acc, p) => (p.final_price < acc.final_price ? p : acc), plans[0]);
+                cheapest.is_cheapest = plans.filter((p) => p.final_price === cheapest.final_price).length > 1;
+                this.planId = cheapest.id;
+            } else {
+                this.planId = null;
+            }
+
+            this.plans = plans;
+        },
+
+        expiryLabel(expiresAt, days) {
+            if (!expiresAt) return ' — نامحدود';
+            let label = ' — اعتبار تا ' + expiresAt;
+            const d = parseInt(days);
+            if (!isNaN(d) && d >= 0) label += ' (' + ApFormat.number(Math.max(d, 0)) + ' روز باقی‌مانده)';
+            return label;
+        },
+
+        async ask(pkg) {
+            this.pkg = pkg;
+            this.license = null;
+            this.subscription = null;
+            this.warning = null;
+            this.busy = false;
+            this.modalOpen = true;
+
+            // پکیج رایگان — مثل قدیمی مستقیم تأیید
+            if (pkg.is_free) {
+                this.mode = 'free';
+                this.plans = [];
+                this.planId = null;
+                return;
+            }
+
+            this.mode = 'paid';
+            this.buildPlans(pkg.active_pricing_plans ?? pkg.pricing_plans ?? pkg.plans ?? []);
+
+            // بررسی خرید/اشتراک (پورت checkPurchase AJAX قدیمی)
+            this.checking = true;
+            try {
+                const state = await this.$wire.checkPurchaseState(pkg.slug);
+                if (state && state.mode === 'subscription') {
+                    this.mode = 'subscription';
+                    this.subscription = {
+                        plan_name: state.plan_name,
+                        expiry_label: this.expiryLabel(state.expires_at_jalali ?? null, state.days_remaining),
+                    };
+                } else if (state && state.mode === 'license') {
+                    this.mode = 'license';
+                    this.license = {
+                        expiry_label: this.expiryLabel(state.expires_at_jalali ?? null, state.days_remaining),
+                    };
+                } else if (state && state.warning) {
+                    this.warning = state.warning;
+                }
+            } catch (e) {
+                // خطا در بررسی → جریان عادی خرید مثل قدیمی
+            } finally {
+                this.checking = false;
+            }
+        },
+
+        pick(plan) {
+            this.planId = plan.id;
+            this.warning = null;
+        },
+
+        async confirmInstall() {
+            if (this.busy) return;
+            this.busy = true;
+            try {
+                if (this.mode === 'subscription') {
+                    await this.$wire.startInstall(this.pkg.slug, null, true, false);
+                } else if (this.mode === 'license') {
+                    await this.$wire.startInstall(this.pkg.slug, null, false, true);
+                } else if (this.mode === 'free') {
+                    await this.$wire.startInstall(this.pkg.slug);
+                } else {
+                    await this.$wire.startInstall(this.pkg.slug, this.planId);
+                }
+                this.modalOpen = false;
+            } catch (e) {
+                ApToast?.show?.('خطا در ارتباط با سرور.', { type: 'error' });
+            } finally {
+                this.busy = false;
+            }
+        },
+    }));
+
     /* فرم محصول — تب‌ها */
     Alpine.data('apProductForm', () => ({
         tab: 'basics',
@@ -954,16 +1200,34 @@ window.apMediaPicker = (initial = '') => ({
             document.querySelectorAll('.ap-clicking').forEach((el) => el.classList.remove('ap-clicking'));
         };
 
-        // ثبت کلیک روی عناصر دارای اکشن Livewire (یا فرزند آن‌ها)
-        const BUSY_SELECTOR = '[wire\\:click], [wire\\:submit]';
+        // ثبت کلیک فقط روی عناصر تعاملی واقعی (دکمه/لینک/سابمیت) — فاز ۱۷
+        // قبلاً [wire:submit] خودِ <form> را می‌گرفت و کلیک روی اینپوت/متن داخل فرم،
+        // کل فرم را محو و اسپینردار می‌کرد؛ حالا فقط دکمه ارسال اسپینر می‌گیرد.
+        // عناصر غیردکمه‌ای با wire:click (مثل هدر آکاردئون) هم دیگر اسپینر نمی‌گیرند —
+        // نوار پیشرفت بالای صفحه همچنان وضعیت درخواست را نشان می‌دهد.
+        const BUSY_SELECTOR = [
+            'button[wire\\:click]',
+            'a[wire\\:click]',
+            '[role="button"][wire\\:click]',
+            'label[wire\\:click]',
+            'form[wire\\:submit] button[type="submit"]',
+            'form[wire\\:submit] button:not([type])',
+            // دکمه‌های بیرون از فرم با اتریبیوت form= (مثل صفحه تنظیمات)
+            'button[type="submit"][form]',
+        ].join(', ');
         document.addEventListener('click', (event) => {
             const target = event.target.closest(BUSY_SELECTOR);
             if (!target) return;
+            // اگر دکمه با form= به فرم متصل است، آن فرم باید wire:submit داشته باشد
+            const formId = target.getAttribute('form');
+            if (formId && ! document.getElementById(formId)?.hasAttribute('wire:submit')) return;
             // دکمه‌های disabled قبلاً wire:loading.attr=disabled دارند — کافی است
             if (target.disabled) return;
             lastUserClickAt = Date.now();
             clearClicking();
             target.classList.add('ap-clicking');
+            // ایمنی: اگر commit پاسخ نداد، اسپینر حداکثر ۸ ثانیه می‌ماند
+            setTimeout(() => target.classList.remove('ap-clicking'), 8000);
         }, true);
 
         // ناوبری wire:navigate — جدا از کامیت‌ها

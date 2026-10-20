@@ -36,6 +36,9 @@ class OrdersPage extends Component
     /** values | counts | users | products */
     public string $tab = 'values';
 
+    /** فاز ۱۷: تب‌هایی که برای ترکیب فعلی فیلترها لود شده‌اند — سوییچ مجدد فوری، بدون رفت‌وبرگشت سرور */
+    public array $loadedTabs = [];
+
     public array $charts = [
         'values'   => [],
         'counts'   => [],
@@ -84,6 +87,9 @@ class OrdersPage extends Component
         $this->to_date = '';
         $this->resetValidation();
 
+        // با تغییر بازه، کش تب‌ها بی‌اعتبار می‌شود
+        $this->loadedTabs = [];
+
         $this->loadTab($this->tab);
     }
 
@@ -96,7 +102,22 @@ class OrdersPage extends Component
             'to_date'   => ['nullable', new CheckeJdate()],
         ]);
 
+        // با تغییر بازه، کش تب‌ها بی‌اعتبار می‌شود
+        $this->loadedTabs = [];
+
         $this->loadTab($this->tab);
+    }
+
+    /** کلید کش بر اساس ترکیب فعلی فیلترها */
+    public function tabCacheKey(): string
+    {
+        return $this->period.'|'.$this->from_date.'|'.$this->to_date;
+    }
+
+    /** آیا داده‌های این تب برای فیلترهای فعلی از قبل لود شده؟ (فاز ۱۷ — سوییچ فوری تب) */
+    public function isTabLoaded(string $tab): bool
+    {
+        return isset($this->loadedTabs[$this->tabCacheKey().'|'.$tab]);
     }
 
     public function loadTab(string $tab): void
@@ -125,6 +146,9 @@ class OrdersPage extends Component
 
         $this->charts[$tab] = array_values($payload['data'] ?? []);
         $this->metas[$tab]  = $payload['meta'] ?? $this->metas[$tab];
+
+        // تب به‌عنوان لودشده برای ترکیب فعلی فیلترها ثبت می‌شود
+        $this->loadedTabs[$this->tabCacheKey().'|'.$tab] = true;
 
         $this->dispatch('chart-update', charts: [
             'stats-orders-' . $tab => $this->chartOptions($tab),
