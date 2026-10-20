@@ -27,7 +27,8 @@
 
         {{-- ستون اصلی --}}
         <div class="flex min-w-0 flex-1 flex-col lg:mr-[17rem]">
-            <x-admin-panel::topbar />
+            {{-- فاز ۱۹: $title (از #[Title] Livewire) صریحاً پاس داده می‌شود — کامپوننت‌های anonymous اسکوپ والد را ارث نمی‌برند --}}
+            <x-admin-panel::topbar :title="($title ?? null)" />
 
             <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
                 {{ $slot }}

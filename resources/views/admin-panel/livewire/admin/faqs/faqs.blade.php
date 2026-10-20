@@ -7,7 +7,11 @@
     {{-- سربرگ --}}
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-            <h1 class="text-base font-extrabold">سوالات متداول</h1>
+            <h1 class="flex items-center gap-2.5 text-base font-extrabold">
+                <span class="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-500/25">
+                    <x-admin-panel::icon name="circle-help" class="size-5.5" />
+                </span>
+                سوالات متداول</h1>
             <p class="mt-1 text-xs text-ink-3 dark:text-night-ink-2">مدیریت پرسش‌هایی که در صفحات سایت به کاربر نمایش داده می‌شود.</p>
         </div>
         @can('faqs.create')
@@ -170,7 +174,8 @@
     <div x-data="{ open: @entangle('showFormModal').live }"
          x-show="open" x-cloak
          class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" x-show="open" x-on:click="closeFormModal" x-transition.opacity aria-hidden="true"></div>
+        {{-- فاز ۱۹: closeFormModal متد سرور است نه Alpine — بستن فوری با entangle.live کافی است --}}
+        <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" x-show="open" x-on:click="open = false" x-transition.opacity aria-hidden="true"></div>
         <div x-show="open" x-on:click.stop
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
@@ -209,7 +214,7 @@
                         <x-admin-panel::icon name="check" class="size-4" />
                         ذخیره
                     </button>
-                    <button type="button" x-on:click="closeFormModal" class="ap-btn-ghost flex-1">انصراف</button>
+                    <button type="button" x-on:click="open = false" class="ap-btn-ghost flex-1">انصراف</button>
                 </div>
             </form>
         </div>

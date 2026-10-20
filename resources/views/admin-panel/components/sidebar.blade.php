@@ -5,6 +5,25 @@
     $siteTitle = option('info_site_title', config('app.name'));
     // فاز ۱۲: منوهای وابسته به سیستم چندفروشندگی فقط وقتی فعال است نمایش داده می‌شوند
     $vendorEnabled = option('multi_vendor_system_status', 'false') == 'true';
+
+    /*
+    | فاز ۱۹ — نقشه‌ی کلیدهای پارامتری هر روت (روی کل منو):
+    | برای تشخیص «آیتم بدون پارامتر» (مثل «همه سفارشات») از آیتم‌های
+    | هم‌روتِ پارامتردار (مثل «پرداخت شده») — تا هر دو هم‌زمان فعال نشوند.
+    */
+    $menuParamKeys = [];
+    $collectParamKeys = function ($items) use (&$collectParamKeys, &$menuParamKeys) {
+        foreach ($items as $it) {
+            if (! empty($it['route']) && ! empty($it['params'])) {
+                foreach (array_keys($it['params']) as $pk) {
+                    $menuParamKeys[$it['route']][] = $pk;
+                }
+            }
+            if (! empty($it['children'])) $collectParamKeys($it['children']);
+        }
+    };
+    foreach ($menu as $g) $collectParamKeys($g['items']);
+    $menuParamKeys = collect($menuParamKeys)->map(fn ($keys) => array_values(array_unique($keys)))->all();
 @endphp
 
 <aside
@@ -95,7 +114,10 @@
                                              x-transition:leave="transition ease-in duration-150"
                                              x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
                                             <ul class="mt-0.5 space-y-0.5 ms-4 border-s-2 border-line/70 ps-2.5 dark:border-night-line/70">
-                                                @each('admin-panel::components.menu-item', $childItems, 'item')
+                                                {{-- فاز ۱۹: @each اسکوپ را پاس نمی‌دهد؛ foreach + include تا $menuParamKeys به menu-item برسد --}}
+                                                @foreach ($childItems as $item)
+                                                    @include('admin-panel::components.menu-item', ['item' => $item])
+                                                @endforeach
                                             </ul>
                                         </div>
                                     </div>

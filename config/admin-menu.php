@@ -522,6 +522,13 @@ return [
                             'permission' => 'posts.category',
                             'icon' => 'folder-tree',
                         ],
+                        // فاز ۱۹: «دیدگاه‌ها» (دیدگاه‌های مطالب) به زیرمنوی وبلاگ منتقل شد
+                        [
+                            'label' => 'دیدگاه‌ها',
+                            'route' => 'np.comments.posts',
+                            'permission' => 'posts.comments',
+                            'icon' => 'message-square',
+                        ],
                     ],
                 ],
                 // فاز ۱۶: «صفحات» بلافاصله بعد از وبلاگ (محتوای اصلی سایت)
@@ -543,12 +550,7 @@ return [
                         ],
                     ],
                 ],
-                [
-                    'label' => 'دیدگاه‌ها',
-                    'route' => 'np.comments.posts',
-                    'permission' => 'posts.comments',
-                    'icon' => 'message-square',
-                ],
+                // فاز ۱۹: «دیدگاه‌ها» به زیرمنوی وبلاگ منتقل شد (np.comments.posts)
                 [
                     'label' => 'تگ‌ها',
                     'route' => 'np.tags.index',
@@ -583,12 +585,8 @@ return [
                             'permission' => 'themes.index',
                             'icon' => 'list',
                         ],
-                        [
-                            'label' => 'آپلود قالب جدید',
-                            'route' => 'np.themes.create',
-                            'permission' => 'themes.create',
-                            'icon' => 'upload',
-                        ],
+                        // فاز ۱۹: «آپلود قالب جدید» حذف شد — نصب قالب از داخل صفحه‌ی
+                        // «لیست قالب‌ها» (کارت آپلود) انجام می‌شود.
                         [
                             'label' => 'تنظیمات قالب',
                             'route' => 'np.themes.settings',

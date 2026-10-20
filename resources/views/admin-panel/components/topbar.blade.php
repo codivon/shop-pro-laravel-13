@@ -1,11 +1,54 @@
 {{-- تاپ‌بار پنل جدید --}}
 @php
     $admin = auth('adminPanel')->user();
-    $pageTitle = trim($__env->yieldContent('title'));
+    /* فاز ۱۹: عنوان واقعی صفحه از #[Title] کامپوننت Livewire ($title در layout)
+       — قبلاً همیشه «داشبورد» نشان داده می‌شد چون yieldContent('title') برای
+       صفحات Livewire پر نمی‌شد. */
+    $pageTitle = trim($__env->yieldContent('title') ?: ($title ?? ''));
+
+    /*
+    | فاز ۱۹ — آیکون عنوان صفحه: از منو (route → icon) با تطبیق خانواده.
+    | همه‌ی صفحات زیرمجموعه (show/edit/movements/…) آیکونِ آیتم لیستِ خانواده‌ی
+    | خود را می‌گیرند؛ صفحات بیرون از منو fallback می‌گیرند.
+    */
+    $routeIconMap = [];
+    $collectIcons = function ($items) use (&$collectIcons, &$routeIconMap) {
+        foreach ($items as $it) {
+            if (! empty($it['route']) && ! empty($it['icon'])) {
+                $routeIconMap[$it['route']] = $it['icon'];
+            }
+            if (! empty($it['children'])) $collectIcons($it['children']);
+        }
+    };
+    foreach (config('admin-menu.groups', []) as $g) $collectIcons($g['items']);
+
+    $currentRoute = request()->route()?->getName();
+    $pageIcon = $routeIconMap[$currentRoute] ?? null;
+    if (! $pageIcon && $currentRoute) {
+        // تطبیق خانواده: بلندترین پیشوند مسیرِ موجود در منو
+        $parts = explode('.', $currentRoute);
+        while (count($parts) > 1) {
+            array_pop($parts);
+            $family = implode('.', $parts);
+            if ($family === 'np') break;
+            if (isset($routeIconMap[$family . '.index'])) { $pageIcon = $routeIconMap[$family . '.index']; break; }
+            foreach ($routeIconMap as $mapRoute => $mapIcon) {
+                if (str_starts_with($mapRoute, $family . '.')) { $pageIcon = $mapIcon; break 2; }
+            }
+        }
+    }
+    $pageIcon = $pageIcon ?: 'layout-dashboard';
 @endphp
 
 <header class="sticky top-0 z-30 border-b border-line bg-surface/85 backdrop-blur-md dark:border-night-line dark:bg-night-2/85">
     <div class="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
+
+        {{-- فاز ۱۹: لودر گرد سراسری — هم‌گام با نوار پیشرفت بالای صفحه (بالای پنل، سمت راست) --}}
+        <div id="ap-nav-spinner" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
+            </svg>
+        </div>
 
         {{-- همبرگر موبایل --}}
         <button type="button" class="rounded-xl p-2 text-ink-2 hover:bg-surface-3 lg:hidden dark:text-night-ink-2 dark:hover:bg-night-3"
@@ -13,9 +56,14 @@
             <x-admin-panel::icon name="menu" class="size-5" />
         </button>
 
-        {{-- عنوان صفحه --}}
+        {{-- عنوان صفحه + آیکون (فاز ۱۹) --}}
         <div class="min-w-0 flex-1">
-            <h1 class="truncate text-[15px] font-bold leading-6">{{ $pageTitle ?: 'داشبورد' }}</h1>
+            <div class="flex items-center gap-2">
+                <span class="flex size-8 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-500/25">
+                    <x-admin-panel::icon name="{{ $pageIcon }}" class="size-4.5" />
+                </span>
+                <h1 class="truncate text-[15px] font-bold leading-6">{{ $pageTitle ?: 'داشبورد' }}</h1>
+            </div>
             @hasSection('subtitle')
                 <p class="truncate text-xs text-ink-3 dark:text-night-ink-2">@yield('subtitle')</p>
             @endif

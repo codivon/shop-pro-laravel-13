@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\Imports\Concerns;
 use App\Traits\ImportLogger;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\Computed;
 use Livewire\WithFileUploads;
 
 /**
@@ -52,6 +53,103 @@ trait InteractsWithImports
     public function getErrorDataProperty(): ?array
     {
         return $this->loadLastErrorFile();
+    }
+
+    /* ------------------------------------------------------------------
+     | فاز ۱۹ — پیش‌فرض همه‌ی فیلدها تیک‌خورده + ابزارهای پیش‌نمایش زنده اکسل
+     ------------------------------------------------------------------ */
+
+    /** همه‌ی فیلدها پیش‌فرض تیک می‌خورند (درخواست کاربر) */
+    protected function defaultAllFiltersChecked(): void
+    {
+        $filters = [];
+        foreach (array_keys($this->fields) as $key) {
+            $filters[$key] = '1';
+        }
+        $this->filters = $filters;
+    }
+
+    /** تیک همه (الزامی‌ها همیشه روشن می‌مانند) */
+    public function checkAllFilters(): void
+    {
+        $this->defaultAllFiltersChecked();
+    }
+
+    /** برداشتن تیک همه (الزامی‌ها روشن می‌مانند) */
+    public function uncheckAllFilters(): void
+    {
+        $filters = [];
+        foreach ($this->fields as $key => $field) {
+            $filters[$key] = ! empty($field['required']) ? '1' : '0';
+        }
+        $this->filters = $filters;
+    }
+
+    /** تعداد فیلدهای فعال (برای بج زنده) */
+    #[Computed]
+    public function activeFieldsCount(): int
+    {
+        return collect($this->filters)->filter(fn ($v) => $v === '1' || $v === true)->count();
+    }
+
+    /** حرف ستون اکسل (A، B، C، …) برای سربرگ شبیه‌سازی */
+    public static function excelColumn(int $index): string
+    {
+        $letters = '';
+        $index += 1;
+        while ($index > 0) {
+            $index--;
+            $letters = chr(65 + ($index % 26)) . $letters;
+            $index = intdiv($index, 26);
+        }
+        return $letters;
+    }
+
+    /* ------------------------------------------------------------------
+     | فاز ۱۹ — فایل‌های آپلودشده‌ی درون‌ریزی با قابلیت حذف
+     | (فایل‌ها روی دیسک storage در imports/{type} ذخیره می‌شوند)
+     ------------------------------------------------------------------ */
+
+    #[Computed]
+    public function uploadedFiles(): array
+    {
+        $disk = Storage::disk('storage');
+        $dir = $this->importDirectory();
+
+        if (! $disk->exists($dir)) {
+            return [];
+        }
+
+        return collect($disk->files($dir))
+            ->map(fn ($f) => [
+                'name' => basename($f),
+                'size' => $disk->size($f),
+                'date' => $disk->lastModified($f),
+            ])
+            ->filter(fn ($f) => str_starts_with($f['name'], $this->baseFilename()))
+            ->sortByDesc('date')
+            ->values()
+            ->all();
+    }
+
+    /** حذف فایل آپلودشده (فقط نام ساده — امن) */
+    public function deleteUploadedFile(string $name): void
+    {
+        auth('adminPanel')->user()?->can('imports.' . $this->importType()) ?: abort(403);
+
+        $name = basename($name);
+        $disk = Storage::disk('storage');
+        $path = $this->importDirectory() . '/' . $name;
+
+        if (! str_starts_with($name, $this->baseFilename()) || ! $disk->exists($path)) {
+            $this->dispatch('toast', message: 'فایل وجود ندارد', type: 'error');
+            return;
+        }
+
+        $disk->delete($path);
+        unset($this->uploadedFiles);
+
+        $this->dispatch('toast', message: 'فایل آپلودشده حذف شد.', type: 'success');
     }
 
     public function getErrorFileDateProperty(): ?string

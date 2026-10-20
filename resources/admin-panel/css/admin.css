@@ -929,7 +929,7 @@ button [wire\:loading][style]:not([style*="display: none"]):not([style*="display
     position: fixed;
     top: 0;
     inset-inline-start: 0;
-    height: 3px;
+    height: 5px; /* فاز ۱۹: بزرگ‌تر شد (قبلاً ۳ پیکسل) */
     width: 0;
     z-index: 9999;
     background: linear-gradient(90deg, var(--color-brand-500, #10b981), var(--color-brand-400, #34d399));
@@ -937,7 +937,7 @@ button [wire\:loading][style]:not([style*="display: none"]):not([style*="display
     opacity: 0;
     transition: width 0.25s ease, opacity 0.3s ease;
     pointer-events: none;
-    box-shadow: 0 0 10px rgb(16 185 129 / 0.55);
+    box-shadow: 0 0 14px rgb(16 185 129 / 0.7);
 }
 #ap-top-progress.is-active {
     opacity: 1;
@@ -951,6 +951,34 @@ button [wire\:loading][style]:not([style*="display: none"]):not([style*="display
 #ap-top-progress.is-done {
     opacity: 0;
     width: 100% !important;
+}
+
+/* فاز ۱۹ — لودر گرد سراسری در بالای پنل (سمت راست) — هم‌گام با نوار پیشرفت */
+#ap-nav-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    pointer-events: none;
+    color: var(--color-brand-600, #059669);
+    background: color-mix(in srgb, var(--color-brand-500, #10b981) 12%, transparent);
+}
+#ap-nav-spinner.is-active {
+    opacity: 1;
+    transform: scale(1);
+}
+#ap-nav-spinner svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    animation: ap-click-spin 0.65s linear infinite;
+}
+@keyframes ap-click-spin {
+    to { transform: rotate(360deg); }
 }
 
 /* عنصر کلیک‌شده در حال انتظار پاسخ سرور */

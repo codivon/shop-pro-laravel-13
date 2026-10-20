@@ -30,8 +30,8 @@ class PostsImport extends Component
     {
         auth('adminPanel')->user()?->can('imports.posts') ?: abort(403);
 
-        // فیلد الزامی عنوان به‌صورت پیش‌فرض تیک دارد (مثل ویوی قدیمی)
-        $this->filters['title'] = '1';
+        // فاز ۱۹: همه‌ی فیلدها به‌صورت پیش‌فرض تیک می‌خورند
+        $this->defaultAllFiltersChecked();
     }
 
     /* --------- پیاده‌سازی trait --------- */

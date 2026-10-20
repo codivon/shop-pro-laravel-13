@@ -7,15 +7,28 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithFileUploads;
+use Madnest\Madzipper\Madzipper;
+use Throwable;
 
 #[Title('لیست قالب‌ها')]
 class ThemeIndex extends Component
 {
+    use WithFileUploads;
+
     /** لیست تم‌ها (name + config) — پورت index قدیمی */
     public array $themes = [];
 
     /** نام قالب در حال حذف (مودال تایید) */
     public ?string $confirmingDelete = null;
+
+    /* ---------------- آپلود قالب (فاز ۱۹ — ادغام صفحه‌ی create در مدیریت قالب‌ها) ---------------- */
+
+    /** باز بودن کارت آپلود */
+    public bool $showUpload = false;
+
+    /** فایل zip قالب */
+    public $file = null;
 
     public function mount(): void
     {
@@ -45,6 +58,105 @@ class ThemeIndex extends Component
     public function getCurrentThemeProperty(): ?array
     {
         return get_current_theme();
+    }
+
+    /** پورت ۱:۱ store قدیمی (ThemeCreate) — فاز ۱۹: نصب قالب از داخل صفحه‌ی مدیریت */
+    public function store(): void
+    {
+        auth('adminPanel')->user()?->can('themes.create') ?: abort(403);
+
+        $this->validate([
+            'file' => 'required|file|mimes:zip',
+        ], [], [
+            'file' => 'فایل قالب',
+        ]);
+
+        try {
+            $uuid = uniqid();
+            $path = Storage::disk('public')->path('uploads/tmp/');
+
+            if (!File::exists($path)) {
+                File::makeDirectory($path, 0755, true);
+            }
+
+            $name = $uuid . '.' . $this->file->getClientOriginalExtension();
+            $this->file->storeAs('tmp', $name);
+
+            /*
+             * امنیتی (Zip-Slip): قبل از استخراج، ورودی‌های خطرناک بررسی می‌شوند
+             * (../ یا مسیر مطلق یا symlink) و نام قالب استخراج‌شده باید معتبر باشد.
+             */
+            $zipPath = $path . $name;
+            $zipArchive = new \ZipArchive;
+            if ($zipArchive->open($zipPath) === true) {
+                for ($i = 0; $i < $zipArchive->numFiles; $i++) {
+                    $entryName = (string) $zipArchive->getNameIndex($i);
+                    $stat      = $zipArchive->statIndex($i);
+
+                    $isUnsafe = $entryName === ''
+                        || str_contains($entryName, '..')
+                        || str_starts_with($entryName, '/')
+                        || preg_match('/^[A-Za-z]:[\\\/]/', $entryName)
+                        || (isset($stat['attr']) && ((($stat['attr'] >> 16) & 0xF000) === 0xA000));
+
+                    if ($isUnsafe) {
+                        $zipArchive->close();
+                        File::delete($zipPath);
+
+                        $this->dispatch('toast', message: 'فایل zip حاوی ورودی‌های غیرمجاز است.', type: 'error');
+                        return;
+                    }
+                }
+                $zipArchive->close();
+            }
+
+            $zipper = new Madzipper;
+            $zipper->make($path . $name)->extractTo($path . $uuid);
+            $zipper->close();
+
+            File::delete($path . $name);
+
+            $themes = Storage::disk('themes')->directories();
+            $newTheme = Storage::disk('public')->directories('uploads/tmp/' . $uuid);
+            $newTheme = substr($newTheme[0], strrpos($newTheme[0], '/') + 1);
+
+            if (!is_safe_extension_name($newTheme)) {
+                File::deleteDirectory($path . $uuid);
+
+                $this->dispatch('toast', message: 'نام قالب داخل zip معتبر نیست.', type: 'error');
+                return;
+            }
+
+            if (in_array($newTheme, $themes)) {
+                File::deleteDirectory($path . $uuid);
+
+                $this->dispatch('toast', message: 'این قالب قبلا آپلود شده است.', type: 'error');
+                return;
+            }
+
+            File::moveDirectory($path . $uuid . '/' . $newTheme, Storage::disk('themes')->path($newTheme));
+            File::deleteDirectory($path . $uuid);
+
+            change_env('CURRENT_THEME', $newTheme);
+            Artisan::call('dump-autoload');
+
+            \App\Providers\AppServiceProvider::loadTheme();
+
+            if (is_safe_extension_name($newTheme)) {
+                Artisan::call('vendor:publish --tag="' . $newTheme . '" --force');
+            }
+            Artisan::call('shop:link');
+
+            $this->reset(['file']);
+            $this->showUpload = false;
+
+            $this->loadThemes();
+
+            $this->dispatch('toast', message: 'قالب «' . $newTheme . '» با موفقیت نصب و فعال شد.', type: 'success');
+        } catch (Throwable $e) {
+            report($e);
+            $this->dispatch('toast', message: 'خطا در نصب قالب: ' . $e->getMessage(), type: 'error');
+        }
     }
 
     /* ---------------- فعال‌سازی (پورت ۱:۱ update قدیمی) ---------------- */

@@ -1,16 +1,160 @@
-{{-- جستجوهای فروشگاه — پورت back/searches (فاز ۷-ب۲) --}}
+{{-- جستجوهای فروشگاه — پورت back/searches (فاز ۷-ب۲) — بازطراحی کامل فاز ۱۹: عنوان + آمار + نمودار --}}
+@php
+    $stats = $this->stats;
+@endphp
 <div class="mx-auto max-w-7xl space-y-5">
 
-    {{-- سربرگ + فیلترها (پورت request(search_type/keyword) قدیمی) --}}
-    <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex flex-wrap items-center gap-2">
-            <span class="ap-badge bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-400">
-                <x-admin-panel::icon name="search" class="size-3.5" />
-                کلیدواژه‌های یکتا: <span class="fa-digits">{{ number_format($this->rows->total()) }}</span>
-            </span>
+    {{-- سربرگ قهرمان (فاز ۱۹) --}}
+    <div class="relative overflow-hidden rounded-3xl bg-linear-to-l from-brand-600 via-brand-600 to-brand-700 p-6 text-white shadow-xl shadow-brand-600/20 sm:p-7">
+        <div class="absolute -top-16 -start-10 size-52 rounded-full bg-white/10 blur-2xl" aria-hidden="true"></div>
+        <div class="absolute -bottom-20 end-10 size-44 rounded-full bg-white/10 blur-2xl" aria-hidden="true"></div>
+        <div class="relative flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <span class="flex size-14 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/25 backdrop-blur">
+                    <x-admin-panel::icon name="search" class="size-7" />
+                </span>
+                <div>
+                    <h1 class="text-lg font-extrabold sm:text-xl">جستجوهای فروشگاه</h1>
+                    <p class="mt-1 text-[13px] text-white/80">تحلیل کامل جستجوهای کاربران، پرجستجوترین کلیدواژه‌ها و روند روزانه</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 rounded-xl bg-white/12 px-3 py-2 text-xs font-bold ring-1 ring-white/20">
+                    <x-admin-panel::icon name="flame" class="size-4" />
+                    امروز: <span class="fa-digits">{{ number_format($stats['today']) }}</span>
+                </span>
+                <span class="inline-flex items-center gap-1.5 rounded-xl bg-white/12 px-3 py-2 text-xs font-bold ring-1 ring-white/20">
+                    <x-admin-panel::icon name="calendar-days" class="size-4" />
+                    ۷ روز اخیر: <span class="fa-digits">{{ number_format($stats['week']) }}</span>
+                </span>
+            </div>
         </div>
     </div>
 
+    {{-- کارت‌های آمار (فاز ۱۹) --}}
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div class="ap-card flex items-center gap-3.5 p-4">
+            <span class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
+                <x-admin-panel::icon name="hash" class="size-5.5" />
+            </span>
+            <div class="min-w-0">
+                <p class="truncate text-[11px] font-semibold text-ink-3 dark:text-night-ink-2">کل جستجوها</p>
+                <p class="fa-digits text-xl font-extrabold">{{ number_format($stats['total']) }}</p>
+            </div>
+        </div>
+        <div class="ap-card flex items-center gap-3.5 p-4">
+            <span class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 dark:bg-violet-500/12 dark:text-violet-400">
+                <x-admin-panel::icon name="key-round" class="size-5.5" />
+            </span>
+            <div class="min-w-0">
+                <p class="truncate text-[11px] font-semibold text-ink-3 dark:text-night-ink-2">کلیدواژه‌های یکتا</p>
+                <p class="fa-digits text-xl font-extrabold">{{ number_format($stats['keywords']) }}</p>
+            </div>
+        </div>
+        <div class="ap-card flex items-center gap-3.5 p-4">
+            <span class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 dark:bg-sky-500/12 dark:text-sky-400">
+                <x-admin-panel::icon name="users" class="size-5.5" />
+            </span>
+            <div class="min-w-0">
+                <p class="truncate text-[11px] font-semibold text-ink-3 dark:text-night-ink-2">جستجوگران یکتا (IP)</p>
+                <p class="fa-digits text-xl font-extrabold">{{ number_format($stats['visitors']) }}</p>
+            </div>
+        </div>
+        <div class="ap-card flex items-center gap-3.5 p-4">
+            <span class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-500/12 dark:text-amber-400">
+                <x-admin-panel::icon name="pie-chart" class="size-5.5" />
+            </span>
+            <div class="min-w-0">
+                <p class="truncate text-[11px] font-semibold text-ink-3 dark:text-night-ink-2">محصولات / پست‌ها</p>
+                <p class="text-xl font-extrabold">
+                    <span class="fa-digits">{{ number_format($stats['products']) }}</span>
+                    <span class="text-xs font-semibold text-ink-3 dark:text-night-ink-2">/</span>
+                    <span class="fa-digits">{{ number_format($stats['posts']) }}</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    {{-- ردیف تحلیل: پرجستجوترین‌ها + نمودار نوع (فاز ۱۹) --}}
+    <div class="grid grid-cols-1 gap-5 xl:grid-cols-3">
+        {{-- کارت‌های رتبه‌دار پرجستجوترین کلیدواژه‌ها --}}
+        <section class="ap-card overflow-hidden xl:col-span-2">
+            <header class="flex items-center justify-between border-b border-line px-5 py-4 dark:border-night-line">
+                <div class="flex items-center gap-2.5">
+                    <x-admin-panel::icon name="flame" class="size-4.5 text-orange-500" />
+                    <h3 class="text-sm font-bold">پرجستجوترین کلیدواژه‌ها</h3>
+                </div>
+                <span class="ap-badge bg-surface-2 text-ink-2 dark:bg-night-3 dark:text-night-ink-2">۶ رتبه برتر</span>
+            </header>
+            <div class="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
+                @forelse ($this->topKeywords as $i => $item)
+                    @php
+                        $rankColors = [
+                            'from-amber-400 to-orange-500', 'from-slate-300 to-slate-400', 'from-orange-300 to-amber-600',
+                            'from-brand-400 to-brand-600', 'from-sky-400 to-sky-600', 'from-violet-400 to-violet-600',
+                        ];
+                        $rankIcons = ['trophy', 'medal', 'award', 'search', 'search', 'search'];
+                    @endphp
+                    <button type="button" wire:click="openDetailsByKey({{ \Illuminate\Support\Js::from($item->keyword)->toHtml() }}, {{ \Illuminate\Support\Js::from($item->search_type)->toHtml() }})"
+                            class="group flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 text-start transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-card dark:border-night-line dark:bg-night-2 dark:hover:border-brand-500/40">
+                        <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br {{ $rankColors[$i % 6] }} text-white shadow-md">
+                            <x-admin-panel::icon name="{{ $rankIcons[$i % 6] }}" class="size-5" />
+                        </span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block truncate text-[13px] font-bold group-hover:text-brand-600 dark:group-hover:text-brand-400">{{ $item->keyword }}</span>
+                            <span class="mt-0.5 block text-[11px] text-ink-3 dark:text-night-ink-2">
+                                {{ $item->search_type === 'products' ? 'محصولات' : 'پست‌ها' }}
+                            </span>
+                        </span>
+                        <span class="fa-digits shrink-0 rounded-xl bg-surface-2 px-2.5 py-1.5 text-xs font-extrabold text-ink-2 dark:bg-night-3 dark:text-night-ink-2">
+                            {{ number_format($item->search_count) }} بار
+                        </span>
+                    </button>
+                @empty
+                    <div class="col-span-full flex flex-col items-center gap-2 py-8 text-ink-3 dark:text-night-ink-2">
+                        <x-admin-panel::icon name="search" class="size-9 opacity-40" />
+                        <p class="text-sm font-medium">هنوز جستجویی ثبت نشده است</p>
+                    </div>
+                @endforelse
+            </div>
+        </section>
+
+        {{-- نمودار دونات نوع جستجو --}}
+        <section class="ap-card overflow-hidden">
+            <header class="flex items-center justify-between border-b border-line px-5 py-4 dark:border-night-line">
+                <div class="flex items-center gap-2.5">
+                    <x-admin-panel::icon name="chart-pie" class="size-4.5 text-sky-600 dark:text-sky-400" />
+                    <h3 class="text-sm font-bold">سهم نوع جستجو</h3>
+                </div>
+            </header>
+            <div data-chart="searchTypes" data-options="{{ json_encode($this->typeChartOptions) }}" class="h-72 w-full"></div>
+        </section>
+    </div>
+
+    {{-- ردیف نمودارها: کلیدواژه‌ها + روند روزانه (فاز ۱۹) --}}
+    <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <section class="ap-card overflow-hidden">
+            <header class="flex items-center justify-between border-b border-line px-5 py-4 dark:border-night-line">
+                <div class="flex items-center gap-2.5">
+                    <x-admin-panel::icon name="bar-chart-3" class="size-4.5 text-brand-600 dark:text-brand-400" />
+                    <h3 class="text-sm font-bold">تعداد جستجو به تفکیک کلیدواژه</h3>
+                </div>
+            </header>
+            <div data-chart="searchKeywords" data-options="{{ json_encode($this->keywordsChartOptions) }}" class="h-64 w-full px-2"></div>
+        </section>
+
+        <section class="ap-card overflow-hidden">
+            <header class="flex items-center justify-between border-b border-line px-5 py-4 dark:border-night-line">
+                <div class="flex items-center gap-2.5">
+                    <x-admin-panel::icon name="trending-up" class="size-4.5 text-violet-600 dark:text-violet-400" />
+                    <h3 class="text-sm font-bold">روند جستجو — ۱۴ روز اخیر</h3>
+                </div>
+            </header>
+            <div data-chart="searchDaily" data-options="{{ json_encode($this->dailyChartOptions) }}" class="h-64 w-full"></div>
+        </section>
+    </div>
+
+    {{-- فیلترها (پورت request(search_type/keyword) قدیمی) --}}
     <div class="ap-card p-4 sm:p-5" x-data="{ open: false }">
         <button type="button" class="flex w-full items-center justify-between text-start" x-on:click="open = !open">
             <span class="flex items-center gap-2 text-sm font-bold">

@@ -140,7 +140,6 @@ use App\Livewire\Admin\Packages\PackageInstalled;
 use App\Livewire\Admin\Packages\PackageShow;
 use App\Livewire\Admin\Packages\PackagePaymentCallback;
 use App\Livewire\Admin\Themes\ThemeIndex;
-use App\Livewire\Admin\Themes\ThemeCreate;
 use App\Livewire\Admin\Themes\ThemeSettings;
 use App\Livewire\Admin\Imports\PostsImport;
 use App\Livewire\Admin\Imports\ProductsImport;
@@ -554,7 +553,6 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
         Route::get('packages/installed', PackageInstalled::class)->name('packages.installed');
         Route::get('packages/{slug}', PackageShow::class)->name('packages.show');
         Route::get('packages', PackageIndex::class)->name('packages.index');
-        Route::get('themes/create', ThemeCreate::class)->name('themes.create');
         Route::get('themes/settings', ThemeSettings::class)->name('themes.settings');
         Route::get('themes', ThemeIndex::class)->name('themes.index');
         Route::get('imports/posts', PostsImport::class)->name('imports.posts');

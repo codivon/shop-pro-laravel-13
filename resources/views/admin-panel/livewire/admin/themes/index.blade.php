@@ -16,16 +16,109 @@
             </div>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-            <a href="{{ route('np.themes.create') }}" class="ap-btn-outline !py-2">
-                <x-admin-panel::icon name="upload" class="size-4" />
-                آپلود قالب جدید
-            </a>
-            <a href="{{ route('np.themes.settings') }}" class="ap-btn-outline !py-2">
+            @can('themes.create')
+                <button type="button" wire:click="$toggle('showUpload')" class="ap-btn-outline !py-2">
+                    <x-admin-panel::icon name="upload" class="size-4" />
+                    آپلود قالب جدید
+                </button>
+            @endcan
+            <a href="{{ route('np.themes.settings') }}" wire:navigate class="ap-btn-outline !py-2">
                 <x-admin-panel::icon name="settings-2" class="size-4" />
                 تنظیمات قالب
             </a>
         </div>
     </div>
+
+    {{-- کارت آپلود قالب (فاز ۱۹ — ادغام صفحه‌ی «آپلود قالب جدید» در همین صفحه) --}}
+    @can('themes.create')
+        <div x-data="{ open: @entangle('showUpload') }" x-show="open" x-cloak
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
+             class="overflow-hidden rounded-2xl border border-brand-200/70 bg-linear-to-br from-brand-50/80 via-surface to-brand-50/40 shadow-card dark:border-brand-500/20 dark:from-brand-500/5 dark:via-night-2 dark:to-night-2">
+            <div class="flex items-center justify-between gap-3 border-b border-brand-200/60 bg-surface/60 px-4 py-3 dark:border-brand-500/15 dark:bg-night-2/60">
+                <h2 class="flex items-center gap-2 text-sm font-bold">
+                    <span class="flex size-8 items-center justify-center rounded-xl bg-linear-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-500/25">
+                        <x-admin-panel::icon name="upload" class="size-4" />
+                    </span>
+                    نصب قالب جدید
+                </h2>
+                <button type="button" x-on:click="open = false" class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-surface-3 dark:hover:bg-night-3" aria-label="بستن">
+                    <x-admin-panel::icon name="x" class="size-4" />
+                </button>
+            </div>
+
+            <form wire:submit="store" class="p-4 sm:p-5">
+                {{-- ناحیه‌ی drag & drop --}}
+                <div x-data="{
+                            dragging: false,
+                            drop(e) {
+                                this.dragging = false;
+                                const files = e.dataTransfer?.files;
+                                if (! files?.length) { return; }
+                                const input = this.$refs.fileInput;
+                                input.files = files;
+                                input.dispatchEvent(new Event('change'));
+                            }
+                        }"
+                     x-on:dragover.prevent="dragging = true"
+                     x-on:dragleave.prevent="if (! $event.relatedTarget || ! $el.contains($event.relatedTarget)) { dragging = false; }"
+                     x-on:drop.prevent="drop($event)"
+                     x-on:click="$refs.fileInput.click()"
+                     role="button" tabindex="0"
+                     x-on:keydown.enter.prevent="$refs.fileInput.click()"
+                     :aria-label="'انتخاب فایل قالب'"
+                     class="relative flex cursor-pointer flex-col items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-200 sm:p-8"
+                     :class="dragging
+                                ? 'border-brand-500 bg-brand-50/70 scale-[1.01] dark:bg-brand-500/10'
+                                : 'border-line bg-surface/70 hover:border-brand-500/60 hover:bg-brand-50/40 dark:border-night-line dark:bg-night-3/40 dark:hover:bg-brand-500/5'">
+
+                    <input type="file" accept=".zip" wire:model="file" x-ref="fileInput" class="sr-only" aria-label="فایل zip قالب">
+
+                    <span class="flex size-14 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500 to-brand-700 text-white shadow-lg shadow-brand-500/25 transition-transform duration-200"
+                          :class="dragging ? 'scale-110' : ''">
+                        <x-admin-panel::icon name="upload" class="size-7" />
+                    </span>
+
+                    <p class="text-sm font-bold">
+                        فایل قالب را اینجا رها کنید یا <span class="text-brand-600 underline decoration-brand-300 underline-offset-4 dark:text-brand-400">انتخاب کنید</span>
+                    </p>
+                    <p class="text-[11px] text-ink-3 dark:text-night-ink-2">
+                        فقط فایل با فرمت <code class="ltr rounded bg-surface-3 px-1.5 py-0.5 font-bold dark:bg-night-3">.zip</code> — حداقل شامل پوشه‌ی src و config قالب
+                    </p>
+
+                    @error('file') <p class="mt-1 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                {{-- فایل انتخاب‌شده --}}
+                @if ($file)
+                    <p class="mt-3 flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50/70 px-3.5 py-2.5 text-xs font-semibold text-brand-700 dark:border-brand-500/25 dark:bg-brand-500/10 dark:text-brand-400">
+                        <x-admin-panel::icon name="file-archive" class="size-4 shrink-0" />
+                        فایل انتخاب‌شده:
+                        <span class="ltr truncate">{{ $file->getClientOriginalName() }}</span>
+                    </p>
+                @endif
+
+                <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+                    <p class="flex items-start gap-2 rounded-xl bg-sky-50 p-3 text-[11px] leading-5 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400">
+                        <x-admin-panel::icon name="info" class="mt-0.5 size-3.5 shrink-0" />
+                        پس از آپلود، قالب استخراج، نصب و فعال می‌شود (dump-autoload، publish و shop:link خودکار اجرا می‌شود).
+                    </p>
+                    <button type="submit" wire:loading.attr="disabled" wire:target="store" class="ap-btn shrink-0 !py-2.5">
+                        <span wire:loading.remove wire:target="store" class="flex items-center gap-2">
+                            <x-admin-panel::icon name="plus" class="size-4" />
+                            افزودن قالب
+                        </span>
+                        <span wire:loading wire:target="store" class="flex items-center gap-2">
+                            <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
+                            </svg>
+                            در حال نصب…
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    @endcan
 
     @if (count($themes))
         <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -113,7 +206,9 @@
                 <x-admin-panel::icon name="layout-template" class="size-6" />
             </span>
             <p class="text-sm font-bold">چیزی برای نمایش وجود ندارد!</p>
-            <a href="{{ route('np.themes.create') }}" class="ap-btn mt-2 !py-2">آپلود قالب جدید</a>
+            @can('themes.create')
+                <button type="button" wire:click="$toggle('showUpload')" class="ap-btn mt-2 !py-2">آپلود قالب جدید</button>
+            @endcan
         </div>
     @endif
 

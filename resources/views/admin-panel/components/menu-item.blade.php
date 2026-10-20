@@ -1,4 +1,4 @@
-{{-- یک آیتم منو (برگ) — $item از والد --}}
+{{-- یک آیتم منو (برگ) — $item از والد، $menuParamKeys از sidebar (فاز ۱۹) --}}
 @php
     $url = '#';
     $isActive = false;
@@ -6,13 +6,46 @@
         try {
             $url = route($item['route'], $item['params'] ?? []);
             if (str_starts_with($item['route'], 'np.')) {
-                // فاز ۱۱: فعال‌سازی «دقیق» — صفحه لیست برای create/edit خودش فعال نمی‌شود
-                // (تنها گروه‌های کشویی والد باز می‌مانند). استثنا: آیتم‌هایی که خودشان
-                // کلید «active_routes» را ست کرده‌اند (مثل ابزارک‌ها که صریحاً خواسته شده).
+                $routeName = request()->route()?->getName();
+
+                /*
+                | فاز ۱۹ — فعال‌سازی هوشمند منو:
+                | ۱) آیتم‌های با params (مثل «سفارشات پرداخت شده») فقط وقتی فعال‌اند که
+                |    پارامترهایشان در URL جاری عیناً باشد → دیگر سه آیتم هم‌زمان فعال نمی‌شوند.
+                | ۲) آیتم بدون پارامتر، وقتی هم‌خانواده‌هایش با پارامتر تعریف شده‌اند فقط
+                |    وقتی فعال است که هیچ‌کدام از آن کلیدها در URL نباشد («همه سفارشات»).
+                | ۳) صفحات زیرمجموعه (edit/show/movements/…) هم خانواده‌ی منو را فعال می‌کنند
+                |    (مثل تاریخچه حرکات انبار → «لیست انبارها» فعال و گروه باز می‌ماند).
+                */
+                $activeQuery = $item['active_query'] ?? ($item['params'] ?? []);
+
+                $queryMatches = function () use ($activeQuery) {
+                    return collect($activeQuery)->every(fn ($v, $k) => request()->query($k) == $v);
+                };
+                $noConflict = function () use ($item, $menuParamKeys) {
+                    $keys = $menuParamKeys[$item['route']] ?? [];
+                    return collect($keys)->every(fn ($k) => request()->query($k) === null);
+                };
+
                 if (! empty($item['active_routes']) && is_array($item['active_routes'])) {
+                    // استثنا: آیتم‌هایی که خودشان صریحاً الگوی فعال‌سازی داده‌اند (مثل ابزارک‌ها)
                     $isActive = request()->routeIs($item['active_routes']);
+                } elseif ($routeName === $item['route']) {
+                    $isActive = $activeQuery ? $queryMatches() : $noConflict();
                 } else {
-                    $isActive = request()->routeIs($item['route']);
+                    /*
+                    | خانواده‌ی روت — فقط برای آیتم‌های «لیست» (*.index): صفحات زیرمجموعه
+                    | (show/edit/movements/…) آیتم لیستِ خانواده را فعال می‌کنند
+                    | (مثل تاریخچه حرکات انبار → «لیست انبارها» فعال و گروه باز می‌ماند).
+                    | آیتم‌های غیر index (کنسل شده/ثبت جدید/…) بدون روت دقیق فعال نمی‌شوند.
+                    */
+                    $family = preg_replace('/\.[^.]+$/', '', $item['route']);
+                    if (
+                        str_ends_with($item['route'], '.index')
+                        && $routeName && str_starts_with($routeName, $family . '.')
+                    ) {
+                        $isActive = $activeQuery ? $queryMatches() : $noConflict();
+                    }
                 }
             }
         } catch (\Throwable $e) {

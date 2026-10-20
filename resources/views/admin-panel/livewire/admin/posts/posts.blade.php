@@ -4,7 +4,11 @@
     {{-- سربرگ --}}
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-            <h1 class="text-lg font-black">مدیریت وبلاگ</h1>
+            <h1 class="flex items-center gap-2.5 text-lg font-black">
+                <span class="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-500/25">
+                    <x-admin-panel::icon name="notebook-pen" class="size-5.5" />
+                </span>
+                مدیریت وبلاگ</h1>
             <p class="fa-digits mt-0.5 text-xs text-ink-3 dark:text-night-ink-2">
                 <span class="fa-digits">{{ number_format($this->totalCount) }}</span> نوشته در زبان فعلی
             </p>

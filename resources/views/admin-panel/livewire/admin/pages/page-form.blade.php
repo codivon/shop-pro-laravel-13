@@ -26,7 +26,9 @@
     $wgIcons = ['package-2', 'package', 'layout-template', 'sliders-horizontal', 'layout-dashboard', 'share-2'];
 
     $wgIconSvg = static function (string $name): string {
-        return (string) (new \App\View\Components\AdminPanel\Icon($name, 'size-9 text-white/90 drop-shadow'))->render();
+        /* فاز ۱۹: رندر آیکون حالا کلوژور برمی‌گرداند (فاز ۱۷) — باید با data صدا زده شود */
+        $fn = (new \App\View\Components\AdminPanel\Icon($name, 'size-9 text-white/90 drop-shadow'))->render();
+        return (string) $fn(['attributes' => new \Illuminate\View\ComponentAttributeBag()]);
     };
 
     /* همان داده‌های قدیمی: کانفیگ ویجت‌های خانه + ویجت‌های نوشته‌ها */

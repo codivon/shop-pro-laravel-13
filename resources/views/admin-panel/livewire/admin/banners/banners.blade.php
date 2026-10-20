@@ -20,7 +20,11 @@
     {{-- سربرگ --}}
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-            <h1 class="text-base font-extrabold">مدیریت بنرها</h1>
+            <h1 class="flex items-center gap-2.5 text-base font-extrabold">
+                <span class="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-500/25">
+                    <x-admin-panel::icon name="image" class="size-5.5" />
+                </span>
+                مدیریت بنرها</h1>
             <p class="mt-1 text-xs text-ink-3 dark:text-night-ink-2">بنرها بر اساس صفحه‌ی نمایش، به‌صورت کارت گروه‌بندی شده‌اند.</p>
         </div>
         @can('banners.create')

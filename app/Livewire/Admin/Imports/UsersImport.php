@@ -28,6 +28,9 @@ class UsersImport extends Component
     public function mount(): void
     {
         auth('adminPanel')->user()?->can('imports.users') ?: abort(403);
+
+        // فاز ۱۹: همه‌ی فیلدها به‌صورت پیش‌فرض تیک می‌خورند
+        $this->defaultAllFiltersChecked();
     }
 
     /* --------- پیاده‌سازی trait --------- */

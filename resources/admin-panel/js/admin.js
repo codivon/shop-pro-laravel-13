@@ -391,6 +391,11 @@ window.ApChart = {
 
     formatters: {
         faNum: (v) => (typeof v === 'number' ? ApFormat.number(v) : ApFormat.faDigits(v ?? '')),
+        // فاز ۱۹: formatter برچسب سری (bar label) — echarts به‌جای مقدار، آبجکت params می‌فرستد
+        faSeriesLabel: (params) => {
+            const v = params && typeof params === 'object' ? (params.value ?? '') : (params ?? '');
+            return typeof v === 'number' ? ApFormat.faDigits(v) : ApFormat.faDigits(v);
+        },
         faNumCompact: (v) => {
             const n = Number(v) || 0;
             if (Math.abs(n) >= 1e9) return ApFormat.faDigits((n / 1e9).toFixed(1) + 'B');
@@ -1189,16 +1194,122 @@ window.apMediaPicker = (initial = '') => ({
             }
             return el;
         };
-        const barStart = () => { const bar = getBar(); bar.classList.remove('is-done', 'is-finishing'); bar.classList.add('is-active'); };
+
+        /* فاز ۱۹ — لودر گرد سراسری در بالای پنل (هم‌گام با نوار پیشرفت) */
+        const getSpinner = () => document.getElementById('ap-nav-spinner');
+        const spinnerStart = () => getSpinner()?.classList.add('is-active');
+        const spinnerFinish = () => getSpinner()?.classList.remove('is-active');
+
+        /* شروع/ری‌استارت نوار: همیشه از صفر شروع می‌شود (فاز ۱۹ — کلیک دوم = ری‌استارت لودر) */
+        const barStart = () => {
+            const bar = getBar();
+            bar.classList.remove('is-done', 'is-finishing');
+            bar.style.transition = 'none';
+            bar.style.width = '0';
+            void bar.offsetWidth; // reflow — اعمال width=0 بدون ترنزیشن
+            bar.style.transition = '';
+            bar.classList.add('is-active');
+            spinnerStart();
+        };
         const barFinish = () => {
             const bar = getBar();
             bar.classList.remove('is-active');
             bar.classList.add('is-finishing');
+            spinnerFinish();
             setTimeout(() => { bar.classList.add('is-done'); bar.classList.remove('is-finishing'); }, 180);
         };
         const clearClicking = () => {
             document.querySelectorAll('.ap-clicking').forEach((el) => el.classList.remove('ap-clicking'));
         };
+
+        /* --------------------------------------------------------------
+         | فاز ۱۹ (H3) — «آخرین کلیک برنده است»
+         | کاربر روی «بنر جدید» کلیک می‌کند و قبل از لود، روی «لیست بنر»:
+         | ناوبریِ اول هنوز در جریان است و Livewire آن را کنسل نمی‌کند —
+         | هر پاسخی زودتر برسد صفحه را swap می‌کند (پاسخ کندِ اول می‌تواند
+         | آخر باشد!).
+         |
+         | راه‌حل نهایی: promise هر fetch ناوبری (هدر X-Livewire-Navigate)
+         | پشت یک «دروازه» قرار می‌گیرد. با شروع هر ناوبری تازه
+         | (رویداد alpine:navigate) همه‌ی درخواست‌های ناوبری‌های قبلی با
+         | URL متفاوت stale شده و fetch زیرین‌شان abort می‌شود — اما چون
+         | promiseِ دروازه‌شده هرگز settle نمی‌شود، Livewire هرگز متوجه
+         | abort نمی‌شود (نه swap قدیمی رخ می‌دهد نه fallbackREFETCH
+         | whenFailed که در تست اول باعث «زنده‌شدن» صفحه‌ی قدیمی شد!).
+         | نتیجه: همیشه آخرین کلیک برنده است.
+         -------------------------------------------------------------- */
+        const navFetchEntries = new Set();
+        let navFetchPatched = false;
+        const patchNavFetch = () => {
+            if (navFetchPatched) return;
+            navFetchPatched = true;
+            const originalFetch = window.fetch.bind(window);
+            window.fetch = function (input, init) {
+                let uri = null;
+                try {
+                    const headers = init && init.headers;
+                    let isNavigate = false;
+                    if (headers) {
+                        if (typeof Headers !== 'undefined' && headers instanceof Headers) {
+                            isNavigate = headers.get('X-Livewire-Navigate') === '1';
+                        } else if (typeof headers === 'object') {
+                            isNavigate = headers['X-Livewire-Navigate'] === '1' || headers['x-livewire-navigate'] === '1';
+                        }
+                    }
+                    if (!isNavigate) return originalFetch(input, init);
+
+                    uri = typeof input === 'string' ? input : (input && input.url) ?? '';
+                    const controller = new AbortController();
+                    const theirSignal = init && init.signal;
+                    if (theirSignal) {
+                        if (theirSignal.aborted) controller.abort();
+                        else theirSignal.addEventListener('abort', () => controller.abort(), { once: true });
+                    }
+                    const entry = { controller, uri, stale: false };
+                    navFetchEntries.add(entry);
+
+                    const real = originalFetch(input, { ...(init || {}), signal: controller.signal });
+                    // دروازه: ناوبری stale هرگز settle نمی‌شود تا Livewire swap/fallback نزند
+                    return new Promise((resolve, reject) => {
+                        real.then(
+                            (value) => {
+                                if (entry.stale) return;
+                                navFetchEntries.delete(entry);
+                                resolve(value);
+                            },
+                            (error) => {
+                                if (entry.stale) return;
+                                navFetchEntries.delete(entry);
+                                reject(error);
+                            },
+                        );
+                    });
+                } catch (e) { /* هر خطایی → fetch عادی */ }
+                return originalFetch(input, init);
+            };
+        };
+        patchNavFetch();
+
+        // با شروع هر ناوبری تازه، درخواست‌های ناوبری‌های قبلی (با URL متفاوت) بی‌اثر می‌شوند
+        document.addEventListener('alpine:navigate', (event) => {
+            let currentUrl = null;
+            try {
+                const d = event.detail && event.detail.url;
+                currentUrl = d ? new URL(d.href ?? String(d), window.location.href).href : null;
+            } catch (e) { /* ignore */ }
+            navFetchEntries.forEach((entry) => {
+                if (currentUrl && entry.uri && new URL(entry.uri, window.location.href).href === currentUrl) return;
+                entry.stale = true;
+                try { entry.controller.abort(); } catch (e) { /* ignore */ }
+                navFetchEntries.delete(entry);
+            });
+        });
+
+        // کلیک روی لینک ناوبری — نوار/لودر فوراً از نو شروع می‌شود (فاز ۱۹)
+        document.addEventListener('click', (event) => {
+            if (!event.target.closest('a[wire\\:navigate]')) return;
+            barStart();
+        }, true);
 
         // ثبت کلیک فقط روی عناصر تعاملی واقعی (دکمه/لینک/سابمیت) — فاز ۱۷
         // قبلاً [wire:submit] خودِ <form> را می‌گرفت و کلیک روی اینپوت/متن داخل فرم،
