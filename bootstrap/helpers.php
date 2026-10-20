@@ -585,6 +585,45 @@ function sanitize_rich_text(?string $html): ?string
     return $html;
 }
 
+/*
+ * فاز ۲۷ — پاک‌سازی HTML توضیحات پکیج‌ها (بازار پکیج‌ها — مثل پنل قدیمی)
+ *
+ * توضیحات بلندِ API پکیج‌ها «صفحه‌ی معرفی» کامل است (hero، گالری، جدول ویژگی‌ها
+ * و…) و استایل‌های خودش را داخل تگ <style> همان HTML می‌آورد — پنل قدیمی همان را
+ * خام تزریق می‌کرد و ظاهر مودال دقیقاً همین بود. sanitize_rich_text تگ <style> را
+ * «با محتوا» حذف می‌کند و باعث می‌شد توضیحات پکیج در پنل جدید لخت و به‌هم‌ریخته
+ * دیده شود. این نسخه تگ <style> را نگه می‌دارد (اسکوپ CSS API پکیج، امن است) ولی
+ * بقیه‌ی بردارها (script، on*، javascript: URLs، فرم/آی‌فریم ناامن) مثل قبل حذف می‌شوند.
+ */
+function sanitize_package_html(?string $html): ?string
+{
+    if ($html === null || trim($html) === '') {
+        return $html;
+    }
+
+    $html = preg_replace('/<script\b[^>]*>.*?<\/script\s*>/is', '', $html) ?? $html;
+    $html = preg_replace('/<object\b[^>]*>.*?<\/object\s*>/is', '', $html) ?? $html;
+    $html = preg_replace('/<embed\b[^>]*>.*?(<\/embed\s*>)?/is', '', $html) ?? $html;
+    $html = preg_replace('/<form\b[^>]*>.*?<\/form\s*>/is', '', $html) ?? $html;
+    $html = preg_replace('/<meta\b[^>]*>/is', '', $html) ?? $html;
+    $html = preg_replace('/<link\b[^>]*>/is', '', $html) ?? $html;
+    $html = preg_replace('/<base\b[^>]*>/is', '', $html) ?? $html;
+    $html = preg_replace('/<applet\b[^>]*>.*?(<\/applet\s*>)?/is', '', $html) ?? $html;
+    $html = preg_replace('/<iframe(?![^>]*(youtube|youtube-nocookie|aparat|vimeo)\.com)[^>]*>.*?(<\/iframe\s*>)?/is', '', $html) ?? $html;
+
+    $html = preg_replace('/\son\w+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/is', '', $html) ?? $html;
+
+    $html = preg_replace(
+        '/(\s(?:href|src|action|xlink:href)\s*=\s*)("\s*(?:javascript|vbscript|data:text\/html)[^"]*"|\'\s*(?:javascript|vbscript|data:text\/html)[^\']*\'|(?:javascript|vbscript|data:text\/html)[^\s>]*)/is',
+        '$1"#"',
+        $html
+    ) ?? $html;
+
+    $html = preg_replace('/style\s*=\s*("[^"]*(?:javascript:|expression\()[^"]*"|\'[^\']*(?:javascript:|expression\()[^\']*\')/is', '', $html) ?? $html;
+
+    return $html;
+}
+
 function change_env($key, $value, bool $cacheConfig = true)
 {
     /*

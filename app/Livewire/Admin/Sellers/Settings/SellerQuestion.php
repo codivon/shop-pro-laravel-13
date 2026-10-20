@@ -20,6 +20,12 @@ class SellerQuestion extends Component
 
     public ?int $confirmingDelete = null;
 
+    public function mount(): void
+    {
+        // فاز ۲۷ — مثل پنل قدیمی (@can('sellers')) — این صفحات بخش تنظیمات فروشندگان‌اند
+        auth('adminPanel')->user()?->can('sellers') ?: abort(403);
+    }
+
     #[Computed]
     public function items()
     {

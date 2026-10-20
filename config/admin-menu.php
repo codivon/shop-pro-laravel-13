@@ -216,7 +216,7 @@ return [
                         [
                             'label' => 'لیست حمل و نقل‌ها',
                             'route' => 'np.carriers.index',
-                            'permission' => null,
+                            'permission' => 'carriers',
                             'icon' => 'list',
                         ],
                         [
@@ -466,25 +466,25 @@ return [
                         [
                             'label' => 'چرا ما',
                             'route' => 'np.settings.seller-hero',
-                            'permission' => null,
+                            'permission' => 'sellers',
                             'icon' => 'sparkles',
                         ],
                         [
                             'label' => 'نمایش میزان کمیسیون',
                             'route' => 'np.settings.seller-commission',
-                            'permission' => null,
+                            'permission' => 'sellers',
                             'icon' => 'percent',
                         ],
                         [
                             'label' => 'سوالات پر تکرار',
                             'route' => 'np.settings.seller-question',
-                            'permission' => null,
+                            'permission' => 'sellers',
                             'icon' => 'message-circle-question',
                         ],
                         [
                             'label' => 'قرارداد الکترونیک',
                             'route' => 'np.settings.seller-econtract',
-                            'permission' => null,
+                            'permission' => 'sellers',
                             'icon' => 'file-signature',
                         ],
                     ],
@@ -931,18 +931,21 @@ return [
                             'label' => 'دسترسی‌ها',
                             'route' => 'np.permissions.index',
                             'permission' => null,
+                            'creator_only' => true,
                             'icon' => 'shield',
                         ],
                         [
                             'label' => 'تنظیمات برنامه‌نویس',
                             'route' => 'np.developer.index',
                             'permission' => null,
+                            'creator_only' => true,
                             'icon' => 'settings',
                         ],
                         [
                             'label' => 'لاگ های سیستم',
                             'route' => 'np.logs.index',
                             'permission' => null,
+                            'creator_only' => true,
                             'icon' => 'scroll-text',
                             // فاز ۲۰: دیگر تب جدید باز نمی‌شود — صفحه‌ی داخلی با دانلود/پاک‌سازی لاگ
                         ],
@@ -950,6 +953,7 @@ return [
                             'label' => 'تنظیمات Robots',
                             'route' => 'np.robots.index',
                             'permission' => null,
+                            'creator_only' => true,
                             'icon' => 'bot',
                         ],
                         // فاز ۱۷: «بروزرسانی سیستم» فعلاً از منو حذف شد (در جای دیگری در

@@ -116,7 +116,12 @@
                         }
 
                         if (data.total > 0) {
-                            percent = Math.min(99, (data.done / data.total) * 100);
+                            // فاز ۲۷ — در فاز سید، درصد از ۸۵ تا ۹۹ جلو می‌رود (سیدرها یکی‌یکی)
+                            if (data.phase === 'seed' && data.seed_total > 0) {
+                                percent = Math.min(99, 85 + (data.seed_done / data.seed_total) * 14);
+                            } else if (data.phase !== 'done') {
+                                percent = Math.min(99, (data.done / data.total) * 100);
+                            }
                             setRing(percent);
                         }
 
@@ -128,8 +133,10 @@
                         }
 
                         if (data.phase === 'seed') {
-                            statusEl.textContent = 'در حال ثبت داده‌های اولیه…';
-                            statusSubEl.textContent = 'سیدهای اولیه (تنظیمات، واحدها و…) در حال ثبت هستند';
+                            // فاز ۲۷ — هر سیدر جدا اجرا و نمایش داده می‌شود (قابل ادامه بعد از قطعی)
+                            var seedName = (data.current || '').split('\\').pop();
+                            statusEl.textContent = 'در حال ثبت داده‌های اولیه: ' + seedName;
+                            statusSubEl.textContent = faNum(data.seed_done || 0) + ' از ' + faNum(data.seed_total || 0) + ' سید اجرا شد';
                             setTimeout(nextStep, 150);
                             return;
                         }

@@ -269,7 +269,7 @@
 
                         {{-- توضیحات — مثل قدیمی HTML غنی و پاک‌سازی‌شده رندر می‌شود --}}
                         <div class="ap-rich line-clamp-3 mt-1.5 min-h-12 text-xs leading-5 text-ink-3 dark:text-night-ink-2">
-                            {!! sanitize_rich_text($pkg['short_description'] ?? ($pkg['description'] ?? '')) ?: 'بدون توضیحات' !!}
+                            {!! sanitize_package_html($pkg['short_description'] ?? ($pkg['description'] ?? '')) ?: 'بدون توضیحات' !!}
                         </div>
 
                         {{-- متا --}}
@@ -760,7 +760,7 @@
 
                                 @if (!empty($detail['short_description']))
                                     <div class="ap-rich mt-2.5 text-[13px] leading-6 text-ink-2 dark:text-night-ink-2">
-                                        {!! sanitize_rich_text($detail['short_description']) !!}
+                                        {!! sanitize_package_html($detail['short_description']) !!}
                                     </div>
                                 @endif
                             </div>
@@ -838,8 +838,10 @@
                                     <x-admin-panel::icon name="file-text" class="size-4 text-brand-600 dark:text-brand-400" />
                                     توضیحات کامل
                                 </h5>
-                                <div class="ap-rich max-h-64 overflow-y-auto rounded-xl border border-line bg-surface-2/50 p-4 text-[13px] leading-7 text-ink-2 dark:border-night-line dark:bg-night-3/40 dark:text-night-ink-2">
-                                    {!! sanitize_rich_text($detail['long_description'] ?? $detail['description']) !!}
+                                {{-- فاز ۲۷: مثل پنل قدیمی — بدون محدودیت ارتفاع (pkg-long-desc قدیمی فقط جعبه‌ی حاشیه‌دار بود؛
+                                     اسکرول را خودِ مودال می‌دهد) و با پاک‌سازی مخصوص پکیج که تگ <style> توضیحات API را نگه می‌دارد --}}
+                                <div class="ap-rich mt-0 rounded-e-xl rounded-s-xl border border-line border-e-4 border-e-brand-500 bg-surface-2/50 p-4 text-[13px] leading-7 text-ink-2 dark:border-night-line dark:bg-night-3/40 dark:text-night-ink-2">
+                                    {!! sanitize_package_html($detail['long_description'] ?? $detail['description']) !!}
                                 </div>
                             </div>
                         @endif

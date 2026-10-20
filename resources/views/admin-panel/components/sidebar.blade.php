@@ -85,14 +85,29 @@
                 // فاز ۱۲: گروه‌های وابسته به چندفروشندگی + آیتم‌ها بر اساس دسترسی
                 if (! empty($group['vendor']) && ! $vendorEnabled) continue;
 
-                $visibleItems = collect($group['items'])->filter(function ($item) use ($admin, $vendorEnabled) {
+                /*
+                | فاز ۲۷ — فیلتر بازگشتی دسترسی:
+                | قبلاً آیتم‌های «پدر» (دارای children) که خودشان permission نداشتند همیشه
+                | true برمی‌گرداندند → گروه‌های «بدون هیچ آیتم مجاز» هم با عنوانِ خالی
+                | رندر می‌شدند (سوءتفاهم «منو برای بی‌پرمیشن‌ها نمایش داده می‌شود»).
+                | حالا پدر فقط وقتی دیده می‌شود که «حداقل یکی از فرزندانش» مجاز باشد.
+                */
+                $checkMenuItem = function ($item) use ($admin, $vendorEnabled, &$checkMenuItem) {
                     if (! empty($item['vendor']) && ! $vendorEnabled) return false;
                     if (!empty($item['creator_only'])) {
                         return $admin && ($admin->id === 1 || $admin->level === 'creator');
                     }
+                    if (! empty($item['children'])) {
+                        foreach ($item['children'] as $child) {
+                            if ($checkMenuItem($child)) return true;
+                        }
+                        return false;
+                    }
                     if (empty($item['permission'])) return true;
                     return $admin && $admin->can($item['permission']);
-                })->values();
+                };
+
+                $visibleItems = collect($group['items'])->filter($checkMenuItem)->values();
 
                 if ($visibleItems->isEmpty()) continue;
 
@@ -115,9 +130,8 @@
                         @if (!empty($item['children']))
                             {{-- آیتم با زیرمنو --}}
                             @php
-                                $childItems = collect($item['children'])
-                                    ->filter(fn ($c) => ! empty($c['vendor']) && ! $vendorEnabled ? false : (empty($c['permission']) || ($admin && $admin->can($c['permission']))))
-                                    ->values();
+                                // فاز ۲۷ — همان فیلتر بازگشتی $checkMenuItem برای فرزندان
+                                $childItems = collect($item['children'])->filter($checkMenuItem)->values();
                             @endphp
                             @if ($childItems->isNotEmpty())
                                 @php $parentLabel = $item['label']; @endphp
@@ -165,15 +179,17 @@
             </div>
         @endforeach
 
-        {{-- منوی ماژول‌ها (پکیج‌ها) — مطابق پنل قدیمی --}}
-        @foreach (\App\Services\ModuleMenuRegistry::all() as $menuView)
-            @if (view()->exists($menuView))
-                <div class="menu-group">
-                    <p class="ap-menu-title">پکیج‌ها</p>
-                    @include($menuView)
-                </div>
-            @endif
-        @endforeach
+        {{-- منوی ماژول‌ها (پکیج‌ها) — مطابق پنل قدیمی؛ فاز ۲۷: مثل قدیمی داخل @can('packages') --}}
+        @can('packages')
+            @foreach (\App\Services\ModuleMenuRegistry::all() as $menuView)
+                @if (view()->exists($menuView))
+                    <div class="menu-group">
+                        <p class="ap-menu-title">پکیج‌ها</p>
+                        @include($menuView)
+                    </div>
+                @endif
+            @endforeach
+        @endcan
     </nav>
 
     {{-- پایین سایدبار: پروفایل --}}

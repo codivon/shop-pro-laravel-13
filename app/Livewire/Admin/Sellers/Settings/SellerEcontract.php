@@ -15,6 +15,9 @@ class SellerEcontract extends Component
 
     public function mount(): void
     {
+        // فاز ۲۷ — مثل پنل قدیمی (@can('sellers')) — این صفحات بخش تنظیمات فروشندگان‌اند
+        auth('adminPanel')->user()?->can('sellers') ?: abort(403);
+
         $econtract = SellerEcontractModel::first();
 
         $this->header = (string) ($econtract->header ?? '');

@@ -10,10 +10,20 @@ use Symfony\Component\Console\Output\BufferedOutput;
 /**
  * فاز ۲۱ — اجرای مرحله‌به‌مرحله‌ی مایگریشن‌ها و سیدها (AJAX)
  *
- * هر درخواست فقط «یک» مایگریشن را اجرا می‌کند (یا بعد از اتمام، سید را یک‌بار).
+ * هر درخواست فقط «یک» مایگریشن (یا بعد از اتمام مایگریشن‌ها، «یک» سیدر) را اجرا می‌کند.
  * چون هر درخواست کوتاه است، Timeout هاست رخ نمی‌دهد و اگر صفحه قطع شود،
- * با رفرش دقیقاً از همان‌جا ادامه می‌دهد (لیست pending از جدول migrations
- * دوباره محاسبه می‌شود — کاملاً idempotent).
+ * با رفرش دقیقاً از همان‌جا ادامه می‌دهد.
+ *
+ * فاز ۲۷ — رفع دو باگ گزارش‌شده‌ی کاربر:
+ *  ۱) «آخرِ ساخت جداول پیام خطا می‌آمد و با تلاش مجدد سبز می‌شد ولی سیدرها وارد نشده بودند»
+ *     علت: db:seed کل سیدرها را در «یک درخواست» اجرا می‌کرد؛ روی سیستم‌های کند
+ *     درخواست وسط کار می‌مرد (بعد از RoleSeeder که جدول roles را پر می‌کند) و
+ *     databaseHasSeedData() در تلاش مجدد، «سید ناقص» را «سیدشده‌ی کامل» فرض می‌کرد
+ *     و سید را کلاً رد می‌کرد → سبز شدن بدون داده‌ی اولیه.
+ *     حالا هر سیدر جدا اجرا و در فایل ردیاب (installer-seeded.json) ثبت می‌شود؛
+ *     تلاش مجدد دقیقاً از همان سیدر ناتمام ادامه می‌دهد — نه از صفر، نه رد شدن کامل.
+ *  ۲) خطاهای تکراری (۱۰۶۲) ناشی از نیمه‌کاره‌ماندن یک سیدر، به‌عنوان «قبلاً ثبت شده»
+ *     مدیریت می‌شوند تا نصب قابل ادامه باشد.
  */
 class MigrateController extends Controller
 {
@@ -53,6 +63,45 @@ class MigrateController extends Controller
     protected function seedMarkerPath(): string
     {
         return storage_path('app/installer-seeded');
+    }
+
+    /** فاز ۲۷ — فایل ردیاب سیدرها (کدام سیدرها کامل شده‌اند) */
+    protected function seedTrackerPath(): string
+    {
+        return storage_path('app/installer-seeded.json');
+    }
+
+    /** خواندن ردیاب — ['done' => [کلاس...], 'finished' => bool] */
+    protected function readTracker(): array
+    {
+        try {
+            if (is_file($this->seedTrackerPath())) {
+                $json = json_decode((string) file_get_contents($this->seedTrackerPath()), true);
+                if (is_array($json)) {
+                    return [
+                        'done'     => array_values((array) ($json['done'] ?? [])),
+                        'finished' => (bool) ($json['finished'] ?? false),
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            // فایل خراب است → از صفر شروع می‌شود
+        }
+
+        return ['done' => [], 'finished' => false];
+    }
+
+    /** نوشتن ردیاب */
+    protected function writeTracker(array $done, bool $finished = false): void
+    {
+        try {
+            @file_put_contents(
+                $this->seedTrackerPath(),
+                json_encode(['done' => array_values($done), 'finished' => $finished, 'at' => now()->toDateTimeString()], JSON_UNESCAPED_UNICODE),
+            );
+        } catch (\Throwable $e) {
+            // غیرحیاتی
+        }
     }
 
     /*
@@ -114,57 +163,96 @@ class MigrateController extends Controller
                 ]);
             }
 
-            // ---------- مایگریشن‌ها تمام شد → سید (یک‌بار و idempotent) ----------
-            $alreadySeeded = is_file($this->seedMarkerPath())
-                || $this->databaseHasSeedData();
+            // ---------- فاز ۲۷ — مایگریشن‌ها تمام شد → سیدرها یکی‌یکی ----------
+            $seeders = \Database\Seeders\DatabaseSeeder::seederClasses();
+            $tracker = $this->readTracker();
+
+            // نشانگر قدیمی (نصب قبلی کامل) یا داده‌ی موجود (نصب ناقص قبلی روی همین
+            // دیتابیس) → سید کلاً رد می‌شود تا داده‌ی سایت زنده تکثیر نشود
+            $legacyMarker = is_file($this->seedMarkerPath());
+
+            if ($tracker['finished'] || $legacyMarker) {
+                $alreadySeeded = true;
+            } elseif (empty($tracker['done']) && $this->databaseHasSeedData()) {
+                // بدون ردیاب ولی دیتابیس داده دارد = نصب قبلی با نسخه‌ی قدیمی نصاب
+                $alreadySeeded = true;
+            } else {
+                $alreadySeeded = false;
+            }
 
             if (! $alreadySeeded) {
-                Artisan::call('db:seed', ['--force' => true], $output);
-                @file_put_contents($this->seedMarkerPath(), now()->toDateTimeString());
-
-                // فاز ۲۵ — مدیر پیش‌فرض ساخته نمی‌شود؛ مدیر در صفحه‌ی ثبت‌نام (/setup) ساخته می‌شود
-
-                // فاز ۲۵ — درایور سشن/صف همین‌جا (بعد از ساخت جداول) دیتابیسی می‌شود
-                // تا سشن ثبت‌نامِ مدیر در صفحه‌ی بعد، واقعاً در جدول sessions ذخیره شود
-                // و ورود خودکار پس از ثبت‌نام از بین نرود.
-                try {
-                    change_env('SESSION_DRIVER', 'database');
-                    change_env('QUEUE_CONNECTION', 'database');
-                } catch (\Throwable $e) {
-                    $output->writeln('env skip: ' . $e->getMessage());
+                // اولین سیدرِ هنوز انجام‌نشده
+                $current = null;
+                foreach ($seeders as $seeder) {
+                    if (! in_array($seeder, $tracker['done'], true)) {
+                        $current = $seeder;
+                        break;
+                    }
                 }
 
-                return response()->json([
-                    'phase' => 'seed',
-                    'current' => 'DatabaseSeeder',
-                    'total' => $files->count(),
-                    'done' => $files->count(),
-                    'remaining' => 0,
-                    'log' => trim($output->fetch()),
-                    'error' => null,
-                ]);
+                if ($current !== null) {
+                    Artisan::call('db:seed', [
+                        '--class' => $current,
+                        '--force' => true,
+                    ], $output);
+                    $log = trim($output->fetch());
+
+                    // درج تکراری (نیمه‌کاره‌ی تلاش قبلی) = سیدر قبلاً بخشی از داده را
+                    // گذاشته؛ ادامه‌ی نصب مهم‌تر از دوباره‌کاری است — مثل «done» رفتار می‌شود
+                    $duplicate = preg_match('/(1062|Duplicate entry|duplicate key)/i', $log) === 1;
+
+                    $tracker['done'][] = $current;
+                    $this->writeTracker($tracker['done'], false);
+
+                    return response()->json([
+                        'phase' => 'seed',
+                        'current' => $current,
+                        'total' => $files->count(),
+                        'done' => $files->count(),
+                        'remaining' => 0,
+                        'seed_done' => count($tracker['done']),
+                        'seed_total' => count($seeders),
+                        'duplicate' => $duplicate,
+                        'log' => $log !== '' ? $log : ('✔ ' . class_basename($current)),
+                        'error' => null,
+                    ]);
+                }
             }
 
-            // دیتابیس از قبل داده دارد (نصب ناقص قبلی یا اجرای مجدد) → سید رد می‌شود
+            // ---------- همه‌ی سیدرها کامل شد (یا سید رد شد) ----------
+            $this->writeTracker(count($tracker['done']) === count($seeders) ? $tracker['done'] : $seeders, true);
             @file_put_contents($this->seedMarkerPath(), now()->toDateTimeString());
 
-            // فاز ۲۵ — در این مسیر هم درایور سشن/صف دیتابیسی شود (نصب ناقص قبلی)
+            // فاز ۲۵ — مدیر پیش‌فرض ساخته نمی‌شود؛ مدیر در صفحه‌ی ثبت‌نام (/setup) ساخته می‌شود
+
+            // فاز ۲۵ — درایور سشن/صف همین‌جا (بعد از ساخت جداول) دیتابیسی می‌شود
+            // تا سشن ثبت‌نامِ مدیر در صفحه‌ی بعد، واقعاً در جدول sessions ذخیره شود
+            // و ورود خودکار پس از ثبت‌نام از بین نرود.
+            //
+            // ★ فاز ۲۷ — پارامتر سوم «false»: هرگز config:cache داخل همین درخواست!
+            //   قبلاً change_env با پیش‌فرض true وسط درخواستِ آخرِ نصب config:cache
+            //   اجرا می‌کرد که یک Application دوم را بوت می‌کند؛ روی هاست‌های کند
+            //   همین درخواست کشته می‌شد → پیام خطا در پایان کار → «تلاش مجدد» سبز
+            //   می‌شد (چون همه‌چیز قبلاً انجام شده بود). درایور جدید در درخواستِ
+            //   بعدی (همین حلقه AJAX) خودکار اعمال می‌شود؛ کش نهایی هم SetupFinalizer
+            //   بعد از ثبت‌نام مدیر با register_shutdown_function می‌سازد.
             try {
                 if (config('session.driver') !== 'database') {
-                    change_env('SESSION_DRIVER', 'database');
-                    change_env('QUEUE_CONNECTION', 'database');
+                    change_env('SESSION_DRIVER', 'database', false);
+                    change_env('QUEUE_CONNECTION', 'database', false);
                 }
             } catch (\Throwable $e) {
-                // غیرحیاتی
+                $output->writeln('env skip: ' . $e->getMessage());
             }
 
-            // ---------- همه‌چیز انجام شد ----------
             return response()->json([
                 'phase' => 'done',
                 'current' => null,
                 'total' => $files->count(),
                 'done' => $files->count(),
                 'remaining' => 0,
+                'seed_done' => count($seeders),
+                'seed_total' => count($seeders),
                 'log' => 'نصب دیتابیس کامل شد.',
                 'error' => null,
             ]);

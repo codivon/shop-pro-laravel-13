@@ -243,8 +243,16 @@ trait InteractsWithPackages
              * پکیج باید «در حال نصب» نمایش داده شود (نه «در صف»). markPending رکورد
              * را از همین لحظه در وضعیت updating می‌گذارد تا کارت و مودال پیشرفت
              * فوراً وضعیت درست را نشان دهند.
+             *
+             * فاز ۲۷ — name از کش محلی پاس می‌شود (ستون name جدول NOT NULL است؛
+             * قبلاً null پاس می‌شد و درج با خطای 1364 شکست می‌خورد و نصب هرگز شروع نمی‌شد)
              */
-            InstalledModule::markPending($slug, null, $version, $licenseKey);
+            InstalledModule::markPending(
+                $slug,
+                \App\Models\PackageCache::where('slug', $slug)->value('name'),
+                $version,
+                $licenseKey
+            );
 
             InstallPackageJob::dispatch(
                 $slug,
