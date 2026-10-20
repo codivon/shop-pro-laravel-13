@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Install;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 /**
@@ -22,11 +21,16 @@ class MigrateController extends Controller
     protected const STEP_TIME_LIMIT = 240;
 
     /**
-     * آیا دیتابیس از قبل داده‌های اولیه دارد؟ (اجرای مجدد نصب را امن می‌کند — فاز ۲۱)
+     * آیا دیتابیس از قبل «داده‌ی سیدشده» دارد؟ (اجرای مجدد نصب را امن می‌کند — فاز ۲۱/۲۳)
+     *
+     * فاز ۲۳: فقط جدول‌هایی که «فقط» توسط Seeder پر می‌شوند بررسی شوند.
+     * (options/currencies/settings از نسخه‌ی قبلی حذف شدند — بعضی مایگریشن‌ها
+     * خودشان ردیف پیش‌فرض درج می‌کنند و باعث می‌شد سید کلاً رد شود و
+     * جدول settings اصلا ساخته نشود!)
      */
     protected function databaseHasSeedData(): bool
     {
-        foreach (['roles', 'admins', 'users', 'options', 'settings', 'currencies'] as $table) {
+        foreach (['roles', 'admins', 'users'] as $table) {
             try {
                 if (\Schema::hasTable($table) && DB::table($table)->count() > 0) {
                     return true;
@@ -37,6 +41,57 @@ class MigrateController extends Controller
         }
 
         return false;
+    }
+
+    /**
+     * مسیر نشانگر «سید انجام شد» — فاز ۲۳: مسیر قطعی storage/app
+     *
+     * قبلاً از Storage::disk('local') استفاده می‌شد که در این پروژه ریشه‌اش
+     * public/uploads است — یعنی نشانگر داخل وب‌روت می‌افتاد (از وب قابل دسترس،
+     * و با هر تغییر پیکربندی دیسک یا پاک‌کردن uploads، رفتار نصب عوض می‌شد).
+     */
+    protected function seedMarkerPath(): string
+    {
+        return storage_path('app/installer-seeded');
+    }
+
+    /**
+     * فاز ۲۳ — اگر هیچ مدیری وجود نداشت، مدیر پیش‌فرض بساز
+     * (admin / admin1234 — صفحه‌ی «پایان نصب» کاربر را به تغییر آن مکلف می‌کند)
+     */
+    protected function createDefaultAdmin(BufferedOutput $output): void
+    {
+        try {
+            if (! \Schema::hasTable('admins') || DB::table('admins')->count() > 0) {
+                return;
+            }
+
+            $adminId = DB::table('admins')->insertGetId([
+                'first_name' => 'مدیر',
+                'last_name' => 'سایت',
+                'username' => 'admin',
+                'email' => 'admin@example.com',
+                'password' => \Illuminate\Support\Facades\Hash::make('admin1234'),
+                'level' => 'admin',
+                'status' => 'ACTIVE',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $role = DB::table('roles')->orderBy('id')->first();
+
+            if ($role && \Schema::hasTable('admin_role')) {
+                DB::table('admin_role')->insertOrIgnore([
+                    'admin_id' => $adminId,
+                    'role_id' => $role->id,
+                ]);
+            }
+
+            $output->writeln('مدیر پیش‌فرض ایجاد شد (admin / admin1234) — بعد از ورود رمز را عوض کنید.');
+        } catch (\Throwable $e) {
+            // ساخت مدیر اختیاری است — خطا نباید نصب را متوقف کند
+            $output->writeln('admin skip: '.$e->getMessage());
+        }
     }
 
     public function index()
@@ -89,12 +144,15 @@ class MigrateController extends Controller
             }
 
             // ---------- مایگریشن‌ها تمام شد → سید (یک‌بار و idempotent) ----------
-            $alreadySeeded = Storage::disk('local')->exists('installer-seeded')
+            $alreadySeeded = is_file($this->seedMarkerPath())
                 || $this->databaseHasSeedData();
 
             if (! $alreadySeeded) {
                 Artisan::call('db:seed', ['--force' => true], $output);
-                Storage::disk('local')->put('installer-seeded', now()->toDateTimeString());
+                @file_put_contents($this->seedMarkerPath(), now()->toDateTimeString());
+
+                // فاز ۲۳ — مدیر پیش‌فرض: بدون آن ورود به پنل پس از نصب غیرممکن بود
+                $this->createDefaultAdmin($output);
 
                 return response()->json([
                     'phase' => 'seed',
@@ -108,7 +166,7 @@ class MigrateController extends Controller
             }
 
             // دیتابیس از قبل داده دارد (نصب ناقص قبلی یا اجرای مجدد) → سید رد می‌شود
-            Storage::disk('local')->put('installer-seeded', now()->toDateTimeString());
+            @file_put_contents($this->seedMarkerPath(), now()->toDateTimeString());
 
             // ---------- همه‌چیز انجام شد ----------
             return response()->json([

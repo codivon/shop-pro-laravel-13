@@ -320,17 +320,24 @@ class ProductScraper
         }
     }
 
-    /* ============================ ترب (فاز ۲۱) ============================ */
+    /* ============================ ترب (فاز ۲۱/۲۳) ============================ */
 
     /**
-     * دریافت محصول از ترب — جایگزین متد خراب getDataTorob پنل قدیمی
+     * دریافت محصول از ترب — بازنویسی کامل در فاز ۲۳
      *
-     * استراتژی چندلایه (چون ترب ممکن است API/صفحه را برای ربات‌ها مسدود کند):
-     *  ۱) استخراج کد prk از آدرس (torob.com/p/PRK/...) یا پذیرش مستقیم کد
-     *  ۲) فراخوانی API رسمی ترب (چند اندپوینت)
-     *  ۳) اگر API مسدود بود → دریافت HTML صفحه و پارس JSON-LD (schema.org Product)
+     * دلایل «هیچ چیز نمی‌گیرد» در نسخه‌ی قبلی:
+     *  ۱) پاسخ خطای API (مثل {"status":404} یا {"message":"..."}) چون کلید detail
+     *     نداشت، «پاسخ سالم» فرض می‌شد → هیچ فیلدی پر نمی‌شد و فرم با پیام موفقیت
+     *     خالی می‌ماند (silent-empty)؛
+     *  ۲) ساختار واقعی ترب (Next.js) در __NEXT_DATA__ است که اصلا پارس نمی‌شد؛
+     *  ۳) URL تصاویر نسبی (//gt.torob.com/...) رد می‌شد؛
+     *  ۴) هدرهای callApi شبیه مرورگر نبود → ترب 403/490 می‌داد.
      *
-     * خروجی هم‌شکل fetchDigikala است تا فرم لایووایر بدون تغییر پُر شود.
+     * استراتژی چندلایه‌ی جدید:
+     *  ۱) API رسمی ترب (۴ اندپوینت + اعتبارسنجی محتوای پاسخ)
+     *  ۲) HTML صفحه → پارس __NEXT_DATA__ (گردشگر بازگشتی به دنبال گره محصول)
+     *  ۳) HTML صفحه → پارس JSON-LD (schema.org Product)
+     *  ۴) اگر هیچ لایه‌ای داده نداد → خطای توضیحی با کد وضعیت هر لایه (هرگز silent!)
      */
     public function fetchTorob(string $urlOrCode): array
     {
@@ -362,11 +369,12 @@ class ProductScraper
             }
 
             // ---------- ۱) API ترب ----------
-            $payload = null;
-            $apiError = null;
+            $product = null;
+            $attempts = [];
 
             $endpoints = [
                 "https://api.torob.com/v4/base-product/detail/?source=next_desktop&prk={$prk}",
+                "https://api.torob.com/v4/base-product/detail2/?source=next_desktop&prk={$prk}",
                 "https://api.torob.com/v4/base-product/detail/?prk={$prk}",
                 "https://api.torob.com/v2/base-product/detail/?prk={$prk}",
             ];
@@ -375,225 +383,313 @@ class ProductScraper
                 try {
                     $candidate = $this->callApi($endpoint);
 
-                    if (! empty($candidate) && empty($candidate['detail'])) {
-                        $payload = $candidate;
+                    if ($this->isTorobProductPayload($candidate)) {
+                        $product = $candidate;
+
                         break;
                     }
+
+                    $attempts['api'] = 'پاسخ نامعتبر: ' . mb_substr(json_encode($candidate, JSON_UNESCAPED_UNICODE) ?: '', 0, 120);
                 } catch (\Throwable $e) {
-                    $apiError = $e->getMessage();
+                    $attempts['api'] = $e->getMessage();
                 }
             }
 
-            // ---------- ۲) fallback: JSON-LD صفحه محصول ----------
-            $pageHtml = null;
+            // ---------- ۲ و ۳) صفحه HTML → __NEXT_DATA__ / JSON-LD ----------
+            $nextData = null;
             $jsonLd = null;
-            $pageUrl = str_contains($urlOrCode, 'torob.com') ? $urlOrCode : "https://torob.com/p/{$prk}/";
 
-            if (! $payload) {
+            if (! $product) {
+                $pageUrl = str_contains($urlOrCode, 'torob.com') ? $urlOrCode : "https://torob.com/p/{$prk}/";
                 [$pageHtml, $fetchError] = $this->fetchTorobPage($pageUrl);
+                $attempts['page'] = $fetchError ?: 'ok';
 
                 if ($pageHtml) {
-                    $jsonLd = $this->parseTorobJsonLd($pageHtml);
+                    $nextData = $this->parseTorobNextData($pageHtml);
+
+                    if ($this->isTorobProductPayload($nextData)) {
+                        $product = $nextData;
+                    }
+
+                    if (! $product) {
+                        $jsonLd = $this->parseTorobJsonLd($pageHtml);
+                    }
                 }
             }
 
-            if (! $payload && ! $jsonLd) {
-                $hint = str_contains((string) $apiError, '403') || str_contains((string) $fetchError, '403')
-                    ? ' (ترب دسترسی ربات‌ها را مسدود کرده است — چند لحظه بعد تلاش کنید یا از دیجی‌کالا استفاده کنید)'
+            if (! $product) {
+                $blocked = str_contains((string) ($attempts['api'] ?? ''), '403')
+                    || str_contains((string) ($attempts['api'] ?? ''), '490')
+                    || str_contains((string) ($attempts['page'] ?? ''), '403')
+                    || str_contains((string) ($attempts['page'] ?? ''), '490');
+
+                $hint = $blocked
+                    ? ' — ترب دسترسی سرورها/ربات‌ها را مسدود کرده است (HTTP 403/490). لطفا آدرس را در مرورگر باز و از دیجی‌کالا استفاده کنید یا چند دقیقه بعد تلاش کنید.'
                     : '';
 
-                throw new \Exception('دریافت اطلاعات از ترب ناموفق بود' . $hint);
+                $detail = implode(' | ', array_map(fn ($k, $v) => "{$k}: {$v}", array_keys($attempts), $attempts));
+
+                Log::error('Torob fetch failed', ['input' => $urlOrCode, 'attempts' => $attempts]);
+
+                throw new \Exception('دریافت اطلاعات از ترب ناموفق بود' . $hint . ($detail ? ' [' . $detail . ']' : ''));
             }
 
-            // ---------- استخراج داده‌ها ----------
-            $product = $payload;
-
-            // اگر ساختار API تو در تو بود (data.product / product)
-            foreach (['product', 'data'] as $wrapKey) {
-                if (isset($product[$wrapKey]) && is_array($product[$wrapKey]) && empty($product['title1'])) {
+            // ---------- نرمال‌سازی ساختار (تو در تویی API) ----------
+            foreach (['product', 'data', 'base_product'] as $wrapKey) {
+                if (isset($product[$wrapKey]) && is_array($product[$wrapKey])
+                    && ! isset($product['title1']) && ! isset($product['name_fa'])) {
                     $product = $product[$wrapKey] + $product;
                 }
             }
 
-            $pick = function (array $keys, $default = null) use ($product) {
-                foreach ($keys as $key) {
-                    if (isset($product[$key]) && $product[$key] !== '' && $product[$key] !== null) {
-                        return $product[$key];
-                    }
-                }
+            $mapped = $this->mapTorobProduct($product, $jsonLd);
 
-                return $default;
-            };
+            // ---------- ۴) هرگز silent-empty برنگردان ----------
+            if (empty($mapped['title']) && empty($mapped['price']) && empty($mapped['baseImage'])) {
+                Log::error('Torob fetch: payload accepted but nothing extracted', ['keys' => array_keys($product)]);
 
-            // عنوان
-            $title = $pick(['title1', 'title2', 'title', 'name', 'name_fa']);
-            if (! $title && $jsonLd) {
-                $title = $jsonLd['title'] ?? null;
+                throw new \Exception('پاسخ ترب دریافت شد اما داده‌ی قابل استفاده‌ای در آن نبود. لطفا آدرس دقیق صفحه‌ی محصول را وارد کنید.');
             }
 
-            // قیمت (تومان)
-            $price = (int) $pick(['min_price', 'price', 'lowest_price', 'price_toman'], 0);
-            if (! $price && isset($jsonLd['price'])) {
-                $price = (int) preg_replace('/[^\d]/', '', (string) $jsonLd['price']);
-            }
-
-            // تصاویر
-            $imageUrls = [];
-            foreach (['image1', 'image_url', 'image', 'main_image'] as $key) {
-                $val = $product[$key] ?? null;
-
-                if (is_string($val) && str_starts_with($val, 'http')) {
-                    $imageUrls[] = $val;
-                } elseif (is_array($val)) {
-                    foreach ($val as $v) {
-                        if (is_string($v) && str_starts_with($v, 'http')) {
-                            $imageUrls[] = $v;
-                        }
-                    }
-                }
-            }
-
-            // تصاویر پیشنهادی فروشندگان (results[*].image_url) — عکس همان محصول
-            foreach ((array) ($product['results'] ?? []) as $offer) {
-                if (is_array($offer) && ! empty($offer['image_url']) && is_string($offer['image_url'])) {
-                    $imageUrls[] = $offer['image_url'];
-                }
-
-                if (count($imageUrls) >= 12) {
-                    break;
-                }
-            }
-
-            if (! $imageUrls && ! empty($jsonLd['image'])) {
-                $imageUrls = (array) $jsonLd['image'];
-            }
-
-            $imageUrls = array_values(array_unique($imageUrls));
-
-            $baseImage = null;
-            $galleryFiles = [];
-
-            foreach ($imageUrls as $i => $imgUrl) {
-                if ($i >= 11) {
-                    break;
-                }
-
-                $imageName = $this->baseName(parse_url($imgUrl, PHP_URL_PATH) ?: $imgUrl);
-
-                if (! preg_match('/\.(jpe?g|png|webp)$/i', $imageName)) {
-                    $imageName .= '.jpg';
-                }
-
-                $path = 'uploads/tmp/torob-' . $imageName;
-
-                if (! file_exists($path)) {
-                    $ok = $i === 0
-                        ? $this->resizeAndSaveSiteImage($imgUrl, $path, 600, 600)
-                        : $this->resizeAndSaveSiteImage($imgUrl, $path);
-
-                    if (! $ok) {
-                        continue;
-                    }
-
-                    if ($i > 0) {
-                        usleep(400000);
-                    }
-                }
-
-                if ($i === 0) {
-                    $baseImage = 'torob-' . $imageName;
-                } else {
-                    $galleryFiles[] = 'torob-' . $imageName;
-                }
-            }
-
-            // دسته‌بندی
-            $categoryId = null;
-            $categoryName = $pick(['category_name', 'category_title']);
-
-            if (! $categoryName && isset($product['category']) && is_array($product['category'])) {
-                $categoryName = $product['category']['title'] ?? $product['category']['name'] ?? null;
-            }
-
-            if (! $categoryName && ! empty($jsonLd['category'])) {
-                $categoryName = is_array($jsonLd['category']) ? end($jsonLd['category']) : $jsonLd['category'];
-            }
-
-            if ($categoryName) {
-                $category = Category::where('title', trim((string) $categoryName))->where('type', 'productcat')->first();
-
-                if (! $category) {
-                    $category = Category::create([
-                        'title' => trim((string) $categoryName),
-                        'slug' => sluggable_helper_function(trim((string) $categoryName)),
-                        'type' => 'productcat',
-                        'lang' => 'fa',
-                    ]);
-                }
-
-                $categoryId = $category->id;
-            }
-
-            // مشخصات فنی
-            $specGroups = [];
-            $rawSpecs = $product['extra_info'] ?? $product['specifications'] ?? $product['specs'] ?? [];
-
-            if (is_array($rawSpecs)) {
-                $rows = [];
-
-                foreach ($rawSpecs as $spec) {
-                    if (is_array($spec)) {
-                        $name = $spec['key'] ?? $spec['title'] ?? $spec['name'] ?? null;
-                        $value = $spec['value'] ?? $spec['body'] ?? null;
-                    } elseif (is_string($spec) && str_contains($spec, ':')) {
-                        [$name, $value] = array_map('trim', explode(':', $spec, 2));
-                    } else {
-                        continue;
-                    }
-
-                    if ($name && $value !== null && $value !== '') {
-                        $rows[] = ['name' => trim((string) $name), 'value' => trim((string) $value), 'special' => false];
-                    }
-                }
-
-                if ($rows) {
-                    $specGroups[] = [
-                        'name' => 'مشخصات ' . ($title ?: 'محصول'),
-                        'specifications' => $rows,
-                    ];
-                }
-            }
-
-            // توضیحات
-            $description = $pick(['description', 'description_text']);
-            if (! $description && ! empty($jsonLd['description'])) {
-                $description = $jsonLd['description'];
-            }
-
-            // برند
-            $brandName = $pick(['brand_name', 'brand']);
-
-            if (is_array($brandName)) {
-                $brandName = $brandName['name'] ?? $brandName['title'] ?? null;
-            }
-
-            return array_merge($empty, [
-                'title' => $title ? (string) $title : null,
-                'price' => $price,
-                'variantRows' => $price ? [['attributes' => [], 'price' => $price]] : [],
-                'galleryFiles' => $galleryFiles,
-                'baseImage' => $baseImage,
-                'categoryId' => $categoryId,
-                'brandName' => $brandName ? (string) $brandName : null,
-                'descriptionHtml' => $description ? '<p>' . e((string) $description) . '</p>' : null,
-                'specGroups' => $specGroups,
-                'metaTitle' => $title ? (string) $title : null,
-                'metaDescription' => $description ? mb_substr(strip_tags((string) $description), 0, 300) : null,
-            ]);
+            return array_merge($empty, $mapped);
         } catch (\Exception $e) {
             Log::error('Torob fetch error: ' . $e->getMessage(), ['input' => $urlOrCode]);
 
             return array_merge($empty, ['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * آیا این پاسخ، یک محصول واقعی ترب است؟ (جلوگیری از silent-empty)
+     */
+    protected function isTorobProductPayload($payload): bool
+    {
+        if (! is_array($payload) || empty($payload)) {
+            return false;
+        }
+
+        // خطاهای متداول API — هر شکلی که باشند
+        foreach (['detail', 'message', 'error', 'status_code'] as $errKey) {
+            if (isset($payload[$errKey]) && ! is_array($payload[$errKey])) {
+                $val = strtolower(trim((string) $payload[$errKey]));
+
+                if ($val !== '' && $val !== 'ok' && ! is_numeric($val)) {
+                    return false;
+                }
+            }
+        }
+
+        $hasTitle = ! empty($payload['title1']) || ! empty($payload['title2'])
+            || ! empty($payload['name_fa']) || ! empty($payload['name1']);
+
+        $hasPrice = isset($payload['min_price']) || isset($payload['price']) || isset($payload['lowest_price']);
+        $hasImage = ! empty($payload['image1']) || ! empty($payload['image_url']);
+        $hasOffers = ! empty($payload['results']) && is_array($payload['results']);
+
+        return $hasTitle && ($hasPrice || $hasImage || $hasOffers);
+    }
+
+    /**
+     * نگاشت گره محصول ترب به خروجی استاندارد فرم
+     */
+    protected function mapTorobProduct(array $product, ?array $jsonLd): array
+    {
+        $pick = function (array $keys, $default = null) use ($product) {
+            foreach ($keys as $key) {
+                if (isset($product[$key]) && $product[$key] !== '' && $product[$key] !== null) {
+                    return $product[$key];
+                }
+            }
+
+            return $default;
+        };
+
+        // ---------- عنوان ----------
+        $title = $pick(['title1', 'title2', 'name1', 'name_fa', 'title', 'name']);
+        if (! $title && $jsonLd) {
+            $title = $jsonLd['title'] ?? null;
+        }
+
+        // ---------- قیمت (تومان) ----------
+        $price = (int) preg_replace('/[^\d]/', '', (string) $pick(['min_price', 'price', 'lowest_price', 'price_toman'], 0));
+        if (! $price && ! empty($jsonLd['price'])) {
+            $price = (int) preg_replace('/[^\d]/', '', (string) $jsonLd['price']);
+        }
+
+        // ---------- تصاویر ----------
+        $imageUrls = [];
+
+        foreach (['image1', 'image_url', 'image', 'main_image', 'image2'] as $key) {
+            $val = $product[$key] ?? null;
+            $this->collectTorobImageUrl($val, $imageUrls);
+        }
+
+        // تصاویر پیشنهادی فروشندگان (results[*].image_url) — عکس همان محصول
+        foreach ((array) ($product['results'] ?? []) as $offer) {
+            if (is_array($offer)) {
+                $this->collectTorobImageUrl($offer['image_url'] ?? null, $imageUrls);
+            }
+
+            if (count($imageUrls) >= 12) {
+                break;
+            }
+        }
+
+        if (! $imageUrls && ! empty($jsonLd['image'])) {
+            foreach ((array) $jsonLd['image'] as $img) {
+                $this->collectTorobImageUrl($img, $imageUrls);
+            }
+        }
+
+        $imageUrls = array_values(array_unique($imageUrls));
+
+        $baseImage = null;
+        $galleryFiles = [];
+
+        foreach ($imageUrls as $i => $imgUrl) {
+            if ($i >= 11) {
+                break;
+            }
+
+            $imageName = $this->baseName(parse_url($imgUrl, PHP_URL_PATH) ?: $imgUrl);
+
+            if (! preg_match('/\.(jpe?g|png|webp)$/i', $imageName)) {
+                $imageName .= '.jpg';
+            }
+
+            $path = 'uploads/tmp/torob-' . $imageName;
+
+            if (! file_exists($path)) {
+                $ok = $i === 0
+                    ? $this->resizeAndSaveSiteImage($imgUrl, $path, 600, 600)
+                    : $this->resizeAndSaveSiteImage($imgUrl, $path);
+
+                if (! $ok) {
+                    continue;
+                }
+
+                if ($i > 0) {
+                    usleep(400000);
+                }
+            }
+
+            if ($i === 0) {
+                $baseImage = 'torob-' . $imageName;
+            } else {
+                $galleryFiles[] = 'torob-' . $imageName;
+            }
+        }
+
+        // ---------- دسته‌بندی ----------
+        $categoryId = null;
+        $categoryName = $pick(['category_name', 'category_title']);
+
+        if (! $categoryName && isset($product['category']) && is_array($product['category'])) {
+            $categoryName = $product['category']['title'] ?? $product['category']['name'] ?? null;
+        }
+
+        if (! $categoryName && ! empty($jsonLd['category'])) {
+            $categoryName = is_array($jsonLd['category']) ? end($jsonLd['category']) : $jsonLd['category'];
+        }
+
+        if ($categoryName) {
+            $category = Category::where('title', trim((string) $categoryName))->where('type', 'productcat')->first();
+
+            if (! $category) {
+                $category = Category::create([
+                    'title' => trim((string) $categoryName),
+                    'slug' => sluggable_helper_function(trim((string) $categoryName)),
+                    'type' => 'productcat',
+                    'lang' => 'fa',
+                ]);
+            }
+
+            $categoryId = $category->id;
+        }
+
+        // ---------- مشخصات فنی ----------
+        $specGroups = [];
+        $rawSpecs = $product['extra_info'] ?? $product['specifications'] ?? $product['specs'] ?? [];
+
+        if (is_array($rawSpecs)) {
+            $rows = [];
+
+            foreach ($rawSpecs as $spec) {
+                if (is_array($spec)) {
+                    $name = $spec['key'] ?? $spec['title'] ?? $spec['name'] ?? null;
+                    $value = $spec['value'] ?? $spec['body'] ?? null;
+                } elseif (is_string($spec) && str_contains($spec, ':')) {
+                    [$name, $value] = array_map('trim', explode(':', $spec, 2));
+                } else {
+                    continue;
+                }
+
+                if ($name && $value !== null && $value !== '') {
+                    $rows[] = ['name' => trim((string) $name), 'value' => trim((string) $value), 'special' => false];
+                }
+            }
+
+            if ($rows) {
+                $specGroups[] = [
+                    'name' => 'مشخصات ' . ($title ?: 'محصول'),
+                    'specifications' => $rows,
+                ];
+            }
+        }
+
+        // ---------- توضیحات ----------
+        $description = $pick(['description', 'description_text']);
+        if (! $description && ! empty($jsonLd['description'])) {
+            $description = $jsonLd['description'];
+        }
+
+        // ---------- برند ----------
+        $brandName = $pick(['brand_name', 'brand']);
+
+        if (is_array($brandName)) {
+            $brandName = $brandName['name'] ?? $brandName['title'] ?? null;
+        }
+
+        return [
+            'title' => $title ? (string) $title : null,
+            'price' => $price,
+            'variantRows' => $price ? [['attributes' => [], 'price' => $price]] : [],
+            'galleryFiles' => $galleryFiles,
+            'baseImage' => $baseImage,
+            'categoryId' => $categoryId,
+            'brandName' => $brandName ? (string) $brandName : null,
+            'descriptionHtml' => $description ? '<p>' . e((string) $description) . '</p>' : null,
+            'specGroups' => $specGroups,
+            'metaTitle' => $title ? (string) $title : null,
+            'metaDescription' => $description ? mb_substr(strip_tags((string) $description), 0, 300) : null,
+        ];
+    }
+
+    /**
+     * جمع‌آوری URL تصویر ترب (مطلق / //protocol-relative / آرایه)
+     */
+    protected function collectTorobImageUrl($val, array &$out): void
+    {
+        if (is_array($val)) {
+            foreach ($val as $v) {
+                $this->collectTorobImageUrl($v, $out);
+            }
+
+            return;
+        }
+
+        if (! is_string($val) || $val === '') {
+            return;
+        }
+
+        $val = trim($val);
+
+        if (str_starts_with($val, 'http://') || str_starts_with($val, 'https://')) {
+            $out[] = $val;
+        } elseif (str_starts_with($val, '//')) {
+            $out[] = 'https:' . $val;
+        } elseif (str_starts_with($val, '/') && ! str_contains($val, ' ')) {
+            $out[] = 'https://gt.torob.com' . $val;
         }
     }
 
@@ -634,7 +730,11 @@ class ProductScraper
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Accept-Language: fa-IR,fa;q=0.9,en;q=0.8',
-            'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+            'Referer: https://torob.com/',
+            'Sec-Fetch-Dest: document',
+            'Sec-Fetch-Mode: navigate',
+            'Upgrade-Insecure-Requests: 1',
+            'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
         ]);
 
         $html = curl_exec($ch);
@@ -650,11 +750,59 @@ class ProductScraper
             return [null, "HTTP code: {$httpCode}"];
         }
 
-        if (str_contains($html, 'arcaptcha') && ! str_contains($html, 'application/ld+json')) {
+        if (str_contains($html, 'arcaptcha') && ! str_contains($html, '__NEXT_DATA__') && ! str_contains($html, 'application/ld+json')) {
             return [null, 'HTTP code: 403'];
         }
 
         return [$html, null];
+    }
+
+    /**
+     * فاز ۲۳ — پارس __NEXT_DATA__ صفحات Next.js ترب
+     *
+     * ترب با Next.js است و کل داده‌ی صفحه در <script id="__NEXT_DATA__"> است.
+     * ساختار تو در تو بین نسخه‌ها فرق می‌کند؛ پس بازگشتی به دنبال اولین گره‌ای
+     * می‌گردیم که «شکل» محصول ترب را دارد (title1/min_price/results...).
+     */
+    protected function parseTorobNextData(string $html): ?array
+    {
+        if (! preg_match('#<script[^>]*id=["\']__NEXT_DATA__["\'][^>]*>(.*?)</script>#is', $html, $m)) {
+            return null;
+        }
+
+        $data = json_decode((string) $m[1], true);
+
+        if (! is_array($data)) {
+            return null;
+        }
+
+        return $this->findTorobProductNode($data, 0);
+    }
+
+    /**
+     * جستجوی بازگشتی (با عمق محدود) گره‌ی محصول در JSON ترب
+     */
+    protected function findTorobProductNode(array $node, int $depth): ?array
+    {
+        if ($depth > 12) {
+            return null;
+        }
+
+        if ($this->isTorobProductPayload($node)) {
+            return $node;
+        }
+
+        foreach ($node as $child) {
+            if (is_array($child)) {
+                $found = $this->findTorobProductNode($child, $depth + 1);
+
+                if ($found) {
+                    return $found;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -708,9 +856,7 @@ class ProductScraper
         return $out;
     }
 
-    /**
-     * دریافت و رزایز تصویر — پورت resizeAndSaveSiteImage
-     */
+
     public function resizeAndSaveSiteImage($imageUrl, $savePath, $width = null, $height = null)
     {
         $ch = curl_init($imageUrl);
@@ -843,11 +989,22 @@ class ProductScraper
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2); // امنیتی: تطابق هاست گواهی
         curl_setopt($ch, CURLOPT_ENCODING, '');
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Accept: application/json',
+
+        // فاز ۲۳: هدرهای شبیه مرورگر — ترب بدون Referer/UA کامل 403/490 می‌دهد
+        $headers = [
+            'Accept: application/json, text/plain, */*',
             'Accept-Charset: utf-8',
-            'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        ]);
+            'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        ];
+
+        if (str_contains($url, 'torob.com')) {
+            $headers[] = 'Referer: https://torob.com/';
+            $headers[] = 'Origin: https://torob.com';
+            $headers[] = 'X-Requested-With: XMLHttpRequest';
+            $headers[] = 'Accept-Language: fa-IR,fa;q=0.9,en;q=0.8';
+        }
+
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
         $result = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);

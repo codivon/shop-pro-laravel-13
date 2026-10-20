@@ -149,12 +149,12 @@
                 <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                     <div>
                         <label class="mb-1.5 block text-[13px] font-semibold">عنوان محصول <span class="text-red-500">*</span></label>
-                        <input type="text" wire:model="title" class="ap-input" placeholder="مثال: گوشی موبایل سامسونگ ...">
+                        <input type="text" wire:model.blur="title" class="ap-input" placeholder="مثال: گوشی موبایل سامسونگ ...">
                         @error('title') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="mb-1.5 block text-[13px] font-semibold">عنوان انگلیسی</label>
-                        <input type="text" wire:model="title_en" dir="ltr" class="ap-input text-start">
+                        <input type="text" wire:model.blur="title_en" dir="ltr" class="ap-input text-start">
                         @error('title_en') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                     </div>
 
@@ -183,7 +183,7 @@
 
                     <div>
                         <label class="mb-1.5 block text-[13px] font-semibold">برند</label>
-                        <input type="text" wire:model="brand" list="brands-list" class="ap-input" placeholder="نام برند را تایپ یا انتخاب کنید">
+                        <input type="text" wire:model.blur="brand" list="brands-list" class="ap-input" placeholder="نام برند را تایپ یا انتخاب کنید">
                         <datalist id="brands-list">
                             @foreach (\App\Models\Brand::orderBy('name')->get(['name']) as $b)
                                 <option value="{{ $b->name }}"></option>
@@ -195,12 +195,12 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="mb-1.5 block text-[13px] font-semibold">وزن (گرم) <span class="text-red-500">*</span></label>
-                                <input type="number" min="0" wire:model="weight" class="ap-input fa-digits">
+                                <input type="number" min="0" wire:model.blur="weight" class="ap-input fa-digits">
                                 @error('weight') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="mb-1.5 block text-[13px] font-semibold">واحد <span class="text-red-500">*</span></label>
-                                <input type="text" wire:model="unit" class="ap-input">
+                                <input type="text" wire:model.blur="unit" class="ap-input">
                                 @error('unit') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                             </div>
                         </div>
@@ -262,7 +262,7 @@
                 {{-- توضیحات --}}
                 <div>
                     <label class="mb-1.5 block text-[13px] font-semibold">توضیحات کوتاه</label>
-                    <textarea wire:model="short_description" rows="3" class="ap-input" placeholder="توضیح کوتاه برای نمایش در لیست محصولات…"></textarea>
+                    <textarea wire:model.blur="short_description" rows="3" class="ap-input" placeholder="توضیح کوتاه برای نمایش در لیست محصولات…"></textarea>
                 </div>
 
                 <div>
@@ -279,12 +279,12 @@
                 <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                     <div>
                         <label class="mb-1.5 block text-[13px] font-semibold">عنوان سئو</label>
-                        <input type="text" wire:model="meta_title" class="ap-input">
+                        <input type="text" wire:model.blur="meta_title" class="ap-input">
                     </div>
                     <div>
                         <label class="mb-1.5 block text-[13px] font-semibold">آدرس (Slug)</label>
                         <div class="flex gap-2">
-                            <input type="text" wire:model="slug" dir="ltr" class="ap-input text-start">
+                            <input type="text" wire:model.blur="slug" dir="ltr" class="ap-input text-start">
                             <button type="button" wire:click="generateSlug" class="ap-btn-outline shrink-0 !px-3">
                                 <x-admin-panel::icon name="sparkles" class="size-4" />
                                 ایجاد خودکار
@@ -294,7 +294,7 @@
                     </div>
                     <div class="md:col-span-2">
                         <label class="mb-1.5 block text-[13px] font-semibold">توضیحات سئو</label>
-                        <textarea wire:model="meta_description" rows="3" class="ap-input"></textarea>
+                        <textarea wire:model.blur="meta_description" rows="3" class="ap-input"></textarea>
                     </div>
                     <div class="md:col-span-2" x-data="apTags()" data-initial="{{ old('tags', $tags) }}" x-effect="$wire.tags = items.join(',')">
                         <label class="mb-1.5 block text-[13px] font-semibold">کلمات کلیدی</label>
@@ -341,7 +341,7 @@
                                 <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
                                     <div>
                                         <label class="mb-1.5 block text-xs font-semibold">عنوان فایل <span class="text-red-500">*</span></label>
-                                        <input type="text" wire:model="download_files.{{ $i }}.title" class="ap-input">
+                                        <input type="text" wire:model.blur="download_files.{{ $i }}.title" class="ap-input">
                                         @error("download_files.{$i}.title") <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
@@ -365,13 +365,13 @@
                                     </div>
                                     <div>
                                         <label class="mb-1.5 block text-xs font-semibold">قیمت (تومان) <span class="text-red-500">*</span></label>
-                                        <input type="number" min="0" wire:model="download_files.{{ $i }}.price" class="ap-input fa-digits">
+                                        <input type="number" min="0" wire:model.blur="download_files.{{ $i }}.price" class="ap-input fa-digits">
                                         @error("download_files.{$i}.price") <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                                     </div>
                                     <div class="grid grid-cols-2 gap-3">
                                         <div>
                                             <label class="mb-1.5 block text-xs font-semibold">تخفیف (٪)</label>
-                                            <input type="number" min="0" max="100" wire:model="download_files.{{ $i }}.discount" class="ap-input fa-digits">
+                                            <input type="number" min="0" max="100" wire:model.blur="download_files.{{ $i }}.discount" class="ap-input fa-digits">
                                         </div>
                                         <div>
                                             <label class="mb-1.5 block text-xs font-semibold">وضعیت</label>
@@ -473,50 +473,102 @@
                                     </div>
                                     <div>
                                         <label class="mb-1.5 block text-xs font-semibold">قیمت (تومان) <span class="text-red-500">*</span></label>
-                                        <input type="number" min="0" wire:model="prices.{{ $i }}.price" data-price-input
+                                        <input type="number" min="0" wire:model.blur="prices.{{ $i }}.price" data-price-input
                                                x-on:input="calc()" class="ap-input fa-digits">
                                         @error("prices.{$i}.price") <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
                                         <label class="mb-1.5 block text-xs font-semibold">موجودی انبار <span class="text-red-500">*</span></label>
-                                        <input type="number" min="0" wire:model="prices.{{ $i }}.stock" class="ap-input fa-digits">
+                                        <input type="number" min="0" wire:model.blur="prices.{{ $i }}.stock" class="ap-input fa-digits">
                                         @error("prices.{$i}.stock") <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                                     </div>
                                 </div>
 
                                 {{-- ویژگی‌ها --}}
-                                <div class="mt-4 space-y-3">
+                                <div class="mt-4 space-y-3" x-data="{ more: false }">
                                     <p class="text-xs font-bold text-ink-2 dark:text-night-ink-2">ویژگی‌های این تنوع:</p>
                                     @foreach ($this->attributeGroups as $group)
                                         @if ($group->get_attributes->count())
-                                            <div class="flex flex-wrap items-center gap-2">
-                                                <span class="min-w-24 text-[11px] font-semibold text-ink-3 dark:text-night-ink-2">{{ $group->name }}:</span>
-                                                @if ($group->type === 'color')
-                                                    @foreach ($group->get_attributes as $attr)
+                                            @php
+                                                $groupAttrs = $group->get_attributes;
+                                                $selectedIds = collect($row['attributes'] ?? [])
+                                                    ->map(fn ($a) => (int) $a)->filter()->values();
+                                                $isSelected = fn ($attr) => $selectedIds->contains((int) $attr->id);
+                                            @endphp
+
+                                            @if ($group->type === 'color')
+                                                {{-- فاز ۲۳: فقط ۶ رنگ اول + انتخاب‌های فعال دیده می‌شوند؛ بقیه با «بیشتر» --}}
+                                                @php
+                                                    $head = $groupAttrs->take(6);
+                                                    $tail = $groupAttrs->slice(6);
+                                                    $tailSelected = $tail->filter(fn ($a) => $isSelected($a));
+                                                    $tailHidden = $tail->reject(fn ($a) => $isSelected($a))->values();
+                                                @endphp
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <span class="min-w-24 text-[11px] font-semibold text-ink-3 dark:text-night-ink-2">{{ $group->name }}:</span>
+
+                                                    @foreach ($head as $attr)
                                                         <button type="button"
-                                                                wire:click="pickColor({{ $i }}, {{ $group->id }}, {{ $attr->id }})"
+                                                                wire:click="pickAttribute({{ $i }}, {{ $group->id }}, {{ $attr->id }})"
                                                                 class="group flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-semibold transition-all
-                                                                       {{ in_array((string) $attr->id, $row['attributes'] ?? []) || in_array($attr->id, $row['attributes'] ?? [])
+                                                                       {{ $isSelected($attr)
                                                                             ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-300'
                                                                             : 'border-line bg-surface text-ink-2 hover:border-brand-300 dark:border-night-line dark:bg-night-2 dark:text-night-ink-2' }}">
                                                             <span class="size-3.5 rounded-full border border-black/10" style="background: {{ $attr->value }}"></span>
                                                             {{ $attr->name }}
                                                         </button>
                                                     @endforeach
-                                                @else
-                                                    @foreach ($group->get_attributes as $attr)
-                                                        <label class="cursor-pointer">
-                                                            <input type="checkbox" value="{{ $attr->id }}" wire:model="prices.{{ $i }}.attributes" class="peer sr-only">
-                                                            <span class="inline-block rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-all
-                                                                         border-line bg-surface text-ink-2 hover:border-brand-300 dark:border-night-line dark:bg-night-2 dark:text-night-ink-2
-                                                                         peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700
-                                                                         dark:peer-checked:bg-brand-500/12 dark:peer-checked:text-brand-300">
-                                                                {{ $attr->name }}
-                                                            </span>
-                                                        </label>
+
+                                                    {{-- رنگ‌های انتخابی خارج از ۶ تای اول — همیشه نمایان --}}
+                                                    @foreach ($tailSelected as $attr)
+                                                        <button type="button"
+                                                                wire:click="pickAttribute({{ $i }}, {{ $group->id }}, {{ $attr->id }})"
+                                                                class="flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-semibold transition-all
+                                                                       border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-300">
+                                                            <span class="size-3.5 rounded-full border border-black/10" style="background: {{ $attr->value }}"></span>
+                                                            {{ $attr->name }}
+                                                        </button>
                                                     @endforeach
-                                                @endif
-                                            </div>
+
+                                                    @if ($tailHidden->count())
+                                                        <button type="button" x-show="!more" @click="more = true"
+                                                                class="rounded-full border border-dashed border-brand-400 px-2.5 py-1 text-[11px] font-bold text-brand-600 transition-colors hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10">
+                                                            بیشتر <span class="fa-digits">(+{{ \App\Livewire\Admin\Dashboard::fa($tailHidden->count()) }})</span>
+                                                        </button>
+                                                    @endif
+
+                                                    <span x-show="more" x-cloak class="flex flex-wrap items-center gap-2">
+                                                        @foreach ($tailHidden as $attr)
+                                                            <button type="button"
+                                                                    wire:click="pickAttribute({{ $i }}, {{ $group->id }}, {{ $attr->id }})"
+                                                                    class="flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-semibold transition-all
+                                                                           border-line bg-surface text-ink-2 hover:border-brand-300 dark:border-night-line dark:bg-night-2 dark:text-night-ink-2">
+                                                                <span class="size-3.5 rounded-full border border-black/10" style="background: {{ $attr->value }}"></span>
+                                                                {{ $attr->name }}
+                                                            </button>
+                                                        @endforeach
+                                                        <button type="button" @click="more = false"
+                                                                class="rounded-full border border-line px-2.5 py-1 text-[11px] font-bold text-ink-3 transition-colors hover:bg-surface-2 dark:border-night-line dark:text-night-ink-2">
+                                                            کمتر
+                                                        </button>
+                                                    </span>
+                                                </div>
+                                            @else
+                                                {{-- فاز ۲۳: رفتار تک‌انتخابی (radio) با pickAttribute — قبلاً چک‌باکس بود --}}
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <span class="min-w-24 text-[11px] font-semibold text-ink-3 dark:text-night-ink-2">{{ $group->name }}:</span>
+                                                    @foreach ($groupAttrs as $attr)
+                                                        <button type="button"
+                                                                wire:click="pickAttribute({{ $i }}, {{ $group->id }}, {{ $attr->id }})"
+                                                                class="rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-all
+                                                                       {{ $isSelected($attr)
+                                                                            ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-300'
+                                                                            : 'border-line bg-surface text-ink-2 hover:border-brand-300 dark:border-night-line dark:bg-night-2 dark:text-night-ink-2' }}">
+                                                            {{ $attr->name }}
+                                                        </button>
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                         @endif
                                     @endforeach
                                 </div>
@@ -524,23 +576,23 @@
                                 <div class="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-5">
                                     <div>
                                         <label class="mb-1.5 block text-xs font-semibold">تخفیف (٪)</label>
-                                        <input type="number" min="0" max="100" wire:model="prices.{{ $i }}.discount" data-discount-input
+                                        <input type="number" min="0" max="100" wire:model.blur="prices.{{ $i }}.discount" data-discount-input
                                                x-on:input="calc()" class="ap-input fa-digits">
                                         @error("prices.{$i}.discount") <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
                                         <label class="mb-1.5 block text-xs font-semibold">انقضای تخفیف</label>
-                                        <input type="text" wire:model="prices.{{ $i }}.discount_expire_at" data-jdp data-jdp-only-date="false"
+                                        <input type="text" wire:model.blur="prices.{{ $i }}.discount_expire_at" data-jdp data-jdp-only-date="false"
                                                placeholder="۱۴۰۴/۰۱/۰۱ ۱۲:۰۰" class="ap-input fa-digits text-center">
                                     </div>
                                     <div>
                                         <label class="mb-1.5 block text-xs font-semibold">حداکثر خرید</label>
                                         {{-- فاز ۲۱ — min=1 مقدار ۰ (نامحدود) را invalid می‌کرد و کل فرم غیرقابل ارسال می‌شد --}}
-                                        <input type="number" min="0" wire:model="prices.{{ $i }}.cart_max" class="ap-input fa-digits">
+                                        <input type="number" min="0" wire:model.blur="prices.{{ $i }}.cart_max" class="ap-input fa-digits">
                                     </div>
                                     <div>
                                         <label class="mb-1.5 block text-xs font-semibold">حداقل خرید</label>
-                                        <input type="number" min="0" wire:model="prices.{{ $i }}.cart_min" class="ap-input fa-digits">
+                                        <input type="number" min="0" wire:model.blur="prices.{{ $i }}.cart_min" class="ap-input fa-digits">
                                     </div>
                                     <div>
                                         <label class="mb-1.5 block text-xs font-semibold">وضعیت نمایش</label>
@@ -667,7 +719,7 @@
 
                         <div class="mt-4">
                             <label class="mb-1.5 block text-[13px] font-semibold">متن جایگزین تصویر</label>
-                            <input type="text" wire:model="image_alt" class="ap-input" placeholder="توضیح تصویر برای موتورهای جستجو…">
+                            <input type="text" wire:model.blur="image_alt" class="ap-input" placeholder="توضیح تصویر برای موتورهای جستجو…">
                         </div>
                     </div>
                 </div>
@@ -678,7 +730,7 @@
                 <div class="flex flex-wrap items-end gap-3">
                     <div class="min-w-56 flex-1">
                         <label class="mb-1.5 block text-[13px] font-semibold">نوع مشخصات</label>
-                        <input type="text" wire:model="spec_type" list="spectypes-list" class="ap-input" placeholder="مثلا گوشی موبایل">
+                        <input type="text" wire:model.blur="spec_type" list="spectypes-list" class="ap-input" placeholder="مثلا گوشی موبایل">
                         <datalist id="spectypes-list">
                             @foreach (\App\Models\SpecType::get(['name']) as $st)
                                 <option value="{{ $st->name }}"></option>
@@ -699,7 +751,7 @@
                 @foreach ($specificationGroup as $gi => $group)
                     <div wire:key="specg-{{ $gi }}" class="rounded-2xl border border-line bg-surface-2 p-4 dark:border-night-line dark:bg-night-3/60">
                         <div class="mb-3 flex items-center gap-2.5">
-                            <input type="text" wire:model="specificationGroup.{{ $gi }}.name" class="ap-input max-w-xs" placeholder="نام گروه — مثال: مشخصات کلی">
+                            <input type="text" wire:model.blur="specificationGroup.{{ $gi }}.name" class="ap-input max-w-xs" placeholder="نام گروه — مثال: مشخصات کلی">
                             <button type="button" wire:click="removeSpecGroup({{ $gi }})" class="ms-auto rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10" title="حذف گروه">
                                 <x-admin-panel::icon name="trash-2" class="size-4" />
                             </button>
@@ -709,10 +761,10 @@
                             @foreach ($group['specifications'] as $si => $spec)
                                 <div wire:key="spec-{{ $gi }}-{{ $si }}" class="grid grid-cols-12 items-center gap-2.5 rounded-xl bg-surface p-2.5 dark:bg-night-2">
                                     <div class="col-span-12 sm:col-span-4">
-                                        <input type="text" wire:model="specificationGroup.{{ $gi }}.specifications.{{ $si }}.name" class="ap-input !py-2" placeholder="عنوان (مثال: اندازه صفحه)">
+                                        <input type="text" wire:model.blur="specificationGroup.{{ $gi }}.specifications.{{ $si }}.name" class="ap-input !py-2" placeholder="عنوان (مثال: اندازه صفحه)">
                                     </div>
                                     <div class="col-span-11 sm:col-span-7">
-                                        <textarea rows="1" wire:model="specificationGroup.{{ $gi }}.specifications.{{ $si }}.value" class="ap-input !py-2" placeholder="مقدار (مثال: ۶.۷ اینچ)"></textarea>
+                                        <textarea rows="1" wire:model.blur="specificationGroup.{{ $gi }}.specifications.{{ $si }}.value" class="ap-input !py-2" placeholder="مقدار (مثال: ۶.۷ اینچ)"></textarea>
                                     </div>
                                     <div class="col-span-1 flex items-center justify-center">
                                         <label title="نمایش ویژه" class="cursor-pointer">
@@ -770,7 +822,7 @@
                                     @foreach ($sizeTypeSizes as $size)
                                         <div>
                                             <label class="mb-1 block text-[11px] font-semibold text-ink-3 dark:text-night-ink-2">{{ $size->title }}</label>
-                                            <input type="text" wire:model="sizes.{{ $gi }}.{{ $size->id }}" class="ap-input !py-2 fa-digits">
+                                            <input type="text" wire:model.blur="sizes.{{ $gi }}.{{ $size->id }}" class="ap-input !py-2 fa-digits">
                                         </div>
                                     @endforeach
                                 </div>
@@ -798,10 +850,10 @@
                 @foreach ($abilityScores as $i => $score)
                     <div wire:key="score-{{ $i }}" class="grid grid-cols-12 items-center gap-3 rounded-xl border border-line bg-surface-2 p-3 dark:border-night-line dark:bg-night-3/60">
                         <div class="col-span-12 sm:col-span-6">
-                            <input type="text" wire:model="abilityScores.{{ $i }}.name" class="ap-input" placeholder="عنوان ویژگی (مثال: کیفیت ساخت)">
+                            <input type="text" wire:model.blur="abilityScores.{{ $i }}.name" class="ap-input" placeholder="عنوان ویژگی (مثال: کیفیت ساخت)">
                         </div>
                         <div class="col-span-10 sm:col-span-4">
-                            <input type="number" min="0" max="5" step="0.1" wire:model="abilityScores.{{ $i }}.value" class="ap-input fa-digits" placeholder="امتیاز ۰ تا ۵">
+                            <input type="number" min="0" max="5" step="0.1" wire:model.blur="abilityScores.{{ $i }}.value" class="ap-input fa-digits" placeholder="امتیاز ۰ تا ۵">
                         </div>
                         <div class="col-span-2 flex justify-end">
                             <button type="button" wire:click="removeAbilityScore({{ $i }})" class="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10">
@@ -832,9 +884,9 @@
                                 </label>
 
                                 @if ($fild->type === 'textarea')
-                                    <textarea wire:model="filds.{{ $fild->id }}" rows="3" class="ap-input"></textarea>
+                                    <textarea wire:model.blur="filds.{{ $fild->id }}" rows="3" class="ap-input"></textarea>
                                 @elseif ($fild->type === 'select')
-                                    <select wire:model="filds.{{ $fild->id }}" class="ap-input">
+                                    <select wire:model.blur="filds.{{ $fild->id }}" class="ap-input">
                                         <option value="">انتخاب کنید…</option>
                                         @foreach (explode(',', $fild->select_options) as $opt)
                                             <option value="{{ trim($opt) }}">{{ trim($opt) }}</option>
@@ -846,11 +898,11 @@
                                         بله
                                     </label>
                                 @elseif ($fild->type === 'number')
-                                    <input type="number" wire:model="filds.{{ $fild->id }}" class="ap-input fa-digits">
+                                    <input type="number" wire:model.blur="filds.{{ $fild->id }}" class="ap-input fa-digits">
                                 @elseif ($fild->type === 'email')
-                                    <input type="email" dir="ltr" wire:model="filds.{{ $fild->id }}" class="ap-input text-start">
+                                    <input type="email" dir="ltr" wire:model.blur="filds.{{ $fild->id }}" class="ap-input text-start">
                                 @else
-                                    <input type="text" wire:model="filds.{{ $fild->id }}" class="ap-input">
+                                    <input type="text" wire:model.blur="filds.{{ $fild->id }}" class="ap-input">
                                 @endif
 
                                 @error("filds.{$fild->id}") <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
@@ -881,14 +933,14 @@
                 </div>
                 <div>
                     <label class="mb-1.5 block text-xs font-semibold">تاریخ انتشار</label>
-                    <input type="text" wire:model="publish_date" data-jdp data-jdp-only-date="false" class="ap-input !py-2 fa-digits text-center" placeholder="۱۴۰۴/۰۱/۰۱">
+                    <input type="text" wire:model.blur="publish_date" data-jdp data-jdp-only-date="false" class="ap-input !py-2 fa-digits text-center" placeholder="۱۴۰۴/۰۱/۰۱">
                 </div>
                 <div>
                     <label class="mb-1.5 flex cursor-pointer items-center gap-2 text-xs font-semibold">
                         <input type="checkbox" wire:model.live="special" class="size-4 rounded-md border-line text-amber-500 dark:border-night-line">
                         محصول ویژه
                     </label>
-                    <input type="text" wire:model="special_end_date" data-jdp data-jdp-only-date="false"
+                    <input type="text" wire:model.blur="special_end_date" data-jdp data-jdp-only-date="false"
                            class="ap-input !py-2 fa-digits text-center {{ $special ? '' : 'opacity-40 pointer-events-none' }}"
                            placeholder="انقضای ویژه بودن">
                 </div>

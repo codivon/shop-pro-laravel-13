@@ -267,6 +267,8 @@ window.ApEditor = {
                 /* مدیا و سایر ابزارها */
                 MediaEmbed, AutoMediaEmbed, PasteFromOffice, FindAndReplace, SourceEditing, ShowBlocks,
                 SpecialCharacters, SpecialCharactersEssentials, HtmlEmbed, WordCount, Fullscreen, Emoji,
+                /* فاز ۲۳ — ابزارهای بیشتر: درج تصویر از URL، زبان بخش متن (MultiLevelList تجاری است و در بیلد GPL نیست) */
+                ImageInsert, ImageInsertViaUrl, TextPartLanguage,
                 /* فاز ۱۲ — تکمیل شکاف قابلیت‌ها: نشانک/انتخاب همه/استایل‌های آماده/تبدیل خودکار نویسه‌ها/خودفرمت‌کن + GHS برای ذخیره کلاس استایل‌ها */
                 SelectAll, Style, TextTransformation, Autoformat, GeneralHtmlSupport,
             } = await import('ckeditor5');
@@ -285,10 +287,10 @@ window.ApEditor = {
                     List, ListProperties, TodoList,
                     Link, LinkImage, AutoLink, Bookmark,
                     Table, TableToolbar, TableProperties, TableCellProperties, TableCaption,
-                    Image, ImageToolbar, ImageUpload, ImageResize, AutoImage, ImageStyle, ImageCaption, PictureEditing,
+                    Image, ImageToolbar, ImageUpload, ImageInsert, ImageInsertViaUrl, ImageResize, AutoImage, ImageStyle, ImageCaption, PictureEditing,
                     MediaEmbed, AutoMediaEmbed, PasteFromOffice, FindAndReplace, SourceEditing, ShowBlocks,
                     SpecialCharacters, SpecialCharactersEssentials, HtmlEmbed, WordCount, Fullscreen, Emoji,
-                    SelectAll, Style, TextTransformation, Autoformat, GeneralHtmlSupport,
+                    TextPartLanguage, SelectAll, Style, TextTransformation, Autoformat, GeneralHtmlSupport,
                 ],
                 toolbar: {
                     /* فاز ۲۱ — همه آیتم‌ها همیشه نمایش داده می‌شوند (چند ردیفه مثل پنل قدیمی)،
@@ -296,17 +298,16 @@ window.ApEditor = {
                     items: [
                         'heading', 'style', '|',
                         'bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript', 'code', '|',
-                        'fontColor', 'fontBackgroundColor', 'highlight', 'fontFamily', 'fontSize', '|',
+                        'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor', 'highlight', 'textPartLanguage', '|',
                         'link', 'bookmark', '|',
                         'bulletedList', 'numberedList', 'todoList', 'outdent', 'indent', '|',
                         'alignment', '|',
                         'blockQuote', 'codeBlock', '|',
-                        'uploadImage', 'insertTable', 'mediaEmbed', 'htmlEmbed', '|',
-                        'specialCharacters', 'horizontalLine', 'pageBreak', '|',
+                        'insertImage', 'insertTable', 'mediaEmbed', 'htmlEmbed', '|',
+                        'specialCharacters', 'emoji', 'horizontalLine', 'pageBreak', '|',
                         'findAndReplace', 'selectAll', 'removeFormat', '|',
                         'showBlocks', 'sourceEditing', '|',
                         'fullscreen', '|',
-                        'emoji', '|',
                         'undo', 'redo',
                     ],
                     shouldNotGroupWhenFull: true,
@@ -314,10 +315,52 @@ window.ApEditor = {
                 heading: {
                     options: [
                         { model: 'paragraph', title: 'متن', class: 'ck-heading_paragraph' },
+                        { model: 'heading1', view: 'h1', title: 'تیتر ۱', class: 'ck-heading_heading1' },
                         { model: 'heading2', view: 'h2', title: 'تیتر ۲', class: 'ck-heading_heading2' },
                         { model: 'heading3', view: 'h3', title: 'تیتر ۳', class: 'ck-heading_heading3' },
                         { model: 'heading4', view: 'h4', title: 'تیتر ۴', class: 'ck-heading_heading4' },
+                        { model: 'heading5', view: 'h5', title: 'تیتر ۵', class: 'ck-heading_heading5' },
+                        { model: 'heading6', view: 'h6', title: 'تیتر ۶', class: 'ck-heading_heading6' },
                     ],
+                },
+                /* فاز ۲۳ — اندازه فونت صریح: پریست‌ها + اعداد پیکسلی (پیش‌فرض فقط ۴ پریست داشت) */
+                fontSize: {
+                    // نکته: پریست‌های نامی (tiny/big/...) را نمی‌توان با اعداد پیکسلی ترکیب کرد؛
+                    // فقط 'default' + اعداد px مجاز است
+                    options: [
+                        'default',
+                        10, 11, 12, 13, 14, 15, 16, 18, 20, 22, 24, 26, 28, 32, 36, 40, 48,
+                    ],
+                    supportAllValues: true,
+                },
+                /* فاز ۲۳ — فونت‌های مناسب فارسی */
+                fontFamily: {
+                    supportAllValues: true,
+                    options: [
+                        'default',
+                        { title: 'IRANSans', model: 'IRANSans' },
+                        { title: 'Vazirmatn', model: 'Vazirmatn' },
+                        { title: 'Yekan Bakh', model: 'YekanBakh' },
+                        { title: 'تاهوما', model: 'Tahoma, Geneva, Verdana, sans-serif' },
+                        { title: 'سیستمی', model: 'system-ui, -apple-system, Segoe UI, Roboto' },
+                        { title: 'آریال', model: 'Arial, Helvetica, sans-serif' },
+                        { title: 'موناکو/کد', model: 'Consolas, Monaco, monospace' },
+                    ],
+                },
+                /* فاز ۲۳ — گزینه‌های لینک (باز کردن در تب جدید / دانلود) */
+                link: {
+                    decorators: {
+                        openInNewTab: {
+                            mode: 'manual',
+                            label: 'باز کردن در تب جدید',
+                            attributes: { target: '_blank', rel: 'noopener noreferrer' },
+                        },
+                        downloadable: {
+                            mode: 'manual',
+                            label: 'قابل دانلود',
+                            attributes: { download: 'download' },
+                        },
+                    },
                 },
                 table: {
                     contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells', 'toggleTableCaption', 'tableProperties', 'tableCellProperties'],

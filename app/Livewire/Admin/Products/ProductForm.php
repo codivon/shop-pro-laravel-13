@@ -18,6 +18,7 @@ use App\Models\Warehouse;
 use Cviebrock\EloquentSluggable\Services\SlugService;
 use App\Services\AdminPanel\ProductPersistence;
 use App\Services\AdminPanel\ProductScraper;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -505,18 +506,37 @@ class ProductForm extends Component
     /** انتخاب رنگ برای ردیف تنوع (در هر گروه رنگ فقط یک رنگ) */
     public function pickColor(int $i, int $groupId, int $attributeId): void
     {
+        $this->pickAttribute($i, $groupId, $attributeId);
+    }
+
+    /**
+     * فاز ۲۳ — انتخاب «تکی» ویژگی برای هر گروه (گارانتی و بقیه موارد)
+     *
+     * قبلاً چک‌باکس بود و کاربر چند گزینه از یک گروه را همزمان می‌توانست بزند؛
+     * حالا رفتار رادیویی دارد: کلیک روی هر گزینه، انتخاب‌های قبلی همان گروه را
+     * حذف می‌کند (کلیک مجدد = حذف انتخاب).
+     */
+    public function pickAttribute(int $i, int $groupId, int $attributeId): void
+    {
+        if (! isset($this->prices[$i])) {
+            return;
+        }
+
         $group = AttributeGroup::with('get_attributes')->find($groupId);
-        $groupAttrIds = $group?->get_attributes->pluck('id')->toArray() ?? [];
+        $groupAttrIds = $group?->get_attributes->pluck('id')->map(fn ($id) => (int) $id)->toArray() ?? [];
 
-        // حذف رنگ‌های قبلی همین گروه
-        $current = array_values(array_diff($this->prices[$i]['attributes'] ?? [], $groupAttrIds));
+        // حذف انتخاب‌های قبلی همین گروه
+        $current = array_values(array_diff(
+            array_map('intval', $this->prices[$i]['attributes'] ?? []),
+            $groupAttrIds
+        ));
 
-        // اگر همان رنگ دوباره کلیک شد، حذف می‌شود (toggle)
+        // اگر همان گزینه دوباره کلیک شد، حذف می‌شود (toggle)
         if (! in_array($attributeId, $current)) {
             $current[] = $attributeId;
         }
 
-        $this->prices[$i]['attributes'] = $current;
+        $this->prices[$i]['attributes'] = array_map('strval', $current);
     }
 
     /* ============================ تصاویر ============================ */
@@ -866,7 +886,7 @@ class ProductForm extends Component
 
         // مشخصات / تصاویر / دسته‌بندی‌ها / برچسب‌ها / سایز / امتیاز
         $persistence->updateProductSpecifications($product, $this->specificationGroup);
-        $persistence->updateProductImages($product, $this->image, $this->mergedGallery());
+        $persistence->updateProductImages($product, $this->resolveFeaturedImage(), $this->mergedGallery());
         $persistence->updateProductCategories($product, $this->extraCategories);
         $persistence->updateProductLabels($product, $this->labels);
         $persistence->updateProductSizes($product, $this->sizes);
@@ -964,7 +984,7 @@ class ProductForm extends Component
         $persistence->updateProductPrices($product, $this->normalizePrices());
         $persistence->updateProductFiles($product, $this->normalizeDownloadFiles());
         $persistence->updateProductSpecifications($product, $this->specificationGroup);
-        $persistence->updateProductImages($product, $this->image, $this->mergedGallery());
+        $persistence->updateProductImages($product, $this->resolveFeaturedImage(), $this->mergedGallery());
         $persistence->updateProductCategories($product, $this->extraCategories);
         $persistence->updateProductLabels($product, $this->labels);
         $persistence->updateProductSizes($product, $this->sizes);
@@ -1141,6 +1161,35 @@ class ProductForm extends Component
     }
 
     /**
+     * فاز ۲۳ — تصویر شاخص نهایی:
+     * فایل آپلودی کاربر اولویت دارد؛ اگر نبود و تصویرِ دریافتی از دیجی‌کالا/ترب
+     * در تب تصاویر پیش‌نمایش شده باشد، همان فایل tmp به‌عنوان تصویر شاخص ذخیره می‌شود.
+     * (باگ قبلی: تصویر شاخص دریافتی فقط پیش‌نمایش می‌شد و موقع ذخیره حذف می‌شد!)
+     */
+    protected function resolveFeaturedImage(): ?UploadedFile
+    {
+        if ($this->image) {
+            return $this->image;
+        }
+
+        if ($this->scraperBaseImage) {
+            $path = public_path('uploads/tmp/' . $this->scraperBaseImage);
+
+            if (file_exists($path)) {
+                return new \Illuminate\Http\UploadedFile(
+                    $path,
+                    $this->scraperBaseImage,
+                    mime_content_type($path) ?: 'image/webp',
+                    null,
+                    true
+                );
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * گالری نهایی: مسیرهای موجود + تصاویر دیجی‌کالا (از public/uploads/tmp) + فایل‌های جدید (به ترتیب)
      */
     protected function mergedGallery(): array
@@ -1231,27 +1280,40 @@ class ProductForm extends Component
 
     /* ============================ منابع فرم (computed) ============================ */
 
+    /** فاز ۲۳: کش ۶۰ ثانیه‌ای — روی هاست کند هر رندر لیووایر یک راند‌تریپ لازم داشت */
     #[\Livewire\Attributes\Computed]
     public function categories(): \Illuminate\Support\Collection
     {
-        return Category::detectLang()->where('type', 'productcat')->orderBy('ordering')->get(['id', 'title', 'category_id']);
+        return \Illuminate\Support\Facades\Cache::remember(
+            'np.pform.categories.' . app()->getLocale(),
+            60,
+            fn () => Category::detectLang()->where('type', 'productcat')->orderBy('ordering')->get(['id', 'title', 'category_id'])
+        );
     }
 
     /** درخت دسته‌بندی با تورفتگی برای select اصلی */
     #[\Livewire\Attributes\Computed]
     public function categoryOptions(): array
     {
-        $result = [];
-        $byParent = $this->categories()->groupBy('category_id');
+        $cats = $this->categories();
+        $byParent = $cats->groupBy(fn ($c) => (int) $c->category_id);
 
         $walk = function ($parentId, $depth) use (&$walk, &$result, $byParent) {
             foreach ($byParent->get($parentId, collect()) as $cat) {
                 $result[] = ['id' => $cat->id, 'title' => str_repeat('— ', $depth) . $cat->title];
-                $walk($cat->id, $depth + 1);
+                $walk((int) $cat->id, $depth + 1);
             }
         };
 
-        $walk(null, 0);
+        $result = [];
+
+        // فاز ۲۳ — ریشه‌ها: بدون والد یا با والدِ حذف‌شده (ایتیم) — مثل ProductIndex
+        $existingIds = $cats->pluck('id')->map(fn ($i) => (int) $i)->all();
+        $rootIds = $cats->filter(fn ($c) => ! in_array((int) $c->category_id, $existingIds))->pluck('id');
+
+        foreach ($rootIds as $rootId) {
+            $walk((int) $rootId, 0);
+        }
 
         return $result;
     }
@@ -1260,8 +1322,9 @@ class ProductForm extends Component
     #[\Livewire\Attributes\Computed]
     public function categoryTree(): array
     {
-        // ریشه‌ها = دسته‌هایی که category_id آن‌ها null یا صفر است
-        $byParent = $this->categories()->groupBy(fn ($cat) => (int) $cat->category_id ?: 0);
+        // فاز ۲۳ — ریشه‌ها: بدون والد یا با والدِ حذف‌شده (ایتیم) — مثل ProductIndex
+        $cats = $this->categories();
+        $byParent = $cats->groupBy(fn ($cat) => (int) $cat->category_id);
 
         $build = function ($parentId) use (&$build, $byParent): array {
             return $byParent->get($parentId, collect())
@@ -1274,7 +1337,20 @@ class ProductForm extends Component
                 ->toArray();
         };
 
-        return $build(0);
+        $existingIds = $cats->pluck('id')->map(fn ($i) => (int) $i)->all();
+        $roots = $cats->filter(fn ($cat) => ! in_array((int) $cat->category_id, $existingIds));
+
+        $tree = [];
+
+        foreach ($roots as $root) {
+            $tree[] = [
+                'id' => (int) $root->id,
+                'title' => $root->title,
+                'children' => $build((int) $root->id),
+            ];
+        }
+
+        return $tree;
     }
 
     /** پرکاربردترین دسته‌ها بر اساس تعداد محصولات (فاز ۱۲) */
@@ -1303,48 +1379,79 @@ class ProductForm extends Component
             ->toArray();
     }
 
+    /** فاز ۲۳: کش ۶۰ ثانیه‌ای */
     #[\Livewire\Attributes\Computed]
     public function attributeGroups(): \Illuminate\Support\Collection
     {
-        return AttributeGroup::detectLang()->orderBy('ordering')->with('get_attributes')->get();
+        return \Illuminate\Support\Facades\Cache::remember(
+            'np.pform.attr_groups.' . app()->getLocale(),
+            60,
+            fn () => AttributeGroup::detectLang()->orderBy('ordering')->with('get_attributes')->get()
+        );
     }
 
     #[\Livewire\Attributes\Computed]
     public function currencies(): \Illuminate\Support\Collection
     {
-        return Currency::latest()->get();
+        return \Illuminate\Support\Facades\Cache::remember(
+            'np.pform.currencies',
+            300,
+            fn () => Currency::latest()->get()
+        );
     }
 
+    /** فاز ۲۳: کش ۶۰ ثانیه‌ای */
     #[\Livewire\Attributes\Computed]
     public function sellers(): \Illuminate\Support\Collection
     {
-        return Seller::with('seller_info')
-            ->where(['status_register' => 'complete', 'status_documents' => 'Accept', 'status_work' => 'ACTIVE'])
-            ->get();
+        return \Illuminate\Support\Facades\Cache::remember(
+            'np.pform.sellers',
+            60,
+            fn () => Seller::with('seller_info')
+                ->where(['status_register' => 'complete', 'status_documents' => 'Accept', 'status_work' => 'ACTIVE'])
+                ->get()
+        );
     }
 
+    /** فاز ۲۳: کش ۶۰ ثانیه‌ای */
     #[\Livewire\Attributes\Computed]
     public function warehouses(): \Illuminate\Support\Collection
     {
-        return Warehouse::active()->get();
+        return \Illuminate\Support\Facades\Cache::remember(
+            'np.pform.warehouses',
+            60,
+            fn () => Warehouse::active()->get()
+        );
     }
 
     #[\Livewire\Attributes\Computed]
     public function sizeTypes(): \Illuminate\Support\Collection
     {
-        return SizeType::detectLang()->get(['id', 'title']);
+        return \Illuminate\Support\Facades\Cache::remember(
+            'np.pform.size_types.' . app()->getLocale(),
+            300,
+            fn () => SizeType::detectLang()->get(['id', 'title'])
+        );
     }
 
     #[\Livewire\Attributes\Computed]
     public function labelSuggestions(): array
     {
-        return Label::detectLang()->limit(50)->pluck('title')->toArray();
+        return \Illuminate\Support\Facades\Cache::remember(
+            'np.pform.labels.' . app()->getLocale(),
+            300,
+            fn () => Label::detectLang()->limit(50)->pluck('title')->toArray()
+        );
     }
 
     #[\Livewire\Attributes\Computed]
     public function tagSuggestions(): array
     {
-        return Tag::take(50)->pluck('name')->toArray();
+        return \Illuminate\Support\Facades\Cache::remember(
+            'np.pform.tags',
+            300,
+            fn () => Tag::take(50)->pluck('name')->toArray()
+        );
     }
 
     public function render()

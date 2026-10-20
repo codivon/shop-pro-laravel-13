@@ -2,6 +2,55 @@
 
 /*
 |--------------------------------------------------------------------------
+| فاز ۲۳ — بوت ایمن برای نصبِ خام (کلون تازه از گیت)
+|--------------------------------------------------------------------------
+| روی یک کلون خام از گیت سه مشکل پشت‌سرهم 500 می‌دهد:
+|   1) پوشه‌ی bootstrap/cache وجود ندارد (گیت پوشه‌ی خالی را نگه نمی‌دارد) →
+|      ساخت PackageManifest در هر request با «failed to open stream» می‌میرد؛
+|   2) فایل .env اصلا وجود ندارد → نه پیکربندی دیتابیس نصب‌کننده در دسترس است؛
+|   3) اگر APP_KEY خالی باشد، همان اولین درخواستِ /install هنگام رمزنگاری
+|      کوکی/نشست با «No application encryption key has been specified.» 500 می‌دهد.
+|
+| این بلوک هر سه حالت را «قبل از بوت شدن اپ» (هم HTTP و هم artisan) برطرف
+| می‌کند؛ وقتی همه‌چیز سر جای خودش است هزینه‌اش فقط چند is_dir/is_file است.
+|
+| این فایل همیشه بعد از vendor/autoload.php بارگذاری می‌شود، پس autoloader
+| در دسترس است؛ اما از کلاس‌های فریمورک استفاده نمی‌کنیم تا وابسته به بوت نباشد.
+*/
+
+$__installBasePath = $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__);
+
+// 1) bootstrap/cache (خروجی کش manifest/config/routes) باید وجود داشته باشد
+if (! is_dir($__installBasePath.'/bootstrap/cache')) {
+    @mkdir($__installBasePath.'/bootstrap/cache', 0755, true);
+}
+
+// 2) اگر .env نیست، از نمونه بساز — پیش از LoadEnvironmentVariables همین request
+if (! is_file($__installBasePath.'/.env') && is_file($__installBasePath.'/.env.example')) {
+    @copy($__installBasePath.'/.env.example', $__installBasePath.'/.env');
+}
+
+// 3) کلید رمزنگاری خالی/ناموجود → تولید و ماندگاری در .env (پیش از EncryptCookies)
+if (is_file($__installBasePath.'/.env')) {
+    $__envContent = @file_get_contents($__installBasePath.'/.env');
+
+    if ($__envContent !== false && ! preg_match('/^APP_KEY=base64:\S{20,}/m', $__envContent)) {
+        $__envKey = 'base64:'.base64_encode(random_bytes(32));
+
+        if (preg_match('/^APP_KEY=.*$/m', $__envContent)) {
+            $__envContent = preg_replace('/^APP_KEY=.*$/m', 'APP_KEY='.$__envKey, $__envContent, 1);
+        } else {
+            $__envContent = 'APP_KEY='.$__envKey."\n".ltrim($__envContent);
+        }
+
+        @file_put_contents($__installBasePath.'/.env', $__envContent);
+    }
+}
+
+unset($__installBasePath, $__envContent, $__envKey);
+
+/*
+|--------------------------------------------------------------------------
 | Create The Application
 |--------------------------------------------------------------------------
 |

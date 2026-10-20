@@ -27,14 +27,30 @@
         </div>
 
         <ul class="ap-list" style="margin-bottom:1.4rem">
-            <li><span>ورود به پنل مدیریت</span><a href="{{ url('/admin') }}" dir="ltr" style="color:var(--brand-strong);font-weight:700;text-decoration:none">{{ url('/admin') }}</a></li>
+            @php $panelUrl = url('admin/'.(admin_route_prefix() ?: 'admin')); @endphp
+            <li><span>ورود به پنل مدیریت</span><a href="{{ $panelUrl }}" dir="ltr" style="color:var(--brand-strong);font-weight:700;text-decoration:none">{{ $panelUrl }}</a></li>
         </ul>
 
-        <p class="ap-muted">توصیه امنیتی: برای بار اول با نام کاربری/ایمیل مدیر و رمزی که در مرحله راه‌اندازی ثبت کرده‌اید وارد شوید و پس از ورود، رمز عبور را تغییر دهید.</p>
+        @php
+            $installAdmin = null;
+            try {
+                $installAdmin = \Illuminate\Support\Facades\DB::table('admins')->orderBy('id')->value('username');
+            } catch (\Throwable $e) {}
+        @endphp
+
+        @if($installAdmin)
+            <div class="ap-alert ap-alert-warn" style="margin-bottom:1.2rem">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                <span>نام کاربری مدیر پیش‌فرض: <strong dir="ltr">{{ $installAdmin }}</strong> — رمز اولیه: <strong dir="ltr">admin1234</strong>. <u>بلافاصله پس از اولین ورود، رمز عبور را تغییر دهید.</u></span>
+            </div>
+        @endif
+
+        <p class="ap-muted">توصیه امنیتی: پس از ورود، از بخش «ویرایش پروفایل» رمز عبور را عوض کنید و سپس این صفحه/نشست را ببندید.</p>
     @endif
 
     <div class="ap-actions">
-        <a href="{{ url('/admin') }}" class="ap-btn ap-btn-primary">
+        @php $panelUrl = url('admin/'.(admin_route_prefix() ?: 'admin')); @endphp
+        <a href="{{ $panelUrl }}" class="ap-btn ap-btn-primary">
             ورود به پنل مدیریت
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         </a>

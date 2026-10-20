@@ -107,7 +107,23 @@ class ProductIndex extends Component
                 ->toArray();
         };
 
-        return $build(0);
+        // فاز ۲۳ — ریشه‌ها: بدون والد «یا» والدِ حذف‌شده (ایتیم)
+        // قبلاً فقط category_id=0/null ریشه بود؛ دسته‌ای که والدش حذف شده بود
+        // هرگز در پیمایش دیده نمی‌شد و کاربر «دسته‌بندی‌ها را نمی‌دید»
+        $existingIds = $cats->pluck('id')->map(fn ($i) => (int) $i)->all();
+        $roots = $cats->filter(fn ($c) => ! in_array((int) $c->category_id, $existingIds));
+
+        $tree = [];
+
+        foreach ($roots as $root) {
+            $tree[] = [
+                'id' => (int) $root->id,
+                'title' => $root->title,
+                'children' => $build((int) $root->id),
+            ];
+        }
+
+        return $tree;
     }
 
     /* ---------------- آمار سربرگ ---------------- */
