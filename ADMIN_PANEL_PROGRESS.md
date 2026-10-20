@@ -905,3 +905,37 @@
 - `auth()->user()` در Livewire 4 با middleware عوض‌کردن گارد پیش‌فرض، به‌شدت کانتکست‌محور است — در کد فرانت همیشه `auth('web')` صریح بنویسید
 - Container binding برای override کنترلرِ روتِ رشته‌ای پکیج‌ها (`['uses' => 'Class@method']`) کار می‌کند
 - `$wire.set` آنی است ولی `btn.click()` بعد از آن در تست اتوماسیون ممکن است state یک قدم عقب بفرستد — برای تست قطعی از `$wire.action()` مستقیم استفاده کنید
+
+## فاز ۲۲ — مانیتور سیستم: دانلود گزارش‌ها + ریشه‌کنی کوئری‌های کند
+
+### ۱) دانلود «درخواست‌های کند» و «کوئری‌های کند» (درخواست کاربر)
+- دو دکمه دانلود (آیکون download + اسپینر wire:loading) در سربرگ هر دو کارت صفحه مانیتور سیستم
+- اکشن‌های `downloadSlowRequests()` / `downloadSlowQueries()` در PulseIndex — `response()->streamDownload()` (Livewire 4 SupportFileDownloads از StreamedResponse پشتیبانی می‌کند)
+- گزارش متنی ساخت‌یافته تا **۱۰۰ مورد تازه (بدون کش)**: رتبه/مدت (ms)/زمان شمسی+میلادی/منبع (file:line)/SQL کامل یا Method+URI+via — مناسب ارسال مستقیم به پشتیبانی/ایجنت
+- نام فایل: `slow-queries-YYYYMMDD-His.txt` / `slow-requests-...`
+- E2E: هر دو دانلود در مرورگر با هک `URL.createObjectURL` گرفته و محتوایشان بررسی شد ✓
+
+### ۲) باگ نمایش: کلیدهای Pulse از نوع JSON بودند!
+- SlowRequests recorder کلید را `json_encode([method, uri, "via ..."|"Controller@class"])` ذخیره می‌کند — کد قبلی با `explode(' ')` پارسش می‌کرد → برای ردیف‌های livewire متد/URI آشغال نمایش داده می‌شد (دقیقاً همان خروجی HTML که کاربر فرستاد)
+- SlowQueries هم `json_encode([sql, source])` — حالا source (فایل:خط) جدا شده و زیر SQL نمایش داده می‌شود
+- برای درخواست‌های livewire، زیر URI لیبل «Livewire update» + title با منبع
+
+### ۳) ریشه‌کنی کوئری‌های کند (هدف: صفر کوئری اضافه در هر درخواست)
+- **پرمیشن‌ها** (`AuthServiceProvider:44` — تا ۵,۲۸۹ms، در «هر درخواست»!): کش ۱۵ دقیقه‌ای + باطل‌سازی فوری با رویدادهای saved/deleted مدل Permission و Role — کلید `auth.permissions.active` (۲۴۶ ردیف + roles)
+- **`Schema::hasTable('redirects')`** (information_schema — تا ۳,۴۷۲ms در «هر درخواست» سراسری): `Cache::rememberForever` + باطل‌سازی با رویدادهای مدل Redirect و رویداد `MigrationsEnded` (نصب/مایگریشن) — به‌علاوه نقشه ریدایرکت‌ها کش ۱۰ دقیقه‌ای (قبلاً هم per-request کوئری می‌شد)
+- **RecordAdminSession** (updateOrCreate = ۲-۳ کوئری در هر درخواست ادمین/هر آپدیت Livewire — تا ۱,۷۲۷ms): تrottle ۶۰ ثانیه‌ای با مارکر session (صفر کوئری در پنجره) + الگوی UPDATE-اول (مسیر گرم ۱ کوئری، مسیر سرد create)
+- **ایندکس ترکیبی `(type, timestamp)` روی pulse_entries** (مایگریشن ۲۰۲۶_۰۷_۰۵_۱۰۱۰۱۰) — کوئری‌های مانیتور قبلاً بعد از فیلتر filesort می‌شدند
+- **کش داشبورد مانیتور ۱۵ → ۳۰ ثانیه** — wire:poll هر ۱۰ ثانیه باقی است ولی ~۲/۳ pollها دیگر DB را نمی‌زنند
+- SessionDriver نکته: کوئری‌های «update sessions» طبیعت درایور دیتابیسی سشن روی هاست کند است — تغییر driver تصمیم deploy است (در پیام توضیح داده شد)
+- E2E: کش‌ها پس از مرور واقعی پر شدند (permissions=246)؛ last_activity در پیمایش صفحات بعدی ثابت ماند (throttle فعال)؛ dashboard/products/orders/users سالم
+
+### ۴) باگ جانبی پیدا‌شده: کرش ۵۰۰ صفحات خطا برای ادمین (تم فرانت)
+- `popup-message.blade.php` با `Auth::check()` (گارد پیش‌فرض) شاخه می‌گرفت ولی داخلش `auth('web')->user()` صدا می‌زد → روی مسیرهای پنل (ResolveDefaultGuard) ادمین وارد شاخه می‌شد و null → ۵۰۰
+- صفحات خطا (۴۰۴/۵۰۰) که از master فرانت رندر می‌شوند برای ادمین «خطای سرور» می‌دادند — فیکس: `auth('web')->check()`
+- E2E: URL اشتباه قبلی (`system/backups`) حالا تمیز ۴۰۴ می‌دهد؛ فرانت با نشست ادمین سالم است ✓
+
+### یادداشت‌های فنی فاز ۲۲
+- کلیدهای Pulse همیشه JSON-encoded آرایه هستند — هر نمایش/گزارشی باید `json_decode` با fallback داشته باشد
+- `Schema::hasTable()` در میدلور سراسری = یک information_schema کوئری در هر درخواست — همیشه کش کنید
+- کش لاراول فایل‌محور روی هاست اشتراکی از cache:database بسیار سریع‌تر است؛ برای شمارنده‌ها هم Cache::increment امن است
+- rebuild ادمین: خروجی بیلد deterministic بود — بایت‌به‌بایت با فاز ۲۱ یکسان (کلاس‌های استفاده‌شده قبلاً در اسکن بودند) → assets بدون تغییر ماندند
