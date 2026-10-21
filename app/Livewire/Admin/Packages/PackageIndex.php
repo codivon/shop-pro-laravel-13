@@ -9,8 +9,11 @@ use App\Models\ModuleInstallLog;
 use App\Models\PackageCache;
 use App\Models\PackagePurchase;
 use App\Services\PackageInstallerService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -31,17 +34,35 @@ class PackageIndex extends Component
 
     /** گزینه‌های دسته‌بندی مثل قدیمی (index.blade.php قدیمی) */
     public static array $categoryOptions = [
-        'shop'         => 'فروشگاه',
-        'payment'      => 'پرداخت',
+        'shop' => 'فروشگاه',
+        'payment' => 'پرداخت',
         'notification' => 'اعلان',
-        'seo'          => 'سئو',
+        'seo' => 'سئو',
     ];
 
     #[Url(as: 'sort', except: '')]
     public string $sort = '';
 
+    /**
+     * فیلتر وضعیت قیمت — رایگان بودن (درخواست کاربر):
+     *  '' = همه | 'free' = رایگان | 'paid' = پولی
+     * API مرکزی این پارامتر را نمی‌شناسد، پس فیلترینگ سمت پنل انجام می‌شود
+     * (همه‌ی صفحات API جمع‌ شده و بر اساس وضعیت قیمت هر پکیج فیلتر می‌شود).
+     */
+    #[Url(as: 'free', except: '')]
+    public string $free = '';
+
+    /** گزینه‌های فیلتر رایگان/پولی */
+    public static array $freeOptions = [
+        'free' => 'رایگان',
+        'paid' => 'پولی',
+    ];
+
     /** صفحه‌بندی سرور دست‌ساز بر اساس meta پاسخ API (قدیمی pagination سمت API بود) */
     public int $page = 1;
+
+    /** حداکثر صفحاتی که در حالت فیلتر رایگان/پولی از API جمع می‌شود (ضد حلقه‌ی بی‌پایان) */
+    protected const MAX_AGGREGATE_PAGES = 25;
 
     /* ---------------- دیتای صفحه ---------------- */
 
@@ -133,19 +154,61 @@ class PackageIndex extends Component
         $this->page = 1;
     }
 
+    public function updatingFree(): void
+    {
+        $this->page = 1;
+    }
+
+    /*
+     * فیلترهای زنده — تا الان search/category/sort با wire:model.live فقط
+     * URL را عوض می‌کردند و لیست با Enter (submit فرم) تازه می‌شد؛ اکنون
+     * با هر تغییر، لیست بلافاصله دوباره خوانده می‌شود.
+     */
+    public function updatedSearch(): void
+    {
+        $this->page = 1;
+        $this->loadPackages();
+    }
+
+    public function updatedCategory(): void
+    {
+        $this->page = 1;
+        $this->loadPackages();
+    }
+
+    public function updatedSort(): void
+    {
+        $this->page = 1;
+        $this->loadPackages();
+    }
+
+    public function updatedFree(): void
+    {
+        $this->page = 1;
+        $this->loadPackages();
+    }
+
     /* ---------------- لیست پکیج‌ها از API (پورت ۱:۱ index قدیمی) ---------------- */
 
     public function loadPackages(): void
     {
+        $this->apiError = null;
+
+        // فیلتر رایگان/پولی: API این فیلتر را نمی‌شناسد → همه صفحات جمع و سمت پنل فیلتر می‌شود
+        if ($this->free !== '') {
+            $this->loadPackagesWithPriceFilter();
+
+            return;
+        }
+
         $query = array_filter([
-            'page'     => $this->page,
-            'search'   => $this->search,
+            'page' => $this->page,
+            'search' => $this->search,
             'category' => $this->category,
-            'sort'     => $this->sort,
+            'sort' => $this->sort,
         ], fn ($v) => $v !== '' && $v !== null);
 
-        $cacheKey = 'packages.list.' . md5(json_encode($query));
-        $this->apiError = null;
+        $cacheKey = 'packages.list.'.md5(json_encode($query));
 
         try {
             $data = Cache::remember($cacheKey, now()->addMinutes(config('packages.cache.list_ttl')), function () use ($query) {
@@ -155,83 +218,15 @@ class PackageIndex extends Component
             $packages = $data['data'] ?? $data['packages'] ?? [];
             $pagination = $data['meta'] ?? $data['pagination'] ?? [];
 
-            // محاسبه کمترین قیمت و تشخیص رایگان بودن برای هر پکیج (پورت دقیق)
-            $packages = array_map(function ($pkg) {
-                $plans = $pkg['active_pricing_plans'] ?? $pkg['pricing_plans'] ?? $pkg['plans'] ?? [];
-
-                // محاسبه قیمت نهایی هر پلن (با احتساب تخفیف)
-                $planPrices = [];
-                foreach ($plans as $plan) {
-                    $finalPrice = $plan['discount_price'] ?? $plan['price'] ?? 0;
-                    $planPrices[] = (int) $finalPrice;
-                }
-
-                // اگر هیچ پلنی نبود، از default_price استفاده کن
-                if (empty($planPrices)) {
-                    $minPrice = (int) ($pkg['default_price'] ?? $pkg['price'] ?? 0);
-                } else {
-                    $minPrice = min($planPrices);
-                }
-
-                // is_free فقط اگر خود API گفته باشه؛ has_free_plan: حداقل یک پلن رایگان
-                $pkg['min_price'] = $minPrice;
-                $pkg['plans'] = $plans;
-                $pkg['has_free_plan'] = $minPrice === 0;
-
-                if (!empty($pkg['subscription']['subscription_expires_at'])) {
-                    $exp = \Carbon\Carbon::parse($pkg['subscription']['subscription_expires_at']);
-                    $pkg['subscription']['days_remaining'] = max(0, (int) round(now()->diffInDays($exp)));
-                    if ($exp->isPast()) {
-                        $pkg['subscription']['is_free_with_subscription'] = false;
-                    }
-                }
-
-                return $pkg;
-            }, $packages);
+            $packages = $this->enrichPackages($packages);
 
             // ★ خلاصه اشتراک فعال پروژه (برای بنر صفحه ایندکس)
-            $subscriptionSummary = $data['subscription_summary'] ?? null;
-            if (is_array($subscriptionSummary)) {
-                if (!empty($subscriptionSummary['expires_at'])) {
-                    $exp = \Carbon\Carbon::parse($subscriptionSummary['expires_at']);
-                    $subscriptionSummary['days_remaining'] = max(0, (int) round(now()->diffInDays($exp)));
-                    $subscriptionSummary['has_active_subscription'] =
-                        ($subscriptionSummary['has_active_subscription'] ?? false) && $exp->isFuture();
-                }
-            } else {
-                $subscriptionSummary = null;
-            }
+            $subscriptionSummary = $this->normalizeSubscriptionSummary($data['subscription_summary'] ?? null);
 
             // sync با جدول packages_cache (پورت syncCache قدیمی)
             $this->syncCache($packages);
 
-            // دریافت ماژول‌های نصب‌شده برای مقایسه نسخه
-            $this->installedMap = InstalledModule::pluck('version', 'slug')->toArray();
-            $this->purchasedSlugs = PackagePurchase::query()
-                ->where('status', PackagePurchase::STATUS_PAID)
-                ->pluck('package_slug')
-                ->all();
-
-            // ماژول‌های در حال نصب/آپدیت (پورت pendingSlugs قدیمی)
-            $pendingSlugs = [];
-            $pendingModules = InstalledModule::where('status', InstalledModule::STATUS_UPDATING)
-                ->where('updated_at', '>', now()->subMinutes(10))
-                ->get();
-
-            if ($pendingModules->isNotEmpty()) {
-                $runningSlugs = ModuleInstallLog::whereIn('module_slug', $pendingModules->pluck('slug'))
-                    ->where('status', ModuleInstallLog::STATUS_RUNNING)
-                    ->where('created_at', '>', now()->subMinutes(10))
-                    ->pluck('module_slug')
-                    ->unique()
-                    ->flip()
-                    ->all();
-
-                foreach ($pendingModules as $m) {
-                    $pendingSlugs[$m->slug] = isset($runningSlugs[$m->slug]) ? 'running' : 'queued';
-                }
-            }
-            $this->pendingSlugs = $pendingSlugs;
+            $this->syncInstalledState();
 
             $this->packages = $packages;
             $this->paginationMeta = $pagination;
@@ -243,6 +238,197 @@ class PackageIndex extends Component
             $this->subscriptionSummary = null;
             $this->apiError = $e->getMessage();
         }
+    }
+
+    /**
+     * حالت فیلتر رایگان/پولی — همه‌ی صفحات API (با احترام به search/category/sort)
+     * جمع شده، پکیج‌ها بر اساس وضعیت قیمت فیلتر و سپس سمت پنل صفحه‌بندی می‌شوند.
+     * کشِ هر صفحه‌ی API جداگانه است، پس ناوبری‌های بعدی هزینه‌ی شبکه‌ای ندارند.
+     */
+    protected function loadPackagesWithPriceFilter(): void
+    {
+        try {
+            $perPage = 12;
+            $allPackages = [];
+            $subscriptionSummary = null;
+            $page = 1;
+            $lastPage = 1;
+
+            do {
+                $query = array_filter([
+                    'page' => $page,
+                    'search' => $this->search,
+                    'category' => $this->category,
+                    'sort' => $this->sort,
+                ], fn ($v) => $v !== '' && $v !== null);
+
+                $cacheKey = 'packages.list.'.md5(json_encode($query));
+
+                $data = Cache::remember($cacheKey, now()->addMinutes(config('packages.cache.list_ttl')), function () use ($query) {
+                    return $this->api()->listPackages($query);
+                });
+
+                $packages = $data['data'] ?? $data['packages'] ?? [];
+                $pagination = $data['meta'] ?? $data['pagination'] ?? [];
+
+                if ($subscriptionSummary === null) {
+                    $subscriptionSummary = $data['subscription_summary'] ?? null;
+                }
+
+                $lastPage = (int) ($pagination['last_page'] ?? $pagination['lastPage'] ?? 1);
+                $perPage = (int) ($pagination['per_page'] ?? $pagination['perPage'] ?? $perPage);
+                if ($perPage < 1) {
+                    $perPage = 12;
+                }
+
+                $allPackages = array_merge($allPackages, $packages);
+                $page++;
+            } while ($page <= min($lastPage, self::MAX_AGGREGATE_PAGES) && ! empty($packages));
+
+            // Enrique → غنی‌سازی (min_price / has_free_plan / اشتراک) مثل حالت عادی
+            $allPackages = $this->enrichPackages($allPackages);
+
+            // sync با جدول packages_cache مثل حالت عادی
+            $this->syncCache($allPackages);
+
+            // فیلتر قیمت — تعریف «رایگان»: is_free خود API، پلن رایگان (min_price=0)
+            // یا رایگان با اشتراکِ فعال پروژه (هیچ کدام پرداختی نمی‌خواهند)
+            $freeWanted = $this->free === 'free';
+            $allPackages = array_values(array_filter(
+                $allPackages,
+                fn (array $pkg) => self::isEffectivelyFree($pkg) === $freeWanted
+            ));
+
+            // صفحه‌بندی سمت پنل روی نتایج فیلترشده
+            $total = count($allPackages);
+            $syntheticLastPage = max(1, (int) ceil($total / $perPage));
+            $this->page = min(max(1, $this->page), $syntheticLastPage);
+            $offset = ($this->page - 1) * $perPage;
+
+            $this->packages = array_slice($allPackages, $offset, $perPage);
+            $this->paginationMeta = [
+                'current_page' => $this->page,
+                'last_page' => $syntheticLastPage,
+                'per_page' => $perPage,
+                'total' => $total,
+            ];
+
+            $this->subscriptionSummary = $this->normalizeSubscriptionSummary($subscriptionSummary);
+            $this->syncInstalledState();
+        } catch (RuntimeException $e) {
+            $this->packages = [];
+            $this->paginationMeta = [];
+            $this->installedMap = [];
+            $this->subscriptionSummary = null;
+            $this->apiError = $e->getMessage();
+        }
+    }
+
+    /**
+     * تشخیص «رایگان بودن مؤثر» یک پکیج — دقیقاً با همان منطقی که کارت‌ها نشان می‌دهند:
+     * is_free از API | حداقل یک پلن رایگان (min_price = 0) | رایگان با اشتراک فعال
+     */
+    public static function isEffectivelyFree(array $pkg): bool
+    {
+        if (! empty($pkg['is_free'])) {
+            return true;
+        }
+
+        if (($pkg['min_price'] ?? null) === 0) {
+            return true;
+        }
+
+        if (! empty($pkg['subscription']['is_free_with_subscription'])) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /** غنی‌سازی هر پکیج: min_price + has_free_plan + اصلاح اعتبار اشتراک (پورت دقیق قدیمی) */
+    protected function enrichPackages(array $packages): array
+    {
+        return array_map(function ($pkg) {
+            $plans = $pkg['active_pricing_plans'] ?? $pkg['pricing_plans'] ?? $pkg['plans'] ?? [];
+
+            // محاسبه قیمت نهایی هر پلن (با احتساب تخفیف)
+            $planPrices = [];
+            foreach ($plans as $plan) {
+                $finalPrice = $plan['discount_price'] ?? $plan['price'] ?? 0;
+                $planPrices[] = (int) $finalPrice;
+            }
+
+            // اگر هیچ پلنی نبود، از default_price استفاده کن
+            if (empty($planPrices)) {
+                $minPrice = (int) ($pkg['default_price'] ?? $pkg['price'] ?? 0);
+            } else {
+                $minPrice = min($planPrices);
+            }
+
+            // is_free فقط اگر خود API گفته باشه؛ has_free_plan: حداقل یک پلن رایگان
+            $pkg['min_price'] = $minPrice;
+            $pkg['plans'] = $plans;
+            $pkg['has_free_plan'] = $minPrice === 0;
+
+            if (! empty($pkg['subscription']['subscription_expires_at'])) {
+                $exp = Carbon::parse($pkg['subscription']['subscription_expires_at']);
+                $pkg['subscription']['days_remaining'] = max(0, (int) round(now()->diffInDays($exp)));
+                if ($exp->isPast()) {
+                    $pkg['subscription']['is_free_with_subscription'] = false;
+                }
+            }
+
+            return $pkg;
+        }, $packages);
+    }
+
+    /** نرمال‌سازی خلاصه اشتراک (از loadPackages جدا شد تا در حالت فیلتر هم استفاده شود) */
+    protected function normalizeSubscriptionSummary(mixed $subscriptionSummary): ?array
+    {
+        if (! is_array($subscriptionSummary)) {
+            return null;
+        }
+
+        if (! empty($subscriptionSummary['expires_at'])) {
+            $exp = Carbon::parse($subscriptionSummary['expires_at']);
+            $subscriptionSummary['days_remaining'] = max(0, (int) round(now()->diffInDays($exp)));
+            $subscriptionSummary['has_active_subscription'] =
+                ($subscriptionSummary['has_active_subscription'] ?? false) && $exp->isFuture();
+        }
+
+        return $subscriptionSummary;
+    }
+
+    /** نقشه‌ی نصب‌شده‌ها + خریدها + درحال‌نصب‌ها (از loadPackages جدا شد) */
+    protected function syncInstalledState(): void
+    {
+        // دریافت ماژول‌های نصب‌شده برای مقایسه نسخه
+        $this->installedMap = InstalledModule::pluck('version', 'slug')->toArray();
+        $this->purchasedSlugs = PackagePurchase::query()
+            ->where('status', PackagePurchase::STATUS_PAID)
+            ->pluck('package_slug')
+            ->all();
+
+        // ماژول‌های در حال نصب/آپدیت (پورت pendingSlugs قدیمی)
+        $pendingSlugs = [];
+        $pendingModules = InstalledModule::where('status', InstalledModule::STATUS_UPDATING)
+            ->where('updated_at', '>', now()->subMinutes(10))
+            ->get();
+
+        if ($pendingModules->isNotEmpty()) {
+            $runningSlugs = ModuleInstallLog::whereIn('module_slug', $pendingModules->pluck('slug'))
+                ->where('status', ModuleInstallLog::STATUS_RUNNING)
+                ->where('created_at', '>', now()->subMinutes(10))
+                ->pluck('module_slug')
+                ->unique()
+                ->flip()
+                ->all();
+
+            foreach ($pendingModules as $m) {
+                $pendingSlugs[$m->slug] = isset($runningSlugs[$m->slug]) ? 'running' : 'queued';
+            }
+        }
+        $this->pendingSlugs = $pendingSlugs;
     }
 
     /* ---------------- صفحه‌بندی سرور دست‌ساز (meta پاسخ API) ---------------- */
@@ -271,11 +457,20 @@ class PackageIndex extends Component
         $this->loadPackages();
     }
 
+    /** تغییر سریع فیلتر قیمت از کارت‌های آماری/بخش فیلتر */
+    public function setFreeFilter(string $value): void
+    {
+        $this->free = in_array($value, array_keys(self::$freeOptions), true) ? $value : '';
+        $this->page = 1;
+        $this->loadPackages();
+    }
+
     public function resetFilters(): void
     {
         $this->search = '';
         $this->category = '';
         $this->sort = '';
+        $this->free = '';
         $this->page = 1;
         $this->loadPackages();
     }
@@ -318,14 +513,14 @@ class PackageIndex extends Component
             $module = InstalledModule::where('slug', $slug)->first();
 
             if ($module && $module->status === InstalledModule::STATUS_INSTALLED) {
-                $this->dispatch('toast', message: 'نصب «' . ($module->name ?: $slug) . '» با موفقیت کامل شد.', type: 'success');
+                $this->dispatch('toast', message: 'نصب «'.($module->name ?: $slug).'» با موفقیت کامل شد.', type: 'success');
             } else {
                 $lastError = ModuleInstallLog::where('module_slug', $slug)
                     ->where('status', ModuleInstallLog::STATUS_FAILED)
                     ->orderByDesc('created_at')
                     ->value('message');
 
-                $this->dispatch('toast', message: 'نصب «' . $slug . '» ناموفق بود.' . ($lastError ? ' (' . \Illuminate\Support\Str::limit($lastError, 120) . ')' : ''), type: 'error');
+                $this->dispatch('toast', message: 'نصب «'.$slug.'» ناموفق بود.'.($lastError ? ' ('.Str::limit($lastError, 120).')' : ''), type: 'error');
             }
         }
     }
@@ -383,11 +578,11 @@ class PackageIndex extends Component
         }
 
         $this->progressState = [
-            'percent'   => $percent,
-            'step'      => $stepIndex,
-            'status'    => $failed ? 'failed' : ($done ? 'installed' : 'installing'),
-            'message'   => $message,
-            'error'     => $failed ? $message : null,
+            'percent' => $percent,
+            'step' => $stepIndex,
+            'status' => $failed ? 'failed' : ($done ? 'installed' : 'installing'),
+            'message' => $message,
+            'error' => $failed ? $message : null,
         ];
 
         if ($done || $failed) {
@@ -395,7 +590,7 @@ class PackageIndex extends Component
 
             $this->dispatch('toast', message: $done
                 ? "نصب «{$name}» با موفقیت کامل شد."
-                : "نصب «{$name}» ناموفق بود." . ($failed && $message ? ' (' . \Illuminate\Support\Str::limit($message, 120) . ')' : ''),
+                : "نصب «{$name}» ناموفق بود.".($failed && $message ? ' ('.Str::limit($message, 120).')' : ''),
                 type: $done ? 'success' : 'error');
 
             $this->progressSlug = null;
@@ -434,7 +629,7 @@ class PackageIndex extends Component
         $this->detailConfirmingUninstall = false;
 
         try {
-            $cacheKey = 'packages.detail.' . $slug;
+            $cacheKey = 'packages.detail.'.$slug;
 
             $data = Cache::remember($cacheKey, now()->addMinutes(config('packages.cache.detail_ttl')), function () use ($slug) {
                 return $this->api()->getPackage($slug);
@@ -443,8 +638,8 @@ class PackageIndex extends Component
             $package = $data['data'] ?? $data;
 
             // اصلاح اعتبار اشتراک (به دلیل کش شدن detail — پورت show قدیمی)
-            if (!empty($package['subscription']['subscription_expires_at'])) {
-                $exp = \Carbon\Carbon::parse($package['subscription']['subscription_expires_at']);
+            if (! empty($package['subscription']['subscription_expires_at'])) {
+                $exp = Carbon::parse($package['subscription']['subscription_expires_at']);
                 $package['subscription']['days_remaining'] = max(0, (int) round(now()->diffInDays($exp)));
                 if ($exp->isPast()) {
                     $package['subscription']['is_free_with_subscription'] = false;
@@ -461,7 +656,7 @@ class PackageIndex extends Component
             $installed = InstalledModule::where('slug', $slug)->first();
             $activeVersions = $package['active_versions'] ?? [];
 
-            if (!empty($activeVersions)) {
+            if (! empty($activeVersions)) {
                 usort($activeVersions, fn ($a, $b) => version_compare($b['version'], $a['version']));
                 $latestVersion = $activeVersions[0]['version'];
             } else {
@@ -469,13 +664,13 @@ class PackageIndex extends Component
             }
 
             $package['installed'] = $installed ? [
-                'version'               => $installed->version,
-                'status'                => $installed->status,
-                'is_active'             => $installed->is_active,
-                'is_expired'            => $installed->isExpired(),
-                'license_expires_at'    => $installed->license_expires_at?->toDateTimeString(),
+                'version' => $installed->version,
+                'status' => $installed->status,
+                'is_active' => $installed->is_active,
+                'is_expired' => $installed->isExpired(),
+                'license_expires_at' => $installed->license_expires_at?->toDateTimeString(),
                 'license_expires_human' => $this->jexpiry($installed->license_expires_at?->toDateTimeString()),
-                'last_error'            => $installed->last_error,
+                'last_error' => $installed->last_error,
             ] : null;
             $package['latestVersion'] = $latestVersion;
             $package['has_update'] = $installed && $latestVersion !== ''
@@ -487,13 +682,13 @@ class PackageIndex extends Component
                 ->limit(10)
                 ->get()
                 ->map(fn ($log) => [
-                    'id'           => $log->id,
-                    'action'       => $log->action,
+                    'id' => $log->id,
+                    'action' => $log->action,
                     'from_version' => $log->from_version,
-                    'to_version'   => $log->to_version,
-                    'status'       => $log->status,
-                    'message'      => $log->message,
-                    'created_at'   => $log->created_at->diffForHumans(),
+                    'to_version' => $log->to_version,
+                    'status' => $log->status,
+                    'message' => $log->message,
+                    'created_at' => $log->created_at->diffForHumans(),
                 ])
                 ->all();
 
@@ -506,7 +701,7 @@ class PackageIndex extends Component
             // وضعیت خرید/اشتراک (پورت checkModalLicense/applyModalSubscriptionMode قدیمی)
             $subscription = $package['subscription'] ?? null;
 
-            if (!$installed && ($subscription['is_free_with_subscription'] ?? false)) {
+            if (! $installed && ($subscription['is_free_with_subscription'] ?? false)) {
                 $this->detailMode = 'subscription';
             } else {
                 $state = $this->checkPurchaseState($slug);
@@ -557,13 +752,14 @@ class PackageIndex extends Component
         $installed = InstalledModule::where('slug', $slug)->first();
         if ($installed && $installed->status === InstalledModule::STATUS_UPDATING) {
             $this->dispatch('toast', message: 'نصب این پکیج همچنان در جریان است.', type: 'error');
+
             return;
         }
 
         match ($this->detailMode) {
             'subscription' => $this->startInstall($slug, null, true, false),
-            'license'      => $this->startInstall($slug, null, false, true),
-            default        => $this->startInstall($slug, $this->detailPlanId),
+            'license' => $this->startInstall($slug, null, false, true),
+            default => $this->startInstall($slug, $this->detailPlanId),
         };
 
         /*
@@ -591,18 +787,21 @@ class PackageIndex extends Component
 
         $installed = InstalledModule::where('slug', $slug)->first();
 
-        if (!$installed) {
+        if (! $installed) {
             $this->dispatch('toast', message: 'ماژول نصب نشده است.', type: 'error');
+
             return;
         }
 
         if ($installed->status === InstalledModule::STATUS_UPDATING) {
             $this->dispatch('toast', message: 'آپدیت قبلی همچنان در حال اجراست.', type: 'error');
+
             return;
         }
 
         if ($installed->isExpired()) {
             $this->dispatch('toast', message: 'لایسنس ماژول منقضی شده است. ابتدا آن را تمدید کنید.', type: 'error');
+
             return;
         }
 
@@ -661,7 +860,7 @@ class PackageIndex extends Component
             $this->closeDetail();
             $this->loadPackages();
         } catch (\Throwable $e) {
-            $this->dispatch('toast', message: 'حذف ناموفق بود: ' . $e->getMessage(), type: 'error');
+            $this->dispatch('toast', message: 'حذف ناموفق بود: '.$e->getMessage(), type: 'error');
         }
     }
 
@@ -675,17 +874,23 @@ class PackageIndex extends Component
     public static function planDurationLabel(array $plan): string
     {
         $months = (int) ($plan['duration_months'] ?? 0);
-        if ($months === 0) return 'نامحدود';
-        if ($months < 12) return "{$months} ماه";
+        if ($months === 0) {
+            return 'نامحدود';
+        }
+        if ($months < 12) {
+            return "{$months} ماه";
+        }
         $years = $months / 12;
 
-        return ($years === floor($years) ? floor($years) : $years) . ' سال';
+        return ($years === floor($years) ? floor($years) : $years).' سال';
     }
 
     /** ارزان‌ترین پلن (برای انتخاب پیش‌فرض مودال تأیید نصب) */
     public static function cheapestPlanId(array $plans): ?int
     {
-        if (empty($plans)) return null;
+        if (empty($plans)) {
+            return null;
+        }
 
         $cheapest = null;
         foreach ($plans as $plan) {
@@ -700,7 +905,9 @@ class PackageIndex extends Component
     /** وضعیت آپدیت هر پکیج — برای دکمه «آپدیت» کارت (پورت hasUpdate قدیمی) */
     public function hasUpdate(string $slug, array $pkg, $installedVersion): bool
     {
-        if ($installedVersion === null) return false;
+        if ($installedVersion === null) {
+            return false;
+        }
 
         $latest = $pkg['latest_version']['version'] ?? ($pkg['version'] ?? '');
 
@@ -710,10 +917,12 @@ class PackageIndex extends Component
     /** برچسب جلالی تاریخ انقضا برای مودال لایسنس/اشتراک */
     public static function jexpiry(?string $date): ?string
     {
-        if (empty($date)) return null;
+        if (empty($date)) {
+            return null;
+        }
 
         try {
-            return jdate(\Carbon\Carbon::parse($date))->format('Y/m/d');
+            return jdate(Carbon::parse($date))->format('Y/m/d');
         } catch (\Throwable $e) {
             return null;
         }
@@ -733,15 +942,15 @@ class PackageIndex extends Component
                 $result = $this->api()->checkUpdate($module->slug, $module->version);
                 if ($result['has_update'] ?? false) {
                     $updates[] = [
-                        'slug'      => $module->slug,
-                        'name'      => $module->name,
-                        'current'   => $module->version,
-                        'latest'    => $result['latest_version'],
+                        'slug' => $module->slug,
+                        'name' => $module->name,
+                        'current' => $module->version,
+                        'latest' => $result['latest_version'],
                         'changelog' => $result['changelog'] ?? null,
                     ];
                 }
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::warning("Update check failed for {$module->slug}: " . $e->getMessage());
+                Log::warning("Update check failed for {$module->slug}: ".$e->getMessage());
             }
         }
 
@@ -750,7 +959,7 @@ class PackageIndex extends Component
         if (empty($updates)) {
             $this->dispatch('toast', message: 'همه چیز به‌روز است — هیچ آپدیتی برای ماژول‌های نصب‌شده موجود نیست.', type: 'success');
         } else {
-            $this->dispatch('toast', message: count($updates) . ' بروزرسانی برای ماژول‌های نصب‌شده یافت شد.', type: 'info');
+            $this->dispatch('toast', message: count($updates).' بروزرسانی برای ماژول‌های نصب‌شده یافت شد.', type: 'info');
         }
     }
 
@@ -764,23 +973,23 @@ class PackageIndex extends Component
                     PackageCache::updateOrCreate(
                         ['slug' => $pkg['slug']],
                         [
-                            'name'           => $pkg['name'] ?? $pkg['slug'],
-                            'description'    => $pkg['description'] ?? null,
+                            'name' => $pkg['name'] ?? $pkg['slug'],
+                            'description' => $pkg['description'] ?? null,
                             'latest_version' => $pkg['latest_version'] ? $pkg['latest_version']['version'] : ($pkg['version'] ?? ''),
-                            'author'         => $pkg['author'] ?? null,
-                            'category'       => $pkg['category'] ?? null,
-                            'thumbnail'      => $pkg['thumbnail'] ?? null,
-                            'price'          => $pkg['price'] ?? 0,
-                            'is_free'        => $pkg['is_free'] ?? false,
-                            'meta'           => $pkg,
-                            'versions'       => $pkg['versions'] ?? null,
-                            'fetched_at'     => now(),
+                            'author' => $pkg['author'] ?? null,
+                            'category' => $pkg['category'] ?? null,
+                            'thumbnail' => $pkg['thumbnail'] ?? null,
+                            'price' => $pkg['price'] ?? 0,
+                            'is_free' => $pkg['is_free'] ?? false,
+                            'meta' => $pkg,
+                            'versions' => $pkg['versions'] ?? null,
+                            'fetched_at' => now(),
                         ]
                     );
                 }
             });
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning('Packages cache sync failed', ['error' => $e->getMessage()]);
+            Log::warning('Packages cache sync failed', ['error' => $e->getMessage()]);
         }
     }
 
@@ -788,11 +997,11 @@ class PackageIndex extends Component
 
     public static function priceLabel(array $pkg): string
     {
-        if (!empty($pkg['is_free'])) {
+        if (! empty($pkg['is_free'])) {
             return 'رایگان';
         }
 
-        return number_format($pkg['min_price'] ?? 0) . ' تومان';
+        return number_format($pkg['min_price'] ?? 0).' تومان';
     }
 
     public function render()

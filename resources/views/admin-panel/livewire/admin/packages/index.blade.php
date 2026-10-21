@@ -128,29 +128,48 @@
         </div>
     @endif
 
-    {{-- ============ کارت‌های آماری (پورت pkg-stat) ============ --}}
+    {{-- ============ کارت‌های آماری (پورت pkg-stat — کارت‌های کل/رایگان/پولی مثل فیلتر وضعیت قیمت عمل می‌کنند) ============ --}}
     @php
         $total = count($packages);
-        $freeCount = collect($packages)->where('is_free', true)->count();
+        $freeCount = collect($packages)->filter(fn ($p) => \App\Livewire\Admin\Packages\PackageIndex::isEffectivelyFree($p))->count();
         $paidCount = $total - $freeCount;
         $installedCount = count($installedMap);
     @endphp
     <div class="grid grid-cols-2 gap-3 xl:grid-cols-4">
         @foreach ([
-            ['label' => 'کل پکیج‌ها', 'value' => $total, 'icon' => 'package', 'accent' => 'bg-violet-50 text-violet-600 dark:bg-violet-500/12 dark:text-violet-400'],
-            ['label' => 'رایگان', 'value' => $freeCount, 'icon' => 'gift', 'accent' => 'bg-sky-50 text-sky-600 dark:bg-sky-500/12 dark:text-sky-400'],
-            ['label' => 'نصب‌شده', 'value' => $installedCount, 'icon' => 'check-circle', 'accent' => 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/12 dark:text-emerald-400'],
-            ['label' => 'پولی', 'value' => $paidCount, 'icon' => 'coins', 'accent' => 'bg-amber-50 text-amber-600 dark:bg-amber-500/12 dark:text-amber-400'],
+            ['label' => 'کل پکیج‌ها', 'value' => $total, 'icon' => 'package', 'accent' => 'bg-violet-50 text-violet-600 dark:bg-violet-500/12 dark:text-violet-400', 'filter' => ''],
+            ['label' => 'رایگان', 'value' => $freeCount, 'icon' => 'gift', 'accent' => 'bg-sky-50 text-sky-600 dark:bg-sky-500/12 dark:text-sky-400', 'filter' => 'free'],
+            ['label' => 'نصب‌شده', 'value' => $installedCount, 'icon' => 'check-circle', 'accent' => 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/12 dark:text-emerald-400', 'filter' => null],
+            ['label' => 'پولی', 'value' => $paidCount, 'icon' => 'coins', 'accent' => 'bg-amber-50 text-amber-600 dark:bg-amber-500/12 dark:text-amber-400', 'filter' => 'paid'],
         ] as $stat)
-            <div class="ap-card flex items-center gap-3 p-4">
-                <span class="flex size-10 shrink-0 items-center justify-center rounded-xl {{ $stat['accent'] }}">
-                    <x-admin-panel::icon name="{{ $stat['icon'] }}" class="size-5" />
-                </span>
-                <div>
-                    <span class="fa-digits block text-lg font-extrabold">{{ number_format($stat['value']) }}</span>
-                    <span class="text-[11px] text-ink-3 dark:text-night-ink-2">{{ $stat['label'] }}</span>
+            @if ($stat['filter'] === null)
+                <div class="ap-card flex items-center gap-3 p-4">
+                    <span class="flex size-10 shrink-0 items-center justify-center rounded-xl {{ $stat['accent'] }}">
+                        <x-admin-panel::icon name="{{ $stat['icon'] }}" class="size-5" />
+                    </span>
+                    <div>
+                        <span class="fa-digits block text-lg font-extrabold">{{ number_format($stat['value']) }}</span>
+                        <span class="text-[11px] text-ink-3 dark:text-night-ink-2">{{ $stat['label'] }}</span>
+                    </div>
                 </div>
-            </div>
+            @else
+                <button type="button" wire:click="setFreeFilter('{{ $stat['filter'] }}')" wire:loading.attr="disabled" wire:target="setFreeFilter"
+                        class="ap-card flex items-center gap-3 p-4 text-start transition-all hover:border-brand-400/60 hover:shadow-sm disabled:opacity-60"
+                        @class(['!border-brand-500/60 ring-2 ring-brand-500/25 dark:!border-brand-500/50' => $free === $stat['filter']])>
+                    <span class="flex size-10 shrink-0 items-center justify-center rounded-xl {{ $stat['accent'] }}">
+                        <x-admin-panel::icon name="{{ $stat['icon'] }}" class="size-5" />
+                    </span>
+                    <div class="min-w-0">
+                        <span class="fa-digits block text-lg font-extrabold">{{ number_format($stat['value']) }}</span>
+                        <span class="block truncate text-[11px] text-ink-3 dark:text-night-ink-2">{{ $stat['label'] }}</span>
+                    </div>
+                    @if ($free === $stat['filter'])
+                        <span class="ms-auto flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white">
+                            <x-admin-panel::icon name="check" class="size-3" />
+                        </span>
+                    @endif
+                </button>
+            @endif
         @endforeach
     </div>
 
@@ -188,6 +207,49 @@
                 </button>
             </div>
         </form>
+
+        {{-- فیلتر وضعیت قیمت (رایگان بودن) — درخواست کاربر: فیلترهای رایگان بودن --}}
+        <div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line pt-4 dark:border-night-line">
+            <span class="flex items-center gap-1.5 text-xs font-semibold text-ink-2 dark:text-night-ink-2">
+                <x-admin-panel::icon name="coins" class="size-4 text-ink-3 dark:text-night-ink-3" />
+                وضعیت قیمت:
+            </span>
+            <div class="flex items-center gap-1 rounded-xl bg-surface-2 p-1 dark:bg-night-3" role="group" aria-label="فیلتر وضعیت قیمت پکیج‌ها">
+                <button type="button" wire:click="setFreeFilter('')" wire:loading.attr="disabled" wire:target="setFreeFilter"
+                        class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all"
+                        @class([$free === ''
+                            ? 'bg-surface text-brand-700 shadow-sm dark:bg-night-2 dark:text-brand-400'
+                            : 'text-ink-2 hover:bg-surface-3 dark:text-night-ink-2 dark:hover:bg-night-2'])>
+                    <x-admin-panel::icon name="list" class="size-3.5" />
+                    همه
+                </button>
+                <button type="button" wire:click="setFreeFilter('free')" wire:loading.attr="disabled" wire:target="setFreeFilter"
+                        class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all"
+                        @class([$free === 'free'
+                            ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30'
+                            : 'text-ink-2 hover:bg-surface-3 dark:text-night-ink-2 dark:hover:bg-night-2'])>
+                    <x-admin-panel::icon name="gift" class="size-3.5" />
+                    رایگان
+                </button>
+                <button type="button" wire:click="setFreeFilter('paid')" wire:loading.attr="disabled" wire:target="setFreeFilter"
+                        class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all"
+                        @class([$free === 'paid'
+                            ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/30'
+                            : 'text-ink-2 hover:bg-surface-3 dark:text-night-ink-2 dark:hover:bg-night-2'])>
+                    <x-admin-panel::icon name="coins" class="size-3.5" />
+                    پولی
+                </button>
+            </div>
+            @if ($free !== '')
+                <span class="flex items-center gap-1.5 rounded-lg border border-dashed border-line bg-surface-2 px-2.5 py-1 text-[11px] text-ink-2 dark:border-night-line dark:bg-night-3 dark:text-night-ink-2">
+                    <x-admin-panel::icon name="filter" class="size-3.5 text-brand-500" />
+                    فقط پکیج‌های {{ \App\Livewire\Admin\Packages\PackageIndex::$freeOptions[$free] }}
+                    <button type="button" wire:click="setFreeFilter('')" class="font-bold text-red-500 transition-colors hover:text-red-600" title="حذف فیلتر قیمت">
+                        <x-admin-panel::icon name="x" class="size-3.5" />
+                    </button>
+                </span>
+            @endif
+        </div>
     </div>
 
     {{-- ============ شبکه پکیج‌ها (پورت pkg-grid / pkg-card) ============ --}}
@@ -399,8 +461,22 @@
             <span class="flex size-12 items-center justify-center rounded-2xl bg-surface-2 text-ink-3 dark:bg-night-3">
                 <x-admin-panel::icon name="package" class="size-6" />
             </span>
-            <p class="text-sm font-bold">پکیجی برای نمایش وجود ندارد</p>
-            <p class="text-xs text-ink-3 dark:text-night-ink-2">فیلترها را تغییر دهید یا اتصال به سرور پکیج‌ها را بررسی کنید.</p>
+            @if ($free === 'free')
+                <p class="text-sm font-bold">پکیج رایگانی یافت نشد</p>
+                <p class="text-xs text-ink-3 dark:text-night-ink-2">همه‌ی پکیج‌های این بخش پولی هستند یا فیلترها را تغییر دهید.</p>
+            @elseif ($free === 'paid')
+                <p class="text-sm font-bold">پکیج پولی یافت نشد</p>
+                <p class="text-xs text-ink-3 dark:text-night-ink-2">پکیج‌های این بخش رایگان هستند یا فیلترها را تغییر دهید.</p>
+            @else
+                <p class="text-sm font-bold">پکیجی برای نمایش وجود ندارد</p>
+                <p class="text-xs text-ink-3 dark:text-night-ink-2">فیلترها را تغییر دهید یا اتصال به سرور پکیج‌ها را بررسی کنید.</p>
+            @endif
+            @if ($free !== '' || $search !== '' || $category !== '' || $sort !== '')
+                <button type="button" wire:click="resetFilters" class="ap-btn-outline mt-1 !py-2">
+                    <x-admin-panel::icon name="rotate-ccw" class="size-4" />
+                    حذف همه‌ی فیلترها
+                </button>
+            @endif
         </div>
     @endif
 
@@ -662,7 +738,7 @@
     {{-- ====================== --}}
     @if ($detailOpen)
         <div class="fixed inset-0 z-[90] flex items-center justify-center p-4"
-             x-on:keydown.escape.window="closeDetail()" role="dialog" aria-modal="true" aria-label="جزئیات پکیج">
+             x-on:keydown.escape.window="$wire.closeDetail()" role="dialog" aria-modal="true" aria-label="جزئیات پکیج">
             <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" wire:click="closeDetail" aria-hidden="true"></div>
 
             {{-- فاز ۲۸: مثل مودال پنل قدیمی (modal-xl) — عرض ۱۱۵۲px --}}
