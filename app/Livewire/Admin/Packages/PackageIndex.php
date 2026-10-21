@@ -330,7 +330,8 @@ class PackageIndex extends Component
      */
     public static function isEffectivelyFree(array $pkg): bool
     {
-        if (! empty($pkg['is_free'])) {
+        // درخواست کاربر: پکیج‌هایی که is_free = true دارند حتماً جزو «رایگان‌ها» نمایش داده شوند
+        if (self::normalizeIsFree($pkg['is_free'] ?? null)) {
             return true;
         }
 
@@ -340,6 +341,29 @@ class PackageIndex extends Component
 
         if (! empty($pkg['subscription']['is_free_with_subscription'])) {
             return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * نرمال‌سازی مقادیر is_free با هر شکلی که API بفرستد:
+     * true / 1 / "1" / "true" / "yes" / "on" → رایگان
+     * false / 0 / "0" / "false" / null / نبودن فیلد → رایگان نیست
+     * (empty() خام، رشته‌ی "false" را هم رایگان می‌گرفت)
+     */
+    public static function normalizeIsFree(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (int) $value === 1;
+        }
+
+        if (is_string($value)) {
+            return in_array(strtolower(trim($value)), ['1', 'true', 'yes', 'on'], true);
         }
 
         return false;
@@ -365,7 +389,9 @@ class PackageIndex extends Component
                 $minPrice = min($planPrices);
             }
 
-            // is_free فقط اگر خود API گفته باشه؛ has_free_plan: حداقل یک پلن رایگان
+            // is_free فقط اگر خود API گفته باشه (با هر شکلی نرمال می‌شود تا نشان رایگان/فیلتر همیشه درست باشد)
+            $pkg['is_free'] = self::normalizeIsFree($pkg['is_free'] ?? null);
+            // has_free_plan: حداقل یک پلن رایگان
             $pkg['min_price'] = $minPrice;
             $pkg['plans'] = $plans;
             $pkg['has_free_plan'] = $minPrice === 0;
@@ -636,6 +662,9 @@ class PackageIndex extends Component
             });
 
             $package = $data['data'] ?? $data;
+
+            // نرمال‌سازی is_free (هر شکلی از API → بولین تمیز برای نشان «رایگان» مودال)
+            $package['is_free'] = self::normalizeIsFree($package['is_free'] ?? null);
 
             // اصلاح اعتبار اشتراک (به دلیل کش شدن detail — پورت show قدیمی)
             if (! empty($package['subscription']['subscription_expires_at'])) {

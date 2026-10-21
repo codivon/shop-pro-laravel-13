@@ -2,7 +2,6 @@
 
 namespace App\Livewire\Admin\Settings;
 
-use Illuminate\Support\Facades\Artisan;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -24,7 +23,8 @@ class Others extends Component
 {
     /* ---------------- چند فروشندگی ---------------- */
 
-    public string $multi_vendor_system_status = 'false';
+    // فاز ۳۰: بولین واقعی — در UI سوییچ است (نه select)؛ هنگام ذخیره به "true"/"false" تبدیل می‌شود
+    public bool $multi_vendor_system_status = false;
 
     /* ---------------- فاکتور ---------------- */
 
@@ -47,7 +47,8 @@ class Others extends Component
 
     public string $user_register_gift_credit = '0';
 
-    public string $user_referrals_enable = 'false';
+    // فاز ۳۰: بولین واقعی — سوییچ به‌جای select
+    public bool $user_referrals_enable = false;
 
     public string $user_referrals_gift_type = 'discount_code';
 
@@ -67,7 +68,8 @@ class Others extends Component
 
     public string $changePhotoFormat = 'webp';
 
-    public string $watermarkStatus = 'false';
+    // فاز ۳۰: بولین واقعی — سوییچ به‌جای select
+    public bool $watermarkStatus = false;
 
     /** مقدار تازه انتخاب‌شده از File Manager (مسیر/URL رشته‌ای) — خالی یعنی «بدون تغییر» */
     public string $watermarkImage = '';
@@ -105,7 +107,8 @@ class Others extends Component
         auth('adminPanel')->user()?->can('settings.others') ?: abort(403);
 
         // option ها — یک‌بار در mount خوانده می‌شوند
-        $this->multi_vendor_system_status = (string) (option('multi_vendor_system_status') ?: 'false');
+        // فاز ۳۰: سه تنظیم بله/خیر حالا سوییچ بولین هستند (مقادیر قدیمی true/false/1/0 هم پذیرفته می‌شود)
+        $this->multi_vendor_system_status = filter_var((string) (option('multi_vendor_system_status') ?: 'false'), FILTER_VALIDATE_BOOLEAN);
 
         $this->factor_title = (string) (option('factor_title') ?: option('info_site_title'));
         $this->factor_seller_name = (string) option('factor_seller_name');
@@ -115,7 +118,7 @@ class Others extends Component
         $this->current_factor_logo = (string) option('factor_logo');
 
         $this->user_register_gift_credit = (string) (option('user_register_gift_credit', 0) ?: 0);
-        $this->user_referrals_enable = (string) (option('user_referrals_enable') ?: 'false');
+        $this->user_referrals_enable = filter_var((string) (option('user_referrals_enable') ?: 'false'), FILTER_VALIDATE_BOOLEAN);
         $this->user_referrals_gift_type = (string) (option('user_referrals_gift_type') ?: 'discount_code');
         $this->user_referrals_gift_discount_type = (string) (option('user_referrals_gift_discount_type') ?: 'percent');
         $this->owner_referrals_amount = (string) option('owner_referrals_amount');
@@ -125,7 +128,7 @@ class Others extends Component
 
         $this->optimizeImage = (string) (option('optimizeImage', '10') ?: '10');
         $this->changePhotoFormat = (string) (option('changePhotoFormat', 'webp') ?: 'webp');
-        $this->watermarkStatus = (string) (option('watermarkStatus') ?: 'false');
+        $this->watermarkStatus = filter_var((string) (option('watermarkStatus') ?: 'false'), FILTER_VALIDATE_BOOLEAN);
         $this->current_watermarkImage = (string) option('watermarkImage');
         $this->watermarkImagePosition = (string) (option('watermarkImagePosition') ?: 'bottom-right');
 
@@ -241,9 +244,15 @@ class Others extends Component
             'transport', // quirk قدیمی: این فیلد در env_options نبود → به‌صورت option ذخیره می‌شد
         ];
 
+        // فاز ۳۰: این کلیدها سوییچ بولین دارند → مثل قدیمی "true"/"false" ذخیره شوند
+        $boolOptionKeys = ['multi_vendor_system_status', 'user_referrals_enable', 'watermarkStatus'];
+
         $optionChanges = [];
         foreach ($optionKeys as $key) {
-            $value = (string) $this->{$key};
+            // فاز ۳۰: سوییچ‌های بولین → "true"/"false" (فرمت داده مثل قدیمی)
+            $value = in_array($key, $boolOptionKeys, true)
+                ? ($this->{$key} ? 'true' : 'false')
+                : (string) $this->{$key};
             $oldValue = option($key);
 
             // پورت نرمال‌سازی multi_vendor_system_status برای لاگ

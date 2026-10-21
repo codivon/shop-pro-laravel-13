@@ -29,7 +29,13 @@ class SliderIndex extends Component
     public function sliders()
     {
         // پورت: Slider::detectLang()->orderBy('ordering')->get() — با orderBy('id') برای قطعیت ترتیبِ برابرها
-        return Slider::detectLang()
+        //
+        // فاز ۳۰ — رفع «اسلایدرها در پنل نمایش داده نمی‌شوند»: ردیف‌هایی که در دیتابیس lang = NULL
+        // دارند (ایمپورت دستی/دیتای قدیمی) با detectLang ساده (lang = locale) حذف می‌شدند، در حالی‌که
+        // فرانت همین ردیف‌ها را نشان می‌دهد (کوئری‌های فرانت فیلتر lang ندارند). الان ردیف‌های
+        // بدون زبان هم مثل بقیه در لیست پنل می‌آیند.
+        return Slider::query()
+            ->where(fn ($q) => $q->where('lang', app()->getLocale())->orWhereNull('lang'))
             ->orderBy('ordering')
             ->orderBy('id')
             ->get();
@@ -42,9 +48,9 @@ class SliderIndex extends Component
         $all = $this->sliders;
 
         return [
-            'total'        => $all->count(),
-            'published'    => $all->where('published', true)->count(),
-            'drafts'       => $all->where('published', false)->count(),
+            'total' => $all->count(),
+            'published' => $all->where('published', true)->count(),
+            'drafts' => $all->where('published', false)->count(),
             'pagesCovered' => $all->flatMap(fn ($slider) => $slider->pages ?: [])->unique()->count(),
         ];
     }

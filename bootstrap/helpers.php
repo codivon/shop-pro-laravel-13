@@ -2,52 +2,54 @@
 
 // helper functions
 
+use App\Helpers\ShortcodeHelper;
 use App\Models\Admin;
-use App\Models\Banner;
 use App\Models\Brand;
 use App\Models\Carrier;
 use App\Models\Cart;
 use App\Models\Category;
+use App\Models\Currency;
+use App\Models\FieldValue;
+use App\Models\Fild;
 use App\Models\Gateway;
 use App\Models\Option;
 use App\Models\Order;
+use App\Models\Post;
+use App\Models\Product;
+use App\Models\Seller;
+use App\Models\SellerInfo;
+use App\Models\Slider;
 use App\Models\Specification;
 use App\Models\SpecificationGroup;
 use App\Models\SpecType;
+use App\Models\Story;
 use App\Models\Tag;
 use App\Models\Ticket;
-use App\Models\Contact;
-use App\Models\Story;
-use App\Models\FieldValue;
-use App\Models\Fild;
-use App\Models\Post;
-use App\Models\Product;
 use App\Models\User;
 use App\Models\UserOption;
 use App\Models\Viewer;
-use App\Models\Slider;
-use App\Models\SellerInfo;
-use App\Models\Seller;
 use Carbon\Carbon;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Str;
-use Milon\Barcode\DNS1D;
-use Illuminate\Support\Facades\Http;
-use Intervention\Image\Drivers\Gd\Driver;
-use Intervention\Image\ImageManager;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\Drivers\Gd\Encoders\JpegEncoder;
 use Intervention\Image\Drivers\Gd\Encoders\PngEncoder;
-use Spatie\ImageOptimizer\OptimizerChainFactory;
-use Intervention\Image\Encoders\WebpEncoder;
 use Intervention\Image\Encoders\AutoEncoder;
+use Intervention\Image\Encoders\WebpEncoder;
+use Intervention\Image\ImageManager;
+use Milon\Barcode\DNS1D;
+use Spatie\ImageOptimizer\OptimizerChainFactory;
 
 /* add active class to li */
 
@@ -58,10 +60,10 @@ function update_url()
         return '';
     }*/
 
-    $url = 'https://update.weblak.ir/api/v1/check-update?token=' . env('SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN',config('self-update.updater_token'));
+    $url = 'https://update.weblak.ir/api/v1/check-update?token='.env('SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN', config('self-update.updater_token'));
     $headers_url = @get_headers($url);
     if ($headers_url && strpos($headers_url[0], '200')) {
-        /*return $url . '/';*/
+        /* return $url . '/'; */
         return $url;
     }
 
@@ -74,7 +76,7 @@ function Admin()
 
 function active_class($route_name, $class = 'active')
 {
-    return Route::is($route_name) || Route::is(app()->getLocale() . '.' . $route_name) ? $class : '';
+    return Route::is($route_name) || Route::is(app()->getLocale().'.'.$route_name) ? $class : '';
 }
 
 function open_class($route_list, $class = 'open')
@@ -82,7 +84,7 @@ function open_class($route_list, $class = 'open')
     $text = '';
 
     foreach ($route_list as $route) {
-        if (Route::is($route) || Route::is(app()->getLocale() . '.' . $route)) {
+        if (Route::is($route) || Route::is(app()->getLocale().'.'.$route)) {
             $text = $class;
             break;
         }
@@ -95,13 +97,13 @@ function option_update($option_name, $option_value)
 {
     $option = Option::firstOrNew([
         'option_name' => $option_name,
-        'lang'        => app()->getLocale(),
+        'lang' => app()->getLocale(),
     ]);
 
     $option->option_value = $option_value;
     $option->save();
 
-    Cache::forever('options.' . app()->getLocale() . '.' . $option_name, $option_value);
+    Cache::forever('options.'.app()->getLocale().'.'.$option_name, $option_value);
 }
 
 function option($option_name, $default_value = '')
@@ -114,7 +116,7 @@ function option($option_name, $default_value = '')
         $language = app()->getLocale();
     }
 
-    $value = Cache::rememberForever('options.' . $language . '.' . $option_name, function () use ($option_name, $default_value, $language) {
+    $value = Cache::rememberForever('options.'.$language.'.'.$option_name, function () use ($option_name, $default_value, $language) {
         $option = Option::where('option_name', $option_name)
             ->where('lang', $language)
             ->first();
@@ -126,22 +128,22 @@ function option($option_name, $default_value = '')
         return $default_value;
     });
 
-    if (is_null($value) || $value === false || $value == "") {
+    if (is_null($value) || $value === false || $value == '') {
         return $default_value;
     }
 
-    return  $value;
+    return $value;
 }
 
 function user_option_update($option_name, $option_value, $user_id = null)
 {
-    if (!$user_id) {
-        $user_id =  auth('adminPanel')->user()->id;
+    if (! $user_id) {
+        $user_id = auth('adminPanel')->user()->id;
     }
 
     $option = UserOption::firstOrNew([
         'option_name' => $option_name,
-        'admin_id'     => $user_id
+        'admin_id' => $user_id,
     ]);
 
     $option->option_value = $option_value;
@@ -150,12 +152,12 @@ function user_option_update($option_name, $option_value, $user_id = null)
 
 function user_option($option_name, $default_value = '', $user_id = null)
 {
-    if (!$user_id) {
-        if (!auth('adminPanel')->check()) {
+    if (! $user_id) {
+        if (! auth('adminPanel')->check()) {
             return $default_value;
         }
 
-        $user_id =  auth('adminPanel')->user()->id;
+        $user_id = auth('adminPanel')->user()->id;
     }
 
     $option = UserOption::where('option_name', $option_name)->where('admin_id', $user_id)->first();
@@ -166,19 +168,19 @@ function user_option($option_name, $default_value = '', $user_id = null)
 // add new tags and return tags id
 function addTags($tags, $separator = ',')
 {
-    $tags    = explode($separator, $tags);
+    $tags = explode($separator, $tags);
     $tags_id = [];
 
     foreach ($tags as $item) {
 
-        if (!$item) {
+        if (! $item) {
             continue;
         }
 
         try {
             $tag = Tag::firstOrCreate([
                 'name' => $item,
-                'lang' => app()->getLocale()
+                'lang' => app()->getLocale(),
             ]);
         } catch (Exception $e) {
             Log::error($e->getMessage());
@@ -216,14 +218,14 @@ function check_cart_quantity()
 {
     $cart = get_cart();
 
-    if (!$cart || !$cart->products()->count()) {
+    if (! $cart || ! $cart->products()->count()) {
         return true;
     }
 
     foreach ($cart->products as $product) {
-        $price     = $product->prices()->find($product->pivot->price_id);
+        $price = $product->prices()->find($product->pivot->price_id);
         $has_stock = $price->hasStock($product->pivot->quantity);
-        if (!$has_stock['status']) {
+        if (! $has_stock['status']) {
             return false;
         }
     }
@@ -235,12 +237,13 @@ function check_cart_discount()
 {
     $cart = get_cart();
 
-    if (!$cart || !$cart->products()->count()) {
+    if (! $cart || ! $cart->products()->count()) {
         return ['status' => true];
     }
 
     if ($cart->discount) {
         $status = $cart->canUseDiscount();
+
         return $status;
     }
 
@@ -252,7 +255,7 @@ function check_cart()
     return check_cart_quantity() && check_cart_discount()['status'];
 }
 
-//get user address
+// get user address
 function user_address($key)
 {
     if (old($key)) {
@@ -271,45 +274,44 @@ function short_content($str, $words = 20, $strip_tags = true)
     return Str::words($str, $words);
 }
 
-
 function spec_type($request)
 {
-    if (!$request->spec_type || !$request->specification_group) {
+    if (! $request->spec_type || ! $request->specification_group) {
         return null;
     }
 
     $spec_type = SpecType::firstOrCreate([
         'name' => $request->spec_type,
-        'lang' => app()->getLocale()
+        'lang' => app()->getLocale(),
     ]);
 
     $group_ordering = 0;
 
     foreach ($request->specification_group as $group) {
 
-        if (!isset($group['specifications'])) {
+        if (! isset($group['specifications'])) {
             continue;
         }
 
         $spec_group = SpecificationGroup::firstOrCreate([
             'name' => $group['name'],
-            'lang' => app()->getLocale()
+            'lang' => app()->getLocale(),
         ]);
 
         $specification_ordering = 0;
 
         foreach ($group['specifications'] as $specification) {
             $spec = Specification::firstOrCreate([
-                'name' => $specification['name']
+                'name' => $specification['name'],
             ]);
 
-            if (!$spec_type->specifications()->where('specification_id', $spec->id)->where('specification_group_id', $spec_group->id)->first()) {
+            if (! $spec_type->specifications()->where('specification_id', $spec->id)->where('specification_group_id', $spec_group->id)->first()) {
                 $spec_type->specifications()->attach([
                     $spec->id => [
                         'specification_group_id' => $spec_group->id,
-                        'group_ordering'         => $group_ordering,
+                        'group_ordering' => $group_ordering,
                         'specification_ordering' => $specification_ordering++,
-                    ]
+                    ],
                 ]);
             }
         }
@@ -327,11 +329,11 @@ function viewers_data($number = 7)
     for ($i = 0; $i < $number; $i++) {
         $date = Carbon::now()->subDays($i);
 
-        if ($date->isToday() && Cache::get('admin.views-count-' . $date->format('Y-m-d')) <= 1) {
-            Cache::forget('admin.views-count-' . $date->format('Y-m-d'));
+        if ($date->isToday() && Cache::get('admin.views-count-'.$date->format('Y-m-d')) <= 1) {
+            Cache::forget('admin.views-count-'.$date->format('Y-m-d'));
         }
 
-        $views = Cache::rememberForever('admin.views-count-' . $date->format('Y-m-d'), function () use ($date) {
+        $views = Cache::rememberForever('admin.views-count-'.$date->format('Y-m-d'), function () use ($date) {
             return Viewer::whereDate('created_at', $date)->count();
         });
 
@@ -348,7 +350,7 @@ function ip_data($number = 7)
     for ($i = 0; $i < $number; $i++) {
         $date = Carbon::now()->subDays($i);
 
-        $views = Cache::remember('admin.views-ip-' . $date->format('Y-m-d'), now()->addMinutes(10), function () use ($date) {
+        $views = Cache::remember('admin.views-ip-'.$date->format('Y-m-d'), now()->addMinutes(10), function () use ($date) {
             return Viewer::whereDate('created_at', $date)->distinct('ip')->count();
         });
 
@@ -361,7 +363,8 @@ function ip_data($number = 7)
 function array_to_string($array)
 {
     $comma_separated = implode("','", $array);
-    $comma_separated = "'" . $comma_separated . "'";
+    $comma_separated = "'".$comma_separated."'";
+
     return $comma_separated;
 }
 
@@ -392,19 +395,19 @@ function to_round_price($price, $product)
         }
 
         switch ($rounding_amount) {
-            case "100":
-            case "1000":
-            case "10000":
-            case "100000": {
-                    if ($rounding_type == 'up') {
-                        $price = ceil($price / $rounding_amount) * $rounding_amount;
-                    } else if ($rounding_type == 'down') {
-                        $price = floor($price / $rounding_amount) * $rounding_amount;
-                    } else {
-                        $price = round($price / $rounding_amount) * $rounding_amount;
-                    }
-                    break;
+            case '100':
+            case '1000':
+            case '10000':
+            case '100000':
+                if ($rounding_type == 'up') {
+                    $price = ceil($price / $rounding_amount) * $rounding_amount;
+                } elseif ($rounding_type == 'down') {
+                    $price = floor($price / $rounding_amount) * $rounding_amount;
+                } else {
+                    $price = round($price / $rounding_amount) * $rounding_amount;
                 }
+                break;
+
         }
     }
 
@@ -414,12 +417,12 @@ function to_round_price($price, $product)
 function category_group($key)
 {
     switch ($key) {
-        case 'postcat': {
-                return 'دسته بندی وبلاگ';
-            }
-        case 'productcat': {
-                return 'دسته بندی محصول';
-            }
+        case 'postcat':
+            return 'دسته بندی وبلاگ';
+
+        case 'productcat':
+            return 'دسته بندی محصول';
+
     }
 }
 
@@ -427,17 +430,18 @@ function convert2english($string)
 {
     $newNumbers = range(0, 9);
     // 1. Persian HTML decimal
-    $persianDecimal = array('&#1776;', '&#1777;', '&#1778;', '&#1779;', '&#1780;', '&#1781;', '&#1782;', '&#1783;', '&#1784;', '&#1785;');
+    $persianDecimal = ['&#1776;', '&#1777;', '&#1778;', '&#1779;', '&#1780;', '&#1781;', '&#1782;', '&#1783;', '&#1784;', '&#1785;'];
     // 2. Arabic HTML decimal
-    $arabicDecimal = array('&#1632;', '&#1633;', '&#1634;', '&#1635;', '&#1636;', '&#1637;', '&#1638;', '&#1639;', '&#1640;', '&#1641;');
+    $arabicDecimal = ['&#1632;', '&#1633;', '&#1634;', '&#1635;', '&#1636;', '&#1637;', '&#1638;', '&#1639;', '&#1640;', '&#1641;'];
     // 3. Arabic Numeric
-    $arabic = array('٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩');
+    $arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
     // 4. Persian Numeric
-    $persian = array('۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹');
+    $persian = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
 
-    $string =  str_replace($persianDecimal, $newNumbers, $string);
-    $string =  str_replace($arabicDecimal, $newNumbers, $string);
-    $string =  str_replace($arabic, $newNumbers, $string);
+    $string = str_replace($persianDecimal, $newNumbers, $string);
+    $string = str_replace($arabicDecimal, $newNumbers, $string);
+    $string = str_replace($arabic, $newNumbers, $string);
+
     return str_replace($persian, $newNumbers, $string);
 }
 
@@ -500,7 +504,7 @@ function remove_id_from_url($id)
 
 function get_separated_values($array, $separator)
 {
-    if (!$separator) {
+    if (! $separator) {
         return $array;
     }
 
@@ -519,7 +523,7 @@ function get_option_property($obj, $property)
 {
     $obj = json_decode($obj);
 
-    if (!is_object($obj)) {
+    if (! is_object($obj)) {
         return null;
     }
 
@@ -631,17 +635,17 @@ function change_env($key, $value, bool $cacheConfig = true)
      * کنترلی باشد وگرنه یک مهاجم می‌تواند کلیدهای دلخواه .env (مثل APP_KEY یا
      * DB_PASSWORD) را تزریق کند. کلید هم فقط [A-Z0-9_] مجاز است.
      */
-    $key   = strtoupper(trim((string) $key));
+    $key = strtoupper(trim((string) $key));
     $value = str_replace(["\r", "\n", "\0"], '', (string) $value);
     $value = trim($value);
 
-    if (!preg_match('/^[A-Z][A-Z0-9_]*$/', $key) || $value === '') {
+    if (! preg_match('/^[A-Z][A-Z0-9_]*$/', $key) || $value === '') {
         return false;
     }
 
     // اگر مقدار فاصله/کاراکتر خاص دارد، داخل کوتیشن قرار می‌گیرد
-    if (preg_match('/[\s"\'#\\\\]/', $value) && !preg_match('/^".*"$/', $value)) {
-        $value = '"' . str_replace('"', '\\"', $value) . '"';
+    if (preg_match('/[\s"\'#\\\\]/', $value) && ! preg_match('/^".*"$/', $value)) {
+        $value = '"'.str_replace('"', '\\"', $value).'"';
     }
 
     /*
@@ -654,9 +658,9 @@ function change_env($key, $value, bool $cacheConfig = true)
      * کل برنامه را ۵۰۰ می‌کرد. حالا فقط خط‌های KEY=VALUE بازنویسی می‌شوند
      * و کامنت‌ها/خط‌های خالی دست‌نخورده باقی می‌مانند.
      */
-    $envPath = base_path() . '/.env';
+    $envPath = base_path().'/.env';
 
-    if (!file_exists($envPath)) {
+    if (! file_exists($envPath)) {
         return false;
     }
 
@@ -672,21 +676,39 @@ function change_env($key, $value, bool $cacheConfig = true)
             continue;
         }
 
-        $entry = explode("=", $line, 2);
+        $entry = explode('=', $line, 2);
 
         if (trim((string) $entry[0]) === $key) {
-            $lines[$env_key] = $key . "=" . $value;
+            /*
+             * فاز ۳۰ — مقدار از قبل درست است؟ هیچ کاری نکن.
+             * بازنویسیِ بی‌دلیل .env در هر ذخیره (حتی وقتی هیچ مقداری عوض نشده)
+             * در artisan serve باعث «Environment modified. Restarting server...» و
+             * کشته‌شدن همان درخواست می‌شد (ذخیره‌ی تنظیمات دیگر: envها نوشته می‌شدند
+             * ولی optionها هرگز!). در php-fpm هم فقط نوشتنِ بیهوده روی دیسک +
+             * config:cache اضافی بود. حالا فقط تغییر واقعی فایل را می‌نویسد.
+             */
+            $existing = trim((string) ($entry[1] ?? ''));
+            if (strlen($existing) >= 2
+                && ((str_starts_with($existing, '"') && str_ends_with($existing, '"'))
+                    || (str_starts_with($existing, "'") && str_ends_with($existing, "'")))) {
+                $existing = substr($existing, 1, -1);
+            }
+            if ($existing === $value) {
+                return true;
+            }
+
+            $lines[$env_key] = $key.'='.$value;
             $key_exists = true;
             break;
         }
     }
 
-    if (!$key_exists) {
-        $lines[] = $key . "=" . $value;
+    if (! $key_exists) {
+        $lines[] = $key.'='.$value;
     }
 
     // And overwrite the .env with the new data
-    file_put_contents($envPath, implode("\n", $lines) . "\n");
+    file_put_contents($envPath, implode("\n", $lines)."\n");
 
     // فاز ۲۵ — کش کانفیگ اختیاری است: در جریان درخواستِ فعال، config:cache
     // یک نمونه‌ی دوم Application را بوت می‌کند و Facadeها را جابه‌جا می‌کند
@@ -702,10 +724,11 @@ function get_current_theme()
 {
     $current_theme = config('general.current_theme');
 
-    if (file_exists(base_path() . '/themes/' . $current_theme)) {
+    if (file_exists(base_path().'/themes/'.$current_theme)) {
         $theme = [];
         $theme['name'] = $current_theme;
         $theme['service_provider'] = "Themes\\$current_theme\src\ThemeServiceProvider";
+
         return $theme;
     }
 
@@ -721,6 +744,7 @@ function customConfig($path)
 {
     if (file_exists($path)) {
         $config = include $path;
+
         return $config;
     }
 }
@@ -760,7 +784,7 @@ function store_user_cart(User $user)
 
             $user_cart = Cart::where('user_id', $user->id)->first();
 
-            if (!$user_cart) {
+            if (! $user_cart) {
                 $cart->update([
                     'user_id' => $user->id,
                 ]);
@@ -769,13 +793,13 @@ function store_user_cart(User $user)
                     $query = DB::table('cart_product')->where('cart_id', $user_cart->id)->where('product_id', $product->id)->where('price_id', $product->pivot->price_id);
                     $user_cart_product = $query->first();
 
-                    if (!$user_cart_product) {
+                    if (! $user_cart_product) {
 
                         DB::table('cart_product')->insert([
-                            'cart_id'    => $user_cart->id,
+                            'cart_id' => $user_cart->id,
                             'product_id' => $product->id,
-                            'quantity'   => $product->pivot->quantity,
-                            'price_id'   => $product->pivot->price_id,
+                            'quantity' => $product->pivot->quantity,
+                            'price_id' => $product->pivot->price_id,
                         ]);
                     } else {
 
@@ -795,7 +819,7 @@ function store_user_cart(User $user)
 
 function ellips_text($str, $char)
 {
-    $out = mb_strlen($str, 'utf-8') > $char ? mb_substr($str, 0, $char, 'utf-8') . "..." : $str;
+    $out = mb_strlen($str, 'utf-8') > $char ? mb_substr($str, 0, $char, 'utf-8').'...' : $str;
 
     return $out;
 }
@@ -814,88 +838,88 @@ function get_gateway_configs($gateway)
     $configs = [];
 
     switch ($gateway->key) {
-        case "zarinpal": {
-                $configs['merchantId'] = $gateway->config('merchantId');
-                break;
-            }
-        case "toman": {
-                $user = auth()->user();
-                $order =  $user->orders->last();
-                $items = [];
-                foreach ($order->items as $product) {
+        case 'zarinpal':
+            $configs['merchantId'] = $gateway->config('merchantId');
+            break;
 
-                    $data = [
-                        'name' => $product->title,
-                        'price' => $product->price . 0,
-                        'quantity' => $product->quantity
-                    ];
-                    array_push($items, $data);
-                    $data = null;
-                }
-
-                if ($order->shipping_cost > 0) {
-                    $shipping = [
-                        'name' => $order->carrier->title,
-                        'price' => $order->shipping_cost . 0,
-                        'quantity' => 1
-                    ];
-                    array_push($items, $shipping);
-                }
+        case 'toman':
+            $user = auth()->user();
+            $order = $user->orders->last();
+            $items = [];
+            foreach ($order->items as $product) {
 
                 $data = [
-                    'res_number' => $order->id,
-                    'return_to' => route('front.orders.verify', ['gateway' => 'toman']),
-                    'items' => $items
+                    'name' => $product->title,
+                    'price' => $product->price. 0,
+                    'quantity' => $product->quantity,
                 ];
+                array_push($items, $data);
+                $data = null;
+            }
 
-                $configs['shop_slug'] = $gateway->config('shop_slug');
-                $configs['auth_code'] = $gateway->config('auth_code');
-                $configs['data'] = $data;
-                break;
+            if ($order->shipping_cost > 0) {
+                $shipping = [
+                    'name' => $order->carrier->title,
+                    'price' => $order->shipping_cost. 0,
+                    'quantity' => 1,
+                ];
+                array_push($items, $shipping);
             }
-        case "payping": {
-                $configs['merchantId'] = $gateway->config('merchantId');
-                break;
-            }
-        case "irankish": {
-                $configs['terminalId'] = $gateway->config('terminalId');
-                $configs['password']   = $gateway->config('password');
-                $configs['acceptorId'] = $gateway->config('acceptorId');
-                $configs['pubKey']     = $gateway->config('pubKey');
-                break;
-            }
-        case "idpay": {
-                $configs['merchantId'] = $gateway->config('merchantId');
-                break;
-            }
-        case "saman": {
-                $configs['merchantId'] = $gateway->config('merchantId');
-                break;
-            }
-        case "behpardakht": {
-                $configs['terminalId'] = $gateway->config('terminalId');
-                $configs['username']   = $gateway->config('username');
-                $configs['password']   = $gateway->config('password');
-                break;
-            }
-        case "payir": {
-                $configs['merchantId'] = $gateway->config('merchantId');
-                break;
-            }
-        case "sepehr": {
-                $configs['terminalId'] = $gateway->config('terminalId');
-                break;
-            }
-        case "sadad": {
-                $configs['key']        = $gateway->config('key');
-                $configs['merchantId'] = $gateway->config('merchantId');
-                $configs['terminalId'] = $gateway->config('terminalId');
-                break;
-            }
-        case "zibal": {
-                $configs['merchantId'] = $gateway->config('merchantId');
-                break;
-            }
+
+            $data = [
+                'res_number' => $order->id,
+                'return_to' => route('front.orders.verify', ['gateway' => 'toman']),
+                'items' => $items,
+            ];
+
+            $configs['shop_slug'] = $gateway->config('shop_slug');
+            $configs['auth_code'] = $gateway->config('auth_code');
+            $configs['data'] = $data;
+            break;
+
+        case 'payping':
+            $configs['merchantId'] = $gateway->config('merchantId');
+            break;
+
+        case 'irankish':
+            $configs['terminalId'] = $gateway->config('terminalId');
+            $configs['password'] = $gateway->config('password');
+            $configs['acceptorId'] = $gateway->config('acceptorId');
+            $configs['pubKey'] = $gateway->config('pubKey');
+            break;
+
+        case 'idpay':
+            $configs['merchantId'] = $gateway->config('merchantId');
+            break;
+
+        case 'saman':
+            $configs['merchantId'] = $gateway->config('merchantId');
+            break;
+
+        case 'behpardakht':
+            $configs['terminalId'] = $gateway->config('terminalId');
+            $configs['username'] = $gateway->config('username');
+            $configs['password'] = $gateway->config('password');
+            break;
+
+        case 'payir':
+            $configs['merchantId'] = $gateway->config('merchantId');
+            break;
+
+        case 'sepehr':
+            $configs['terminalId'] = $gateway->config('terminalId');
+            break;
+
+        case 'sadad':
+            $configs['key'] = $gateway->config('key');
+            $configs['merchantId'] = $gateway->config('merchantId');
+            $configs['terminalId'] = $gateway->config('terminalId');
+            break;
+
+        case 'zibal':
+            $configs['merchantId'] = $gateway->config('merchantId');
+            break;
+
     }
 
     return $configs;
@@ -955,55 +979,55 @@ function get_gateway_configs($gateway)
 function sluggable_helper_function($string, $separator = '-')
 {
     $_transliteration = [
-        "/ö|œ/" => "e",
-        "/ü/" => "e",
-        "/Ä/" => "e",
-        "/Ü/" => "e",
-        "/Ö/" => "e",
-        "/À|Á|Â|Ã|Å|Ǻ|Ā|Ă|Ą|Ǎ/" => "",
-        "/à|á|â|ã|å|ǻ|ā|ă|ą|ǎ|ª/" => "",
-        "/Ç|Ć|Ĉ|Ċ|Č/" => "",
-        "/ç|ć|ĉ|ċ|č/" => "",
-        "/Ð|Ď|Đ/" => "",
-        "/ð|ď|đ/" => "",
-        "/È|É|Ê|Ë|Ē|Ĕ|Ė|Ę|Ě/" => "",
-        "/è|é|ê|ë|ē|ĕ|ė|ę|ě/" => "",
-        "/Ĝ|Ğ|Ġ|Ģ/" => "",
-        "/ĝ|ğ|ġ|ģ/" => "",
-        "/Ĥ|Ħ/" => "",
-        "/ĥ|ħ/" => "",
-        "/Ì|Í|Î|Ï|Ĩ|Ī| Ĭ|Ǐ|Į|İ/" => "",
-        "/ì|í|î|ï|ĩ|ī|ĭ|ǐ|į|ı/" => "",
-        "/Ĵ/" => "",
-        "/ĵ/" => "",
-        "/Ķ/" => "",
-        "/ķ/" => "",
-        "/Ĺ|Ļ|Ľ|Ŀ|Ł/" => "",
-        "/ĺ|ļ|ľ|ŀ|ł/" => "",
-        "/Ñ|Ń|Ņ|Ň/" => "",
-        "/ñ|ń|ņ|ň|ŉ/" => "",
-        "/Ò|Ó|Ô|Õ|Ō|Ŏ|Ǒ|Ő|Ơ|Ø|Ǿ/" => "",
-        "/ò|ó|ô|õ|ō|ŏ|ǒ|ő|ơ|ø|ǿ|º/" => "",
-        "/Ŕ|Ŗ|Ř/" => "",
-        "/ŕ|ŗ|ř/" => "",
-        "/Ś|Ŝ|Ş|Ș|Š/" => "",
-        "/ś|ŝ|ş|ș|š|ſ/" => "",
-        "/Ţ|Ț|Ť|Ŧ/" => "",
-        "/ţ|ț|ť|ŧ/" => "",
-        "/Ù|Ú|Û|Ũ|Ū|Ŭ|Ů|Ű|Ų|Ư|Ǔ|Ǖ|Ǘ|Ǚ|Ǜ/" => "",
-        "/ù|ú|û|ũ|ū|ŭ|ů|ű|ų|ư|ǔ|ǖ|ǘ|ǚ|ǜ/" => "",
-        "/Ý|Ÿ|Ŷ/" => "",
-        "/ý|ÿ|ŷ/" => "",
-        "/Ŵ/" => "",
-        "/ŵ/" => "",
-        "/Ź|Ż|Ž/" => "",
-        "/ź|ż|ž/" => "",
-        "/Æ|Ǽ/" => "E",
-        "/ß/" => "s",
-        "/Ĳ/" => "J",
-        "/ĳ/" => "j",
-        "/Œ/" => "E",
-        "/ƒ/" => "",
+        '/ö|œ/' => 'e',
+        '/ü/' => 'e',
+        '/Ä/' => 'e',
+        '/Ü/' => 'e',
+        '/Ö/' => 'e',
+        '/À|Á|Â|Ã|Å|Ǻ|Ā|Ă|Ą|Ǎ/' => '',
+        '/à|á|â|ã|å|ǻ|ā|ă|ą|ǎ|ª/' => '',
+        '/Ç|Ć|Ĉ|Ċ|Č/' => '',
+        '/ç|ć|ĉ|ċ|č/' => '',
+        '/Ð|Ď|Đ/' => '',
+        '/ð|ď|đ/' => '',
+        '/È|É|Ê|Ë|Ē|Ĕ|Ė|Ę|Ě/' => '',
+        '/è|é|ê|ë|ē|ĕ|ė|ę|ě/' => '',
+        '/Ĝ|Ğ|Ġ|Ģ/' => '',
+        '/ĝ|ğ|ġ|ģ/' => '',
+        '/Ĥ|Ħ/' => '',
+        '/ĥ|ħ/' => '',
+        '/Ì|Í|Î|Ï|Ĩ|Ī| Ĭ|Ǐ|Į|İ/' => '',
+        '/ì|í|î|ï|ĩ|ī|ĭ|ǐ|į|ı/' => '',
+        '/Ĵ/' => '',
+        '/ĵ/' => '',
+        '/Ķ/' => '',
+        '/ķ/' => '',
+        '/Ĺ|Ļ|Ľ|Ŀ|Ł/' => '',
+        '/ĺ|ļ|ľ|ŀ|ł/' => '',
+        '/Ñ|Ń|Ņ|Ň/' => '',
+        '/ñ|ń|ņ|ň|ŉ/' => '',
+        '/Ò|Ó|Ô|Õ|Ō|Ŏ|Ǒ|Ő|Ơ|Ø|Ǿ/' => '',
+        '/ò|ó|ô|õ|ō|ŏ|ǒ|ő|ơ|ø|ǿ|º/' => '',
+        '/Ŕ|Ŗ|Ř/' => '',
+        '/ŕ|ŗ|ř/' => '',
+        '/Ś|Ŝ|Ş|Ș|Š/' => '',
+        '/ś|ŝ|ş|ș|š|ſ/' => '',
+        '/Ţ|Ț|Ť|Ŧ/' => '',
+        '/ţ|ț|ť|ŧ/' => '',
+        '/Ù|Ú|Û|Ũ|Ū|Ŭ|Ů|Ű|Ų|Ư|Ǔ|Ǖ|Ǘ|Ǚ|Ǜ/' => '',
+        '/ù|ú|û|ũ|ū|ŭ|ů|ű|ų|ư|ǔ|ǖ|ǘ|ǚ|ǜ/' => '',
+        '/Ý|Ÿ|Ŷ/' => '',
+        '/ý|ÿ|ŷ/' => '',
+        '/Ŵ/' => '',
+        '/ŵ/' => '',
+        '/Ź|Ż|Ž/' => '',
+        '/ź|ż|ž/' => '',
+        '/Æ|Ǽ/' => 'E',
+        '/ß/' => 's',
+        '/Ĳ/' => 'J',
+        '/ĳ/' => 'j',
+        '/Œ/' => 'E',
+        '/ƒ/' => '',
     ];
     $quotedReplacement = preg_quote($separator, '/');
     $merge = [
@@ -1013,6 +1037,7 @@ function sluggable_helper_function($string, $separator = '-')
     ];
     $map = $_transliteration + $merge;
     unset($_transliteration);
+
     return preg_replace(array_keys($map), array_values($map), $string);
 }
 
@@ -1024,15 +1049,15 @@ function admin_route_prefix()
 function formatSizeUnits($bytes)
 {
     if ($bytes >= 1073741824) {
-        $bytes = number_format($bytes / 1073741824, 2) . ' GB';
+        $bytes = number_format($bytes / 1073741824, 2).' GB';
     } elseif ($bytes >= 1048576) {
-        $bytes = number_format($bytes / 1048576, 2) . ' MB';
+        $bytes = number_format($bytes / 1048576, 2).' MB';
     } elseif ($bytes >= 1024) {
-        $bytes = number_format($bytes / 1024, 2) . ' KB';
+        $bytes = number_format($bytes / 1024, 2).' KB';
     } elseif ($bytes > 1) {
-        $bytes = $bytes . ' bytes';
+        $bytes = $bytes.' bytes';
     } elseif ($bytes == 1) {
-        $bytes = $bytes . ' byte';
+        $bytes = $bytes.' byte';
     } else {
         $bytes = '0 bytes';
     }
@@ -1043,11 +1068,11 @@ function formatSizeUnits($bytes)
 function formatPriceUnits($price)
 {
     if ($price >= 1000000000) {
-        $price = number_format($price / 1000000000, 2) . ' میلیارد';
+        $price = number_format($price / 1000000000, 2).' میلیارد';
     } elseif ($price >= 1000000) {
-        $price = number_format($price / 1000000, 2) . ' میلیون';
+        $price = number_format($price / 1000000, 2).' میلیون';
     } elseif ($price >= 1000) {
-        $price = number_format($price / 1000, 2) . ' هزار';
+        $price = number_format($price / 1000, 2).' هزار';
     } else {
         $price = round($price, 2);
     }
@@ -1061,6 +1086,7 @@ function convertPersianToEnglish($string)
     $english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
     $output = str_replace($persian, $english, $string);
+
     return $output;
 }
 
@@ -1074,10 +1100,10 @@ function get_current_url($lang)
     $locale = request()->segment(1);
     $current_url = request()->url();
 
-    if (!$locale || !array_key_exists($locale, get_langs())) {
+    if (! $locale || ! array_key_exists($locale, get_langs())) {
         $index = url('/');
 
-        $url = str_replace_first($index, $index . '/' . $lang, $current_url);
+        $url = str_replace_first($index, $index.'/'.$lang, $current_url);
     } else {
         $url = str_replace_first($locale, $lang, $current_url);
     }
@@ -1105,7 +1131,7 @@ function locale_date($date)
 
 function str_replace_first($from, $to, $content)
 {
-    $from = '/' . preg_quote($from, '/') . '/';
+    $from = '/'.preg_quote($from, '/').'/';
 
     return preg_replace($from, $to, $content, 1);
 }
@@ -1119,7 +1145,7 @@ function aparat_iframe($string)
         return '';
     }
 
-    return '<div class="h_iframe-aparat_embed_frame"><span style="display: block;padding-top: 57%">.</span><iframe data-src="https://www.aparat.com/video/video/embed/videohash/' . $matches[1] . '/vt/frame" allowFullScreen="true" webkitallowfullscreen="true" mozallowfullscreen="true"></iframe></div>';
+    return '<div class="h_iframe-aparat_embed_frame"><span style="display: block;padding-top: 57%">.</span><iframe data-src="https://www.aparat.com/video/video/embed/videohash/'.$matches[1].'/vt/frame" allowFullScreen="true" webkitallowfullscreen="true" mozallowfullscreen="true"></iframe></div>';
 }
 
 function module_asset(string $module, string $path): string
@@ -1128,35 +1154,36 @@ function module_asset(string $module, string $path): string
     $path = ltrim($path, '/');
 
     // مسیر صحیح برای فایل‌های assets
-    return asset('modules/' . $moduleLower . '/' . $path);
+    return asset('modules/'.$moduleLower.'/'.$path);
 }
 function theme_asset($path)
 {
-    return asset(config('front.asset_path') . $path);
+    return asset(config('front.asset_path').$path);
 }
 
 function theme_path($path)
 {
-    return base_path(config('front.theme_path') . $path);
+    return base_path(config('front.theme_path').$path);
 }
 
 function prepareNumber($num)
 {
-    if (gettype($num) == "integer" || gettype($num) == "double") {
+    if (gettype($num) == 'integer' || gettype($num) == 'double') {
         $num = (string) $num;
     }
     $length = strlen($num) % 3;
     if ($length == 1) {
-        $num = "00" . $num;
-    } else if ($length == 2) {
-        $num = "0" . $num;
+        $num = '00'.$num;
+    } elseif ($length == 2) {
+        $num = '0'.$num;
     }
+
     return str_split($num, 3);
 }
 function threeNumbersToLetter($num, $words, $splitter)
 {
     if ((int) preg_replace('/\D/', '', $num) == 0) {
-        return "";
+        return '';
     }
     $parsedInt = (int) preg_replace('/\D/', '', $num);
     if ($parsedInt < 10) {
@@ -1169,19 +1196,20 @@ function threeNumbersToLetter($num, $words, $splitter)
         $one = $parsedInt % 10;
         $ten = ($parsedInt - $one) / 10;
         if ($one > 0) {
-            return $words[2][$ten] . $splitter . $words[0][$one];
+            return $words[2][$ten].$splitter.$words[0][$one];
         }
+
         return $words[2][$ten];
     }
-    $one        = $parsedInt % 10;
-    $hundreds   = ($parsedInt - $parsedInt % 100) / 100;
-    $ten        = ($parsedInt - (($hundreds * 100) + $one)) / 10;
-    $out        = [$words[3][$hundreds]];
+    $one = $parsedInt % 10;
+    $hundreds = ($parsedInt - $parsedInt % 100) / 100;
+    $ten = ($parsedInt - (($hundreds * 100) + $one)) / 10;
+    $out = [$words[3][$hundreds]];
     $secondPart = (($ten * 10) + $one);
     if ($secondPart > 0) {
         if ($secondPart < 10) {
             array_push($out, $words[0][$secondPart]);
-        } else if ($secondPart <= 20) {
+        } elseif ($secondPart <= 20) {
             array_push($out, $words[1][$secondPart - 10]);
         } else {
             array_push($out, $words[2][$ten]);
@@ -1190,107 +1218,108 @@ function threeNumbersToLetter($num, $words, $splitter)
             }
         }
     }
-    return join($splitter, $out);
+
+    return implode($splitter, $out);
 }
 
 function convert_number($number)
 {
     $words = [
         [
-            "",
-            "یک",
-            "دو",
-            "سه",
-            "چهار",
-            "پنج",
-            "شش",
-            "هفت",
-            "هشت",
-            "نه"
+            '',
+            'یک',
+            'دو',
+            'سه',
+            'چهار',
+            'پنج',
+            'شش',
+            'هفت',
+            'هشت',
+            'نه',
         ],
         [
-            "ده",
-            "یازده",
-            "دوازده",
-            "سیزده",
-            "چهارده",
-            "پانزده",
-            "شانزده",
-            "هفده",
-            "هجده",
-            "نوزده",
-            "بیست"
-        ],
-        [
-            "",
-            "",
-            "بیست",
-            "سی",
-            "چهل",
-            "پنجاه",
-            "شصت",
-            "هفتاد",
-            "هشتاد",
-            "نود"
-        ],
-        [
-            "",
-            "یکصد",
-            "دویست",
-            "سیصد",
-            "چهارصد",
-            "پانصد",
-            "ششصد",
-            "هفتصد",
-            "هشتصد",
-            "نهصد"
+            'ده',
+            'یازده',
+            'دوازده',
+            'سیزده',
+            'چهارده',
+            'پانزده',
+            'شانزده',
+            'هفده',
+            'هجده',
+            'نوزده',
+            'بیست',
         ],
         [
             '',
-            " هزار ",
-            " میلیون ",
-            " میلیارد ",
-            " بیلیون ",
-            " بیلیارد ",
-            " تریلیون ",
-            " تریلیارد ",
-            " کوآدریلیون ",
-            " کادریلیارد ",
-            " کوینتیلیون ",
-            " کوانتینیارد ",
-            " سکستیلیون ",
-            " سکستیلیارد ",
-            " سپتیلیون ",
-            " سپتیلیارد ",
-            " اکتیلیون ",
-            " اکتیلیارد ",
-            " نانیلیون ",
-            " نانیلیارد ",
-            " دسیلیون "
-        ]
+            '',
+            'بیست',
+            'سی',
+            'چهل',
+            'پنجاه',
+            'شصت',
+            'هفتاد',
+            'هشتاد',
+            'نود',
+        ],
+        [
+            '',
+            'یکصد',
+            'دویست',
+            'سیصد',
+            'چهارصد',
+            'پانصد',
+            'ششصد',
+            'هفتصد',
+            'هشتصد',
+            'نهصد',
+        ],
+        [
+            '',
+            ' هزار ',
+            ' میلیون ',
+            ' میلیارد ',
+            ' بیلیون ',
+            ' بیلیارد ',
+            ' تریلیون ',
+            ' تریلیارد ',
+            ' کوآدریلیون ',
+            ' کادریلیارد ',
+            ' کوینتیلیون ',
+            ' کوانتینیارد ',
+            ' سکستیلیون ',
+            ' سکستیلیارد ',
+            ' سپتیلیون ',
+            ' سپتیلیارد ',
+            ' اکتیلیون ',
+            ' اکتیلیارد ',
+            ' نانیلیون ',
+            ' نانیلیارد ',
+            ' دسیلیون ',
+        ],
     ];
-    $splitter = " و ";
+    $splitter = ' و ';
 
-
-    $zero = "صفر";
+    $zero = 'صفر';
     if ($number == 0) {
         return $zero;
     }
     if (strlen($number) > 66) {
-        return "خارج از محدوده";
+        return 'خارج از محدوده';
     }
-    //Split to sections
+    // Split to sections
     $splittedNumber = prepareNumber($number);
     $result = [];
     $splitLength = count($splittedNumber);
     for ($i = 0; $i < $splitLength; $i++) {
         $sectionTitle = $words[4][$splitLength - ($i + 1)];
-        $converted    = threeNumbersToLetter($splittedNumber[$i], $words, $splitter);
-        if ($converted !== "") {
-            array_push($result, $converted . $sectionTitle);
+        $converted = threeNumbersToLetter($splittedNumber[$i], $words, $splitter);
+        if ($converted !== '') {
+            array_push($result, $converted.$sectionTitle);
         }
     }
-    return join($splitter, $result);
+
+    return implode($splitter, $result);
 }
 
 function run_theme_config()
@@ -1302,13 +1331,13 @@ function run_theme_config()
 
 function barcode($str)
 {
-    $barcode = new DNS1D();
+    $barcode = new DNS1D;
 
-    if (!is_dir(public_path() . '/uploads/barcodes')) {
-        File::makeDirectory(public_path() . '/uploads/barcodes/');
+    if (! is_dir(public_path().'/uploads/barcodes')) {
+        File::makeDirectory(public_path().'/uploads/barcodes/');
     }
 
-    return asset($barcode->getBarcodePNGPath($str, "C39E", 3, 33, array(69, 78, 89)));
+    return asset($barcode->getBarcodePNGPath($str, 'C39E', 3, 33, [69, 78, 89]));
 }
 
 function notification_link($notification)
@@ -1346,8 +1375,6 @@ function notification_link($notification)
             return route('admin.tickets.show', ['ticket' => Ticket::find($notification->data['ticket_id'])]);
         }
     }
-
-
 
     if ($notification->type == 'CommentPostCreated') {
         return route('admin.comments.posts');
@@ -1401,9 +1428,10 @@ function get_slider_search()
 function seller()
 {
     $seller = Seller::where('id', Auth::guard('seller')->id())->first();
-    if (!$seller) {
+    if (! $seller) {
         return null;
     }
+
     return $seller;
 }
 
@@ -1411,27 +1439,30 @@ function sellerID()
 {
     $seller = Seller::where('id', Auth::guard('seller')->id())->first();
 
-    if (!$seller) {
+    if (! $seller) {
         return null;
     }
+
     return $seller->id;
 }
 
 function seller_info()
 {
     $seller = SellerInfo::where('seller_id', Auth::guard('seller')->id())->first();
-    if (!$seller) {
+    if (! $seller) {
         return null;
     }
+
     return $seller;
 }
 
 function get_seller($id)
 {
     $seller = Seller::where('id', $id)->first();
-    if (!$seller) {
+    if (! $seller) {
         return null;
     }
+
     return $seller;
 }
 function get_seller_info($id)
@@ -1441,6 +1472,7 @@ function get_seller_info($id)
     if ($seller) {
         return $seller;
     }
+
     return null;
 }
 
@@ -1450,20 +1482,22 @@ function checkAiToken($token, $created_by = null)
         'token_key' => $token,
         'created_by' => $created_by,
     ]);
+
     return json_decode($response);
 }
 function multi_language()
 {
-    $languages = array("persian", "English (US)", "English (UK)", "French", "Spanish", "German", "Italian", "Dutch", "Portuguese", "Portuguese (BR)", "Swedish", "Norwegian", "Danish", "Romanian", "Czech", "Slovak", "Slovenian", "Hungarian", "Croatian", "Polish", "Greek", "Turkish", "Russian", "Hindi", "Thai", "Japanese", "Chinese (Simplified)", "Korean");
+    $languages = ['persian', 'English (US)', 'English (UK)', 'French', 'Spanish', 'German', 'Italian', 'Dutch', 'Portuguese', 'Portuguese (BR)', 'Swedish', 'Norwegian', 'Danish', 'Romanian', 'Czech', 'Slovak', 'Slovenian', 'Hungarian', 'Croatian', 'Polish', 'Greek', 'Turkish', 'Russian', 'Hindi', 'Thai', 'Japanese', 'Chinese (Simplified)', 'Korean'];
+
     return $languages;
 }
 
 function run_fix_helper()
 {
-    $brand    = Brand::where('slug', 'گیرا-GIRA')->first();
+    $brand = Brand::where('slug', 'گیرا-GIRA')->first();
     $products = Product::where('brand_id', $brand->id)->get();
 
-    $tags = addTags(",ای قفل ,آی قفل,اقای قفل,آقای قفل,قفل من,Hd rtg,Hrhd rtg,Rtg lk,Ghoflman,Ay ghofl,Aghaye ghofl,خرید از ای قفل,خرید از اقای قفل,خرید از آی قفل,خرید از آقای قفل,خرید از قفل من,خرید قفل از ای قفل,خرید قفل از اقای قفل,خرید قفل از آی قفل,خرید قفل از آقای قفل,خرید قفل از قفل من,خرید قفل کتابی گیرا از ای قفل,خرید قفل کتابی گیرا از اقای قفل,خرید قفل کتابی گیرا از آی قفل,خرید قفل کتابی گیرا از آقای قفل,خرید قفل کتابی گیرا از قفل من,خرید قفل دیسک گیرا از ای قفل,خرید قفل دیسک گیرا از اقای قفل,خرید قفل دیسک گیرا از آی قفل,خرید قفل دیسک گیرا از آقای قفل,خرید قفل دیسک گیرا از قفل من,خرید قفل موتورسیکلت گیرا از ای قفل,خرید قفل موتورسیکلت گیرا از اقای قفل,خرید قفل موتورسیکلت گیرا از آی قفل,خرید قفل موتورسیکلت گیرا از آقای قفل,خرید قفل موتورسیکلت گیرا از قفل من,خرید قفل اویز گیرا از ای قفل,خرید قفل اویز گیرا از اقای قفل,خرید قفل اویز گیرا از آی قفل,خرید قفل اویز گیرا از آقای قفل,خرید قفل اویز گیرا از قفل من,خرید قفل آویز گیرا از ای قفل,خرید قفل آویز گیرا از اقای قفل,خرید قفل آویز گیرا از آی قفل,خرید قفل آویز گیرا از آقای قفل,خرید قفل آویز گیرا از قفل من,خرید قفل گیرا از ای قفل,خرید قفل گیرا از اقای قفل,خرید قفل گیرا از آی قفل,خرید قفل گیرا از آقای قفل,خرید قفل گیرا از قفل من,قفل گیرا,خرید قفل گیرا,قفل کتابی گیرا,خرید قفل کتابی گیرا,قفل آویز گیرا,خرید قفل آویز گیرا,قفل دیسک گیرا,خرید قفل دیسک گیرا,قفل موتورسیکلت گیرا,خرید قفل موتورسیکلت گیرا,قفل اویز گیرا,خرید قفل اویز گیرا,خرید قفل عصایی گیرا از ای قفل,خرید قفل عصایی گیرا از اقای قفل,خرید قفل عصایی گیرا از آی قفل,خرید قفل عصایی گیرا از آقای قفل,خرید قفل عصایی گیرا از قفل من,قفل کتابی,قفل دیسک,قفل اویز,قفل آویز,قفل موتورسیکلت,قفل عصایی,خرید قفل آپارتمانی گیرا از ای قفل,خرید قفل آپارتمانی گیرا از اقای قفل,خرید قفل آپارتمانی گیرا از آی قفل,خرید قفل آپارتمانی گیرا از آقای قفل,خرید قفل آپارتمانی گیرا از قفل من,Rtg,Rtg uwhdd,RTG ;JHFD,RTG NDS;,RTG UWHDD,خرید قفل اپارتمانی گیرا از ای قفل,خرید قفل اپارتمانی گیرا از اقای قفل,خرید قفل اپارتمانی گیرا از آی قفل,خرید قفل اپارتمانی گیرا از آقای قفل,خرید قفل اپارتمانی گیرا از قفل من");
+    $tags = addTags(',ای قفل ,آی قفل,اقای قفل,آقای قفل,قفل من,Hd rtg,Hrhd rtg,Rtg lk,Ghoflman,Ay ghofl,Aghaye ghofl,خرید از ای قفل,خرید از اقای قفل,خرید از آی قفل,خرید از آقای قفل,خرید از قفل من,خرید قفل از ای قفل,خرید قفل از اقای قفل,خرید قفل از آی قفل,خرید قفل از آقای قفل,خرید قفل از قفل من,خرید قفل کتابی گیرا از ای قفل,خرید قفل کتابی گیرا از اقای قفل,خرید قفل کتابی گیرا از آی قفل,خرید قفل کتابی گیرا از آقای قفل,خرید قفل کتابی گیرا از قفل من,خرید قفل دیسک گیرا از ای قفل,خرید قفل دیسک گیرا از اقای قفل,خرید قفل دیسک گیرا از آی قفل,خرید قفل دیسک گیرا از آقای قفل,خرید قفل دیسک گیرا از قفل من,خرید قفل موتورسیکلت گیرا از ای قفل,خرید قفل موتورسیکلت گیرا از اقای قفل,خرید قفل موتورسیکلت گیرا از آی قفل,خرید قفل موتورسیکلت گیرا از آقای قفل,خرید قفل موتورسیکلت گیرا از قفل من,خرید قفل اویز گیرا از ای قفل,خرید قفل اویز گیرا از اقای قفل,خرید قفل اویز گیرا از آی قفل,خرید قفل اویز گیرا از آقای قفل,خرید قفل اویز گیرا از قفل من,خرید قفل آویز گیرا از ای قفل,خرید قفل آویز گیرا از اقای قفل,خرید قفل آویز گیرا از آی قفل,خرید قفل آویز گیرا از آقای قفل,خرید قفل آویز گیرا از قفل من,خرید قفل گیرا از ای قفل,خرید قفل گیرا از اقای قفل,خرید قفل گیرا از آی قفل,خرید قفل گیرا از آقای قفل,خرید قفل گیرا از قفل من,قفل گیرا,خرید قفل گیرا,قفل کتابی گیرا,خرید قفل کتابی گیرا,قفل آویز گیرا,خرید قفل آویز گیرا,قفل دیسک گیرا,خرید قفل دیسک گیرا,قفل موتورسیکلت گیرا,خرید قفل موتورسیکلت گیرا,قفل اویز گیرا,خرید قفل اویز گیرا,خرید قفل عصایی گیرا از ای قفل,خرید قفل عصایی گیرا از اقای قفل,خرید قفل عصایی گیرا از آی قفل,خرید قفل عصایی گیرا از آقای قفل,خرید قفل عصایی گیرا از قفل من,قفل کتابی,قفل دیسک,قفل اویز,قفل آویز,قفل موتورسیکلت,قفل عصایی,خرید قفل آپارتمانی گیرا از ای قفل,خرید قفل آپارتمانی گیرا از اقای قفل,خرید قفل آپارتمانی گیرا از آی قفل,خرید قفل آپارتمانی گیرا از آقای قفل,خرید قفل آپارتمانی گیرا از قفل من,Rtg,Rtg uwhdd,RTG ;JHFD,RTG NDS;,RTG UWHDD,خرید قفل اپارتمانی گیرا از ای قفل,خرید قفل اپارتمانی گیرا از اقای قفل,خرید قفل اپارتمانی گیرا از آی قفل,خرید قفل اپارتمانی گیرا از آقای قفل,خرید قفل اپارتمانی گیرا از قفل من');
 
     foreach ($products as $product) {
         $product_tags = $product->tags()->pluck('tags.id')->toArray();
@@ -1490,19 +1524,17 @@ function saveFieldValues(array $filds, string $belongsTo, int $relatedId)
         }
     }
 
-
     foreach ($filds as $fieldId => $value) {
         FieldValue::updateOrCreate(
             [
                 'field_id' => $fieldId,
                 'belongs_to' => $belongsTo,
-                'related_id' => $relatedId
+                'related_id' => $relatedId,
             ],
             ['value' => $value]
         );
     }
 }
-
 
 function uploadOptimizedImage($file, $storagePath, $postId = null, $options = [])
 {
@@ -1516,10 +1548,10 @@ function uploadOptimizedImage($file, $storagePath, $postId = null, $options = []
         'format' => option('changePhotoFormat', 'webp'), // فرمت: webp, jpg, png
         'watermark' => option('watermarkStatus', false),
         'watermarkPath' => option('watermarkImage'),
-        'watermarkImagePosition' => option('watermarkImagePosition','bottom-right'),
+        'watermarkImagePosition' => option('watermarkImagePosition', 'bottom-right'),
         'size' => null, // در صورت نیاز، محدودیت اندازه
         'path' => "uploads/$storagePath/", // مسیر پیش‌فرض ذخیره
-        'field' => 'image' // نام فیلد پیش‌فرض
+        'field' => 'image', // نام فیلد پیش‌فرض
     ];
 
     // ترکیب مقدارهای پیش‌فرض با مقدارهای ورودی
@@ -1528,20 +1560,34 @@ function uploadOptimizedImage($file, $storagePath, $postId = null, $options = []
     if ($postId) {
         $model = null;
         switch ($storagePath) {
-            case 'posts': $model = Post::find($postId); break;
-            case 'products': $model = Product::find($postId); break;
-            case 'categories': $model = Category::find($postId); break;
-            case 'users': $model = User::find($postId); break;
-            case 'users/avatars': $model = User::find($postId); break;
-            case 'brands': $model = Brand::find($postId); break;
-            case 'carriers': $model = Carrier::find($postId); break;
-            case 'admins': $model = Admin::find($postId); break;
-            case 'stories': $model = Story::find($postId); break;
-            case 'sellers': $model = Seller::find($postId); break;
-            case 'sellers/logo': $model = Seller::find($postId); break;
-            case 'sellers/documents': $model = Seller::find($postId); break;
-            case 'sellerInfo': $model = SellerInfo::where('seller_id',$postId)->first(); break;
-            case 'options': $model = Option::where('option_name',$postId)->first(); break;
+            case 'posts': $model = Post::find($postId);
+                break;
+            case 'products': $model = Product::find($postId);
+                break;
+            case 'categories': $model = Category::find($postId);
+                break;
+            case 'users': $model = User::find($postId);
+                break;
+            case 'users/avatars': $model = User::find($postId);
+                break;
+            case 'brands': $model = Brand::find($postId);
+                break;
+            case 'carriers': $model = Carrier::find($postId);
+                break;
+            case 'admins': $model = Admin::find($postId);
+                break;
+            case 'stories': $model = Story::find($postId);
+                break;
+            case 'sellers': $model = Seller::find($postId);
+                break;
+            case 'sellers/logo': $model = Seller::find($postId);
+                break;
+            case 'sellers/documents': $model = Seller::find($postId);
+                break;
+            case 'sellerInfo': $model = SellerInfo::where('seller_id', $postId)->first();
+                break;
+            case 'options': $model = Option::where('option_name', $postId)->first();
+                break;
         }
         // حذف تصویر قبلی در صورتی که مدل موجود باشد و تصویر داشته باشد
         if ($model && $model->{$options['field']}) {
@@ -1554,14 +1600,13 @@ function uploadOptimizedImage($file, $storagePath, $postId = null, $options = []
 
     // ایجاد نام منحصربه‌فرد برای فایل
     $modified_storagePath = str_replace('/', '-', $storagePath);
-    $fileName = $modified_storagePath . '-' . uniqid() . '.' . $options['format'];
-    $filePath = $options['path'] . $fileName; // مسیر ذخیره در `public`
-
+    $fileName = $modified_storagePath.'-'.uniqid().'.'.$options['format'];
+    $filePath = $options['path'].$fileName; // مسیر ذخیره در `public`
 
     // خواندن تصویر
     $image = $manager->read($file->getContent());
 
-    if (!empty($options['size'])) {
+    if (! empty($options['size'])) {
         if (is_array($options['size']) && count($options['size']) === 2) {
             // اگر مقدار size آرایه‌ای باشد [عرض, ارتفاع]
             $image->scale(width: $options['size'][0], height: $options['size'][1]);
@@ -1580,14 +1625,15 @@ function uploadOptimizedImage($file, $storagePath, $postId = null, $options = []
 
     // **انتخاب Encoder بر اساس فرمت انتخابی**
     switch ($options['format']) {
-        case 'webp':  $encodedImage = $image->encode(new WebpEncoder(quality: $options['quality'])); break;
+        case 'webp':  $encodedImage = $image->encode(new WebpEncoder(quality: $options['quality']));
+            break;
         case 'jpg':
-        case 'jpeg':  $encodedImage = $image->encode(new JpegEncoder(quality: $options['quality'])); break;
-        case 'png':   $encodedImage = $image->encode(new PngEncoder()); break;
+        case 'jpeg':  $encodedImage = $image->encode(new JpegEncoder(quality: $options['quality']));
+            break;
+        case 'png':   $encodedImage = $image->encode(new PngEncoder);
+            break;
         default:      $encodedImage = $image->encode(new AutoEncoder(quality: $options['quality']));
     }
-
-
 
     // ذخیره تصویر در مسیر تعیین‌شده
     Storage::disk('public')->put($filePath, (string) $encodedImage);
@@ -1607,7 +1653,7 @@ function uploadOptimizedImageFromPath($imagePath, $storagePath, $postId = null, 
     $imageContent = file_get_contents($imagePath);
 
     // ایجاد یک کلاس موقت که شبیه UploadedFile رفتار کند
-    $tempFile = new \Illuminate\Http\UploadedFile(
+    $tempFile = new UploadedFile(
         $imagePath,
         basename($imagePath),
         mime_content_type($imagePath),
@@ -1619,22 +1665,21 @@ function uploadOptimizedImageFromPath($imagePath, $storagePath, $postId = null, 
     return uploadOptimizedImage($tempFile, $storagePath, $postId, $options);
 }
 
-if (!function_exists('parse_shortcodes')) {
+if (! function_exists('parse_shortcodes')) {
     function parse_shortcodes($content)
     {
-        return App\Helpers\ShortcodeHelper::parse($content);
+        return ShortcodeHelper::parse($content);
     }
 }
 
-
-function currencyTitle(){
-
+function currencyTitle()
+{
 
     $option = Option::where('option_name', 'default_currency_id')->first();
 
     $currency_id = null;
     if ($option) {
-        $currency = \App\Models\Currency::detectLang()->find($option->option_value);
+        $currency = Currency::detectLang()->find($option->option_value);
         if ($currency) {
             return $currency->title;
         }
@@ -1642,57 +1687,53 @@ function currencyTitle(){
         return 'ریال';
     }
 
+    $value = Cache::rememberForever('options.default_currency_id', function () {
+        $currency = Currency::detectLang()->find(option('default_currency_id'));
 
-     $value = Cache::rememberForever('options.default_currency_id' , function (){
-         $currency=\App\Models\Currency::detectLang()->find(option('default_currency_id'));
+        if ($currency) {
+            return $currency->title;
+        }
 
-         if ($currency){
-             return $currency->title;
-         }
+        return 'تومان';
+    });
 
-         return 'تومان';
-     });
+    if (is_null($value) || $value === false) {
+        return 'تومان';
+    }
 
-
-     if (is_null($value) || $value === false) {
-         return 'تومان';
-     }
-
-     return $value;
+    return $value;
 }
 
-if (!function_exists('module_is_active')) {
+if (! function_exists('module_is_active')) {
     function module_is_active(string $moduleName): bool
     {
         try {
             return app('modules')->isEnabled($moduleName);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
     }
 }
-if (!function_exists('module_is_active')) {
+if (! function_exists('module_is_active')) {
     function module_is_active(string $moduleName): bool
     {
         try {
             return app('modules')->isEnabled($moduleName);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return false;
         }
     }
 }
 
-if (!function_exists('module_is_ready')) {
+if (! function_exists('module_is_ready')) {
     /**
      * چک می‌کند ماژول فعال است و (در صورت مشخص کردن) جداول حیاتی آن وجود دارند.
      *
-     * @param string $moduleName
-     * @param array  $requiredTables  اگر خالی باشد، فقط فعال بودن ماژول چک می‌شود.
-     * @return bool
+     * @param  array  $requiredTables  اگر خالی باشد، فقط فعال بودن ماژول چک می‌شود.
      */
     function module_is_ready(string $moduleName, array $requiredTables = []): bool
     {
-        if (!module_is_active($moduleName)) {
+        if (! module_is_active($moduleName)) {
             return false;
         }
 
@@ -1703,18 +1744,19 @@ if (!function_exists('module_is_ready')) {
 
         try {
             foreach ($requiredTables as $table) {
-                if (!\Illuminate\Support\Facades\Schema::hasTable($table)) {
+                if (! Schema::hasTable($table)) {
                     return false;
                 }
             }
+
             return true;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return false;
         }
     }
 }
 
-if (!function_exists('ap_clean_legacy_class')) {
+if (! function_exists('ap_clean_legacy_class')) {
     /**
      * فاز ۱۶ — حذف کلاس‌های ستونِ بوت‌استرپ (col، col-6، col-md-3، col-xl-4 و…)
      * از کلاس‌های دریافتی از کانفیگ قالب/ماژول‌ها.
@@ -1726,7 +1768,7 @@ if (!function_exists('ap_clean_legacy_class')) {
      */
     function ap_clean_legacy_class(?string $class): string
     {
-        if (!$class) {
+        if (! $class) {
             return '';
         }
 

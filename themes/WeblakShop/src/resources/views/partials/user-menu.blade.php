@@ -11,7 +11,7 @@
         <div class="dropdown-menu dropdown-menu-sm dropdown-menu-left">
 
             @if (auth('web')->user()->level == 'admin' || auth('web')->user()->level == 'creator')
-                <a class="dropdown-item" href="{{ route('admin.dashboard') }}">
+                <a class="dropdown-item" href="{{ route('np.dashboard') }}">
                     پنل مدیریت
                 </a>
             @endif

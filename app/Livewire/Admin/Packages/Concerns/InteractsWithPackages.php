@@ -3,9 +3,12 @@
 namespace App\Livewire\Admin\Packages\Concerns;
 
 use App\Jobs\InstallPackageJob;
+use App\Livewire\Admin\Packages\PackageIndex;
 use App\Models\InstalledModule;
+use App\Models\PackageCache;
 use App\Models\PackagePurchase;
 use App\Services\PackageApiService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use RuntimeException;
@@ -62,31 +65,35 @@ trait InteractsWithPackages
             if ($selectedPlan) {
                 $isFree = ($selectedPlan['price'] == 0);
             } else {
-                // اگر پلن پیدا نشد، از مقدار is_free پکیج استفاده کن (پورت قدیمی)
-                $isFree = (bool) ($package['is_free'] ?? false);
+                // اگر پلن پیدا نشد، از مقدار is_free پکیج استفاده کن (پورت قدیمی — نرمال‌شده برای هر شکل داده)
+                $isFree = PackageIndex::normalizeIsFree($package['is_free'] ?? null);
             }
 
             // ★ نصب با اشتراک فعال (بدون پرداخت)
             if ($useSubscription) {
                 $this->installWithSubscription($slug);
+
                 return;
             }
 
             // اگر قبلاً نصب شده، جلوگیری شود
             if (InstalledModule::where('slug', $slug)->exists()) {
                 $this->dispatch('toast', message: 'این پکیج قبلاً نصب شده است.', type: 'error');
+
                 return;
             }
 
             if ($isFree) {
                 // پکیج رایگان: مستقیم به job
                 $this->dispatchInstall($slug, $version, $pricingPlanId);
+
                 return;
             }
 
             // ★ نصب مجدد با لایسنس قبلی (خریداری‌شده — بدون پرداخت)
             if ($useLicense) {
                 $this->reinstallWithExistingLicense($slug);
+
                 return;
             }
 
@@ -102,20 +109,21 @@ trait InteractsWithPackages
 
             // ذخیره رکورد خرید (پورت قدیمی)
             PackagePurchase::create([
-                'admin_id'       => auth('adminPanel')->id(),
-                'package_slug'   => $slug,
-                'package_name'   => $package['name'] ?? $slug,
-                'version'        => $version,
-                'amount'         => $purchase['amount'] ?? ($package['price'] ?? 0),
-                'gateway'        => $purchase['gateway'] ?? null,
+                'admin_id' => auth('adminPanel')->id(),
+                'package_slug' => $slug,
+                'package_name' => $package['name'] ?? $slug,
+                'version' => $version,
+                'amount' => $purchase['amount'] ?? ($package['price'] ?? 0),
+                'gateway' => $purchase['gateway'] ?? null,
                 'transaction_id' => $purchase['transaction_id'] ?? null,
-                'payment_url'    => $purchase['payment_url'] ?? null,
-                'status'         => PackagePurchase::STATUS_PENDING,
-                'meta'           => $purchase,
+                'payment_url' => $purchase['payment_url'] ?? null,
+                'status' => PackagePurchase::STATUS_PENDING,
+                'meta' => $purchase,
             ]);
 
-            if (!empty($purchase['payment_url'])) {
+            if (! empty($purchase['payment_url'])) {
                 $this->redirect($purchase['payment_url']);
+
                 return;
             }
 
@@ -146,23 +154,26 @@ trait InteractsWithPackages
             if ($subscription && ($subscription['is_free_with_subscription'] ?? false)) {
                 $expiresAt = $subscription['subscription_expires_at'] ?? null;
                 $active = true;
-                if (!empty($expiresAt)) {
-                    try { $active = \Carbon\Carbon::parse($expiresAt)->isFuture(); }
-                    catch (\Throwable $e) { $active = false; }
+                if (! empty($expiresAt)) {
+                    try {
+                        $active = Carbon::parse($expiresAt)->isFuture();
+                    } catch (Throwable $e) {
+                        $active = false;
+                    }
                 }
 
                 if ($active) {
                     return [
-                        'mode'           => 'subscription',
-                        'plan_name'      => $subscription['plan_name'] ?? null,
-                        'expires_at'     => $expiresAt,
+                        'mode' => 'subscription',
+                        'plan_name' => $subscription['plan_name'] ?? null,
+                        'expires_at' => $expiresAt,
                         'expires_at_jalali' => $this->jexpiry($expiresAt),
                         'days_remaining' => $subscription['days_remaining'] ?? null,
                     ];
                 }
 
                 return [
-                    'mode'    => 'paid',
+                    'mode' => 'paid',
                     'warning' => 'اشتراک شما منقضی شده است؛ برای نصب، پلن موردنظر را انتخاب کنید.',
                 ];
             }
@@ -178,7 +189,7 @@ trait InteractsWithPackages
             ->orderByDesc('paid_at')
             ->first();
 
-        if (!$purchase) {
+        if (! $purchase) {
             return ['mode' => 'paid'];
         }
 
@@ -186,14 +197,14 @@ trait InteractsWithPackages
             $verify = $this->api()->verifyLicense($slug, $purchase->license_key);
         } catch (Throwable $e) {
             return [
-                'mode'    => 'paid',
+                'mode' => 'paid',
                 'warning' => 'بررسی آنلاین لایسنس ناموفق بود. لطفاً مجدد تلاش کنید.',
             ];
         }
 
-        if (!($verify['valid'] ?? false) || ! $this->licenseHasTime($verify['expires_at'] ?? null, $purchase->license_expires_at)) {
+        if (! ($verify['valid'] ?? false) || ! $this->licenseHasTime($verify['expires_at'] ?? null, $purchase->license_expires_at)) {
             return [
-                'mode'    => 'paid',
+                'mode' => 'paid',
                 'warning' => $verify['message'] ?? 'لایسنس قبلی شما منقضی شده است. برای نصب، یکی از پلن‌ها را انتخاب کنید.',
             ];
         }
@@ -202,21 +213,23 @@ trait InteractsWithPackages
         $expiresAt = $verify['expires_at'] ?? $purchase->license_expires_at;
 
         return [
-            'mode'           => 'license',
-            'expires_at'     => $expiresAt,
+            'mode' => 'license',
+            'expires_at' => $expiresAt,
             'expires_at_jalali' => $this->jexpiry($expiresAt),
-            'days_remaining' => $expiresAt ? (int) round(now()->diffInDays(\Carbon\Carbon::parse($expiresAt))) : null,
+            'days_remaining' => $expiresAt ? (int) round(now()->diffInDays(Carbon::parse($expiresAt))) : null,
         ];
     }
 
     /** تاریخ جلالی برای نمایش در مودال (null امن) */
     protected function jexpiry(?string $date): ?string
     {
-        if (empty($date)) return null;
+        if (empty($date)) {
+            return null;
+        }
 
         try {
-            return jdate(\Carbon\Carbon::parse($date))->format('Y/m/d');
-        } catch (\Throwable $e) {
+            return jdate(Carbon::parse($date))->format('Y/m/d');
+        } catch (Throwable $e) {
             return null;
         }
     }
@@ -232,7 +245,7 @@ trait InteractsWithPackages
             $purchase = $this->api()->createPurchase($slug, $callbackUrl, auth('adminPanel')->id(), $pricingPlanId);
             $licenseKey = $purchase['license_key'] ?? null;
 
-            if (!$licenseKey) {
+            if (! $licenseKey) {
                 $callbackUrl = $this->paymentCallbackUrl();
                 $purchase = $this->api()->createPurchase($slug, $callbackUrl, auth('adminPanel')->id(), $pricingPlanId);
                 $licenseKey = $purchase['license_key'] ?? null;
@@ -249,7 +262,7 @@ trait InteractsWithPackages
              */
             InstalledModule::markPending(
                 $slug,
-                \App\Models\PackageCache::where('slug', $slug)->value('name'),
+                PackageCache::where('slug', $slug)->value('name'),
                 $version,
                 $licenseKey
             );
@@ -278,7 +291,8 @@ trait InteractsWithPackages
             $package = $this->api()->getPackage($slug);
             $package = $package['data'] ?? $package;
         } catch (RuntimeException $e) {
-            $this->dispatch('toast', message: 'بررسی اشتراک ناموفق بود: ' . $e->getMessage(), type: 'error');
+            $this->dispatch('toast', message: 'بررسی اشتراک ناموفق بود: '.$e->getMessage(), type: 'error');
+
             return;
         }
 
@@ -290,13 +304,17 @@ trait InteractsWithPackages
             if (empty($expiresAt)) {
                 $eligible = true; // اشتراک نامحدود
             } else {
-                try { $eligible = \Carbon\Carbon::parse($expiresAt)->isFuture(); }
-                catch (\Throwable $e) { $eligible = false; }
+                try {
+                    $eligible = Carbon::parse($expiresAt)->isFuture();
+                } catch (Throwable $e) {
+                    $eligible = false;
+                }
             }
         }
 
-        if (!$eligible) {
+        if (! $eligible) {
             $this->dispatch('toast', message: 'اشتراک فعال شما این پکیج را پوشش نمی‌دهد یا منقضی شده است. برای نصب، پلن را انتخاب کنید.', type: 'error');
+
             return;
         }
 
@@ -314,13 +332,15 @@ trait InteractsWithPackages
                     null   // pricing_plan_id لازم نیست — مسیر اشتراک قبل از چک پلن اجرا می‌شود
                 );
             } catch (RuntimeException $e) {
-                $this->dispatch('toast', message: 'صدور لایسنس از اشتراک ناموفق بود: ' . $e->getMessage(), type: 'error');
+                $this->dispatch('toast', message: 'صدور لایسنس از اشتراک ناموفق بود: '.$e->getMessage(), type: 'error');
+
                 return;
             }
 
             // اطمینان: پاسخ واقعاً از مسیر اشتراک باشد، نه شروع یک خرید پولی
             if (empty($purchase['via_subscription']) || empty($purchase['license_key'])) {
                 $this->dispatch('toast', message: 'دسترسی به این پکیج از طریق اشتراک ممکن نشد. لطفاً پلن موردنظر را خریداری کنید.', type: 'error');
+
                 return;
             }
 
@@ -343,8 +363,8 @@ trait InteractsWithPackages
         );
 
         Log::info('Package install via subscription', [
-            'slug'        => $slug,
-            'had_license' => !empty($subscription['license_key']),
+            'slug' => $slug,
+            'had_license' => ! empty($subscription['license_key']),
         ]);
 
         $this->dispatch('toast', message: 'نصب پکیج آغاز شد — تا پایان، وضعیت «در حال نصب» نمایش داده می‌شود.', type: 'success');
@@ -363,20 +383,23 @@ trait InteractsWithPackages
             ->orderByDesc('paid_at')
             ->first();
 
-        if (!$purchase) {
+        if (! $purchase) {
             $this->dispatch('toast', message: 'خرید معتبری برای این پکیج یافت نشد.', type: 'error');
+
             return;
         }
 
         try {
             $verify = $this->api()->verifyLicense($slug, $purchase->license_key);
         } catch (Throwable $e) {
-            $this->dispatch('toast', message: 'بررسی لایسنس ناموفق بود: ' . $e->getMessage(), type: 'error');
+            $this->dispatch('toast', message: 'بررسی لایسنس ناموفق بود: '.$e->getMessage(), type: 'error');
+
             return;
         }
 
-        if (!($verify['valid'] ?? false)) {
+        if (! ($verify['valid'] ?? false)) {
             $this->dispatch('toast', message: $verify['message'] ?? 'لایسنس شما منقضی شده است. برای ادامه، یکی از پلن‌ها را انتخاب کنید.', type: 'error');
+
             return;
         }
 
@@ -391,7 +414,7 @@ trait InteractsWithPackages
         );
 
         Log::info('Package reinstall with existing license', [
-            'slug'        => $slug,
+            'slug' => $slug,
             'purchase_id' => $purchase->id,
         ]);
 
@@ -432,8 +455,8 @@ trait InteractsWithPackages
         }
 
         try {
-            return \Carbon\Carbon::parse($date)->isFuture();
-        } catch (\Throwable $e) {
+            return Carbon::parse($date)->isFuture();
+        } catch (Throwable $e) {
             return false;
         }
     }
