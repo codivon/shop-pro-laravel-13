@@ -5,6 +5,18 @@
 
 @import "tailwindcss";
 
+/* فاز ۳۵ — منابع اسکن تیلویند
+   --------------------------------------------------------------------------
+   Tailwind 4 به‌صورت پیش‌فرض کل پروژه را اسکن می‌کند؛ ویوهای قدیمی (back/)،
+   پکیج‌ها (Modules/)، دارایی‌های پنل قدیمی (public/back/) و قالب‌های فرانت
+   (themes/) پر از کلاس‌های بوت‌استرپی‌اند (collapse، container، col-* و …)
+   که نباید به‌عنوان utility در CSS پنل کامپایل شوند. پنل فقط از
+   resources/admin-panel و app/Livewire و ویوهای admin-panel کلاس استفاده می‌کند. */
+@source not "../../views/back";
+@source not "../../../Modules";
+@source not "../../../public/back";
+@source not "../../../themes";
+
 /* حالت تاریک کلاس‌محور (روی <html>) */
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -128,6 +140,16 @@ body {
 .dark body {
     @apply bg-night text-night-ink;
 }
+
+/* فاز ۳۵ — تداخل کلاس «collapse» با بوت‌استرپ
+   --------------------------------------------------------------------------
+   خود این فایل حاوی واژه‌ی collapse است (border-collapse: collapse) و Tailwind
+   همین را به‌عنوان candidate می‌بیند و utility ِ «.collapse { visibility: collapse }»
+   را کامپایل می‌کند. در صفحات پکیج‌ها (پل فاز ۳۲/۳۴) کلاس collapseِ بوت‌استرپ
+   روی کارت‌هاست؛ visibility:collapse تیلویند محتوایشان را «فضا-گیر ولی نامرئی»
+   می‌کند (کارت فیلتر خالی!). این قاعده‌ی unlayered بر utility لایه‌دار برتری
+   همیشگی دارد و کلاس collapse را به رفتار عادی برمی‌گرداند. */
+.collapse { visibility: visible; }
 
 /* اسکرول‌بار سفارشی */
 *::-webkit-scrollbar { width: 8px; height: 8px; }

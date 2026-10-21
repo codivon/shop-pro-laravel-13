@@ -62,15 +62,82 @@
 
     @include('back.partials.global-css')
 
-    {{-- ۳) کمپات: نشت reboot بوت‌استرپ به کروم پنل جدید خنثی می‌شود --}}
-    {{-- :where() صفرکردن specificity — فقط قواعد element-level بوت‌استرپ را می‌بُرد،
-        نه utilityهای کلاسی تیلویند؛ بعد از هر دو CSS لود می‌شود --}}
+    {{-- ۳) کمپات: نشت CSS پنل قدیمی به کروم پنل جدید خنثی می‌شود — فاز ۳۵ --}}
+    {{-- الگوی مهم: «اسکوپ» با :where (اولویت صفر) ولی «خود سلکتور» عنصر واقعی
+        (0,0,1) — هم‌ترازِ قواعد element-level بوت‌استرپ و چون بعد از آن‌ها لود
+        می‌شود برنده است؛ در عین حال utilityهای کلاسی تیلویند (0,1,0) همیشه
+        بالاتر می‌مانند. نسخه‌ی قبلی هر دو بخش :where بودند (اولویت 0,0,0) و
+        به بوت‌استرپ می‌باختند → کل کروم به‌هم می‌ریخت. --}}
     <style>
-        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer) :where(p, h1, h2, h3, h4, h5, h6) { margin: 0; }
-        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer) :where(ul, ol) { margin: 0; padding: 0; list-style: none; }
-        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer) :where(a, a:hover, a:focus, a:active) { text-decoration: none; color: inherit; }
-        :where(#ap-chrome-side) :where(label) { margin-bottom: 0; }
-        :where(#ap-chrome-side, #ap-chrome-top) :where(img) { vertical-align: middle; }
+        /* ۱) ریشه: پنل جدید برای root=16px طراحی شده؛ components.css پنل قدیمی
+              html را 14px و line-height 1.15 و letter-spacing می‌گذارد و همه‌ی
+              سایزهای rem کروم (سایدبار 17rem، تاپ‌بار h-16 و…) را ۱۲.۵٪ کوچک می‌کند */
+        html { font-size: 16px; line-height: 1.5; letter-spacing: normal; }
+
+        /* ۲) بدنه: قاعده‌ی body پنل جدید (bg-surface-2 text-ink) — components.css
+              با «html body» (0,0,2) پس‌زمینه #F8F8F8 می‌گذارد؛ همان اولویت و بعدتر */
+        html body { background-color: var(--color-surface-2); color: var(--color-ink); }
+        html.dark body { background-color: var(--color-night); color: var(--color-night-ink); }
+
+        /* ۳) کانتینرهای کروم: فونت/رنگ/سطرِ پنل جدید — iranyekan !important پنل
+              قدیمی روی body از راه ارث‌بری به کروم هم می‌رسد */
+        #ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts {
+            font-family: var(--font-sans, "Vazirmatn", "Tahoma", "Segoe UI", ui-sans-serif, system-ui, sans-serif);
+            color: var(--color-ink);
+            line-height: 1.5;
+        }
+        .dark #ap-chrome-side, .dark #ap-chrome-top, .dark .ap-footer, .dark .ap-toasts {
+            color: var(--color-night-ink);
+        }
+
+        /* ۴) فونت اجباری iranyekan روی span/textarea پنل قدیمی نباید داخل کروم
+              اعمال شود — آیکون‌های فونت (fa-*) مستثنا هستند */
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) span:not([class*="fa-"]) { font-family: inherit !important; }
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) textarea { font-family: inherit !important; }
+
+        /* ۵) خنثی‌سازی reboot بوت‌استرپ داخل کروم */
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) p { margin: 0; }
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) h1,
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) h2,
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) h3,
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) h4,
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) h5,
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) h6 { margin: 0; }
+        /* هدینگ‌های کروم مثل preflight تیلویند behave کنند (text-* کلاسی همیشه برنده می‌ماند) */
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) h1,
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) h2,
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) h3,
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) h4,
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) h5,
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) h6 { font-size: inherit; font-weight: inherit; line-height: inherit; }
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) ul,
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) ol { margin: 0; padding: 0; list-style: none; }
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) a { text-decoration: none; color: inherit; }
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) a:hover,
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) a:focus,
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) a:active { text-decoration: none; color: inherit; }
+        :where(#ap-chrome-side) label { margin-bottom: 0; }
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) img { vertical-align: middle; }
+
+        /* ۶) کلاس «hidden» پنل قدیمی (bootstrap-extended: display:none + visibility:hidden
+              و بعضی پکیج‌ها با !important) utilityهای ریسپانسیوِ لایه‌دار تیلویند را
+              می‌شکند — در کروم با همان بریک‌پوینت‌ها بازیابی می‌شوند */
+        @media (min-width: 640px) {
+            :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .sm\:block { display: block !important; }
+        }
+        @media (min-width: 1024px) {
+            :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .lg\:hidden { display: none !important; }
+        }
+        html.dark :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .dark\:block { display: block !important; }
+        /* ۷) پنل قدیمی برای فاصله‌گیری از سایدبار ثابت خودش به .content مقدار
+              بی‌قیدِ margin-right:260px می‌دهد (components.css)؛ در کروم پنل جدید
+              ستون اصلی همین کار را انجام می‌دهد — این حاشیه باید صفر شود وگرنه
+              محتوای پکیج در همه‌ی سایزها باریک و کج رندر می‌شود */
+        html body .content { margin-right: 0; margin-left: 0; }
+
+        /* visibility:hiddenِ باقیمانده روی عناصر hidden sm:block/dark:block */
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .sm\:block,
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .dark\:block { visibility: visible; }
     </style>
 
     <!-- Scripts -->
@@ -105,7 +172,8 @@
         {{-- ستون اصلی --}}
         <div class="flex min-w-0 flex-1 flex-col lg:mr-[17rem]">
             <div id="ap-chrome-top">
-                <x-admin-panel::topbar :title="($title ?? null)" />
+                {{-- پکیج‌ها title ست نمی‌کنند — به‌جای «داشبورد» نام فروشگاه نشان داده شود --}}
+                <x-admin-panel::topbar :title="($title ?? $apSiteTitle)" />
             </div>
 
             {{-- محتوای صفحه‌ی پکیج (بوت‌استرپ قدیمی) --}}
