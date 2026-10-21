@@ -1193,3 +1193,31 @@
 - ۵ صفحه‌ی دیگر پنل (داشبورد/محصولات/تنظیمات/اسلایدرها/نوشته‌ها) بدون رگرسیون
 
 **php -l سبز؛ اسکرین‌شات‌ها: /home/z/my-project/shots/pkg-*.png**
+
+## فاز ۳۲ — دو-پنلی شدن کامل پکیج‌ها (منو + صفحات) + رفع باگ‌های واقعی ماژول‌ها
+
+**درخواست کاربر:** منوی ۱۰ پکیج در پنل جدید استایل ندارد؛ صفحات پکیج‌ها همه `@extends('back.layouts.master')` هستند — باید در «هر دو پنل» درست کار کنند (و برای پنل‌های آینده هم قرارداد داشته باشند).
+
+### قرارداد دو-پنلی (ماژول‌محور و آینده‌پذیر)
+- کوکی `ap_panel` = «پنل فعال»؛ هر دو layout هنگام لود با JS ست می‌کنند (new/old) — آخرین پنل بازدیدشده همیشه برنده است
+- `EncryptCookies::$except += ['ap_panel']` — کوکی خام JS بدون این، middleware از درخواست حذف می‌کرد (root cause اصلی سوییچ نشدن)
+- کلاس `Modules\{X}\Support\ActivePanel` در هر ۱۰ پکیج: `isNew()` (کوکی → admin-old مسیر → پیش‌فرض new) + `hasNewChrome()` (view()->exists لایه پل) + `useNewPanel()`
+- منوی هر پکیج دو-رندره: سایدبارها با `@include($menuView, ['apPanel' => 'new|old'])` کانتکست می‌دهند؛ بدون کانتکست ActivePanel تشخیص می‌دهد
+- صفحات پکیج‌ها: `@extends(ActivePanel::useNewPanel() ? 'admin-panel::layouts.module' : 'back.layouts.master')` — هر ۸۱ ویو back هر ۱۰ پکیج
+
+### لایه‌ی پل `admin-panel::layouts.module` (جدید)
+- کروم پنل جدید (سایدبار/تاپ‌بار/فوتر/توست + Vite + Livewire) + استک کامل CSS/JS پنل قدیمی (بوت‌استرپ و…)
+- ترتیب CSS: پنل جدید ← بوت‌استرپ قدیمی ← کمپات `:where()` (نشت reboot بوت‌استرپ به کروم خنثی، بدون شکستن utilityهای تیلویند)
+- مودال‌های main-errors/password-confirm + session toasts پنل قدیمی حفظ شده؛ @yield('title') → تاپ‌بار breadcrumb می‌گیرد
+
+### باگ‌های واقعی کشف‌شده در ماژول‌ها (هیچ‌کدام تا حالا اجرا نشده بودند)
+- **DigiPay**: RouteServiceProvider هرگز `routes/admin.php` را لود نمی‌کرد (صفحات ادمین در هیچ پنلی در دسترس نبود) + متد تکراری `testConnection()` (fatal redeclare) + منو در مسیر اشتباه `partials/` بود + view بدون namespace مدل (`DigiPaySetting`) + `LicenseGuard::check()` bool برمی‌گرداند ولی view آرایه می‌خواهد + امضای دستور پرمیشن با CreditPay تداخل داشت
+- **CreditPay/InstallmentPayment**: ثبت‌نام منوی ادمین به فایل منوی «پنل کاربری» (front) اشاره می‌کرد — منوی ادمین از صفر ساخته شد (`back/partials/menu.blade.php` از روی روت‌ها + پرمیشن‌های واقعی)
+- **CheckoutTurbo**: پوشه `Database/` با حرف بزرگ — `loadMigrationsFrom('database/migrations')` هرگز اجرا نمی‌شد (جدول‌ها ساخته نمی‌شدند؛ داشبورد ۵۰۰) — git mv به `database/`
+- `CreditSetting::get` fail-safe شد (نصب تازه قبل از migrate کرش نمی‌کند)
+
+### پنل جدید
+- همه منوهای پکیج زیر «یک» تیتر پکیج‌ها (مثل قدیمی)، آکاردئون apMenuGroup، حالت فعال is-active، یکپارچه با جستجوی منو (apMenuSearch)
+- E2E مرورگر: کلیک منو در هر دو پنل → صفحه با کروم همان پنل + breadcrumb + is-active + dark mode + استک jQuery/SweetAlert/toastr پکیج‌ها سالم؛ صفحه‌های کلیدی هر ۱۰ پکیج HTTP 200
+
+**php -l + pint سبز؛ اسکرین‌شات‌ها: /home/z/shots/final-*.png**

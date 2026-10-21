@@ -9,6 +9,9 @@
 
     <title>@yield('title', $title ?? 'داشبورد') | پنل مدیریت {{ option('info_site_title', config('app.name')) }}</title>
 
+    {{-- کوکی «پنل فعال» — صفحات و منوهای پکیج‌ها با همین کوکی بین پنل جدید/قدیمی سوییچ می‌کنند --}}
+    <script>document.cookie = 'ap_panel=new; path=/; max-age=31536000; SameSite=Lax';</script>
+
     @vite(['resources/admin-panel/css/admin.css', 'resources/admin-panel/js/admin.js'])
     @livewireStyles
 </head>

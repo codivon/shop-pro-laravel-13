@@ -2,11 +2,8 @@
    AICatalog — دستیار شناور هوشمند (بارگذاری سراسری — بدون ویرایش layout)
    توضیح: این فایل توسط موتور تزریق ماژول (میدل‌ور/رویداد/composer)
    به همهٔ صفحات ادمین تزریق می‌شود؛ عناصر دارای title یا data-ac-hint
-   تولتیپ زیبا می‌گیرند و دکمهٔ «دستیار هوشمند» + پنل چهارتبی
-   (تولید محتوا + سئوچک + تاریخچه + راهنما) در همهٔ صفحات مدیریت
-   نمایش داده می‌شود.
-   v1.5.0: سئوچک (امتیاز + چک‌لیست) • تاریخچهٔ تولیدها (localStorage)
-   • ویجت تگ‌ها • فیلدهای تب‌های مخفی (سئو) با فعال‌سازی خودکار تب.
+   تولتیپ زیبا می‌گیرند و دکمهٔ «دستیار هوشمند» + پنل دو-تبی (تولید
+   محتوا + راهنما) در همهٔ صفحات مدیریت نمایش داده می‌شود.
    موقعیت دکمه از تنظیمات ماژول (pos-bottom-left و…) انتخاب می‌شود.
    ============================================================ */
 
@@ -228,29 +225,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    padding: 8px 3px;
+    gap: 7px;
+    padding: 9px 6px;
     border: none;
     border-radius: 10px 10px 0 0;
     background: transparent;
     color: #0f766e;
-    font-size: .72rem;
+    font-size: .8rem;
     font-weight: 700;
     cursor: pointer;
     transition: background .15s, color .15s;
     font-family: inherit;
-    white-space: nowrap;
-}
-
-.ac-tab i {
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
 }
 
 .ac-tab svg {
-    width: 13px;
-    height: 13px;
+    width: 15px;
+    height: 15px;
     flex-shrink: 0;
 }
 
@@ -450,300 +440,6 @@
 
 .ac-gen-btn.wide { margin-top: 2px; }
 
-/* ---------- سئوچک (تب تحلیل سئو) ---------- */
-.ac-seo-head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, rgba(13, 148, 136, .08), rgba(59, 130, 246, .06));
-    border: 1px solid rgba(13, 148, 136, .22);
-    margin-bottom: 10px;
-}
-
-.ac-ring {
-    width: 62px;
-    height: 62px;
-    flex-shrink: 0;
-    transform: rotate(-90deg);
-}
-
-.ac-ring .bg { fill: none; stroke: rgba(15, 118, 110, .15); stroke-width: 5; }
-
-.ac-ring .fg {
-    fill: none;
-    stroke-width: 5;
-    stroke-linecap: round;
-    transition: stroke-dashoffset .6s ease;
-}
-
-.ac-ring.good .fg { stroke: #059669; }
-.ac-ring.mid  .fg { stroke: #d97706; }
-.ac-ring.bad  .fg { stroke: #dc2626; }
-
-.ac-ring text {
-    transform: rotate(90deg);
-    transform-origin: 22px 22px;
-    font-size: 15px;
-    font-weight: 800;
-    fill: #0f766e;
-}
-
-.ac-ring.good text { fill: #047857; }
-.ac-ring.mid text { fill: #b45309; }
-.ac-ring.bad text { fill: #b91c1c; }
-
-.ac-seo-sum { flex: 1; display: flex; flex-direction: column; gap: 3px; }
-
-.ac-seo-sum b { font-size: .8rem; font-weight: 800; color: #0f766e; }
-
-.ac-seo-sum small { font-size: .68rem; color: #0f766e; opacity: .8; }
-
-.ac-seo-again {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    align-self: flex-start;
-    margin-top: 3px;
-    border: 1px solid rgba(13, 148, 136, .35);
-    background: #fff;
-    color: #0f766e;
-    font-size: .66rem;
-    font-weight: 700;
-    font-family: inherit;
-    border-radius: 7px;
-    padding: 4px 8px;
-    cursor: pointer;
-    transition: background .15s;
-}
-
-.ac-seo-again svg { width: 12px; height: 12px; }
-
-.ac-seo-again:hover { background: rgba(13, 148, 136, .12); }
-
-/* چک‌لیست سئو */
-.ac-checks {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.ac-check {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 9px;
-    border-radius: 10px;
-    border: 1px solid transparent;
-    background: rgba(148, 163, 184, .07);
-}
-
-.ac-check.ok   { background: rgba(16, 185, 129, .08);  border-color: rgba(16, 185, 129, .25); }
-.ac-check.warn { background: rgba(245, 158, 11, .09);  border-color: rgba(245, 158, 11, .3); }
-.ac-check.bad  { background: rgba(239, 68, 68, .08);   border-color: rgba(239, 68, 68, .28); }
-
-.ac-check-ico {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    flex-shrink: 0;
-    background: rgba(148, 163, 184, .18);
-    color: #64748b;
-}
-
-.ac-check.ok .ac-check-ico   { background: rgba(16, 185, 129, .16); color: #047857; }
-.ac-check.warn .ac-check-ico { background: rgba(245, 158, 11, .18); color: #b45309; }
-.ac-check.bad .ac-check-ico  { background: rgba(239, 68, 68, .16);  color: #b91c1c; }
-
-.ac-check-ico svg { width: 15px; height: 15px; }
-
-.ac-check-txt { flex: 1; min-width: 0; }
-
-.ac-check-txt b {
-    display: block;
-    font-size: .74rem;
-    font-weight: 800;
-    color: #1e293b;
-    line-height: 1.6;
-}
-
-.ac-check-txt small {
-    display: block;
-    font-size: .66rem;
-    color: #475569;
-    line-height: 1.7;
-}
-
-.ac-check.ok .ac-check-txt b   { color: #065f46; }
-.ac-check.warn .ac-check-txt b { color: #92400e; }
-.ac-check.bad .ac-check-txt b  { color: #991b1b; }
-
-.ac-check-fix {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    color: #fff;
-    background: linear-gradient(135deg, #0d9488, #14b8a6);
-    padding: 0;
-    transition: transform .14s, box-shadow .14s;
-}
-
-.ac-check-fix svg { width: 15px; height: 15px; }
-
-.ac-check-fix:hover { transform: scale(1.08); box-shadow: 0 4px 12px rgba(13, 148, 136, .4); }
-
-/* ---------- تاریخچه ---------- */
-.ac-hist-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 10px;
-    font-size: .76rem;
-    font-weight: 800;
-    color: #0f766e;
-}
-
-.ac-hist-head small { font-weight: 600; opacity: .7; }
-
-.ac-hist-clear {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    border: 1px solid rgba(239, 68, 68, .35);
-    background: #fff;
-    color: #b91c1c;
-    font-size: .64rem;
-    font-weight: 700;
-    font-family: inherit;
-    border-radius: 7px;
-    padding: 4px 8px;
-    cursor: pointer;
-    transition: background .15s;
-}
-
-.ac-hist-clear svg { width: 12px; height: 12px; }
-
-.ac-hist-clear:hover { background: rgba(239, 68, 68, .12); }
-
-.ac-hist-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.ac-hist-item {
-    border: 1px solid rgba(13, 148, 136, .2);
-    background: rgba(13, 148, 136, .04);
-    border-radius: 11px;
-    padding: 8px 10px;
-}
-
-.ac-hist-top {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    margin-bottom: 4px;
-}
-
-.ac-hist-badge {
-    font-size: .64rem;
-    font-weight: 800;
-    color: #047857;
-    background: rgba(16, 185, 129, .14);
-    border: 1px solid rgba(16, 185, 129, .3);
-    border-radius: 20px;
-    padding: 2px 9px;
-    white-space: nowrap;
-}
-
-.ac-hist-time {
-    font-size: .62rem;
-    color: #64748b;
-    flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.ac-hist-del {
-    flex-shrink: 0;
-    width: 22px;
-    height: 22px;
-    border-radius: 6px;
-    border: none;
-    background: transparent;
-    color: #94a3b8;
-    font-size: 1rem;
-    line-height: 1;
-    cursor: pointer;
-    padding: 0;
-    transition: background .14s, color .14s;
-}
-
-.ac-hist-del:hover { background: rgba(239, 68, 68, .15); color: #dc2626; }
-
-.ac-hist-topic {
-    font-size: .66rem;
-    color: #0f766e;
-    font-weight: 700;
-    margin-bottom: 3px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.ac-hist-prev {
-    font-size: .68rem;
-    color: #475569;
-    line-height: 1.8;
-    margin-bottom: 6px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.ac-hist-actions {
-    display: flex;
-    gap: 6px;
-}
-
-.ac-hist-btn {
-    flex: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    border: 1px solid rgba(13, 148, 136, .35);
-    background: #fff;
-    color: #0f766e;
-    font-size: .66rem;
-    font-weight: 700;
-    font-family: inherit;
-    border-radius: 8px;
-    padding: 6px 6px;
-    cursor: pointer;
-    transition: background .15s;
-}
-
-.ac-hist-btn svg { width: 12px; height: 12px; }
-
-.ac-hist-btn:hover { background: rgba(13, 148, 136, .1); }
-
-.ac-hist-btn.ghost { border-color: rgba(148, 163, 184, .4); color: #475569; }
-.ac-hist-btn.ghost:hover { background: rgba(148, 163, 184, .12); }
-
 /* ---------- نتیجه ---------- */
 .ac-result {
     margin-top: 12px;
@@ -778,50 +474,25 @@
 .ac-res-text::-webkit-scrollbar { width: 5px; }
 .ac-res-text::-webkit-scrollbar-thumb { background: rgba(13, 148, 136, .3); border-radius: 3px; }
 
-.ac-res-meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    margin-top: 8px;
-    flex-wrap: wrap;
-}
-
-.ac-res-words {
-    font-size: .64rem;
-    font-weight: 700;
-    color: #0f766e;
-    opacity: .85;
-    white-space: nowrap;
-}
-
 .ac-res-actions {
     display: flex;
-    gap: 6px;
-    flex: 1;
-    min-width: 0;
+    gap: 8px;
+    margin-top: 8px;
 }
 
 .ac-res-btn {
     flex: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
     border: 1px solid rgba(13, 148, 136, .35);
     background: #fff;
     color: #0f766e;
-    font-size: .68rem;
+    font-size: .72rem;
     font-weight: 700;
     font-family: inherit;
     border-radius: 8px;
-    padding: 6px 5px;
+    padding: 7px 6px;
     cursor: pointer;
     transition: background .15s;
-    white-space: nowrap;
 }
-
-.ac-res-btn svg { width: 12px; height: 12px; }
 
 .ac-res-btn:hover { background: rgba(13, 148, 136, .1); }
 
@@ -914,29 +585,6 @@
 }
 
 /* حالت تاریک قالب (اگر ادمین تاریک است) */
-
-/* ============================================================
-   ★ v1.6.0 — قالب‌های پرامپت + بازنویسی هوشمند (پنل دستیار)
-   ============================================================ */
-.ac-rewrite-row {
-    display: flex; align-items: center; gap: 8px;
-    margin: 10px 0 8px; padding: 8px 12px;
-    border: 1px dashed rgba(13, 148, 136, .45);
-    border-radius: 10px; cursor: pointer;
-    font-size: .74rem; font-weight: 700; color: #0f766e;
-    background: rgba(13, 148, 136, .06);
-    transition: .15s;
-}
-.ac-rewrite-row:hover { border-color: #0d9488; background: rgba(13, 148, 136, .1); }
-.ac-rewrite-row input { accent-color: #0d9488; width: 15px; height: 15px; flex: 0 0 auto; }
-.ac-rewrite-row svg { width: 13px; height: 13px; flex: 0 0 auto; }
-
-/* بازنویسی فعال */
-.ac-rewrite-row:has(input:checked) {
-    border-style: solid; border-color: #0d9488;
-    background: rgba(13, 148, 136, .14);
-}
-
 @media (prefers-color-scheme: dark) {
     .ac-help-panel { background: #0b1526; border-color: rgba(20, 184, 166, .3); }
     .ac-tab.active { background: rgba(13, 148, 136, .16); }
@@ -955,43 +603,229 @@
     .ac-result { background: rgba(13, 148, 136, .1); }
     .ac-res-text { color: #e2e8f0; }
     .ac-res-btn { background: transparent; color: #5eead4; border-color: rgba(20, 184, 166, .4); }
+}
 
-    /* سئوچک */
-    .ac-seo-head { background: linear-gradient(135deg, rgba(13, 148, 136, .14), rgba(59, 130, 246, .1)); border-color: rgba(20, 184, 166, .3); }
-    .ac-ring .bg { stroke: rgba(20, 184, 166, .18); }
-    .ac-ring text { fill: #5eead4; }
-    .ac-ring.good text { fill: #6ee7b7; }
-    .ac-ring.mid text { fill: #fbbf24; }
-    .ac-ring.bad text { fill: #f87171; }
-    .ac-seo-sum b, .ac-seo-sum small { color: #5eead4; }
-    .ac-seo-again { background: transparent; border-color: rgba(20, 184, 166, .4); color: #5eead4; }
-    .ac-check { background: rgba(148, 163, 184, .1); }
-    .ac-check.ok   { background: rgba(16, 185, 129, .12);  border-color: rgba(16, 185, 129, .3); }
-    .ac-check.warn { background: rgba(245, 158, 11, .12);  border-color: rgba(245, 158, 11, .32); }
-    .ac-check.bad  { background: rgba(239, 68, 68, .13);   border-color: rgba(239, 68, 68, .3); }
-    .ac-check-txt b { color: #e2e8f0; }
-    .ac-check-txt small { color: #94a3b8; }
-    .ac-check.ok .ac-check-txt b { color: #6ee7b7; }
-    .ac-check.warn .ac-check-txt b { color: #fbbf24; }
-    .ac-check.bad .ac-check-txt b { color: #f87171; }
-    .ac-check-ico { background: rgba(148, 163, 184, .2); color: #94a3b8; }
-    .ac-check.ok .ac-check-ico { background: rgba(16, 185, 129, .2); color: #6ee7b7; }
-    .ac-check.warn .ac-check-ico { background: rgba(245, 158, 11, .22); color: #fbbf24; }
-    .ac-check.bad .ac-check-ico { background: rgba(239, 68, 68, .2); color: #f87171; }
+/* ============================================================
+   ★ v1.5.0/v1.6.0/v1.7.0 — پنل چهارتبی + سئوچک + تاریخچه + بازنویسی
+   ============================================================ */
 
-    /* تاریخچه */
-    .ac-hist-head { color: #5eead4; }
-    .ac-hist-clear { background: transparent; border-color: rgba(239, 68, 68, .45); color: #f87171; }
-    .ac-hist-item { background: rgba(13, 148, 136, .08); border-color: rgba(20, 184, 166, .25); }
-    .ac-hist-badge { background: rgba(16, 185, 129, .18); border-color: rgba(16, 185, 129, .35); color: #6ee7b7; }
-    .ac-hist-time { color: #94a3b8; }
-    .ac-hist-topic { color: #5eead4; }
-    .ac-hist-prev { color: #cbd5e1; }
-    .ac-hist-btn { background: transparent; color: #5eead4; border-color: rgba(20, 184, 166, .4); }
-    .ac-hist-btn.ghost { color: #cbd5e1; border-color: rgba(148, 163, 184, .4); }
+/* تب‌های جمع‌تر برای ۴ تب */
+.ac-help-panel .ac-tabs {
+    display: flex;
+    gap: 2px;
+    padding: 6px 8px 0;
+    flex-wrap: wrap;
+}
 
-    /* v1.6.0 */
-    .ac-rewrite-row { color: #5eead4; border-color: rgba(20, 184, 166, .4); background: rgba(13, 148, 136, .1); }
-    .ac-rewrite-row:hover { border-color: #2dd4bf; background: rgba(13, 148, 136, .16); }
-    .ac-rewrite-row:has(input:checked) { border-color: #2dd4bf; background: rgba(13, 148, 136, .2); }
+.ac-help-panel .ac-tab {
+    flex: 1 1 auto;
+    padding: 7px 6px !important;
+    font-size: .64rem !important;
+    white-space: nowrap;
+}
+
+.ac-help-panel .ac-tab i {
+    width: 12px;
+    height: 12px;
+    margin: 0 !important;
+}
+
+/* ردیف بازنویسی */
+.ac-rewrite-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 4px 2px;
+    font-size: .72rem;
+    font-weight: 700;
+    color: #0f766e;
+    cursor: pointer;
+    user-select: none;
+}
+
+.ac-rewrite-row input {
+    width: 15px;
+    height: 15px;
+    accent-color: #10b981;
+    cursor: pointer;
+}
+
+/* ---------- سئوچک ---------- */
+.ac-seo-score-wrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(148, 163, 184, .08);
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 9px;
+    font-size: .76rem;
+}
+
+.ac-seo-ring {
+    position: relative;
+    width: 54px;
+    height: 54px;
+    flex: none;
+}
+
+.ac-seo-ring svg {
+    width: 54px;
+    height: 54px;
+    transform: rotate(-90deg);
+}
+
+.ac-seo-ring circle {
+    fill: none;
+    stroke-width: 4;
+}
+
+.ac-seo-ring .bg {
+    stroke: rgba(148, 163, 184, .25);
+}
+
+.ac-seo-ring .fg {
+    stroke: #10b981;
+    stroke-linecap: round;
+    transition: stroke-dashoffset .5s, stroke .3s;
+}
+
+.ac-seo-score-wrap.warn .ac-seo-ring .fg { stroke: #f59e0b; }
+.ac-seo-score-wrap.bad .ac-seo-ring .fg { stroke: #ef4444; }
+
+.ac-seo-ring b {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .86rem;
+}
+
+.ac-seo-checks {
+    display: grid;
+    gap: 4px;
+}
+
+.ac-seo-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 9px;
+    font-size: .72rem;
+    font-weight: 600;
+    background: rgba(148, 163, 184, .07);
+    color: #475569;
+}
+
+.ac-seo-check .ic {
+    width: 17px;
+    height: 17px;
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .6rem;
+    flex: none;
+    color: #fff;
+}
+
+.ac-seo-check.ok { background: rgba(16, 185, 129, .1); color: #047857; }
+.ac-seo-check.ok .ic { background: #10b981; }
+.ac-seo-check.bad { background: rgba(239, 68, 68, .09); color: #b91c1c; }
+.ac-seo-check.bad .ic { background: #ef4444; }
+
+.ac-seo-check .lbl { flex: 1; line-height: 1.6; }
+
+.ac-seo-fix {
+    border: 1px solid rgba(16, 185, 129, .5);
+    background: rgba(16, 185, 129, .12);
+    color: #047857;
+    font-size: .62rem;
+    font-weight: 800;
+    border-radius: 7px;
+    padding: 3px 9px;
+    cursor: pointer;
+    flex: none;
+}
+
+.ac-seo-fix:hover { background: rgba(16, 185, 129, .22); }
+
+/* ---------- تاریخچه ---------- */
+.ac-hist-list {
+    display: grid;
+    gap: 8px;
+}
+
+.ac-hist-item {
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 11px;
+    padding: 9px 12px;
+    background: rgba(148, 163, 184, .05);
+}
+
+.ac-hist-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: .72rem;
+}
+
+.ac-hist-top b { color: #0f172a; }
+.ac-hist-top small { color: #94a3b8; font-size: .62rem; }
+
+.ac-hist-prev {
+    font-size: .68rem;
+    color: #64748b;
+    margin: 5px 0 7px;
+    line-height: 1.7;
+}
+
+.ac-hist-actions { display: flex; gap: 6px; }
+
+/* ---------- متای نتیجه ---------- */
+.ac-res-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: .64rem;
+    font-weight: 700;
+    color: #94a3b8;
+    padding: 5px 2px;
+}
+
+.ac-res-meta .ac-res-link {
+    border: none;
+    background: none;
+    color: #0d9488;
+    font-size: .66rem;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 0;
+    margin-right: auto;
+}
+
+.ac-res-link:hover { text-decoration: underline; }
+
+/* ---------- دارک‌مود عناصر جدید ---------- */
+@media (prefers-color-scheme: dark) {
+    .ac-rewrite-row { color: #5eead4; }
+    .ac-seo-score-wrap { background: rgba(148, 163, 184, .1); }
+    .ac-seo-check { background: rgba(148, 163, 184, .09); color: #94a3b8; }
+    .ac-seo-check.ok { background: rgba(16, 185, 129, .13); color: #6ee7b7; }
+    .ac-seo-check.bad { background: rgba(239, 68, 68, .12); color: #fca5a5; }
+    .ac-seo-fix { color: #6ee7b7; border-color: rgba(16, 185, 129, .4); background: rgba(16, 185, 129, .16); }
+    .ac-hist-item { border-color: rgba(148, 163, 184, .18); background: rgba(148, 163, 184, .07); }
+    .ac-hist-top b { color: #e2e8f0; }
+    .ac-hist-prev { color: #94a3b8; }
+    .ac-res-meta { color: #94a3b8; }
+    .ac-res-meta .ac-res-link { color: #5eead4; }
+}
+
+/* موبایل */
+@media (max-width: 480px) {
+    .ac-help-panel .ac-tab { font-size: .58rem !important; padding: 6px 4px !important; }
+    .ac-seo-score-wrap { gap: 10px; padding: 8px 10px; }
 }

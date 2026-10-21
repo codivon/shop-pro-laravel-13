@@ -969,7 +969,8 @@
             <li class="title">پکیج ها </li>
             @foreach (\App\Services\ModuleMenuRegistry::all() as $menuView)
                 @if (view()->exists($menuView))
-                    @include($menuView)
+                    {{-- apPanel: پارشال منوی هر پکیج با همین کانتکست، مارک‌آپ مخصوص این سایدبار را رندر می‌کند --}}
+                    @include($menuView, ['apPanel' => 'old'])
                 @endif
             @endforeach
 

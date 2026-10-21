@@ -1,0 +1,904 @@
+/* ============================================================================
+   Checkout Turbo — استایل «خرید سریع» فرانت (RTL)
+   رنگ‌ها از CSS Variables (--ct-c1/--ct-c2/--ct-cc) که موتور JS از
+   تنظیمات مدیر تزریق می‌کند — بدون rebuild.
+   ============================================================================ */
+
+.ct-btn,
+.ct-fab-wrap,
+.ct-card-btn,
+.ct-root,
+.ct-toast {
+    all: unset;
+    -webkit-appearance: none;
+    appearance: none;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+/* ---------------- دکمهٔ صفحهٔ محصول ---------------- */
+
+.ct-btn {
+    --ct-c1: #f97316;
+    --ct-c2: #f43f5e;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 0;
+    border-radius: 14px;
+    cursor: pointer;
+    font-weight: 700;
+    white-space: nowrap;
+    direction: rtl;
+    line-height: 1;
+    text-decoration: none !important;
+    box-shadow: 0 6px 18px -6px rgba(249, 115, 22, 0.55);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+    position: relative;
+    overflow: hidden;
+    margin-inline-start: 8px;
+}
+
+.ct-btn:hover { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 10px 24px -6px rgba(249, 115, 22, 0.6); }
+.ct-btn:active { transform: translateY(0) scale(0.98); }
+.ct-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+.ct-btn--sm { height: 38px; padding: 0 16px; font-size: 13px; border-radius: 11px; }
+.ct-btn--md { height: 46px; padding: 0 22px; font-size: 15px; }
+.ct-btn--lg { height: 54px; padding: 0 30px; font-size: 17px; border-radius: 16px; }
+
+.ct-btn-ic { display: inline-flex; align-items: center; font-size: 1.05em; }
+.ct-btn-ic svg { width: 1em; height: 1em; }
+
+/* حالت‌های استایل */
+.ct-btn--gradient { background: linear-gradient(135deg, var(--ct-c1), var(--ct-c2)); color: #fff; }
+.ct-btn--solid { background: var(--ct-c1); color: #fff; box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.35); }
+.ct-btn--outline {
+    background: transparent;
+    color: var(--ct-c1);
+    box-shadow: inset 0 0 0 2px var(--ct-c1);
+}
+.ct-btn--outline:hover { background: var(--ct-c1); color: #fff; }
+
+/* دکمهٔ شناور — موقعیت دلخواه (v1.2.0) */
+.ct-fab-wrap {
+    position: fixed;
+    z-index: 99998;
+    bottom: 22px;
+    left: 22px;
+    display: block;
+}
+
+.ct-fab-wrap .ct-btn { margin: 0; box-shadow: 0 12px 32px -8px rgba(249, 115, 22, 0.65); }
+
+/* جایگاه‌های شناور — از دید بینندهٔ راست‌به‌چپ */
+.ct-fab--bottom-left   { bottom: 22px; left: 22px;  top: auto; right: auto; }
+.ct-fab--bottom-right  { bottom: 22px; right: 22px; top: auto; left: auto; }
+.ct-fab--bottom-center { bottom: 22px; left: 50%; transform: translateX(-50%); top: auto; right: auto; }
+.ct-fab--top-right     { top: 22px; right: 22px; bottom: auto; left: auto; }
+.ct-fab--top-left      { top: 22px; left: 22px;  bottom: auto; right: auto; }
+
+.ct-fab--bottom-center .ct-btn { width: auto; }
+
+/* ---------------- آیکون کارت محصول ---------------- */
+
+.ct-card-btn {
+    --ct-cc: #f97316;
+
+    position: absolute;
+    z-index: 60;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    background: linear-gradient(135deg, var(--ct-cc), var(--ct-cc));
+    color: #fff;
+    border: 0;
+    cursor: pointer;
+    box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    padding: 0 9px;
+    font-size: 16px;
+}
+
+.ct-card-btn:hover { transform: scale(1.12) rotate(-4deg); box-shadow: 0 10px 22px -4px rgba(0, 0, 0, 0.5); }
+.ct-card-btn:active { transform: scale(0.95); }
+.ct-card-btn:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+
+.ct-card-btn svg { width: 17px; height: 17px; }
+
+.ct-card-tx { font-size: 11px; font-weight: 800; white-space: nowrap; }
+
+/* ★ v1.3.0 — حالت «آیکون + نوشته» — دکمهٔ کپسولی متنی */
+.ct-card-btn--txt {
+    width: auto;
+    min-width: 40px;
+    padding: 0 12px 0 10px;
+    border-radius: 999px;
+}
+
+.ct-card-btn--txt:hover { transform: scale(1.06); }
+
+/* موقعیت‌ها (مختصات RTL-aware با صریح left/right) */
+.ct-pos-corner-tr { top: 10px; left: 10px; }
+.ct-pos-corner-tl { top: 10px; right: 10px; }
+.ct-pos-corner-br { bottom: 48px; left: 10px; }
+.ct-pos-corner-bl { bottom: 48px; right: 10px; }
+
+/* ---------------- ریشهٔ مودال ---------------- */
+
+.ct-root { position: fixed; inset: 0; z-index: 99999; display: none; direction: rtl; }
+.ct-root.ct-open { display: block; }
+
+.ct-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    animation: ctFade 0.22s ease;
+}
+
+.ct-modal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(430px, calc(100vw - 32px));
+    max-height: min(92vh, 720px);
+    background: #fff;
+    border-radius: 22px;
+    box-shadow: 0 24px 64px -16px rgba(0, 0, 0, 0.45);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: ctPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ct-m-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 5;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748b;
+    background: rgba(241, 245, 249, 0.9);
+    transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.ct-m-close:hover { background: #fee2e2; color: #dc2626; transform: rotate(90deg); }
+.ct-m-close svg { width: 17px; height: 17px; }
+
+/* سربرگ */
+.ct-m-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 56px 16px 20px;
+    background: linear-gradient(135deg, var(--ct-c1, #f97316), var(--ct-c2, #f43f5e));
+    color: #fff;
+}
+
+.ct-m-ic {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.ct-m-title { font-size: 17px; font-weight: 800; line-height: 1.3; }
+.ct-m-desc { font-size: 11.5px; opacity: 0.92; line-height: 1.6; margin-top: 3px; }
+
+/* بدنه */
+.ct-m-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
+
+.ct-m-product { display: flex; gap: 12px; align-items: center; padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; }
+
+.ct-m-pimg { width: 58px; height: 58px; border-radius: 11px; overflow: hidden; flex-shrink: 0; background: #f1f5f9; display: flex; align-items: center; justify-content: center; }
+.ct-m-pimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.ct-m-pinfo { min-width: 0; flex: 1; }
+.ct-m-pname { font-size: 13.5px; font-weight: 700; color: #1e293b; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.5; }
+.ct-m-pvar { font-size: 11px; color: #64748b; margin-top: 2px; }
+.ct-m-pprice { font-size: 12.5px; color: #0f172a; margin-top: 4px; }
+.ct-m-pprice b { color: var(--ct-c1, #f97316); font-size: 14px; }
+
+/* تعداد */
+.ct-m-qty { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 9px 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 13px; width: fit-content; }
+.ct-m-qty-l { font-size: 12.5px; font-weight: 700; color: #92400e; }
+.ct-qty-btn { width: 30px; height: 30px; border-radius: 9px; border: 0; background: #fef3c7; color: #92400e; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: background 0.15s ease, transform 0.15s ease; }
+.ct-qty-btn:hover { background: #fde68a; transform: scale(1.06); }
+.ct-qty-btn:active { transform: scale(0.94); }
+.ct-qty-btn svg { width: 13px; height: 13px; }
+.ct-qty-val { min-width: 34px; text-align: center; font-weight: 800; font-size: 15px; color: #78350f; }
+
+/* فیلدها */
+.ct-m-fields { margin-top: 14px; display: grid; gap: 12px; }
+
+.ct-field { display: block; }
+.ct-f-label { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px; }
+.ct-f-ic { display: inline-flex; color: #94a3b8; font-size: 13px; }
+.ct-f-ic svg { width: 13px; height: 13px; }
+.ct-f-tx b { color: #dc2626; }
+
+.ct-input {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 11px 14px;
+    font-size: 14px;
+    color: #0f172a;
+    background: #fff;
+    font-family: inherit;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ct-input:focus { outline: none; border-color: var(--ct-c1, #f97316); box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15); }
+.ct-input::placeholder { color: #94a3b8; }
+textarea.ct-input { resize: vertical; min-height: 44px; }
+
+.ct-input-err { border-color: #dc2626 !important; box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12) !important; animation: ctShake 0.3s ease; }
+
+/* خطا */
+.ct-m-error {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1.7;
+}
+
+/* فوتر */
+.ct-m-foot { padding: 14px 20px 18px; border-top: 1px solid #f1f5f9; }
+
+.ct-submit {
+    width: 100%;
+    height: 52px;
+    border: 0;
+    border-radius: 15px;
+    background: linear-gradient(135deg, var(--ct-c1, #f97316), var(--ct-c2, #f43f5e));
+    color: #fff;
+    font-size: 15.5px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 10px 26px -8px rgba(249, 115, 22, 0.65);
+    transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+    font-family: inherit;
+}
+
+.ct-submit:hover { transform: translateY(-2px); filter: brightness(1.04); }
+.ct-submit:active { transform: scale(0.98); }
+.ct-submit:disabled { opacity: 0.75; cursor: wait; }
+
+.ct-submit svg { width: 17px; height: 17px; }
+.ct-submit.ct-loading .ct-submit-tx { opacity: 0.55; }
+
+.ct-spin { animation: ctSpin 0.7s linear infinite; }
+
+.ct-m-hint { text-align: center; font-size: 10.5px; color: #94a3b8; margin-top: 10px; line-height: 1.6; }
+
+/* موفقیت */
+.ct-m-success { padding: 34px 24px 24px; text-align: center; }
+
+.ct-ok-ic {
+    width: 68px;
+    height: 68px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    box-shadow: 0 12px 30px -8px rgba(34, 197, 94, 0.6);
+    animation: ctPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ct-ok-ic svg { width: 30px; height: 30px; }
+.ct-ok-title { font-size: 17px; font-weight: 800; color: #14532d; }
+.ct-ok-desc { font-size: 12.5px; color: #64748b; margin-top: 8px; line-height: 1.8; }
+
+.ct-ok-code {
+    margin: 14px auto 0;
+    width: fit-content;
+    padding: 8px 18px;
+    border-radius: 999px;
+    background: #f0fdf4;
+    border: 1px dashed #86efac;
+    color: #166534;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    direction: ltr;
+}
+
+.ct-ok-redirect { font-size: 11.5px; color: #94a3b8; margin-top: 12px; }
+
+.ct-ok-close {
+    margin-top: 18px;
+    width: 100%;
+    height: 44px;
+    border-radius: 13px;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #475569;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s ease;
+}
+
+.ct-ok-close:hover { background: #f8fafc; }
+
+/* ---------------- بخش‌های تسویهٔ کامل (v1.2.0) ---------------- */
+
+/* honeypot ضد بات — کاملاً نامرئی */
+.ct-hp {
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    width: 1px !important;
+    height: 1px !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+}
+
+/* قاب بخش */
+.ct-m-sec { margin-top: 14px; }
+
+/* عنوان بخش */
+.ct-sec-t {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #334155;
+    margin-bottom: 8px;
+}
+
+.ct-sec-t .ct-sec-ic {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--ct-c1, #f97316) 12%, #fff);
+    color: var(--ct-c1, #f97316);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.ct-sec-t .ct-sec-ic svg { width: 14px; height: 14px; }
+
+.ct-sec-req .ct-sec-t span:last-child::after { content: " *"; color: #ef4444; }
+
+/* ============ کارت‌های آدرس ============ */
+.ct-addr-list { display: flex; flex-direction: column; gap: 8px; }
+
+.ct-addr {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ct-addr:hover { border-color: #fdba74; background: #fffbf7; }
+
+.ct-addr.on {
+    border-color: var(--ct-c1, #f97316);
+    background: color-mix(in srgb, var(--ct-c1, #f97316) 5%, #fff);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-c1, #f97316) 14%, transparent);
+}
+
+.ct-addr:focus-visible { outline: 2px solid var(--ct-c1, #f97316); outline-offset: 1px; }
+
+.ct-addr-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #cbd5e1;
+    flex-shrink: 0;
+    margin-top: 2px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.ct-addr.on .ct-addr-dot {
+    border-color: var(--ct-c1, #f97316);
+    background: var(--ct-c1, #f97316);
+}
+
+.ct-addr.on .ct-addr-dot::after {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #fff;
+}
+
+.ct-addr-b { flex: 1; min-width: 0; }
+
+.ct-addr-t {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.ct-addr-city { font-size: 12px; font-weight: 800; color: #1e293b; }
+
+.ct-addr-badge {
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 99px;
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.ct-addr-x {
+    font-size: 11.5px;
+    color: #64748b;
+    margin-top: 3px;
+    line-height: 1.7;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.ct-addr-m { font-size: 10.5px; color: #94a3b8; margin-top: 3px; }
+
+.ct-addr-new { border-style: dashed; }
+.ct-addr-new .ct-addr-city { color: var(--ct-c1, #f97316); }
+.ct-addr-new .ct-addr-x { color: #94a3b8; }
+
+.ct-addr-manual { margin-top: 8px; }
+
+/* ★ v1.3.0 — دکمهٔ «مدیریت/افزودن آدرس در پنل کاربری» (به‌جای فرم داخل مودال) */
+.ct-addr-panel {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 8px;
+    padding: 9px 12px;
+    border: 1.5px dashed rgba(249, 115, 22, 0.55);
+    border-radius: 11px;
+    background: rgba(249, 115, 22, 0.06);
+    color: #c2410c;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.ct-addr-panel:hover { background: rgba(249, 115, 22, 0.13); border-color: #f97316; color: #9a3412; }
+.ct-addr-panel-ic { display: inline-flex; width: 15px; height: 15px; flex: none; }
+.ct-addr-panel-ic svg { width: 100%; height: 100%; }
+.ct-addr-panel-arrow { margin-inline-start: auto; opacity: 0.55; display: inline-flex; width: 13px; height: 13px; flex: none; }
+.ct-addr-panel-arrow svg { width: 100%; height: 100%; }
+.ct-addr-panel-strong {
+    border-style: solid;
+    background: linear-gradient(135deg, #fff7ed, #ffedd5);
+    justify-content: center;
+    padding: 11px 14px;
+    font-size: 12.5px;
+}
+
+/* ★ v1.3.0 — حالت «بدون آدرس ذخیره‌شده» (کاربر واردشده) */
+.ct-addr-empty {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 14px;
+    background: #f8fafc;
+    text-align: center;
+}
+.ct-addr-empty-t { font-size: 12.5px; font-weight: 800; color: #334155; }
+.ct-addr-empty-d { font-size: 11.5px; color: #64748b; margin-top: 4px; line-height: 1.9; }
+
+/* ============ گزینه‌های ارسال/پرداخت ============ */
+.ct-optlist { display: flex; flex-direction: column; gap: 8px; }
+
+.ct-opt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ct-opt:hover { border-color: #fdba74; background: #fffbf7; }
+
+.ct-opt.on {
+    border-color: var(--ct-c1, #f97316);
+    background: color-mix(in srgb, var(--ct-c1, #f97316) 5%, #fff);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-c1, #f97316) 14%, transparent);
+}
+
+.ct-opt:focus-visible { outline: 2px solid var(--ct-c1, #f97316); outline-offset: 1px; }
+
+.ct-opt-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #cbd5e1;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.ct-opt.on .ct-opt-dot {
+    border-color: var(--ct-c1, #f97316);
+    background: var(--ct-c1, #f97316);
+}
+
+.ct-opt.on .ct-opt-dot::after {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #fff;
+}
+
+.ct-opt-img {
+    width: 38px;
+    height: 26px;
+    object-fit: contain;
+    border-radius: 6px;
+    background: #f8fafc;
+    padding: 2px;
+    flex-shrink: 0;
+}
+
+.ct-opt-ic {
+    width: 38px;
+    height: 30px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #475569;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 16px;
+}
+
+.ct-opt-ic svg { width: 16px; height: 16px; }
+
+.ct-opt-b { flex: 1; min-width: 0; }
+
+.ct-opt-t { font-size: 12.5px; font-weight: 800; color: #1e293b; }
+
+.ct-opt-d { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+.ct-opt-c {
+    font-size: 12px;
+    font-weight: 800;
+    color: #1e293b;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.ct-opt-c small { font-weight: 600; font-size: 9.5px; color: #94a3b8; }
+
+.ct-opt-c.ct-free { color: #16a34a; font-size: 11px; }
+/* ★ v1.4.1 — پس‌کرایه (به عهده مشتری — مثل خود فروشگاه) */
+.ct-opt-c.ct-cod { color: #d97706; font-size: 11px; font-weight: 700; }
+
+/* ============ جمع کل نوار پایین ============ */
+.ct-m-total {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    font-size: 11.5px;
+    color: #64748b;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 7px 10px;
+}
+
+.ct-m-total b { color: #1e293b; font-size: 12.5px; }
+
+/* ---------------- حالت دارک خودکار قالب ---------------- */
+
+@media (prefers-color-scheme: dark) {
+    .ct-sec-t { color: #e2e8f0; }
+    .ct-sec-t .ct-sec-ic { background: rgba(249, 115, 22, 0.16); color: #fb923c; }
+    .ct-addr, .ct-opt { background: #0f172a; border-color: #334155; }
+    .ct-addr:hover, .ct-opt:hover { background: #1e293b; }
+    .ct-addr.on, .ct-opt.on { background: rgba(249, 115, 22, 0.08); }
+    .ct-addr-city, .ct-opt-t { color: #f1f5f9; }
+    .ct-addr-x, .ct-opt-d { color: #94a3b8; }
+    .ct-addr-m { color: #64748b; }
+    .ct-opt-c { color: #e2e8f0; }
+    .ct-opt-ic { background: #1e293b; color: #94a3b8; }
+    .ct-m-total { background: #0f172a; color: #94a3b8; }
+    .ct-m-total b { color: #f1f5f9; }
+    .ct-addr-badge { background: #14532d; color: #4ade80; }
+    .ct-modal { background: #1e293b; }
+    .ct-m-product { background: #0f172a; border-color: #334155; }
+    .ct-m-pname { color: #f1f5f9; }
+    .ct-m-pprice { color: #e2e8f0; }
+    .ct-f-label { color: #cbd5e1; }
+    .ct-input { background: #0f172a; border-color: #334155; color: #f1f5f9; }
+    .ct-input::placeholder { color: #475569; }
+    .ct-m-foot { border-top-color: #0f172a; }
+    .ct-m-hint { color: #64748b; }
+    .ct-ok-close { background: #0f172a; border-color: #334155; color: #cbd5e1; }
+    .ct-ok-close:hover { background: #334155; }
+    .ct-m-close { background: #334155; color: #94a3b8; }
+}
+
+/* ---------------- موبایل ---------------- */
+
+@media (max-width: 640px) {
+    .ct-fab-wrap { bottom: 16px; left: 16px; }
+    .ct-fab--bottom-right { bottom: 16px; right: 16px; left: auto; }
+    .ct-fab--bottom-center { bottom: 16px; }
+    .ct-fab--top-right { top: 16px; right: 16px; }
+    .ct-fab--top-left { top: 16px; left: 16px; }
+    .ct-addr-x, .ct-opt-d { font-size: 11px; }
+
+    /* دکمهٔ تمام-عرض در موبایل (قابل تنظیم) */
+    .ct-btn.ct-mobile-full { width: 100%; margin-inline-start: 0; }
+
+    .ct-modal {
+        top: auto;
+        bottom: 0;
+        left: 0;
+        transform: none;
+        width: 100%;
+        max-width: 100%;
+        max-height: 94vh;
+        border-radius: 22px 22px 0 0;
+        animation: ctSlideUp 0.32s cubic-bezier(0.34, 1.3, 0.64, 1);
+    }
+
+    .ct-card-btn { width: 36px; height: 36px; }
+    .ct-card-btn--txt { min-width: 36px; padding: 0 10px 0 8px; }
+    .ct-pos-corner-br, .ct-pos-corner-bl { bottom: 42px; }
+}
+
+/* اسکرول قفل هنگام مودال */
+body.ct-no-scroll { overflow: hidden !important; }
+
+/* ---------------- انیمیشن‌ها ---------------- */
+
+@keyframes ctFade { from { opacity: 0; } to { opacity: 1; } }
+
+@keyframes ctPop {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes ctSlideUp {
+    from { opacity: 0; transform: translateY(60px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ctSpin { to { transform: rotate(360deg); } }
+
+@keyframes ctShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* ================================================================
+ *  ★ v1.4.0 — تنوع‌های محصول (رنگ/گارانتی/…) + گیت لاگین
+ * ================================================================ */
+
+/* ---------- گروه تنوع ---------- */
+.ct-var-group { margin: 10px 0 0; }
+.ct-var-group:first-of-type { margin-top: 2px; }
+.ct-var-gt { font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px; }
+.ct-var-gsel { font-weight: 400; color: #f97316; }
+
+/* ---------- سواچ رنگ ---------- */
+.ct-var-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.ct-var-sw {
+    width: 30px; height: 30px; border-radius: 8px; border: 2px solid #e2e8f0;
+    cursor: pointer; padding: 0; position: relative; transition: transform .15s, border-color .15s, box-shadow .15s;
+}
+.ct-var-sw:hover { transform: translateY(-1px); }
+.ct-var-sw.on { border-color: #f97316; box-shadow: 0 0 0 2px rgba(249, 115, 22, .25); }
+.ct-var-sw.off { opacity: .3; cursor: not-allowed; position: relative; }
+.ct-var-sw.off::after {
+    content: ""; position: absolute; left: 4px; right: 4px; top: 50%;
+    height: 2px; background: #ef4444; transform: rotate(-45deg); border-radius: 2px;
+}
+
+/* ---------- پیلی (گارانتی/سایز/…) ---------- */
+.ct-var-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.ct-var-pill {
+    border: 1.5px solid #e2e8f0; background: #fff; color: #334155;
+    border-radius: 10px; padding: 5px 12px; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all .15s; font-family: inherit;
+}
+.ct-var-pill:hover { border-color: #fdba74; color: #c2410c; }
+.ct-var-pill.on {
+    border-color: #f97316; background: rgba(249, 115, 22, .08); color: #c2410c;
+}
+.ct-var-pill.off { opacity: .35; cursor: not-allowed; text-decoration: line-through; }
+
+/* ---------- نوت وضعیت تنوع ---------- */
+.ct-var-note { font-size: 11.5px; margin-top: 8px; }
+.ct-var-note-err { color: #dc2626; background: rgba(239, 68, 68, .07); border-radius: 8px; padding: 6px 10px; }
+
+/* ---------- قیمت اصلی خط‌خورده ---------- */
+.ct-m-pprice s { color: #94a3b8; font-weight: 400; margin-inline-end: 6px; font-size: 12px; }
+
+/* ---------- زمان تحویل ارسال ---------- */
+.ct-opt-eta { font-size: 10.5px; color: #059669; margin-top: 2px; font-weight: 600; }
+
+/* ---------- گیت لاگین (v1.4.0) ---------- */
+.ct-m-login {
+    padding: 30px 22px 24px; text-align: center; direction: rtl;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.ct-login-ic {
+    width: 56px; height: 56px; border-radius: 16px;
+    background: linear-gradient(135deg, #fed7aa, #fdba74);
+    color: #c2410c; display: flex; align-items: center; justify-content: center;
+    font-size: 24px; margin-bottom: 4px;
+}
+.ct-login-ic svg { width: 26px; height: 26px; }
+.ct-login-t { font-size: 16px; font-weight: 800; color: #1e293b; }
+.ct-login-d { font-size: 12.5px; color: #64748b; line-height: 1.9; max-width: 300px; }
+.ct-login-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 10px; width: 100%; max-width: 260px;
+    background: linear-gradient(135deg, #f97316, #f43f5e);
+    color: #fff !important; text-decoration: none !important;
+    border-radius: 12px; padding: 11px 16px; font-size: 13.5px; font-weight: 700;
+    box-shadow: 0 6px 16px rgba(249, 115, 22, .3);
+    transition: transform .15s, box-shadow .15s;
+}
+.ct-login-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(249, 115, 22, .4); }
+.ct-login-close {
+    background: none; border: none; color: #94a3b8; font-size: 12px;
+    cursor: pointer; padding: 4px 10px; border-radius: 8px; font-family: inherit;
+}
+.ct-login-close:hover { color: #475569; background: #f1f5f9; }
+
+/* ---------- ★ v1.7.0 — مرحلهٔ تأیید موبایل (OTP) ---------- */
+.ct-m-otp {
+    padding: 28px 22px 22px; text-align: center; direction: rtl;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.ct-otp-ic {
+    width: 56px; height: 56px; border-radius: 16px;
+    background: linear-gradient(135deg, #fed7aa, #fdba74);
+    color: #c2410c; display: flex; align-items: center; justify-content: center;
+    margin-bottom: 4px;
+}
+.ct-otp-ic svg { width: 26px; height: 26px; }
+.ct-otp-t { font-size: 16px; font-weight: 800; color: #1e293b; }
+.ct-otp-d { font-size: 12.5px; color: #64748b; line-height: 1.9; max-width: 320px; }
+.ct-otp-box { width: 100%; display: flex; justify-content: center; }
+.ct-otp-input {
+    width: 100%; max-width: 220px; text-align: center;
+    font-size: 20px; font-weight: 800; letter-spacing: 10px;
+    padding: 10px 12px 10px 22px; border-radius: 12px;
+    border: 2px solid #e2e8f0; background: #f8fafc; color: #1e293b;
+    outline: none; font-family: inherit;
+    transition: border-color .15s, box-shadow .15s;
+}
+.ct-otp-input:focus {
+    border-color: #f97316; background: #fff;
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, .14);
+}
+.ct-otp-err {
+    font-size: 12px; color: #dc2626; background: rgba(239, 68, 68, .1);
+    border-radius: 10px; padding: 7px 12px; max-width: 320px; line-height: 1.8;
+}
+.ct-otp-verify {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 6px; width: 100%; max-width: 260px;
+    background: linear-gradient(135deg, #f97316, #f43f5e);
+    color: #fff; border: none; cursor: pointer;
+    border-radius: 12px; padding: 11px 16px; font-size: 13.5px; font-weight: 700;
+    font-family: inherit;
+    box-shadow: 0 6px 16px rgba(249, 115, 22, .3);
+    transition: transform .15s, box-shadow .15s;
+}
+.ct-otp-verify svg { width: 17px; height: 17px; }
+.ct-otp-verify:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(249, 115, 22, .4); }
+.ct-otp-verify:active { transform: scale(0.98); }
+.ct-otp-verify:disabled, .ct-otp-verify.ct-loading { opacity: 0.75; cursor: wait; }
+.ct-otp-verify.ct-loading span { opacity: 0.55; }
+.ct-otp-row {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    flex-wrap: wrap; font-size: 12px;
+}
+.ct-otp-resend {
+    background: none; border: none; color: #f97316; font-size: 12.5px;
+    font-weight: 700; cursor: pointer; padding: 4px 10px; border-radius: 8px;
+    font-family: inherit; transition: background .15s, color .15s;
+}
+.ct-otp-resend:hover { background: rgba(249, 115, 22, .1); }
+.ct-otp-resend:disabled { color: #94a3b8; cursor: not-allowed; background: none; }
+.ct-otp-timer { color: #94a3b8; font-size: 11.5px; }
+.ct-otp-back {
+    background: none; border: none; color: #94a3b8; font-size: 12px;
+    cursor: pointer; padding: 4px 10px; border-radius: 8px; font-family: inherit;
+}
+.ct-otp-back:hover { color: #475569; background: #f1f5f9; }
+
+/* ---------- دارک‌مودال ترتیب‌ها ---------- */
+.ct-modal[data-ct-dark="1"] .ct-var-gt { color: #e2e8f0; }
+.ct-modal[data-ct-dark="1"] .ct-var-sw { border-color: #334155; }
+.ct-modal[data-ct-dark="1"] .ct-var-pill { background: transparent; color: #e2e8f0; border-color: #334155; }
+.ct-modal[data-ct-dark="1"] .ct-var-pill.on { background: rgba(249, 115, 22, .15); color: #fdba74; border-color: #f97316; }
+.ct-modal[data-ct-dark="1"] .ct-var-note-err { color: #fca5a5; background: rgba(239, 68, 68, .12); }
+.ct-modal[data-ct-dark="1"] .ct-m-pprice s { color: #64748b; }
+.ct-modal[data-ct-dark="1"] .ct-login-t { color: #f1f5f9; }
+.ct-modal[data-ct-dark="1"] .ct-login-d { color: #94a3b8; }
+.ct-modal[data-ct-dark="1"] .ct-login-ic { background: linear-gradient(135deg, #7c2d12, #c2410c); color: #fed7aa; }
+.ct-modal[data-ct-dark="1"] .ct-login-close:hover { background: #1e293b; color: #cbd5e1; }
+/* ★ v1.7.0 — دارک: مرحلهٔ OTP */
+.ct-modal[data-ct-dark="1"] .ct-otp-t { color: #f1f5f9; }
+.ct-modal[data-ct-dark="1"] .ct-otp-d { color: #94a3b8; }
+.ct-modal[data-ct-dark="1"] .ct-otp-ic { background: linear-gradient(135deg, #7c2d12, #c2410c); color: #fed7aa; }
+.ct-modal[data-ct-dark="1"] .ct-otp-input { background: #0f172a; border-color: #334155; color: #f1f5f9; }
+.ct-modal[data-ct-dark="1"] .ct-otp-input:focus { border-color: #f97316; background: #1e293b; }
+.ct-modal[data-ct-dark="1"] .ct-otp-err { color: #fca5a5; background: rgba(239, 68, 68, .12); }
+.ct-modal[data-ct-dark="1"] .ct-otp-back:hover { background: #1e293b; color: #cbd5e1; }
+.ct-modal[data-ct-dark="1"] .ct-otp-resend:disabled { color: #64748b; }
+.ct-modal[data-ct-dark="1"] .ct-otp-timer { color: #64748b; }
+
+/* ---------- موبایل ---------- */
+@media (max-width: 480px) {
+    .ct-var-sw { width: 34px; height: 34px; }
+    .ct-var-pill { padding: 7px 13px; font-size: 12.5px; }
+    .ct-m-login { padding: 24px 18px 18px; }
+    .ct-login-btn { max-width: 100%; }
+    /* ★ v1.7.0 — OTP در موبایل */
+    .ct-m-otp { padding: 22px 16px 16px; }
+    .ct-otp-input { max-width: 100%; letter-spacing: 9px; font-size: 19px; }
+    .ct-otp-verify { max-width: 100%; }
+}

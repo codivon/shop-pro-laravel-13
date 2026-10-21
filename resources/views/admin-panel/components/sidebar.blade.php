@@ -180,15 +180,18 @@
         @endforeach
 
         {{-- منوی ماژول‌ها (پکیج‌ها) — مطابق پنل قدیمی؛ فاز ۲۷: مثل قدیمی داخل @can('packages') --}}
+        {{-- apPanel: پارشال منوی هر پکیج با همین کانتکست، مارک‌آپ مخصوص این سایدبار را رندر می‌کند --}}
+        {{-- همه‌ی پکیج‌ها زیر «یک» تیتر پکیج‌ها (مثل سایدبار قدیمی) --}}
         @can('packages')
-            @foreach (\App\Services\ModuleMenuRegistry::all() as $menuView)
-                @if (view()->exists($menuView))
-                    <div class="menu-group">
-                        <p class="ap-menu-title">پکیج‌ها</p>
-                        @include($menuView)
-                    </div>
-                @endif
-            @endforeach
+            @php $apModuleMenus = array_values(array_filter(\App\Services\ModuleMenuRegistry::all(), fn ($v) => view()->exists($v))); @endphp
+            @if (! empty($apModuleMenus))
+                <div class="menu-group">
+                    <p class="ap-menu-title">پکیج‌ها</p>
+                    @foreach ($apModuleMenus as $menuView)
+                        @include($menuView, ['apPanel' => 'new'])
+                    @endforeach
+                </div>
+            @endif
         @endcan
     </nav>
 

@@ -3,6 +3,9 @@
 <!-- BEGIN: Head-->
 
 <head>
+    {{-- کوکی «پنل فعال» — صفحات و منوهای پکیج‌ها با همین کوکی بین پنل جدید/قدیمی سوییچ می‌کنند --}}
+    <script>document.cookie = 'ap_panel=old; path=/; max-age=31536000; SameSite=Lax';</script>
+
     @include('back.partials.meta')
     <title>
         @isset($title)
