@@ -130,9 +130,10 @@
 
     {{-- ============ کارت‌های آماری (پورت pkg-stat — کارت‌های کل/رایگان/پولی مثل فیلتر وضعیت قیمت عمل می‌کنند) ============ --}}
     @php
-        $total = count($packages);
-        $freeCount = collect($packages)->filter(fn ($p) => \App\Livewire\Admin\Packages\PackageIndex::isEffectivelyFree($p))->count();
-        $paidCount = $total - $freeCount;
+        // آمار از priceCounts (بازار کامل) — در حالت فیلتر هم عددها ثابت می‌مانند
+        $total = $priceCounts['total'] ?? count($packages);
+        $freeCount = $priceCounts['free'] ?? collect($packages)->filter(fn ($p) => \App\Livewire\Admin\Packages\PackageIndex::isEffectivelyFree($p))->count();
+        $paidCount = $priceCounts['paid'] ?? ($total - $freeCount);
         $installedCount = count($installedMap);
     @endphp
     <div class="grid grid-cols-2 gap-3 xl:grid-cols-4">

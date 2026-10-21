@@ -70,6 +70,14 @@ class PackageIndex extends Component
 
     public array $paginationMeta = [];
 
+    /**
+     * آمار رایگان/پولی برای کارت‌های آماری — همیشه «بازار» را توصیف می‌کند نه برشِ فعلی:
+     * در حالت عادی = همان صفحه‌ی جاری (با per_page=12 کل بازار را پوشش می‌دهد)
+     * در حالت فیلتر رایگان/پولی = کل نتایج تجمیع‌شده‌ی همه صفحات API
+     * (قبل از اعمال فیلتر قیمت) تا با کلیک روی فیلترها، عددها نپَرند.
+     */
+    public array $priceCounts = ['free' => 0, 'paid' => 0, 'total' => 0];
+
     public array $installedMap = [];
 
     public array $purchasedSlugs = [];
@@ -231,6 +239,14 @@ class PackageIndex extends Component
             $this->packages = $packages;
             $this->paginationMeta = $pagination;
             $this->subscriptionSummary = $subscriptionSummary;
+
+            // آمار کارت‌ها از همین صفحه (حالت بدون فیلتر قیمت)
+            $freeCount = collect($packages)->filter(fn ($p) => self::isEffectivelyFree($p))->count();
+            $this->priceCounts = [
+                'free' => $freeCount,
+                'paid' => count($packages) - $freeCount,
+                'total' => count($packages),
+            ];
         } catch (RuntimeException $e) {
             $this->packages = [];
             $this->paginationMeta = [];
@@ -291,8 +307,18 @@ class PackageIndex extends Component
             // sync با جدول packages_cache مثل حالت عادی
             $this->syncCache($allPackages);
 
-            // فیلتر قیمت — تعریف «رایگان»: is_free خود API، پلن رایگان (min_price=0)
-            // یا رایگان با اشتراکِ فعال پروژه (هیچ کدام پرداختی نمی‌خواهند)
+            // آمار کارت‌ها از کل نتایج تجمیع‌شده (قبل از فیلتر قیمت) — تا عددهای
+            // کارت‌های آماری با تغییر فیلتر نپَرند و همیشه کل بازار را نشان بدهند
+            $aggregateFreeCount = collect($allPackages)->filter(fn ($p) => self::isEffectivelyFree($p))->count();
+            $this->priceCounts = [
+                'free' => $aggregateFreeCount,
+                'paid' => count($allPackages) - $aggregateFreeCount,
+                'total' => count($allPackages),
+            ];
+
+            // فیلتر قیمت — تعریف «رایگان» (درخواست کاربر): فقط پکیج‌هایی که
+            // is_free = true دارند «کلاً رایگان»‌اند. پکیج‌هایی که فقط پلن رایگان
+            // (مثل طرح رایگان یک‌ماهه) یا نصب با اشتراک دارند، جزو «پولی‌ها» می‌مانند.
             $freeWanted = $this->free === 'free';
             $allPackages = array_values(array_filter(
                 $allPackages,
@@ -320,30 +346,24 @@ class PackageIndex extends Component
             $this->paginationMeta = [];
             $this->installedMap = [];
             $this->subscriptionSummary = null;
+            $this->priceCounts = ['free' => 0, 'paid' => 0, 'total' => 0];
             $this->apiError = $e->getMessage();
         }
     }
 
     /**
-     * تشخیص «رایگان بودن مؤثر» یک پکیج — دقیقاً با همان منطقی که کارت‌ها نشان می‌دهند:
-     * is_free از API | حداقل یک پلن رایگان (min_price = 0) | رایگان با اشتراک فعال
+     * تشخیص «رایگان بودن» یک پکیج — فقط بر اساس is_free خود API (درخواست کاربر):
+     * is_free = true یعنی پکیج «کلاً رایگان» است → جزو «رایگان‌ها».
+     * پکیج‌هایی که فقط یک پلن رایگان دارند (مثل طرح رایگان یک‌ماهه) یا با اشتراکِ فعال
+     * پروژه قابل نصب‌اند، «کلاً رایگان» نیستند → جزو «پولی‌ها» نمایش داده می‌شوند.
+     * (قانون قدیمی min_price=0 = رایگان حذف شد — باعث می‌شد پکیج‌های پولیِ دارای
+     * پلن رایگانِ یک‌ماهه در فیلتر «رایگان» بیایند و فیلتر «پولی» خالی بماند.)
+     * این متد مشترکِ فیلتر رایگان/پولی و شمارنده‌ی کارت آماری است تا هر دو با
+     * نشانِ (badge) کارت‌ها که از is_free ساخته می‌شود هم‌خوان بماند.
      */
     public static function isEffectivelyFree(array $pkg): bool
     {
-        // درخواست کاربر: پکیج‌هایی که is_free = true دارند حتماً جزو «رایگان‌ها» نمایش داده شوند
-        if (self::normalizeIsFree($pkg['is_free'] ?? null)) {
-            return true;
-        }
-
-        if (($pkg['min_price'] ?? null) === 0) {
-            return true;
-        }
-
-        if (! empty($pkg['subscription']['is_free_with_subscription'])) {
-            return true;
-        }
-
-        return false;
+        return self::normalizeIsFree($pkg['is_free'] ?? null);
     }
 
     /**
