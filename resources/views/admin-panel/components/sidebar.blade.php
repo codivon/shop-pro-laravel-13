@@ -40,6 +40,25 @@
     };
     foreach ($menu as $g) $collectExactRoutes($g['items']);
     $menuExactRoutes = array_values(array_unique($menuExactRoutes));
+    /*
+    | فاز ۳۴ — منوی پکیج‌ها: قبل از گروه «امور مدیریتی» رندر می‌شود (درخواست کاربر).
+    | یک گروه مصنوعی (apPackages) دقیقاً قبل از امور مدیریتی داخل $menu تزریق
+    | می‌شود تا داخل همان حلقه‌ی اصلی رندر شود؛ اگر امور مدیریتی حذف/تغییر نام
+    | داد، به‌طور خودکار آخر منو می‌افتد (fallback).
+    */
+    $apMenuWithPackages = [];
+    $apPackagesInjected = false;
+    foreach ($menu as $apGroup) {
+        if (! $apPackagesInjected && ($apGroup['title'] ?? '') === 'امور مدیریتی') {
+            $apMenuWithPackages[] = ['title' => 'پکیج‌ها', 'apPackages' => true];
+            $apPackagesInjected = true;
+        }
+        $apMenuWithPackages[] = $apGroup;
+    }
+    if (! $apPackagesInjected) {
+        $apMenuWithPackages[] = ['title' => 'پکیج‌ها', 'apPackages' => true];
+    }
+    $menu = $apMenuWithPackages;
 @endphp
 
 <aside
@@ -81,6 +100,12 @@
     {{-- آیتم‌های منو --}}
     <nav x-ref="nav" x-on:scroll.passive="saveScroll()" class="flex-1 overflow-y-auto overflow-x-hidden px-3 pb-6 pt-1">
         @foreach ($menu as $group)
+            {{-- فاز ۳۴ — گروه مصنوعی «پکیج‌ها»: داده از خود پکیج‌ها استخراج و با مارک‌آپ همین سایدبار رندر می‌شود --}}
+            @if (! empty($group['apPackages']))
+                @include('admin-panel::components.sidebar-packages')
+                @continue
+            @endif
+
             @php
                 // فاز ۱۲: گروه‌های وابسته به چندفروشندگی + آیتم‌ها بر اساس دسترسی
                 if (! empty($group['vendor']) && ! $vendorEnabled) continue;
@@ -179,20 +204,6 @@
             </div>
         @endforeach
 
-        {{-- منوی ماژول‌ها (پکیج‌ها) — مطابق پنل قدیمی؛ فاز ۲۷: مثل قدیمی داخل @can('packages') --}}
-        {{-- apPanel: پارشال منوی هر پکیج با همین کانتکست، مارک‌آپ مخصوص این سایدبار را رندر می‌کند --}}
-        {{-- همه‌ی پکیج‌ها زیر «یک» تیتر پکیج‌ها (مثل سایدبار قدیمی) --}}
-        @can('packages')
-            @php $apModuleMenus = array_values(array_filter(\App\Services\ModuleMenuRegistry::all(), fn ($v) => view()->exists($v))); @endphp
-            @if (! empty($apModuleMenus))
-                <div class="menu-group">
-                    <p class="ap-menu-title">پکیج‌ها</p>
-                    @foreach ($apModuleMenus as $menuView)
-                        @include($menuView, ['apPanel' => 'new'])
-                    @endforeach
-                </div>
-            @endif
-        @endcan
     </nav>
 
     {{-- پایین سایدبار: پروفایل --}}
