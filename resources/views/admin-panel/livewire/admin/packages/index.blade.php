@@ -207,7 +207,9 @@
                     $hasFreePlan = $pkg['has_free_plan'] ?? false;
                     $hasActiveSub = ($pkg['subscription']['is_free_with_subscription'] ?? false);
                 @endphp
-                <div class="ap-card group flex flex-col overflow-hidden" wire:key="pkg-{{ $slug }}" x-bind:data-slug="{{ \Illuminate\Support\Js::from($slug) }}">
+                {{-- فاز ۲۸: مثل پنل قدیمی — کلیک روی هر جای کارت (خارج از دکمه/لینک) مودال جزئیات را باز می‌کند --}}
+                <div class="ap-card group flex cursor-pointer flex-col overflow-hidden" wire:key="pkg-{{ $slug }}" x-bind:data-slug="{{ \Illuminate\Support\Js::from($slug) }}"
+                     @click="if (!$event.target.closest('button, a, [wire\\:click], input, label')) $wire.openDetail('{{ $slug }}')">
                     {{-- رسانه کارت --}}
                     <div class="relative h-40 w-full overflow-hidden bg-surface-2 dark:bg-night-3">
                         @if ($thumbnail)
@@ -663,7 +665,8 @@
              x-on:keydown.escape.window="closeDetail()" role="dialog" aria-modal="true" aria-label="جزئیات پکیج">
             <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" wire:click="closeDetail" aria-hidden="true"></div>
 
-            <div class="relative flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-pop dark:border-night-line dark:bg-night-2">
+            {{-- فاز ۲۸: مثل مودال پنل قدیمی (modal-xl) — عرض ۱۱۵۲px --}}
+            <div class="relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-pop dark:border-night-line dark:bg-night-2">
 
                 {{-- هدر --}}
                 <div class="flex items-center justify-between gap-3 border-b border-line px-5 py-4 dark:border-night-line">
@@ -971,7 +974,8 @@
                                     <x-admin-panel::icon name="tag" class="size-4 text-brand-600 dark:text-brand-400" />
                                     طرح‌های قیمت‌گذاری <span class="text-[11px] font-medium text-ink-3">یک طرح انتخاب کنید</span>
                                 </h5>
-                                <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                                {{-- فاز ۲۸: مثل قدیمی col-md-3 — ۳ ستون در عرض مودال xl --}}
+                                <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
                                     @foreach ($dPlans as $plan)
                                         @php
                                             $fp = $this->planFinalPrice($plan);

@@ -155,13 +155,46 @@
                 </div>
 
                 <div>
-                    <p class="mb-2 text-[13px] font-bold">دسترسی ها</p>
+                    <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                        <p class="text-[13px] font-bold">دسترسی ها</p>
+                        <span class="fa-digits text-[11px] text-ink-3 dark:text-night-ink-2">
+                            {{ $this->filteredPermissionTree->sum(fn ($p) => 1 + $p->permissions->count()) }} دسترسی
+                            @if ($this->isPermSearching())
+                                از {{ $this->permissionTree->sum(fn ($p) => 1 + $p->permissions->count()) }}
+                            @endif
+                        </span>
+                    </div>
+
+                    {{-- فاز ۲۸ — جستجوی دسترسی‌ها --}}
+                    <div class="relative mb-2.5">
+                        <x-admin-panel::icon name="search" class="pointer-events-none absolute inset-y-0 end-3.5 my-auto size-4 text-ink-3" />
+                        <input type="text" wire:model.live.debounce.300ms="permSearch"
+                               placeholder="جستجو در دسترسی‌ها… مثلاً: محصول، سفارش، تخفیف"
+                               class="ap-input pe-10" aria-label="جستجو در دسترسی‌ها"
+                               x-on:keydown.enter.prevent>
+                        <button type="button" wire:click="$set('permSearch', '')"
+                                class="absolute inset-y-0 start-2.5 my-auto flex size-6 items-center justify-center rounded-lg text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink dark:hover:bg-night-3"
+                                aria-label="پاک کردن جستجو">
+                            @if (trim($this->permSearch) !== '')
+                                <x-admin-panel::icon name="x" class="size-3.5" />
+                            @endif
+                        </button>
+                    </div>
+
                     @error('permissions.*')
                         <p class="mb-2 rounded-lg bg-red-50 p-2 text-xs font-medium text-red-600 dark:bg-red-500/10">{{ $message }}</p>
                     @enderror
 
+                    @if ($this->isPermSearching() && $this->filteredPermissionTree->isEmpty())
+                        <div class="flex flex-col items-center gap-2 rounded-xl border border-dashed border-line py-8 text-ink-3 dark:border-night-line dark:text-night-ink-2">
+                            <x-admin-panel::icon name="search-x" class="size-8 opacity-40" />
+                            <p class="text-[13px] font-medium">دسترسی‌ای با عبارت «{{ $this->permSearch }}» پیدا نشد</p>
+                        </div>
+                    @endif
+
                     <div class="max-h-72 space-y-2.5 overflow-y-auto pe-1">
-                        @foreach ($this->permissionTree as $permission)
+                        @foreach ($this->filteredPermissionTree as $permission)
+                            @php($searching = $this->isPermSearching())
                             <div class="rounded-xl border border-line dark:border-night-line" x-data="{ open: @js(in_array($permission->id, array_map('intval', $this->permissions))) }">
                                 <div class="flex items-center gap-2 p-3">
                                     <label class="flex flex-1 cursor-pointer items-center gap-2 text-[13px] font-bold">
@@ -181,7 +214,8 @@
                                     @endif
                                 </div>
                                 @if ($permission->permissions->isNotEmpty())
-                                    <div x-show="open" x-cloak
+                                    {{-- فاز ۲۸: هنگام جستجو گروه‌ها سمت سرور باز رندر می‌شوند (بدون اتکا به x-show) --}}
+                                    <div @unless ($searching) x-show="open" x-cloak @endunless
                                          x-transition:enter="transition ease-out duration-200"
                                          x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
                                          class="border-t border-line px-3 py-3 dark:border-night-line">

@@ -75,9 +75,12 @@
                 <div>
                     <label for="captcha" class="mb-1.5 block text-[13px] font-semibold">کد امنیتی</label>
                     <div class="flex items-center gap-2.5">
+                        {{-- فاز ۲۸: تصویر ۲۰۰×۶۴ با نسبت ۱:۳٫۱۲۵ رندر می‌شود؛ قبلاً w-30 (۱۲۰px) +
+                             object-cover هر دو سمت را برش می‌داد و «حرف اول کد» بریده می‌شد.
+                             حالا w-34 (۱۳۶px ≈ همان نسبت) بدون برش + min-w برای ضد له‌شدگی. --}}
                         <img src="{{ route('captcha.image') }}?v={{ $captchaVersion }}"
-                             alt="کد امنیتی تصویری" width="120" height="44"
-                             class="h-11 w-30 rounded-lg border border-line bg-surface object-cover select-none dark:border-night-line"
+                             alt="کد امنیتی تصویری" width="200" height="64"
+                             class="h-11 w-34 shrink-0 rounded-lg border border-line bg-surface select-none dark:border-night-line"
                              wire:loading.class="opacity-60">
                         <button type="button" wire:click="refreshCaptcha" wire:loading.attr="disabled"
                                 class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-line bg-surface text-ink-2 transition-colors hover:text-brand-600 dark:border-night-line dark:bg-night-2 dark:text-night-ink-2 dark:hover:text-brand-400"
@@ -86,7 +89,7 @@
                         </button>
                         <input id="captcha" type="text" wire:model="captcha" autocomplete="off"
                                placeholder="کد تصویر" maxlength="10"
-                               class="ap-input h-11 flex-1 text-center tracking-[0.3em] {{ $errors->has('captcha') ? '!border-red-400 focus:!ring-red-400/15' : '' }}">
+                               class="ap-input h-11 min-w-0 flex-1 text-center tracking-[0.3em] {{ $errors->has('captcha') ? '!border-red-400 focus:!ring-red-400/15' : '' }}">
                     </div>
                     @error('captcha')
                         <p class="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">{{ $message }}</p>

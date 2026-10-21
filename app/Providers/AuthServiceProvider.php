@@ -2,10 +2,9 @@
 
 namespace App\Providers;
 
-use App\Models\Permission;
 use App\Models\Admin;
+use App\Models\Permission;
 use App\Models\Role;
-use App\Models\Seller;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -34,20 +33,25 @@ class AuthServiceProvider extends ServiceProvider
             $model::deleted(fn () => Cache::forget(self::PERMISSIONS_CACHE_KEY));
         }
 
-        if (!$this->app->runningInConsole() && application_installed()) {
+        if (! $this->app->runningInConsole() && application_installed()) {
             foreach ($this->getPermissions() as $permission) {
-                Gate::define($permission->name, function ($user) use ($permission) {
-                    // بررسی اگر کاربر ادمین است
-                    if ($user instanceof Admin) {
-                        return $user->level == 'creator' || $user->hasRole($permission->roles);
+                /*
+                 * فاز ۲۸ — رفع «ناپدید شدن دکمه‌ها بعد از هر اکشن» در پنل جدید:
+                 * درخواست‌های آپدیتِ Livewire از اکپوینت آپدیت لایووایر می‌گذرند که
+                 * میدل‌ور AdminPanel را ندارد؛ بنابراین auth()->user() (گارد پیش‌فرض web)
+                 * null است و چون پارامتر کلوزر «پذیرنده مهمان» نبود، لاراول اصلاً کلوزر را
+                 * صدا نمی‌زد و همه‌ی @canها false می‌شدند (دکمه ایجاد/ویرایش/حذف محو می‌شد).
+                 * با default null برای پارامتر، کلوزر حتی برای مهمان هم اجرا می‌شود و ما
+                 * خودمان ادمین را از گارد adminPanel برمی‌گردانیم.
+                 */
+                Gate::define($permission->name, function ($user = null) use ($permission) {
+                    $admin = $user instanceof Admin ? $user : Auth::guard('adminPanel')->user();
+
+                    if ($admin instanceof Admin) {
+                        return $admin->level == 'creator' || $admin->hasRole($permission->roles);
                     }
 
-                    // امنیتی: فروشنده‌ها هیچ پرمیشن پنل مدیریتی ندارند
-                    // (پیش‌تر true بود — هر فروشنده‌ای به همه‌ی گیت‌های پنل پاس می‌شد)
-                    if ($user instanceof Seller) {
-                        return false;
-                    }
-
+                    // امنیتی: فروشنده‌ها و مهمان‌ها هیچ پرمیشن پنل مدیریتی ندارند
                     return false;
                 });
             }

@@ -9,6 +9,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Morilog\Jalali\Jalalian;
 
 /**
  * نقش‌ها (مقام‌ها) — پورت ۱:۱ Back\RoleController (index/create/store/edit/update/destroy)
@@ -28,6 +29,9 @@ class RoleIndex extends Component
     /* ---------------- مودال ایجاد/ویرایش (پورت create/edit/store/update قدیمی) ---------------- */
 
     public bool $showFormModal = false;
+
+    /** فاز ۲۸ — جستجوی دسترسی‌ها داخل مودال ایجاد/ویرایش */
+    public string $permSearch = '';
 
     /** null = حالت ایجاد */
     public ?int $roleId = null;
@@ -71,6 +75,48 @@ class RoleIndex extends Component
             ->get();
     }
 
+    /**
+     * فاز ۲۸ — درخت دسترسی‌ها با فیلتر جستجو (کلاینت سبک: فقط همین کالکشن فیلتر می‌شود)
+     * اگر والد با جستجو بخورد → همه فرزندانش؛ اگر فقط فرزندی بخورد → والد با همان فرزندان.
+     */
+    #[Computed]
+    public function filteredPermissionTree()
+    {
+        $tree = $this->permissionTree;
+
+        $needle = mb_strtolower(trim($this->permSearch));
+
+        if ($needle === '') {
+            return $tree;
+        }
+
+        return $tree->filter(function ($parent) use ($needle) {
+            $parentHit = str_contains(mb_strtolower((string) $parent->title), $needle);
+
+            if ($parentHit) {
+                return true; // والد خورد → کل گروه
+            }
+
+            $matchingChildren = $parent->permissions->filter(
+                fn ($child) => str_contains(mb_strtolower((string) $child->title), $needle)
+            );
+
+            if ($matchingChildren->isEmpty()) {
+                return false;
+            }
+
+            $parent->setRelation('permissions', $matchingChildren);
+
+            return true;
+        })->values();
+    }
+
+    /** آیا جستجوی دسترسی فعال است؟ (برای باز نگه‌داشتن گروه‌ها هنگام جستجو) */
+    public function isPermSearching(): bool
+    {
+        return trim($this->permSearch) !== '';
+    }
+
     /* ---------------- مودال ---------------- */
 
     public function openCreateModal(): void
@@ -110,6 +156,7 @@ class RoleIndex extends Component
         $this->title = '';
         $this->description = null;
         $this->permissions = [];
+        $this->permSearch = '';
         $this->resetErrorBag();
     }
 
@@ -148,17 +195,17 @@ class RoleIndex extends Component
         $role = $isEditing ? Role::findOrFail($this->roleId) : null;
 
         $this->validate([
-            'permissions'   => 'array',
+            'permissions' => 'array',
             'permissions.*' => [
                 Rule::exists('permissions', 'id')->where(function ($query) {
                     $query->where('active', true);
                 }),
             ],
-            'title'         => $isEditing
+            'title' => $isEditing
                 ? ['required', Rule::unique('roles', 'title')->ignore($role->id)]
                 : 'required|unique:roles,title',
         ], [], [
-            'title'       => 'عنوان',
+            'title' => 'عنوان',
             'permissions' => 'دسترسی‌ها',
         ]);
 
@@ -180,7 +227,7 @@ class RoleIndex extends Component
             $oldPermissionNames = $role->permissions->pluck('title')->toArray();
 
             $role->update([
-                'title'       => $this->title,
+                'title' => $this->title,
                 'description' => $this->description,
             ]);
 
@@ -218,11 +265,11 @@ class RoleIndex extends Component
             }
 
             $properties = [
-                'action'    => 'update_role',
-                'role_id'   => $role->id,
+                'action' => 'update_role',
+                'role_id' => $role->id,
                 'old_title' => $oldTitle,
                 'new_title' => $this->title,
-                'ip'        => request()->ip(),
+                'ip' => request()->ip(),
             ];
 
             if (! empty($oldData)) {
@@ -241,7 +288,7 @@ class RoleIndex extends Component
         } else {
             // پورت store قدیمی + لاگ دقیق
             $newRole = Role::create([
-                'title'       => $this->title,
+                'title' => $this->title,
                 'description' => $this->description,
             ]);
 
@@ -250,15 +297,15 @@ class RoleIndex extends Component
             $permissionNames = Permission::whereIn('id', $permissionIds)->pluck('title')->toArray();
 
             $properties = [
-                'action'     => 'create_role',
+                'action' => 'create_role',
                 'role_title' => $this->title,
                 'attributes' => [
-                    'عنوان مقام'       => $this->title,
-                    'توضیحات'          => $this->description ?? 'ندارد',
-                    'دسترسی‌ها'        => ! empty($permissionNames) ? implode('، ', $permissionNames) : 'هیچ',
-                    'تعداد دسترسی‌ها'  => count($permissionNames),
+                    'عنوان مقام' => $this->title,
+                    'توضیحات' => $this->description ?? 'ندارد',
+                    'دسترسی‌ها' => ! empty($permissionNames) ? implode('، ', $permissionNames) : 'هیچ',
+                    'تعداد دسترسی‌ها' => count($permissionNames),
                 ],
-                'ip'         => request()->ip(),
+                'ip' => request()->ip(),
             ];
 
             activity()
@@ -304,14 +351,14 @@ class RoleIndex extends Component
             $role->delete();
 
             $properties = [
-                'action'     => 'delete_role',
+                'action' => 'delete_role',
                 'role_title' => $roleTitle,
                 'attributes' => [
-                    'عنوان مقام'      => $roleTitle,
+                    'عنوان مقام' => $roleTitle,
                     'دسترسی‌های مرتبط' => ! empty($permissionNames) ? implode('، ', $permissionNames) : 'هیچ',
                     'تعداد دسترسی‌ها' => count($permissionNames),
                 ],
-                'ip'         => request()->ip(),
+                'ip' => request()->ip(),
             ];
 
             activity()
@@ -337,7 +384,7 @@ class RoleIndex extends Component
             return '—';
         }
 
-        return \Morilog\Jalali\Jalalian::fromDateTime($date)->format($format);
+        return Jalalian::fromDateTime($date)->format($format);
     }
 
     public function render()

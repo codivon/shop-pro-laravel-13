@@ -1,34 +1,19 @@
-@extends('errors.layouts.master', ['title' => 'خطای سرور'])
+{{-- فاز ۲۸ — صفحه ۵۰۰ مدرن (نسخه قبلی: errors/old/500.blade.php) --}}
+@extends('errors.layouts.modern', [
+    'code'     => '500',
+    'title'    => 'خطای غیرمنتظره در سرور',
+    'subtitle' => 'مشکلی در اجرای درخواست پیش آمد. نگران نباشید — اطلاعات شما سالم است. چند لحظه صبر کنید و دوباره تلاش کنید؛ اگر تکرار شد با پشتیبانی تماس بگیرید.',
+    'accent'   => '#ef4444',
+    'icon'     => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/><path d="m11.5 5.5 2 2.5-2.6 0 1.8 2.3"/><path d="M12 17.5h4"/><path d="M17 5.5h1"/></svg>',
+])
 
-@section('content')
-    <div class="app-content content">
-        <div class="content-overlay"></div>
-        <div class="header-navbar-shadow"></div>
-        <div class="content-wrapper">
-            <div class="content-header row">
-            </div>
-            <div class="content-body">
-                <!-- error 500 -->
-                <section class="row flexbox-container">
-                    <div class="col-xl-7 col-md-8 col-12 d-flex justify-content-center">
-                        <div class="card auth-card bg-transparent shadow-none rounded-0 mb-0 w-100">
-                            <div class="card-content">
-                                <div class="card-body text-center">
-                                    <img src="{{ asset('back/app-assets/images/pages/500.png') }}" class="img-fluid align-self-center" alt="branding logo">
-                                    <h1 class="font-large-2 mt-1 mb-0">خطای سرور!</h1>
-                                    <p class="p-3">
-                                        متاسفانه خطایی در سرور رخ داده است لطفا از بخش تماس با ما این خطا را گزارش دهید
-                                    </p>
-                                    <a class="btn btn-primary btn-lg" href="{{ url('/') }}">بازگشت به صفحه اصلی</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-                <!-- error 500 end -->
-
-            </div>
-        </div>
-    </div>
-    <!-- END: Content-->
+@section('actions')
+    <button type="button" onclick="window.location.reload()" class="btn btn-primary">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+        تلاش دوباره
+    </button>
+    <a href="{{ url('/') }}" class="btn btn-ghost">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        بازگشت به فروشگاه
+    </a>
 @endsection

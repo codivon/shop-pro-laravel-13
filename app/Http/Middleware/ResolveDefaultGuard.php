@@ -31,11 +31,19 @@ class ResolveDefaultGuard
         |
         | حالا گارد فقط در بافت پنل‌ها و endpoint لایووایر تعیین می‌شود؛
         | صفحات فروشگاه همیشه گارد پیش‌فرض (web) را می‌بینند.
+        |
+        | فاز ۲۸ — رفع «محو شدن دکمه‌ها بعد از هر اکشن»: از وقتی اکپوینت آپدیت لایووایر
+        | هش‌دار شد (/livewire-<hash>/update)، الگوی is('livewire/*') دیگر با آن نمی‌خورد
+        | (نیاز به «livewire/» تحت‌اللفظی دارد) و این میدل‌ور روی آپدیت‌ها اجرا نمی‌شد؛
+        | در نتیجه auth()->user() روی گارد web می‌ماند و همه‌ی @canها در رندر مجدد
+        | false می‌شدند. حالا پیشوند «livewire-» هم پوشش داده می‌شود.
         */
-        $isPanelContext = $request->is('livewire/*')
-            || $request->is('livewire')
+        $path = $request->decodedPath();
+
+        $isPanelContext = str_starts_with($path, 'livewire/')
+            || str_starts_with($path, 'livewire-')
             || $request->is('admin-old/*')
-            || $request->is('admin/' . admin_route_prefix() . '*')
+            || $request->is('admin/'.admin_route_prefix().'*')
             || $request->is('sellers/*')
             || $request->is('sellers');
 

@@ -4,8 +4,10 @@ namespace App\Services;
 
 class CaptchaImage
 {
-    private int $width  = 200;
+    private int $width = 200;
+
     private int $height = 64;
+
     private ?string $font = null;
 
     // پالت نئونی
@@ -93,36 +95,38 @@ class CaptchaImage
 
     private function drawCode($im, string $code): void
     {
-        $len  = mb_strlen($code);
-        $slot = ($this->width - 20) / $len;
+        $len = mb_strlen($code);
+        // فاز ۲۸: حاشیه بیشتر در ابتدا/انتها تا حرف اول و آخر با چرخش/موج بریده نشوند
+        $slot = ($this->width - 32) / $len;
 
         if ($this->font) {
             foreach (mb_str_split($code) as $i => $ch) {
                 $color = self::NEON[random_int(0, count(self::NEON) - 1)];
                 $solid = imagecolorallocate($im, $color[0], $color[1], $color[2]);
-                $glow  = imagecolorallocatealpha($im, $color[0], $color[1], $color[2], 72);
+                $glow = imagecolorallocatealpha($im, $color[0], $color[1], $color[2], 72);
 
-                $size  = random_int(24, 29);
+                $size = random_int(24, 29);
                 $angle = random_int(-13, 13);
-                $x = (int) (8 + $slot * $i + random_int(-2, 4));
+                $x = (int) (14 + $slot * $i + random_int(-2, 4));
                 $y = (int) ($this->height / 2 + $size / 2.7 + random_int(-6, 6));
 
                 // هاله (دو بار نیمه‌شفاف) + متن اصلی
-                imagettftext($im, $size, $angle, $x, $y, $glow,  $this->font, $ch);
-                imagettftext($im, $size, $angle, $x, $y, $glow,  $this->font, $ch);
+                imagettftext($im, $size, $angle, $x, $y, $glow, $this->font, $ch);
+                imagettftext($im, $size, $angle, $x, $y, $glow, $this->font, $ch);
                 imagettftext($im, $size, $angle, $x, $y, $solid, $this->font, $ch);
             }
+
             return;
         }
 
         // ---------- fallback بدون TTF: بوم کوچک + بزرگ‌نمایی نرم ----------
-        $sh    = 36;
+        $sh = 36;
         $small = imagecreatetruecolor($this->width, $sh);
         imagefill($small, 0, 0, imagecolorallocate($small, 22, 31, 51));
 
         foreach (mb_str_split($code) as $i => $ch) {
             $p = self::NEON[random_int(0, count(self::NEON) - 1)];
-            imagestring($small, 5, (int) (8 + $slot * $i), random_int(2, 12), $ch,
+            imagestring($small, 5, (int) (14 + $slot * $i), random_int(2, 12), $ch,
                 imagecolorallocate($small, $p[0], $p[1], $p[2]));
         }
 
