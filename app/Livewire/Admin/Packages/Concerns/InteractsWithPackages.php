@@ -58,6 +58,22 @@ trait InteractsWithPackages
             $package = $package['data'] ?? $package;
             $version = $package['active_versions'] ? $package['active_versions'][0]['version'] : null;
 
+            /*
+             * ★ اگر پلنی انتخاب نشده و پکیج پلن دارد → ارزان‌ترین پلن خودکار انتخاب
+             *   می‌شود (مثل پیش‌فرض مودال). API خرید حتی برای پکیج‌های is_free=true
+             *   هم pricing_plan_id می‌خواهد؛ بدون پلن، خطای «انتخاب طرح» می‌دهد
+             *   (باگ نصب پکیج‌های رایگان — مودال قبلاً برای is_free پلن‌ها را
+             *   نشان نمی‌داد و planId=null می‌فرستاد).
+             */
+            $activePlans = collect($package['active_pricing_plans'] ?? []);
+            if ($pricingPlanId === null && $activePlans->isNotEmpty()) {
+                $cheapest = $activePlans
+                    ->sortBy(fn ($plan) => (int) ($plan['discount_price'] ?? $plan['price'] ?? 0))
+                    ->values()
+                    ->first();
+                $pricingPlanId = filled($cheapest['id'] ?? null) ? (int) $cheapest['id'] : null;
+            }
+
             $selectedPlan = collect($package['active_pricing_plans'] ?? [])
                 ->firstWhere('id', $pricingPlanId);
 

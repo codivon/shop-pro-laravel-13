@@ -1382,3 +1382,26 @@ Livewire در wire:navigate استایل‌های `<head>` را **هرگز حذ�
 - جستجوی محصول ناموجود → toast «محصول پیدا نشد!» ✓ (سیستم toast تایید شد)
 
 **کامیت‌ها:** پکیج استوری `9d8399c..` (master)، SmartAssembly `1a7ee1e..` (master)، seoAudit `257f8ea..` (master)، میزبان `551125a0` (docs/project-analysis)
+
+---
+
+## فاز ۴۰ — رفع ارور «انتخاب طرح» در نصب پکیج‌های رایگان (is_free=true) + رفرش خودکار صفحه پس از نصب
+
+**گزارش کاربر:** ۱) پکیج‌هایی که `is_free` آن‌ها true است، طرح‌های قیمت‌گذاری را در مودال نصب نمی‌آورند و به‌خاطر همان «ارور انتخاب طرح» می‌دهد. ۲) بعد از اینکه پکیج کامل نصب شد، صفحه رفرش شود تا پکیج به منو اضافه شود.
+
+### ریشه‌یابی
+- مودال تأیید نصب (Alpine `pkgMarket.ask()` در admin.js) برای `pkg.is_free` **زود برمی‌گشت** و `plans` را خالی می‌گذاشت (mode=free) — در حالی که پنل قدیمی `plans.length` را چک می‌کرد نه `is_free` را؛ یعنی پکیج‌های رایگانِ دارای پلن، پلن‌ها را نمی‌دیدند.
+- با planId=null، سرور `createPurchase(slug, callback, adminId, null)` می‌زد و **API مرکزی برای purchase حتی پکیج رایگان `pricing_plan_id` می‌خواهد** → خطای «انتخاب طرح».
+
+### اصلاحات
+1. **admin.js (`pkgMarket.ask`)** — برای is_free: اگر پلن دارد، پلن‌ها مثل پولی‌ها ساخته و نمایش داده می‌شود (ارزان‌ترین مثل قدیمی پیش‌فرض انتخاب می‌شود)؛ فقط if پلن ندارد mode=free می‌ماند. برای is_free، چک اضافه‌ی checkPurchaseState هم حذف شد (خرید/لایسنس/اشتراک ندارد).
+2. **`InteractsWithPackages::startInstall`** — fallback سمت سرور: اگر پلنی انتخاب نشده و پکیج `active_pricing_plans` دارد → ارزان‌ترین پلن خودکار انتخاب و به purchase پاس می‌شود (محافظ همه‌ی مسیرها: مودال تأیید، مودال جزئیات، هر کلاینتی که planId نمی‌فرستد).
+3. **`PackageIndex::pollProgress` + `refreshPending`** — بعد از نصبِ موفق، `setTimeout(() => window.location.reload(), 1500)` اجرا می‌شود (Livewire `$this->js()`) تا منوی «پکیج‌ها»ی سایدبار (که سمت سرور از InstalledModule ساخته می‌شود) پکیج تازه‌نصب را نشان دهد. خطای نصب رفرش نمی‌کند.
+
+### E2E (مرورگر واقعی + API فیک پکیج روی 8099)
+- مودال نصب پکیج is_free دارای پلن: بخش «انتخاب طرح قیمت‌گذاری» با هر دو پلن نمایش داده شد، ارزان‌ترین (رایگان) پیش‌فرض انتخاب بود، دکمه «نصب پکیج» ✓
+- درخواست purchase در لاگ: `"pricing_plan_id": 901` (planId از مودال) ✓
+- نصب کامل از UI: دانلود zip واقعی → extract → migrate → permissions → assets → `installed_modules.status=installed, is_active=1` ✓
+- پس از پایان نصب: `performance.getEntriesByType('navigation')[0].type === "reload"` → صفحه خودکار رفرش شد و منوی پکیج («رگال لباس» + زیرمنوها) در سایدبار ظاهر شد ✓
+- تست جداگانه‌ی fallback سرور (Http::fake، بدون planId): ارزان‌ترین پلن خودکار ارسال شد (id=771) ✓
+- assets بازسازی شد (bun run build:admin).

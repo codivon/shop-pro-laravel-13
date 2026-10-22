@@ -560,6 +560,9 @@ class PackageIndex extends Component
 
             if ($module && $module->status === InstalledModule::STATUS_INSTALLED) {
                 $this->dispatch('toast', message: 'نصب «'.($module->name ?: $slug).'» با موفقیت کامل شد.', type: 'success');
+
+                // درخواست کاربر — رفرش صفحه تا پکیج تازه‌نصب در منوی سایدبار بیاید
+                $this->js('setTimeout(() => window.location.reload(), 1500)');
             } else {
                 $lastError = ModuleInstallLog::where('module_slug', $slug)
                     ->where('status', ModuleInstallLog::STATUS_FAILED)
@@ -638,6 +641,15 @@ class PackageIndex extends Component
                 ? "نصب «{$name}» با موفقیت کامل شد."
                 : "نصب «{$name}» ناموفق بود.".($failed && $message ? ' ('.Str::limit($message, 120).')' : ''),
                 type: $done ? 'success' : 'error');
+
+            /*
+             * درخواست کاربر — پس از نصب کامل، صفحه رفرش شود تا پکیج تازه‌نصب
+             * در منوی «پکیج‌ها»ی سایدبار ظاهر شود (منو سمت سرور از InstalledModule
+             * ساخته می‌شود و با Livewire آپدیت نمی‌شود). تأخیر کوتاه تا toast دیده شود.
+             */
+            if ($done) {
+                $this->js('setTimeout(() => window.location.reload(), 1500)');
+            }
 
             $this->progressSlug = null;
             $this->progressName = null;

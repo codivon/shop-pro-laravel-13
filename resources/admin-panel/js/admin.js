@@ -839,8 +839,17 @@ document.addEventListener('alpine:init', () => {
             this.busy = false;
             this.modalOpen = true;
 
-            // پکیج رایگان — مثل قدیمی مستقیم تأیید
-            if (pkg.is_free) {
+            const rawPlans = pkg.active_pricing_plans ?? pkg.pricing_plans ?? pkg.plans ?? [];
+
+            /*
+             * پکیج رایگان (is_free=true):
+             * - پلن دارد → پلن‌ها مثل پولی‌ها در مودال نمایش داده می‌شود (پورت قدیمی —
+             *   قدیمی plans.length را چک می‌کرد نه is_free را) چون API خرید حتی برای
+             *   پکیج رایگان pricing_plan_id می‌خواهد؛ بدون آن خطای «انتخاب طرح» می‌دهد.
+             *   ارزان‌ترین پلن مثل قدیمی پیش‌فرض انتخاب می‌شود (buildPlans).
+             * - پلن ندارد → مستقیم تأیید (mode=free)
+             */
+            if (pkg.is_free && !rawPlans.length) {
                 this.mode = 'free';
                 this.plans = [];
                 this.planId = null;
@@ -848,7 +857,10 @@ document.addEventListener('alpine:init', () => {
             }
 
             this.mode = 'paid';
-            this.buildPlans(pkg.active_pricing_plans ?? pkg.pricing_plans ?? pkg.plans ?? []);
+            this.buildPlans(rawPlans);
+
+            // پکیج رایگان خرید/لایسنس/اشتراک ندارد → بدون بررسی اضافه، مثل قدیمی
+            if (pkg.is_free) return;
 
             // بررسی خرید/اشتراک (پورت checkPurchase AJAX قدیمی)
             this.checking = true;
