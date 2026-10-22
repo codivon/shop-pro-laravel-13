@@ -1287,3 +1287,30 @@
 - پنل قدیمی (کوکی ap_panel=old): همان صفحه با کروم قدیمی — دست‌نخورده (لینک‌های ساده، بدون لایه)
 
 **اسکرین‌شات‌ها: /tmp/final-create.png، /tmp/final-index-vp.png، /tmp/digipay-test2.png، /tmp/dark-create.png، /tmp/mobile-create.png، /tmp/oldpanel-create.png**
+
+## فاز ۳۷ — پدینگ اضافی منو در صفحات پکیج‌ها (جنگ `!important` + لایه‌ها و بازنویسی فیزیکی شمارنده‌های ap-early)
+
+### گزارش کاربر
+«منو پنل با css های پکیج ها تداخل پیدا کرده... padding های اضافی استایل منو را خراب کرده»
+
+### ریشه‌ها (اندازه‌گیری‌شده در مرورگر — `padding-left` محاسبه‌شده‌ی nav روی هر صفحه‌ی ماژول ۴۸px بود به‌جای ۱۲px)
+1. **بلوک شمارنده‌های ap-early فاز ۳۶ LAYER نشده بود (unlayered)** — برای اعلان‌های `!important` ترتیب لایه‌ها برعکس می‌شود و قاعده‌ی unlayered به هر قاعده‌ی لایه‌دارِ `!important` می‌بازد؛ bootstrap.css قدیمی این پروژه اسکیل کامل فاصله‌گذاری را با `!important` می‌فرستد (`.px-3{padding-left/right:3rem!important}`، `.p-1{1rem!important}`، `.py-2{1.5rem!important}`، `.mt-2{1.5rem!important}` و…) داخل `layer(legacy)` → همه‌ی شمارنده‌ها باختند
+2. **شمارنده‌ها LOGICAL بودند (`padding-inline`/`padding-block`)** — اعلان‌های فیزیکی (legacy از `padding-left/right/top/bottom` استفاده می‌کند) به همان longhand محاسباتی نگاشت می‌شوند و بر logical برنده‌اند، مستقل از ترتیب لایه‌ها
+
+### راه‌حل (فقط blade، resources/views/admin-panel/layouts/module-new.blade.php)
+- کل بلوک شمارنده‌ها داخل `@layer ap-early` رفت (اولین لایه‌ی پرولود → برنده‌ی جنگ `!important`)
+- همه‌ی شمارنده‌ها به longhand فیزیکی با مقادیر تیلویند (N×0.25rem) بازنویسی شدند
+- مجموعه‌ی شمارش‌شده به اسکیل کامل legacy گسترش یافت: p/px/py/pt/pb/pl/pr + m/mx/my/mt/mb/ml/mr × {0..5}
+- `.rounded-lg` ماند؛ شمارنده‌ی `.border` اضافه شد (legacy `.border{border:1px solid #EDEDED!important}` رنگ حاشیه را می‌ربود — `--color-line` + واریانت `.dark` با `--color-night-line` بازگردانده شد)
+- شمارنده‌های font-family ایرانیکَن به ap-early منتقل شدند
+- اسکوپ بدون تغییر: فقط `#ap-chrome-side`/`#ap-chrome-top`/`.ap-footer`/`.ap-toasts`؛ محتوای پکیج و پنل قدیمی دست‌نخورده
+
+### E2E (تأییدشده در مرورگر)
+- padding nav: 16px 48px 24px → 4px 12px 24px؛ لینک‌ها 8px/12px با gap 10px و radius 12px = پاریتی داشبورد؛ ۴۶ لینک، همه ۳۶px بلند و یکنواخت؛ اینپوت جستجو py 8px + Vazirmatn؛ اسکرول داخلی nav سالم؛ دارک‌مود درست؛ موبایل ۳۹۰px بدون overflow؛ SPA پکیج‌ها + داشبورد بدون رگرسیون؛ پنل قدیمی /admin-old دست‌نخورده
+
+**کامیت:** `da317e74`
+
+### درس برای فازهای بعدی
+1. **`!important` + لایه‌ها:** unlayered به لایه‌دار می‌بازد (برای `!important` ترتیب لایه‌ها برعکس می‌شود)
+2. **فیزیکی بر logical غالب است** برای همان longhand محاسباتی
+3. **یوتیلیتی‌های `px-*`/`py-*` تیلویند به `padding-inline`/`padding-block` (logical) کامپایل می‌شوند** — شمارنده در برابر قواعد فیزیکی legacy باید حتماً فیزیکی باشد
