@@ -1338,3 +1338,47 @@ Livewire در wire:navigate استایل‌های `<head>` را **هرگز حذ�
 - دکمه‌ی بازگشت مرورگر (پنل → پکیج با SPA): بلوک‌ها دیر append می‌شوند ولی پرولود پنل ترتیب لایه‌ها را نگه داشته → nav 12px و aside flex = کروم سالم
 - پنل → پنل: ۰ بلوک، بدون رگرسیون
 - استایل‌های push‌شده‌ی DigiPay در body رندر می‌شوند و بعد از ناوبری کاملاً پاک می‌شوند (`digipayStyleInBody=false` روی پنل)
+
+## فاز ۳۹ — استقلال پکیج‌ها از پنل + رفع ارور ۵۰۰ افزودن استوری + تست انقضای لایسنس
+
+### گزارش کاربر
+۱. «بعضی از پکیج‌ها وابسته به پنل هستن — مثلاً در پکیج استوری فایل‌های js و css در خود پنل هستند (asset('back/assets/js/pages/stories/...'))»
+۲. «موقع افزودن استوری ارور 500 می‌داد ولی ارور را نمایش نمی‌داد»
+۳. «بقیه پکیج‌ها را هم بررسی کن که وابسته به پنل نباشند و اگر بودند فایل‌ها را به خود پکیج منتقل کن»
+۴. «تست کن که اگر اشتراک یا زمان استفاده از پکیج تمام شود، پکیج از کار می‌افتد یا نه»
+
+### ۱) ممیزی وابستگی پکیج‌ها به پنل (هر ۱۰ پکیج)
+| پکیج | وابستگی | اقدام |
+|---|---|---|
+| Story | `story.css` + ۵ فایل js (`all/create/edit/index/details`) در `public/back/assets/` | **انتقال به پکیج** → `resources/assets/css/back/story.css` و `resources/assets/js/back/stories/*.js`؛ ۵ blade به `module_asset('Story', ...)` |
+| SmartAssembly | `/back/assets/images/pages/no-image.jpg` هاردکد (در میزبان حتی وجود نداشت!) | تصویر placeholder داخل پکیج + `module_asset('SmartAssembly', ...)` در rules/index و rules/manager (متغیر JS) |
+| seoAudit | همان تصویر در products/details | تصویر داخل پکیج + `module_asset('SeoAudit', ...)` |
+| ۷ پکیج دیگر (DigiPay, CreditPay, InstallmentPayment, RackWidget, CheckoutTurbo, AICatalog, AIWriter) | فقط `@include('back.partials.plugins')` (ویوی میزبان — سرویس‌ساید، مجاز) و `asset('/no-image-product.svg')` | بدون تغییر |
+
+قرارداد استقلال: asset پکیج در `Modules/{Name}/resources/assets/` می‌ماند، نصب‌کننده (`PackageInstallerService::publishModuleAssets`) آن را به `public/modules/{slug}/` کپی می‌کند و ویوها با `module_asset()` صدا می‌زنند — پکیج روی هر میزبانی که نصب‌کننده دارد مستقل است.
+
+### ۲) ریشه‌یابی ارور ۵۰۰ افزودن استوری (بازتولید واقعی در مرورگر)
+- **مسیر بازتولید:** جستجوی محصولِ دارای قیمتِ ناموجود/غیرقابل‌فروش (`getPrices()->first()` = null) → `Call to a member function get_attributes() on null` در `StoryController::getProductWithId:169` (و همین الگو در `edit()`) → POST `/admin/admin/stories/product` = **500**
+- **چرا کاربر ارور را نمی‌دید:** همه‌ی AJAXهای پکیج (create/edit/all/index/details) هیچ `error:` callback نداشتند → 500/422 کاملاً بی‌صدا بود
+- **اصلاحات (ریپوی پکیج استوری):**
+  - helper نال-سیف `buildProductCard()` برای getProductWithId و edit (محصول بدون قیمت → کارت با قیمت خالی، بدون کرش؛ محصول حذف‌شده در edit → کارت خالی)
+  - `parseJalaliExpiry()`: تبدیل تاریخ با ۶ فرمت جایگزین + تبدیل اعداد فارسی/عربی → در بدترین حالت **422 با پیام فارسی** به‌جای 500
+  - `error:` handler برای تمام ۸ AJAX پکیج — پیام 422 (اعتبارسنجی)، 419 (انقضای نشست)، 500 (سرور) با toast
+  - نال-سیف کردن `Storage::delete` قبلی در update
+
+### ۳) تست انقضای اشتراک/لایسنس (سناریوی واقعی در مرورگر)
+- `installed_modules.license_expires_at` استوری به گذشته تنظیم شد + کش پاک
+- ✓ روت‌های ادمین (لیست/ایجاد/ویرایش استوری) → **403 + صفحه‌ی زیبای license_invalid** («ارتباط با سرور مجوز قطع شده است…»)
+- ✓ منوی «استوری‌ها» از سایدبار پنل جدید حذف شد
+- ✓ روت‌های فرانت (`/story/{id}`) → 403؛ ویجت استوری از صفحه‌ی اصلی حذف شد
+- ✓ مسیر پنل قدیم هم همان رفتار را دارد
+- ✓ بعد از تمدید (تاریخ آینده + پاک‌سازی کش) → ریکاور کامل بدون رستارت (چرخه‌ی ۱۵ دقیقه‌ای LicenseGuard + چک دوره‌ای ۲۴ ساعته)
+- نکته: وقتی API مرکزی در دسترس نیست (sandbox) ماژول بلاک می‌ماند (رفتار امن درست است؛ گرسنه‌کشی نمی‌کند — تلاش مجدد ۱۵ دقیقه‌ای)
+
+### E2E نهایی
+- ایجاد استوری (تصویری + ویدیویی + با محصول): 200 → redirect به لیست ✓ (هر دو پنل)
+- صفحه‌ی ویرایش استوریِ دارای محصولِ بدون قیمت فروش‌پذیر: بدون کرش ✓
+- assetهای جدید: `modules/story/css/back/story.css` و `modules/story/js/back/stories/*.js` → 200 در هر دو پنل (کوکی ap_panel) ✓
+- جستجوی محصول ناموجود → toast «محصول پیدا نشد!» ✓ (سیستم toast تایید شد)
+
+**کامیت‌ها:** پکیج استوری `9d8399c..` (master)، SmartAssembly `1a7ee1e..` (master)، seoAudit `257f8ea..` (master)، میزبان `551125a0` (docs/project-analysis)
