@@ -49,9 +49,9 @@ class ThemeServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__ . '/resources/views', 'front');
 
         // share with views
-        if (!$this->app->runningInConsole()) {
-            $this->viewComposer();
-        }
+        // کامپوزرها lazy هستند (فقط هنگام رندر ویو اجرا می‌شوند)؛ بدون ثبت در
+        // حالت کنسول، ویوهای تم در تست‌ها با متغیرهای تعریف‌نشده 500 می‌دهند
+        $this->viewComposer();
     }
 
     private function viewComposer()

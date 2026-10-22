@@ -18,7 +18,10 @@ class ForceHttps
 
         $whitelist = array('127.0.0.1', "::1");
 
-        if(in_array($_SERVER['REMOTE_ADDR'], $whitelist)){
+        // $request->ip() به‌جای $_SERVER['REMOTE_ADDR'] — در CLI/تست‌ها (و برخی
+        // کانفیگ‌های FPM پشت پروکسی) REMOTE_ADDR در $_SERVER وجود ندارد و هشدار
+        // undefined در لاراول به استثنا تبدیل و درخواست 500 می‌شود
+        if(in_array($request->ip(), $whitelist)){
             return $next($request);
         }
         if (!$request->secure()) {

@@ -1405,3 +1405,40 @@ Livewire در wire:navigate استایل‌های `<head>` را **هرگز حذ�
 - پس از پایان نصب: `performance.getEntriesByType('navigation')[0].type === "reload"` → صفحه خودکار رفرش شد و منوی پکیج («رگال لباس» + زیرمنوها) در سایدبار ظاهر شد ✓
 - تست جداگانه‌ی fallback سرور (Http::fake، بدون planId): ارزان‌ترین پلن خودکار ارسال شد (id=771) ✓
 - assets بازسازی شد (bun run build:admin).
+
+---
+
+## فاز ۴۲ — ممیزی کامل پنل با هر ۱۰ پکیج نصب + زیرساخت تست (php artisan test) + ریشه‌یابی کندی
+
+**گزارش کاربر:** ۱) ارور «A listener indicated an asynchronous response...» چیست؟ ۲) همه پکیج‌ها نصب شوند و تک‌تک صفحات پنل بررسی و کنسول چک و ارورها و موارد کاهنده سرعت رفع شود. ۳) `php artisan test` اجرا و ارورهایش رفع شود.
+
+### ارور «A listener indicated an asynchronous response»
+- این ارور از `chrome.runtime.sendMessage` افزونه‌های مرورگر است (انتظار پاسخ async که کانالش بسته شده) — **هیچ کدی در پروژه از API افزونه‌های مرورگر استفاده نمی‌کند** (rg روی public/، resources/، Modules/ صفر نتیجه).
+- خزش کامل ۱۳۶ صفحه پنل با مرورگر تمیز Playwright: **صفر** occurrence — قطعاً نویز افزونه مرورگر کاربر (مترجم/آدبلاک/...) و بی‌ضرر برای اپ.
+
+### خزش کامل پنل (agent-browser، هر ۱۰ پکیج نصب)
+- ۱۳۶ صفحه (/admin/admin/* + همه صفحات پکیج‌ها + صفحات سئو) با اسنپ‌شات و لاگ کنسول/page-error در مرورگر تمیز.
+- دو ارور کنسول واقعی پیدا و رفع شد:
+  1. **socials.blade.php** — `x-text="{{ $f }} === 'all' ..."` با `{{ $f }}` بدون کوتیشن → «all/filled/empty is not defined». رفع: کوتیشن‌گذاری رشته‌ای (`'{{ $f }}'`).
+  2. **admin.js — apPermissions** — `x-model="q"` بدون تعریف `q` در data کامپوننت → «q is not defined». رفع: `q: ''` به کامپوننت اضافه شد + بازسازی assetها (bun run build:admin — emptyOutDir:false، assetهای قدیمی حفظ شدند).
+- نتیجه نهایی: **136/136 صفحه بدون هیچ خطای کنسول** (crawl_panel.sh با پاک‌سازی console بین صفحات).
+
+### باگ seoAudit — پکیج «سئو» اصلاً لود نمی‌شد (404 همه صفحات + منوی ناموجود)
+- **ریشه:** نام پوشه نصب‌شده `Modules/seoAudit` (از نام پوشه ZIP) در حالی که namespace کلاس‌ها `Modules\SeoAudit\...` است (فیلد name در module.json). روی لینوکس فایل‌سیستم case-sensitive است → autoloader سفارشی bootstrap/app.php فایل پروایدر را پیدا نمی‌کند → پروایدر/روت/منو/middleware هرگز لود نمی‌شد (DB می‌گفت «نصب است» ولی عملاً مرده بود).
+- **رفع ساختاری در نصاب (`PackageInstallerService::extractZip`)**: نام کانونی از خود module.json داخل ZIP خوانده می‌شود؛ استخراج در پوشه موقت و انتقال به `Modules/{canonical}` — نصب‌های قبلی با حالت حروفی متفاوت هم بایگانی و جایگزین می‌شوند. یعنی هر پکیجی (حتی با نام پوشه ZIP نادرست) از این بعد همیشه case-consistent نصب می‌شود؛ آپدیت پکیج در پنل = self-heal روی سرور.
+- **سندباکس:** پوشه به `Modules/SeoAudit` تغییر نام کرد + `installed_modules.name` و کلید modules_statuses.json اصلاح شد → پروایدر لود، روت‌ها ثبت، منو نمایش داده شد.
+- مایگریشن‌های ماژول (۱۴ جدول سئو) و `seoaudit:install-permissions` (۲۱ پرمیژن + گرنت به نقش ۱) اجرا شد → همه صفحات سئو 200.
+
+### ریشه‌یابی کندی پنل
+1. **چک لایسنس بلاک‌کننده (۱۲۰ ثانیه!)** — `verifyLicense` با timeout سراسری `packages.api.timeout=120s` وسط لود صفحات پکیج اجرا می‌شود؛ سرور پکیج‌ها کند/غیرفعال = هنگ تا ۲ دقیقه. رفع: `PackageApiService::request()` پارامتر تایم‌اوت گرفت و `verifyLicense` با **6s total / 3s connect** صدا زده می‌شود (تأیید در لاگ: cURL error 28 → 3002ms).
+2. **فیوز API بازار (PackageIndex)** — خطای API کش نمی‌شد → هر بار لود بازار پکیج‌ها دوباره تا 30s منتظر می‌ماند (اندازه‌گیری واقعی: TTFB 2.3s تا **30.5s**). رفع: circuit-breaker ۹۰ ثانیه‌ای — بعد از اولین خطا، لود صفحات بعدی بدون تماس با API و با نمایش پیام خطا (اندازه‌گیری بعد از رفع: **~420ms**).
+
+### زیرساخت تست — `php artisan test` (قبلاً اصلاً tests/ وجود نداشت)
+- `tests/TestCase.php` با override `createApplication()` — چون providerهای پکیج vendor/ خودشان را require می‌کنند و `Application::inferBasePath()` مسیر غلط می‌دهد (باگ واقعی محیط تست).
+- **۱۵ تست** در ۴ کلاس: `ModuleDirectoryCaseTest` (سلامت نام پوشه/منیفست/پروایدر ماژول‌ها — این کلاس باگ seoAudit را برای همیشه می‌گیرد)، `PackageInstallerCanonicalNameTest` (۴ سناریوی استخراج ZIP با ZIP واقعی)، `ModuleHelpersTest`، `AdminPanelSmokeTest` (لاگین/ForceHttps/ریدایرکت مهمان/صفحه اصلی) — **15 passed (30 assertions)** + migrate phpunit.xml به اسکیمای جدید.
+- سه باگ واقعی که تست‌ها پیدا و رفع کردند:
+  1. **ForceHttps** — `$_SERVER['REMOTE_ADDR']` خام → در CLI/تست undefined و 500. رفع: `$request->ip()`.
+  2. **AppServiceProvider::boot** — `viewComposer()` فقط در non-console ثبت می‌شد → در تست‌ها ویوهای تم با متغیر تعریف‌نشده ($menus) 500 می‌دادند. رفع: ثبت کامپوزرها (lazy) در حالت کنسول هم.
+  3. **ThemeServiceProvider::boot** — همان گارد console → همان رفع.
+
+**کامیت:** میزبان → docs/project-analysis

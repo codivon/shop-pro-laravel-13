@@ -198,9 +198,44 @@ class PackageIndex extends Component
 
     /* ---------------- لیست پکیج‌ها از API (پورت ۱:۱ index قدیمی) ---------------- */
 
+    /**
+     * فیوز ارتباط با API بازار — بعد از یک خطای ارتباط، برای این مدت (ثانیه)
+     * اصلاً به سرور پکیج‌ها تلاش نمی‌کنیم تا هر بار لود صفحه تا ۳۰ ثانیه هنگ نکند
+     * (سرور پکیج‌ها ممکن است موقتاً کند/غیرفعال باشد؛ کاربر نباید جریمه شود).
+     */
+    private const API_FUSE_TTL_SECONDS = 90;
+
+    private function apiFuseKey(): string
+    {
+        return 'packages.api.fuse';
+    }
+
+    /** اگر فیوز فعال است پیام خطای ذخیره‌شده را برمی‌گرداند، وگرنه null */
+    private function apiFuseError(): ?string
+    {
+        return Cache::get($this->apiFuseKey());
+    }
+
+    /** روشن کردن فیوز بعد از یک خطای ارتباط با API */
+    private function tripApiFuse(string $message): void
+    {
+        Cache::put($this->apiFuseKey(), $message, now()->addSeconds(self::API_FUSE_TTL_SECONDS));
+    }
+
     public function loadPackages(): void
     {
         $this->apiError = null;
+
+        // فیوز فعال؟ → بدون تماس با API، سریع خطای قبلی را نشان بده
+        if ($fuseMessage = $this->apiFuseError()) {
+            $this->packages = [];
+            $this->paginationMeta = [];
+            $this->installedMap = [];
+            $this->subscriptionSummary = null;
+            $this->apiError = $fuseMessage;
+
+            return;
+        }
 
         // فیلتر رایگان/پولی: API این فیلتر را نمی‌شناسد → همه صفحات جمع و سمت پنل فیلتر می‌شود
         if ($this->free !== '') {
@@ -248,6 +283,7 @@ class PackageIndex extends Component
                 'total' => count($packages),
             ];
         } catch (RuntimeException $e) {
+            $this->tripApiFuse($e->getMessage());
             $this->packages = [];
             $this->paginationMeta = [];
             $this->installedMap = [];
@@ -263,6 +299,18 @@ class PackageIndex extends Component
      */
     protected function loadPackagesWithPriceFilter(): void
     {
+        // فیوز فعال؟ → بدون تماس با API، سریع خطای قبلی را نشان بده
+        if ($fuseMessage = $this->apiFuseError()) {
+            $this->packages = [];
+            $this->paginationMeta = [];
+            $this->installedMap = [];
+            $this->subscriptionSummary = null;
+            $this->priceCounts = ['free' => 0, 'paid' => 0, 'total' => 0];
+            $this->apiError = $fuseMessage;
+
+            return;
+        }
+
         try {
             $perPage = 12;
             $allPackages = [];
@@ -342,6 +390,7 @@ class PackageIndex extends Component
             $this->subscriptionSummary = $this->normalizeSubscriptionSummary($subscriptionSummary);
             $this->syncInstalledState();
         } catch (RuntimeException $e) {
+            $this->tripApiFuse($e->getMessage());
             $this->packages = [];
             $this->paginationMeta = [];
             $this->installedMap = [];

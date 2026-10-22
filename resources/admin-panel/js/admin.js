@@ -664,6 +664,7 @@ document.addEventListener('alpine:init', () => {
         perms: initial.map(Number),
         kidsMap: kids,
         titles,
+        q: '',
 
         match(title) {
             const q = String(this.q ?? '').trim();

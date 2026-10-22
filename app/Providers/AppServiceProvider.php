@@ -85,8 +85,12 @@ class AppServiceProvider extends ServiceProvider
 
         if (application_installed()) {
 
+            // کامپوزرهای ویو lazy هستند (فقط هنگام رندر ویو اجرا می‌شوند) و
+            // بدون آن‌ها ویوهای تم در تست‌ها/کنسول با متغیرهای تعریف‌نشده
+            // (مثل $menus) 500 می‌دهند — پس در حالت کنسول هم ثبت می‌شوند
+            $this->viewComposer();
+
             if (!$this->app->runningInConsole()) {
-                $this->viewComposer();
                 $this->configs();
             }
 

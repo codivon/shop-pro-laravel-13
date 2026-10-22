@@ -44,7 +44,7 @@
                             x-bind:class="filter === '{{ $f }}' ? '!bg-brand-600 !text-white !border-brand-600' : ''">
                         {{ $label }}
                         <span class="fa-digits opacity-70"
-                              x-text="{{ $f }} === 'all' ? total : ({{ $f }} === 'filled' ? filledCount : total - filledCount)"></span>
+                              x-text="'{{ $f }}' === 'all' ? total : ('{{ $f }}' === 'filled' ? filledCount : total - filledCount)"></span>
                     </button>
                 @endforeach
             </div>

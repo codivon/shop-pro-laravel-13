@@ -72,7 +72,7 @@ class PackageApiService
         return $this->request('POST', "/api/v1/packages/{$slug}/verify-license", [
             'license_key' => $licenseKey,
             'project_key' => $this->projectKey,
-        ]);
+        ], false, 6, 3);
     }
 
     /* ===================================================================
@@ -98,11 +98,15 @@ class PackageApiService
      *  درخواست HTTP مشترک
      * =================================================================== */
 
-    private function request(string $method, string $endpoint, array $data = [], bool $soft4xx = false): array
+    private function request(string $method, string $endpoint, array $data = [], bool $soft4xx = false, ?int $timeoutSec = null, ?int $connectSec = null): array
     {
         try {
             $projectUrl = request()->root();
-            $http = Http::timeout($this->timeout)
+            /* تایم‌اوت کوتاه برای فراخوانی‌های غیربلاک‌کننده (مثل verify-license که
+             * وسط لود صفحه اجرا می‌شود) — یک چک لایسنس هرگز نباید رندر صفحه را
+             * تا ۱۲۰ ثانیه متوقف کند؛ فراخوانی‌های سنگین (نصب/پرداخت) پیش‌فرض می‌مانند. */
+            $http = Http::timeout($timeoutSec ?? $this->timeout)
+                ->connectTimeout($connectSec ?? (int) config('packages.api.connect_timeout', 30))
                 ->withToken($this->token)
                 ->withHeaders([
                     'Accept'        => 'application/json',

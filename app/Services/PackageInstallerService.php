@@ -344,10 +344,12 @@ class PackageInstallerService
         }
 
         $moduleName = null;
+        $moduleJsonIndex = null;
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $entry = $zip->getNameIndex($i);
             if (preg_match('#^([^/]+)/module\.json$#', $entry, $m)) {
                 $moduleName = $m[1];
+                $moduleJsonIndex = $i;
                 break;
             }
         }
@@ -357,28 +359,62 @@ class PackageInstallerService
             throw new RuntimeException('فایل module.json در ZIP پیدا نشد. ساختار پکیج نامعتبر است.');
         }
 
+        /* نام کانونی ماژول را از خود module.json می‌خوانیم.
+         * پوشه داخل ZIP ممکن است هر حالت حروفی داشته باشد (مثلاً seoAudit)
+         * اما namespace کلاس‌های PHP (Modules\SeoAudit\...) از فیلد name می‌آید؛
+         * روی لینوکس فایل‌سیستم case-sensitive است و مغایرت نام پوشه با نام ماژول
+         * یعنی autoload ناموفق → سرویس‌پروایدر/روت‌ها/منوی ماژول اصلاً لود نمی‌شوند. */
+        $canonicalName = $moduleName;
+        $meta = json_decode((string) $zip->getFromIndex($moduleJsonIndex), true);
+        if (is_array($meta) && ! empty($meta['name']) && is_string($meta['name'])) {
+            $canonicalName = trim($meta['name']);
+        }
+
         $modulesPath = config('packages.modules.path');
         if (! File::exists($modulesPath)) {
             File::makeDirectory($modulesPath, 0755, true);
         }
 
-        $targetPath = $modulesPath.'/'.$moduleName;
+        $targetPath = $modulesPath.'/'.$canonicalName;
 
         if (File::exists($targetPath)) {
-            $backupPath = $modulesPath.'/.backups/'.$moduleName.'_'.time();
+            $backupPath = $modulesPath.'/.backups/'.$canonicalName.'_'.time();
             File::ensureDirectoryExists(dirname($backupPath), 0755);
             File::moveDirectory($targetPath, $backupPath);
         }
 
-        if (! $zip->extractTo($modulesPath)) {
-            $zip->close();
-            throw new RuntimeException('استخراج فایل ZIP ناموفق بود.');
+        // پوشه قدیمی با حالت حروفی متفاوت (نصب‌های قبلی) هم باید جایگزین شود
+        if ($moduleName !== $canonicalName) {
+            $legacyPath = $modulesPath.'/'.$moduleName;
+            if (File::exists($legacyPath)) {
+                $legacyBackup = $modulesPath.'/.backups/'.$moduleName.'_'.time();
+                File::ensureDirectoryExists(dirname($legacyBackup), 0755);
+                File::moveDirectory($legacyPath, $legacyBackup);
+            }
         }
 
+        // استخراج در پوشه موقت و انتقال با نام کانونی (نه نام پوشه ZIP)
+        $tmpPath = $modulesPath.'/.tmp-extract-'.uniqid();
+        File::ensureDirectoryExists($tmpPath, 0755);
+
+        if (! $zip->extractTo($tmpPath)) {
+            $zip->close();
+            File::deleteDirectory($tmpPath);
+            throw new RuntimeException('استخراج فایل ZIP ناموفق بود.');
+        }
         $zip->close();
+
+        if (! File::exists($tmpPath.'/'.$moduleName)) {
+            File::deleteDirectory($tmpPath);
+            throw new RuntimeException('پوشه ماژول داخل ZIP یافت نشد.');
+        }
+
+        File::moveDirectory($tmpPath.'/'.$moduleName, $targetPath, true);
+        File::deleteDirectory($tmpPath);
+
         clearstatcache();
 
-        return $moduleName;
+        return $canonicalName;
     }
 
     /* ===================================================================
