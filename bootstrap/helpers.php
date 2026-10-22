@@ -116,19 +116,21 @@ function option($option_name, $default_value = '')
         $language = app()->getLocale();
     }
 
-    $value = Cache::rememberForever('options.'.$language.'.'.$option_name, function () use ($option_name, $default_value, $language) {
-        $option = Option::where('option_name', $option_name)
-            ->where('lang', $language)
-            ->first();
+    $prefix = 'options.'.$language.'.';
 
-        if ($option) {
-            return is_null($option->option_value) ? false : $option->option_value;
+    // بهینه‌سازی کارایی: همه گزینه‌های این زبان با «یک» کوئری بارگذاری و کش
+    // می‌شوند (فلگ __loaded__). قبلاً هر option() یک کوئری جدا اجرا می‌کرد
+    // و صفحات پنل/فروشگاه ده‌ها کوئری تکراری options داشتند.
+    if (! Cache::get($prefix.'__loaded__')) {
+        foreach (Option::where('lang', $language)->get() as $opt) {
+            Cache::forever($prefix.$opt->option_name, is_null($opt->option_value) ? false : $opt->option_value);
         }
+        Cache::forever($prefix.'__loaded__', true);
+    }
 
-        return $default_value;
-    });
+    $value = Cache::get($prefix.$option_name, '__option_missing__');
 
-    if (is_null($value) || $value === false || $value == '') {
+    if ($value === '__option_missing__' || is_null($value) || $value === false || $value == '') {
         return $default_value;
     }
 

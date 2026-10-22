@@ -26,7 +26,7 @@ class CategoryObserver
      */
     public function created(Category $category)
     {
-        //
+        Cache::forget('category.children_counts');
     }
 
     /**
@@ -37,7 +37,7 @@ class CategoryObserver
      */
     public function updated(Category $category)
     {
-        //
+        Cache::forget('category.children_counts');
     }
 
     /**
@@ -48,6 +48,6 @@ class CategoryObserver
      */
     public function deleted(Category $category)
     {
-        //
+        Cache::forget('category.children_counts');
     }
 }

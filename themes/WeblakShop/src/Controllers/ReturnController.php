@@ -70,6 +70,14 @@ class ReturnController extends Controller
             return redirect()->back()->with('error', 'مهلت مرجوعی این محصول به پایان رسده است.')->withInput();
         }
 
+        // جلوگیری از ثبت درخواست مرجوعی تکراری برای همان آیتم (ریسک دوبار بازپرداخت)
+        $existingReturn = ReturnRequest::where('order_item_id', $orderItem->id)
+            ->whereNotIn('status', ['cancelled', 'rejected'])
+            ->exists();
+        if ($existingReturn) {
+            return redirect()->back()->with('error', 'برای این محصول قبلاً درخواست مرجوعی ثبت شده است.');
+        }
+
         // ساخت درخواست با مقادیر دقیق از order_item
         $returnRequest = ReturnRequest::createFromOrderItem(
             $orderItem,

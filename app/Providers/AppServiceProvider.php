@@ -116,6 +116,14 @@ class AppServiceProvider extends ServiceProvider
         $this->observers();
 
         $this->app->booted(function () {
+            // باطل‌سازی کش یکپارچه options هنگام ایجاد/ویرایش/حذف مستقیم گزینه‌ها
+            \App\Models\Option::saved(function () {
+                $this->forgetOptionsLoadedFlags();
+            });
+            \App\Models\Option::deleted(function () {
+                $this->forgetOptionsLoadedFlags();
+            });
+
             $this->registerTaggableObservers();
 
             // ★ فاز ۲۲: پس از پایان مایگریشن (نصب/آپدیت) کش وجود جدول redirects باطل شود
@@ -125,6 +133,18 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->registerObservers();
+    }
+
+    /**
+     * باطل‌سازی فلگ بارگذاری کش options برای همه زبان‌ها.
+     */
+    private function forgetOptionsLoadedFlags(): void
+    {
+        $languages = array_unique(array_merge(['fa', 'en'], (array) config('general.languages', [])));
+
+        foreach ($languages as $lang) {
+            \Illuminate\Support\Facades\Cache::forget('options.'.$lang.'.__loaded__');
+        }
     }
 
     private function viewComposer()

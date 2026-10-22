@@ -1,4 +1,4 @@
-@if ($product->addableToCart())
+@if ($product->addableToCart() && $selected_price)
 
     @php
 
@@ -151,7 +151,7 @@
             </div>
 
         </div>
-        @elseif (!$product->addableToCart())
+        @elseif (!$product->addableToCart() || !$selected_price)
             <div class="theiaStickySidebar" style="padding-top: 0px; padding-bottom: 1px; position: static; transform: none;">
                 <div class="product-seller-info">
                     <div class="product-stock-status">
