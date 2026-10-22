@@ -36,31 +36,124 @@
         utilities خودشان بعد از این پرولود، انتهای صف می‌آیند (بعد از legacy و ap-late) --}}
     <style>@layer ap-early, theme, base, legacy, ap-late;</style>
 
-    {{-- فاز ۳۶ — لایه‌ی ap-early: فقط خنثی‌سازهای !important (برای !important، لایه‌ی
-        جلوتر برنده است) — اسکیل فاصله‌گذاری bootstrap.css با !important کلاس‌های
-        هم‌نام تیلویند را می‌رباید و قواعد فونت قدیمی هم !important دارند --}}
+    {{-- فاز ۳۷ — لایه‌ی ap-early: خنثی‌سازهای !important. دو نکته‌ی حیاتی که در فاز ۳۶
+        اشتباه بود و «پدینگ اضافی منو» را می‌ساخت:
+        ۱) این قواعد باید «داخل» لایه‌ی ap-early باشند. برای !important لایه‌ی جلوتر
+           برنده است — اما قواعد «بی‌لایه» در جنگ !important از «هر» لایه‌ای می‌بازند
+           (ترتیب لایه‌ها برای !important معکوس می‌شود و بی‌لایه = آخرین گروه است).
+           فاز ۳۶ این بلوک را بی‌لایه گذاشته بود → اسکیل فاصله‌ی قدیمی (p-3=3rem!important،
+           px-3=padding-left/right:3rem!important و…) می‌برد.
+        ۲) خنثی‌سازها باید با «لانگ‌هند فیزیکی» نوشته شوند (padding-left/right/top/bottom).
+           padding-inline/logical در برابر اعلان فیزیکیِ هم‌ارزش می‌بازد؛ اسکیل قدیمی
+           فیزیکی است (bootstrap.css: .pr-3,.px-3{padding-left:3rem!important}) →
+           هر خنثی‌سازِ padding-inline می‌باخت.
+        مقیاس قدیمی (bootstrap.css خط ~8168-8500): p/px/py/pt/pr/pb/pl و m/mx/my/mt/mr/mb/ml
+        × {0,1,2,3,4,5} با !important — مقدار تیلویندی هر کلاس (N×0.25rem) برش می‌گردد. --}}
     <style>
+    @layer ap-early {
         /* فونت اجباری iranyekan قدیمی نباید داخل کروم اعمال شود — fa-* مستثنا */
         :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) span:not([class*="fa-"]) { font-family: inherit !important; }
         :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) :is(input, textarea, select, button) { font-family: inherit !important; }
 
-        /* اسکیل فاصله‌ی قدیمی (p-1=1rem!important ، px-4=3.5rem!important ، mt-2=1.5rem!important
-           و…) — بازسازی مقادیر تیلویند فقط داخل کروم؛ محتوای پکیج دست‌نخورده */
-        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mt-2 { margin-top: .5rem !important; }
-        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mx-1 { margin-inline: .25rem !important; }
+        /* ---- padding: اسکیل کامل قدیمی × مقادیر تیلویند — همه فیزیکی ---- */
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .p-0 { padding: 0 !important; }
         :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .p-1 { padding: .25rem !important; }
         :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .p-2 { padding: .5rem !important; }
         :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .p-3 { padding: .75rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .p-4 { padding: 1rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .p-5 { padding: 1.25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .px-0 { padding-left: 0 !important; padding-right: 0 !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .px-1 { padding-left: .25rem !important; padding-right: .25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .px-2 { padding-left: .5rem !important; padding-right: .5rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .px-3 { padding-left: .75rem !important; padding-right: .75rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .px-5 { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .py-0 { padding-top: 0 !important; padding-bottom: 0 !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .py-1 { padding-top: .25rem !important; padding-bottom: .25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .py-2 { padding-top: .5rem !important; padding-bottom: .5rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .py-3 { padding-top: .75rem !important; padding-bottom: .75rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .py-4 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .py-5 { padding-top: 1.25rem !important; padding-bottom: 1.25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pt-0 { padding-top: 0 !important; }
         :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pt-1 { padding-top: .25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pt-2 { padding-top: .5rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pt-3 { padding-top: .75rem !important; }
         :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pt-4 { padding-top: 1rem !important; }
-        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .px-1 { padding-inline: .25rem !important; }
-        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .px-3 { padding-inline: .75rem !important; }
-        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .px-4 { padding-inline: 1rem !important; }
-        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .px-5 { padding-inline: 1.25rem !important; }
-        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .py-2 { padding-block: .5rem !important; }
-        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .py-4 { padding-block: 1rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pt-5 { padding-top: 1.25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pb-0 { padding-bottom: 0 !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pb-1 { padding-bottom: .25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pb-2 { padding-bottom: .5rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pb-3 { padding-bottom: .75rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pb-4 { padding-bottom: 1rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pb-5 { padding-bottom: 1.25rem !important; }
+        /* pl/pr قدیمی فیزیکی هستند (pr-3=padding-left، pl-3=padding-right) — تیلویند هم فیزیکی */
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pl-0 { padding-left: 0 !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pl-1 { padding-left: .25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pl-2 { padding-left: .5rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pl-3 { padding-left: .75rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pl-4 { padding-left: 1rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pl-5 { padding-left: 1.25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pr-0 { padding-right: 0 !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pr-1 { padding-right: .25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pr-2 { padding-right: .5rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pr-3 { padding-right: .75rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pr-4 { padding-right: 1rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pr-5 { padding-right: 1.25rem !important; }
+
+        /* ---- margin: همان اسکیل کامل ---- */
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .m-0 { margin: 0 !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .m-1 { margin: .25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .m-2 { margin: .5rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .m-3 { margin: .75rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .m-4 { margin: 1rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .m-5 { margin: 1.25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mx-0 { margin-left: 0 !important; margin-right: 0 !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mx-1 { margin-left: .25rem !important; margin-right: .25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mx-2 { margin-left: .5rem !important; margin-right: .5rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mx-3 { margin-left: .75rem !important; margin-right: .75rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mx-4 { margin-left: 1rem !important; margin-right: 1rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mx-5 { margin-left: 1.25rem !important; margin-right: 1.25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .my-0 { margin-top: 0 !important; margin-bottom: 0 !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .my-1 { margin-top: .25rem !important; margin-bottom: .25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .my-2 { margin-top: .5rem !important; margin-bottom: .5rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .my-3 { margin-top: .75rem !important; margin-bottom: .75rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .my-4 { margin-top: 1rem !important; margin-bottom: 1rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .my-5 { margin-top: 1.25rem !important; margin-bottom: 1.25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mt-0 { margin-top: 0 !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mt-1 { margin-top: .25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mt-2 { margin-top: .5rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mt-3 { margin-top: .75rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mt-4 { margin-top: 1rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mt-5 { margin-top: 1.25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mb-0 { margin-bottom: 0 !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mb-1 { margin-bottom: .25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mb-2 { margin-bottom: .5rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mb-3 { margin-bottom: .75rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mb-4 { margin-bottom: 1rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mb-5 { margin-bottom: 1.25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .ml-0 { margin-left: 0 !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .ml-1 { margin-left: .25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .ml-2 { margin-left: .5rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .ml-3 { margin-left: .75rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .ml-4 { margin-left: 1rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .ml-5 { margin-left: 1.25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mr-0 { margin-right: 0 !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mr-1 { margin-right: .25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mr-2 { margin-right: .5rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mr-3 { margin-right: .75rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mr-4 { margin-right: 1rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mr-5 { margin-right: 1.25rem !important; }
+
         /* قدیمی: .rounded-lg { border-radius: .6rem !important } — تیلویند: .5rem */
         :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .rounded-lg { border-radius: .5rem !important; }
+
+        /* قدیمی: .border { border: 1px solid #EDEDED !important } (bootstrap.css) — کلاس
+           border تیلویند فقط width می‌دهد و رنگ را به border-line/dark:border-night-line
+           می‌سپارد؛ شورت‌هند قدیمی رنگ #EDEDED را هم !important می‌کند (در دارک‌مود
+           مرز روشن می‌ماند) — رنگ با توکن پنل بازسازی می‌شود */
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .border { border-width: 1px !important; border-color: var(--color-line) !important; }
+        .dark :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .border { border-color: var(--color-night-line) !important; }
+    }
     </style>
 
     <title>@yield('title', $title ?? $apSiteTitle) | پنل مدیریت {{ $apSiteTitle }}</title>
