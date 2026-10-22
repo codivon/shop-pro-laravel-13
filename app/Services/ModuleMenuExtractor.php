@@ -5,6 +5,7 @@ namespace App\Services;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
+use Illuminate\Support\Facades\Cache;
 use Throwable;
 
 /**
@@ -27,10 +28,21 @@ use Throwable;
  *
  * اگر پارس شکست خورد یا خالی بود، سایدبار به @include مستقیم همان ویو
  * برمی‌گردد (رفتار فاز ۳۲) تا هیچ منویی گم نشود.
+ *
+ * فاز ۳۵ — کش «بین‌درخواستی» برای سرعت پنل:
+ * --------------------------------------------------------------------------
+ * رندر Blade + پارس DOM هر پکیج در «هر» لود صفحه (و با wire:navigate در هر
+ * ناوبری SPA!) انجام می‌شد؛ با ۱۰ پکیج نصب‌شده یعنی ۱۰ رندر + ۱۰ پارس DOM +
+ * ده‌ها چک پرمیشن به‌ازای هر حرکت در پنل (گزارش کاهش سرعت کاربر).
+ * حالا نتیجه با کلید «نسخه + شناسه ادمین + اثر انگشت mtime فایل‌های منو» کش
+ * می‌شود؛ آپدیت/نصب پکیج mtime را عوض می‌کند → کلید جدید → کش خودکار
+ * باطل می‌شود. فلگ active که به ریکوئست جاری وابسته است بعد از خواندن کش،
+ * با مقایسه‌ی URL محاسبه می‌شود (هیچ داده‌ی وابسته به ریکوئست از کش استفاده
+ * نمی‌شود). TTL شش ساعت — حتی اگر mtime به هر دلیلی عوض نشد.
  */
 class ModuleMenuExtractor
 {
-    /** مموای هر ریکوئست (پارس DOM برای هر لود صفحه یک‌بار کافی است) */
+    /** مموای هر ریکوئست (خواندن از کش برای هر لود صفحه یک‌بار کافی است) */
     protected static array $memo = [];
 
     /**
@@ -44,21 +56,115 @@ class ModuleMenuExtractor
             return static::$memo;
         }
 
-        $result = [];
+        $views = [];
 
         foreach (ModuleMenuRegistry::all() as $view) {
-            if (! view()->exists($view)) {
-                continue;
+            if (view()->exists($view)) {
+                $views[] = $view;
             }
+        }
 
-            foreach (static::extract($view) as $group) {
-                if ($group['items'] !== []) {
-                    $result[] = $group;
+        if ($views === []) {
+            return static::$memo = [];
+        }
+
+        try {
+            $adminId = auth('adminPanel')->id() ?? 0;
+        } catch (Throwable) {
+            $adminId = 0;
+        }
+
+        $key = 'module-menu:v3:'.$adminId.':'.static::viewsFingerprint($views);
+
+        try {
+            $groups = Cache::remember($key, now()->addHours(6), function () use ($views) {
+                $result = [];
+
+                foreach ($views as $view) {
+                    foreach (static::extract($view) as $group) {
+                        if ($group['items'] !== []) {
+                            $result[] = $group;
+                        }
+                    }
+                }
+
+                return $result;
+            });
+        } catch (Throwable) {
+            $groups = null; // کش در دسترس نبود (مثلاً store خطا داد) — مستقیم رندر کن
+        }
+
+        if (! is_array($groups)) {
+            $groups = [];
+
+            foreach ($views as $view) {
+                foreach (static::extract($view) as $group) {
+                    if ($group['items'] !== []) {
+                        $groups[] = $group;
+                    }
                 }
             }
         }
 
-        return static::$memo = $result;
+        // فلگ active به ریکوئست جاری وابسته است — از کش «هرگز» استفاده نشود
+        foreach ($groups as &$group) {
+            foreach ($group['items'] as &$item) {
+                $item['active'] = static::urlIsActive($item['url'] ?? '');
+            }
+            unset($item);
+        }
+        unset($group);
+
+        return static::$memo = $groups;
+    }
+
+    /**
+     * اثر انگشت نسخه‌ی ویوهای منو — هر تغییری در فایل‌های منوی پکیج‌ها
+     * (نصب، آپدیت، حذف) mtime را عوض می‌کند و کلید کش جدید ساخته می‌شود.
+     *
+     * @param  array<int, string>  $views
+     */
+    protected static function viewsFingerprint(array $views): string
+    {
+        $parts = [];
+
+        foreach ($views as $view) {
+            $mtime = 0;
+
+            try {
+                $path = view($view)->getPath();
+
+                if (is_string($path)) {
+                    $mtime = @filemtime($path) ?: 0;
+                }
+            } catch (Throwable) {
+                $mtime = -1;
+            }
+
+            $parts[] = $view.':'.$mtime;
+        }
+
+        return md5(implode('|', $parts));
+    }
+
+    /** آیتم منو با URL فعلیِ ریکوئست فعال است؟ (مقایسه‌ی مسیر بدون query/fragment) */
+    protected static function urlIsActive(string $url): bool
+    {
+        if ($url === '' || $url === '#') {
+            return false;
+        }
+
+        $path = trim(parse_url($url, PHP_URL_PATH) ?? '', '/');
+
+        if ($path === '') {
+            return false;
+        }
+
+        $current = trim(request()->decodedPath(), '/');
+        // محیط‌هایی که آدرس‌ها را با index.php سرو می‌کنند
+        $current = preg_replace('#^index\.php/#', '', $current) ?? $current;
+
+        return rtrim($current, '/') === rtrim($path, '/');
     }
 
     /**
@@ -151,8 +257,8 @@ class ModuleMenuExtractor
 
                 $items[] = [
                     'label' => $itemLabel,
-                    // لینک‌های سایدبار جدید پارامتر ap=new می‌گیرند تا کروم صفحه
-                    // حتی با دو تبِ همزمانِ دو پنل، قطعی و درست باشد (فاز ۳۴)
+                    // فاز ۳۵ — لینک‌ها تمیز می‌مانند (بدون ?ap=new)؛ پنل جدید پیش‌فرض است
+                    // و کوکی ap_panel تشخیص می‌دهد (هر پنل هنگام لود ستش می‌کند)
                     'url' => static::withPanelParam($anchor->getAttribute('href')),
                     'active' => $has($itemLi->getAttribute('class'), 'active') || $has($anchor->getAttribute('class'), 'active'),
                 ];
@@ -205,46 +311,19 @@ class ModuleMenuExtractor
         return $groups;
     }
 
-    /** افزودن ap=new به URL (بدون خراب‌کردن query و fragment موجود) */
+    /**
+     * فاز ۳۵ — لینک‌ها دیگر پارامتر ap=new نمی‌گیرند.
+     * ----------------------------------------------------------------------
+     * تصمیم: URLهای پنل جدید باید «تمیز» باشند؛ اگر روزی علامتی لازم شد، باید
+     * به لینک‌های «پنل قدیمی» اضافه شود نه پنل جدید (پنل قدیمی روزی حذف می‌شود).
+     * الان هم تشخیص کروم بدون پارامتر کار می‌کند:
+     *   • مسیر admin-old/…  → قطعاً قدیمی
+     *   • کوکی ap_panel     → آخرین پنل بازدیدشده (هر chrome هنگام لود ست می‌کند)
+     *   • پیش‌فرض           → پنل جدید
+     * متد برای سازگاری نگه داشته شده و URL را دست‌نخورده برمی‌گرداند.
+     */
     protected static function withPanelParam(string $url): string
     {
-        if ($url === '' || $url === '#') {
-            return $url;
-        }
-
-        $parts = parse_url($url);
-
-        if ($parts === false) {
-            return $url;
-        }
-
-        parse_str($parts['query'] ?? '', $query);
-
-        if (($query['ap'] ?? null) === 'new') {
-            return $url;
-        }
-
-        $query['ap'] = 'new';
-
-        $rebuilt = $parts['path'] ?? '';
-
-        $queryString = http_build_query($query);
-
-        if ($queryString !== '') {
-            $rebuilt .= '?'.$queryString;
-        }
-
-        if (isset($parts['fragment'])) {
-            $rebuilt .= '#'.$parts['fragment'];
-        }
-
-        if (isset($parts['scheme'])) {
-            // پورت هم باید حفظ شود (localhost با پورت سفارشی / استیجینگ)
-            $rebuilt = $parts['scheme'].'://'.($parts['host'] ?? '')
-                .(isset($parts['port']) ? ':'.$parts['port'] : '')
-                .$rebuilt;
-        }
-
-        return $rebuilt;
+        return $url;
     }
 }

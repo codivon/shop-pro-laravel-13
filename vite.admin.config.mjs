@@ -23,7 +23,12 @@ export default defineConfig({
     build: {
         // خروجی = public/admin-panel (manifest هم همین‌جا ساخته می‌شود)
         outDir: 'public/admin-panel',
-        emptyOutDir: true,
+
+        // فاز ۳۵ — خالی‌نکردن پوشه در هر بیلد:
+        // فایل‌های هش‌شده‌ی بیلدهای قبلی «بمانند» تا HTML کش‌شده (مرورگر/CDN)
+        // که هنوز به هش قدیمی اشاره می‌کند، خطای 404 + MIME text/html نگیرد.
+        // (گزارش کاربر: admin-COa1hQtO.css بعد از بیلد جدید پاک شده بود)
+        emptyOutDir: false,
 
         // مرورگرهای مدرن — Tailwind CSS v4 و CSS nesting به همین حداقل نیاز دارند.
         // با این تارگت، esbuild دیگر ۷۲ اخطار unsupported-css-nesting نمی‌دهد.

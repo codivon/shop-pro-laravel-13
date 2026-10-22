@@ -49,7 +49,9 @@
             </button>
         </div>
 
-        {{-- لیست --}}
+        {{-- لیست — فاز ۳۵ (سرعت): فقط وقتی دراپ‌داون باز است کوئری اعلان‌ها اجرا
+             می‌شود؛ قبلاً latest در هر رندرِ صفحه و هر poll بدون نیاز محاسبه می‌شد --}}
+        @if ($open)
         <div class="max-h-80 overflow-y-auto">
             @forelse ($this->latest as $notification)
                 @php $m = $this->meta($notification); @endphp
@@ -103,6 +105,7 @@
                 </div>
             @endforelse
         </div>
+        @endif
 
         {{-- فوتر --}}
         <a href="{{ route('np.notifications.panel') }}" wire:navigate x-on:click="open = false"

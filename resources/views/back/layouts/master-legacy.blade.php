@@ -156,7 +156,7 @@
 
     <script src="{{ asset('back/assets/js/helpers.js') }}?v=8"></script>
     <script src="{{ asset('back/assets/js/customToast.js') }}?v=8"></script>
-    <script src="{{ asset('back/assets/js/scripts.js') }}?v=11"></script>
+    <script src="{{ asset('back/assets/js/scripts.js') }}?v=12"></script>
 
     <!-- END: Theme JS-->
 
