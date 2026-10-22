@@ -8,7 +8,15 @@
     ساختار:
       • کروم پنل جدید: سایدبار + تاپ‌بار + فوتر + توست‌ها (دقیقاً مثل layout.blade.php)
       • استک کامل CSS/JS پنل قدیمی: محتوای بوت‌استرپی پکیج‌ها بدون هیچ تغییری رندر می‌شود
-      • ترتیب CSS: اول پنل جدید (preflight زیر برود) → بعد بوت‌استرپ قدیمی → بعد کمپات
+      • ترتیب CSS — فاز ۳۶ (Cascade Layers): @layer ap-early, theme, base, legacy, ap-late
+            کل CSS پنل قدیمی با @import داخل لایه‌ی «legacy» لود می‌شود (بعد از base/preflight
+            و قبل از components/utilities تیلویند):
+              − reboot بوت‌استرپ روی preflight غالب می‌ماند (رفتار پنل قدیمی حفظ می‌شود)
+              − کلاس‌های تیلویندِ کروم بر قواعد عنصریِ بوت‌استرپ (aside{display:block}،
+                input{font-size:inherit}، button{border-radius:0} و…) برنده می‌شوند
+              − قواعد !important قدیمی (اسکیل فاصله px-4=3.5rem!important و…) هنوز بر
+                utilityهای عادی غالب‌اند → خنثی‌سازی‌شان در لایه «ap-early» (برای
+                !important لایه‌ی جلوتر برنده است) و بازسازی‌های عادی در «ap-late»
 --}}
 @php
     $apSiteTitle = option('info_site_title', config('app.name'));
@@ -23,52 +31,85 @@
     {{-- کوکی «پنل فعال» — منوها و صفحات پکیج با همین کوکی بین دو پنل سوییچ می‌کنند --}}
     <script>document.cookie = 'ap_panel=new; path=/; max-age=31536000; SameSite=Lax';</script>
 
+    {{-- فاز ۳۶ — رزرو ترتیب لایه‌ها قبل از هر CSSی: theme/base (مربوط به تیلویند) باید
+        «قبل از» legacy رزرو شوند تا preflight زیر reboot بوت‌استرپ بماند؛ components و
+        utilities خودشان بعد از این پرولود، انتهای صف می‌آیند (بعد از legacy و ap-late) --}}
+    <style>@layer ap-early, theme, base, legacy, ap-late;</style>
+
+    {{-- فاز ۳۶ — لایه‌ی ap-early: فقط خنثی‌سازهای !important (برای !important، لایه‌ی
+        جلوتر برنده است) — اسکیل فاصله‌گذاری bootstrap.css با !important کلاس‌های
+        هم‌نام تیلویند را می‌رباید و قواعد فونت قدیمی هم !important دارند --}}
+    <style>
+        /* فونت اجباری iranyekan قدیمی نباید داخل کروم اعمال شود — fa-* مستثنا */
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) span:not([class*="fa-"]) { font-family: inherit !important; }
+        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) :is(input, textarea, select, button) { font-family: inherit !important; }
+
+        /* اسکیل فاصله‌ی قدیمی (p-1=1rem!important ، px-4=3.5rem!important ، mt-2=1.5rem!important
+           و…) — بازسازی مقادیر تیلویند فقط داخل کروم؛ محتوای پکیج دست‌نخورده */
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mt-2 { margin-top: .5rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .mx-1 { margin-inline: .25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .p-1 { padding: .25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .p-2 { padding: .5rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .p-3 { padding: .75rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pt-1 { padding-top: .25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .pt-4 { padding-top: 1rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .px-1 { padding-inline: .25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .px-3 { padding-inline: .75rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .px-4 { padding-inline: 1rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .px-5 { padding-inline: 1.25rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .py-2 { padding-block: .5rem !important; }
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .py-4 { padding-block: 1rem !important; }
+        /* قدیمی: .rounded-lg { border-radius: .6rem !important } — تیلویند: .5rem */
+        :is(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .rounded-lg { border-radius: .5rem !important; }
+    </style>
+
     <title>@yield('title', $title ?? $apSiteTitle) | پنل مدیریت {{ $apSiteTitle }}</title>
 
-    {{-- ۱) CSS پنل جدید — زودتر لود می‌شود تا preflight تیلویند زیر reboot بوت‌استرپ برود --}}
+    {{-- ۱) CSS پنل جدید — با لایه‌ها دیگر ترتیبِ «زودتر لود شدن» اهمیت specificity ندارد --}}
     @vite(['resources/admin-panel/css/admin.css', 'resources/admin-panel/js/admin.js'])
     @livewireStyles
 
-    {{-- ۲) متا + استک کامل CSS پنل قدیمی — دقیقاً مثل back.layouts.master --}}
+    {{-- ۲) متا --}}
     @include('back.partials.meta')
 
-    <!-- BEGIN: Vendor CSS-->
-    <link rel="stylesheet" type="text/css" href="{{ asset('back/app-assets/vendors/css/vendors-rtl.min.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('back/app-assets/vendors/css/ui/prism.min.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('back/app-assets/vendors/css/extensions/toastr.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('back/app-assets/vendors/css/forms/select/select2.min.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('back/app-assets/plugins/select2totree/select2totree.css') }}">
-
-    <!-- END: Vendor CSS-->
-
-    <!-- BEGIN: Theme CSS-->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE40xsADsfeQoEypE+enwcOiGjk/bSuGGKHEyjSoQ1zVisanQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-
-    <link rel="stylesheet" type="text/css" href="{{ asset('back/app-assets/css-rtl/bootstrap.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('back/app-assets/css-rtl/bootstrap-extended.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('back/app-assets/css-rtl/colors.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('back/app-assets/css-rtl/components.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('back/app-assets/css-rtl/themes/dark-layout.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('back/app-assets/css-rtl/themes/semi-dark-layout.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('back/app-assets/css-rtl/plugins/extensions/toastr.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('back/app-assets/css-rtl/plugins/animate/animate.min.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ asset('back/assets/css/new-style.css') }}">
-    <!-- BEGIN: Page CSS-->
-    <link rel="stylesheet" type="text/css" href="{{ asset('back/app-assets/css-rtl/core/menu/menu-types/vertical-menu.css') }}">
-
-    {{-- استایل‌های خود صفحه‌ی پکیج --}}
-    @stack('styles')
-    <!-- END: Page CSS-->
-
-    @include('back.partials.global-css')
-
-    {{-- ۳) کمپات: نشت CSS پنل قدیمی به کروم پنل جدید خنثی می‌شود — فاز ۳۵ --}}
-    {{-- الگوی مهم: «اسکوپ» با :where (اولویت صفر) ولی «خود سلکتور» عنصر واقعی
-        (0,0,1) — هم‌ترازِ قواعد element-level بوت‌استرپ و چون بعد از آن‌ها لود
-        می‌شود برنده است؛ در عین حال utilityهای کلاسی تیلویند (0,1,0) همیشه
-        بالاتر می‌مانند. نسخه‌ی قبلی هر دو بخش :where بودند (اولویت 0,0,0) و
-        به بوت‌استرپ می‌باختند → کل کروم به‌هم می‌ریخت. --}}
+    {{-- ۳) کل CSS پنل قدیمی داخل لایه‌ی legacy — همان ترتیب قبلی لینک‌ها --}}
     <style>
+        @import url("{{ asset('back/app-assets/vendors/css/vendors-rtl.min.css') }}") layer(legacy);
+        @import url("{{ asset('back/app-assets/vendors/css/ui/prism.min.css') }}") layer(legacy);
+        @import url("{{ asset('back/app-assets/vendors/css/extensions/toastr.css') }}") layer(legacy);
+        @import url("{{ asset('back/app-assets/vendors/css/forms/select/select2.min.css') }}") layer(legacy);
+        @import url("{{ asset('back/app-assets/plugins/select2totree/select2totree.css') }}") layer(legacy);
+        @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css") layer(legacy);
+        @import url("{{ asset('back/app-assets/css-rtl/bootstrap.css') }}") layer(legacy);
+        @import url("{{ asset('back/app-assets/css-rtl/bootstrap-extended.css') }}") layer(legacy);
+        @import url("{{ asset('back/app-assets/css-rtl/colors.css') }}") layer(legacy);
+        @import url("{{ asset('back/app-assets/css-rtl/components.css') }}") layer(legacy);
+        @import url("{{ asset('back/app-assets/css-rtl/themes/dark-layout.css') }}") layer(legacy);
+        @import url("{{ asset('back/app-assets/css-rtl/themes/semi-dark-layout.css') }}") layer(legacy);
+        @import url("{{ asset('back/app-assets/css-rtl/plugins/extensions/toastr.css') }}") layer(legacy);
+        @import url("{{ asset('back/app-assets/css-rtl/plugins/animate/animate.min.css') }}") layer(legacy);
+        @import url("{{ asset('back/assets/css/new-style.css') }}") layer(legacy);
+        @import url("{{ asset('back/app-assets/css-rtl/core/menu/menu-types/vertical-menu.css') }}") layer(legacy);
+        @import url("{{ asset('back/app-assets/css-rtl/custom-rtl.css') }}") layer(legacy);
+        @import url("{{ asset('back/assets/css/style-rtl.css') }}?v=11") layer(legacy);
+        @if (user_option('theme_font', 'iranyekan') == 'iranyekan')
+            @import url("{{ asset('back/assets/fonts/iranyekan/style.css') }}") layer(legacy);
+        @elseif (user_option('theme_font', 'iranyekan') == 'Yekan')
+            @import url("{{ asset('back/assets/fonts/yekan/style.css') }}") layer(legacy);
+        @elseif (user_option('theme_font', 'iranyekan') == 'Vazir')
+            @import url("{{ asset('back/assets/fonts/vazir/style.css') }}") layer(legacy);
+        @else
+            @import url("{{ asset('back/assets/fonts/iransansdn/style.css') }}") layer(legacy);
+        @endif
+    </style>
+
+    {{-- استایل‌های خود صفحه‌ی پکیج — unlayered می‌ماند (مثل پنل قدیمی آخرین حرف را می‌زند) --}}
+    @stack('styles')
+
+    {{-- ۴) کمپات لایه‌ی ap-late — بازسازی‌های «عادی» (لایه‌ی بعدتر از legacy برنده است).
+        فاز ۳۵: نشت CSS پنل قدیمی به کروم پنل جدید خنثی می‌شود --}}
+    <style>
+    @layer ap-late {
         /* ۱) ریشه: پنل جدید برای root=16px طراحی شده؛ components.css پنل قدیمی
               html را 14px و line-height 1.15 و letter-spacing می‌گذارد و همه‌ی
               سایزهای rem کروم (سایدبار 17rem، تاپ‌بار h-16 و…) را ۱۲.۵٪ کوچک می‌کند */
@@ -90,10 +131,6 @@
             color: var(--color-night-ink);
         }
 
-        /* ۴) فونت اجباری iranyekan روی span/textarea پنل قدیمی نباید داخل کروم
-              اعمال شود — آیکون‌های فونت (fa-*) مستثنا هستند */
-        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) span:not([class*="fa-"]) { font-family: inherit !important; }
-        :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) textarea { font-family: inherit !important; }
 
         /* ۵) خنثی‌سازی reboot بوت‌استرپ داخل کروم */
         :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) p { margin: 0; }
@@ -138,6 +175,18 @@
         /* visibility:hiddenِ باقیمانده روی عناصر hidden sm:block/dark:block */
         :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .sm\:block,
         :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) .dark\:block { visibility: visible; }
+
+        /* ۸) سایدبار: aside بوت‌استرپ display:block می‌دهد — کلاس flex تیلویند (لایه‌ی
+              utilities بعد از legacy) خودش برنده است، این قاعده فقط بیمه‌ی پشتیبان است */
+        #ap-chrome-side > aside { display: flex; }
+
+        /* ۱۰) content-wrapper قدیمی برای ناوبارِ ثابتِ پنل قدیمی margin-top:6rem و
+              پدینگ 1.8rem/2.2rem می‌گیرد (components.css)؛ در کروم پنل جدید تاپ‌بار
+              در جریانِ سند است و main خودش px/py دارد → فاصله‌ی مضاعفِ بالای صفحه
+              («پدینگ زیادِ صفحه») — صفر می‌شود */
+        html body .content .content-wrapper { margin-top: 0; padding: 0; }
+
+    }
     </style>
 
     <!-- Scripts -->
@@ -177,11 +226,16 @@
             </div>
 
             {{-- محتوای صفحه‌ی پکیج (بوت‌استرپ قدیمی) --}}
-            <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+            {{-- فاز ۳۶: px-4 به px-[16px] تبدیل شد — bootstrap.css اسکیل فاصله‌ی خودش را
+                با !important تعریف می‌کند (px-4 = 3.5rem !important) و کلاس تیلویندی
+                px-4 را می‌رباید؛ مقدار دلخواه px-[16px] در آن اسکیل وجود ندارد --}}
+            <main class="flex-1 px-[16px] py-6 sm:px-6 lg:px-8">
                 @yield('content')
             </main>
 
-            <footer class="ap-footer px-4 py-4 sm:px-6 lg:px-8">
+            {{-- فاز ۳۶: فوتر هم مثل main با مقادیر دلخواه — کلاس‌های خودِ فوتر با
+                ترکیب‌کننده‌ی فرزند (:is(...) .px-4) پوشش داده نمی‌شوند --}}
+            <footer class="ap-footer px-[16px] py-[16px] sm:px-[24px] lg:px-[32px]">
                 <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 text-xs text-ink-3 dark:text-night-ink-2">
                     <span>پنل مدیریت {{ $apSiteTitle }} — نسخه جدید (Livewire 4)</span>
                     <span class="fa-digits">© {{ date('Y') }}</span>
