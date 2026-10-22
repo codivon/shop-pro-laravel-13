@@ -49,7 +49,12 @@
            هر خنثی‌سازِ padding-inline می‌باخت.
         مقیاس قدیمی (bootstrap.css خط ~8168-8500): p/px/py/pt/pr/pb/pl و m/mx/my/mt/mr/mb/ml
         × {0,1,2,3,4,5} با !important — مقدار تیلویندی هر کلاس (N×0.25rem) برش می‌گردد. --}}
-    <style>
+    {{-- فاز ۳۸ — data-ap-bridge-style: Livewire در wire:navigate استایل‌های <head> را هرگز حذف
+        نمی‌کند (assetها فقط انباشته می‌شوند) → این سه بلوک پل روی صفحات پنل می‌ماندند و
+        اسکیل !important قدیمی (px-3=3rem!important و…) که فقط داخل ap-chrome خنثی شده بود
+        مستقیم به سایدبار/تاپ‌بار پنل ضربه می‌زد. اسکریپت پاک‌سازی انتهای <head> آن‌ها را
+        بعد از هر ناوبری که به صفحه‌ی غیرپل می‌رسد حذف می‌کند. --}}
+    <style data-ap-bridge-style>
     @layer ap-early {
         /* فونت اجباری iranyekan قدیمی نباید داخل کروم اعمال شود — fa-* مستثنا */
         :where(#ap-chrome-side, #ap-chrome-top, .ap-footer, .ap-toasts) span:not([class*="fa-"]) { font-family: inherit !important; }
@@ -165,8 +170,8 @@
     {{-- ۲) متا --}}
     @include('back.partials.meta')
 
-    {{-- ۳) کل CSS پنل قدیمی داخل لایه‌ی legacy — همان ترتیب قبلی لینک‌ها --}}
-    <style>
+    {{-- ۳) کل CSS پنل قدیمی داخل لایه‌ی legacy — همان ترتیب قبلی لینک‌ها (فاز ۳۸: پاک‌سازی‌پذیر) --}}
+    <style data-ap-bridge-style>
         @import url("{{ asset('back/app-assets/vendors/css/vendors-rtl.min.css') }}") layer(legacy);
         @import url("{{ asset('back/app-assets/vendors/css/ui/prism.min.css') }}") layer(legacy);
         @import url("{{ asset('back/app-assets/vendors/css/extensions/toastr.css') }}") layer(legacy);
@@ -196,12 +201,14 @@
         @endif
     </style>
 
-    {{-- استایل‌های خود صفحه‌ی پکیج — unlayered می‌ماند (مثل پنل قدیمی آخرین حرف را می‌زند) --}}
-    @stack('styles')
+    {{-- فاز ۳۸ — استایل‌های خود صفحه‌ی پکیج (@stack('styles')) از <head> به بدنه منتقل شد
+        (فقط وسط، بین کروم و <main>): ۱) unlayered بودن‌شان حفظ می‌شود (آخرین حرف مثل پنل قدیمی)،
+        ۲) با replaceWith(newBody) در هر ناوبری خودبه‌خود می‌روند و دیگر روی صفحات پنل نمی‌مانند،
+        ۳) چون قبل از <main> هستند، محتوای پکیج تا لودِ استایل‌هایش رندر نمی‌شود (بدون FOUC). --}}
 
     {{-- ۴) کمپات لایه‌ی ap-late — بازسازی‌های «عادی» (لایه‌ی بعدتر از legacy برنده است).
-        فاز ۳۵: نشت CSS پنل قدیمی به کروم پنل جدید خنثی می‌شود --}}
-    <style>
+        فاز ۳۵: نشت CSS پنل قدیمی به کروم پنل جدید خنثی می‌شود (فاز ۳۸: پاک‌سازی‌پذیر) --}}
+    <style data-ap-bridge-style>
     @layer ap-late {
         /* ۱) ریشه: پنل جدید برای root=16px طراحی شده؛ components.css پنل قدیمی
               html را 14px و line-height 1.15 و letter-spacing می‌گذارد و همه‌ی
@@ -295,6 +302,21 @@
         ]) !!};
     </script>
 
+    {{-- فاز ۳۸ — پاک‌سازی استایل‌های پل بعد از SPA-navigate. Livewire (mergeNewHead) استایل‌های
+        <head> را هرگز حذف نمی‌کند؛ بلوک‌های data-ap-bridge-style این صفحه بعد از ناوبری به
+        صفحات خود پنل (که #ap-chrome-side ندارند) باید حذف شوند وگرنه اسکیل !important قدیمی
+        و بازسازی‌های ap-late روی سایدبار/تاپ‌بار پنل اعمال می‌شوند (بهم‌ریختگی بعد از بازگشت
+        از پکیج). جهت معکوس (پنل ← پکیج) لود کامل است و نیازی به این اسکریپت ندارد؛ همین
+        نسخه‌ی عیناً یکسان در layout.blade.php هم هست تا در mergeNewHead dedupe شود و فقط
+        یک بار در هر سند اجرا شود. --}}
+    <script>
+        document.addEventListener('livewire:navigated', function () {
+            if (! document.getElementById('ap-chrome-side')) {
+                document.head.querySelectorAll('[data-ap-bridge-style]').forEach(function (el) { el.remove(); });
+            }
+        });
+    </script>
+
 </head>
 
 {{-- بدنه با درایور Alpine سایدبار (مثل layout.blade.php) --}}
@@ -322,6 +344,13 @@
             {{-- فاز ۳۶: px-4 به px-[16px] تبدیل شد — bootstrap.css اسکیل فاصله‌ی خودش را
                 با !important تعریف می‌کند (px-4 = 3.5rem !important) و کلاس تیلویندی
                 px-4 را می‌رباید؛ مقدار دلخواه px-[16px] در آن اسکیل وجود ندارد --}}
+            {{-- فاز ۳۸ — استایل‌های خود صفحه‌ی پکیج، منتقل‌شده از <head> به بدنه (بعد از کروم،
+                قبل از <main>): ۱) unlayered می‌ماند (آخرین حرف مثل پنل قدیمی)، ۲) با
+                replaceWith(newBody) در هر ناوبری خودبه‌خود می‌رود و دیگر روی صفحات پنل
+                نمی‌ماند، ۳) چون قبل از <main> است، محتوای پکیج تا لود استایل‌هایش
+                رندر نمی‌شود (بدون FOUC). --}}
+            @stack('styles')
+
             <main class="flex-1 px-[16px] py-6 sm:px-6 lg:px-8">
                 @yield('content')
             </main>

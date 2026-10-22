@@ -1314,3 +1314,27 @@
 1. **`!important` + لایه‌ها:** unlayered به لایه‌دار می‌بازد (برای `!important` ترتیب لایه‌ها برعکس می‌شود)
 2. **فیزیکی بر logical غالب است** برای همان longhand محاسباتی
 3. **یوتیلیتی‌های `px-*`/`py-*` تیلویند به `padding-inline`/`padding-block` (logical) کامپایل می‌شوند** — شمارنده در برابر قواعد فیزیکی legacy باید حتماً فیزیکی باشد
+
+## فاز ۳۸ — بهم‌ریختگی صفحات پنل بعد از بازگشت از پکیج (Livewire استایل‌های <head> را حذف نمی‌کند)
+
+### گزارش کاربر
+«وقتی می‌رم تو صفحه‌ی یکی از پکیج‌ها همه‌چی درسته، ولی وقتی می‌رم تو صفحه‌های خود پنل بهم می‌ریزه و وقتی رفرش می‌کنم درست می‌شه — فقط زمانی بهم می‌ریزد که از صفحات پکیج بیام به صفحات پنل»
+
+### ریشه (اندازه‌گیری‌شده — سورس `mergeNewHead` در vendor/livewire/livewire/dist/livewire.esm.js)
+Livewire در wire:navigate استایل‌های `<head>` را **هرگز حذف نمی‌کند** (assetها = link[stylesheet]/style/script فقط «انباشته» می‌شوند؛ فقط non-assetها مثل meta/title تعویض می‌شوند). منوی سایدبار مشترک است (`menu-item` با `wire:navigate`) → ناوبری پکیج → پنل SPA است و این بلوک‌های head صفحه‌ی پل **برای همیشه** روی صفحه‌ی پنل می‌ماندند:
+1. بلوک legacy (@import کل CSS قدیمی در `layer(legacy)`) — اسکیل `!important` قدیمی (`.px-3=3rem!important` و…) که شمارنده‌های ap-early فقط «داخل ap-chrome» خنثی‌اش می‌کنند، روی صفحات پنل اصلاً ap-chrome وجود ندارد → مستقیم به `px-3`/`p-3`/`py-2` سایدبار و تاپ‌بار پنل ضربه می‌زد (پدینگ منوها منفجر می‌شد = اسکرین‌شات کاربر)
+2. `@stack('styles')` پکیج‌ها — **unlayered** (قوی‌تر از هر لایه‌ای) — استایل‌های خودِ پکیج (DigiPay/CheckoutTurbo/AIWriter/seoAudit همه push می‌کنند) روی صفحات پنل جا می‌ماند
+3. بلوک ap-late (`html body{…}`، `aside{display:flex}` و…) — روی صفحات پنل اعمال می‌شد
+رفرش درست می‌شد چون head تازه هیچ‌کدام را ندارد. جهت معکوس (پنل → پکیج) لود کامل است و سالم بود.
+
+### راه‌حل (blade-only؛ بدون rebuild)
+- **module-new.blade.php**: سه بلوک پلِ head (ap-early، legacy، ap-late) با `data-ap-bridge-style` نشانه‌گذاری شدند؛ `@stack('styles')` از head به بدنه منتقل شد (بعد از کروم، قبل از `<main>` — unlayered می‌ماند، با `replaceWith(newBody)` در هر ناوبری خودبه‌خود می‌رود، و چون قبل از main است بدون FOUC است)
+- **layout.blade.php (پنل)**: پرولود `@layer ap-early, theme, base, legacy, ap-late;` قبل از @vite اضافه شد — برای مسیر «پنل ← (دکمه‌ی بازگشت/SPA) → پکیج» که mergeNewHead بلوک‌های پل را «دیرتر» append می‌کند؛ بدون این پرولود legacy بعد از utilities می‌افتاد و کروم پل می‌شکست؛ روی خود صفحات پنل بی‌اثر است (هیچ قاعده‌ای در این لایه‌ها نیست) و نسخه‌ی عیناً یکسانش در module-new با dedupe شدن mergeNewHead دوبار اجرا نمی‌شود
+- **اسکریپت پاک‌سازی (عیناً یکسان در head هر دو layout)**: روی `livewire:navigated`، اگر صفحه‌ی مقصد پل نیست (`#ap-chrome-side` ندارد) همه‌ی `head [data-ap-bridge-style]` حذف می‌شوند — یک بار در هر سند اجرا می‌شود (head-asset → dedupe) و بین ناوبری‌ها زنده می‌ماند
+
+### E2E (مرورگر واقعی — ۵ سناریو)
+- پکیج (stories/create + digipay/settings) → پنل (redirects) با SPA: بعد از swap → `bridgeStyles=0`، nav padding ۱۲px (نه ۴۸px)، aside flex/272px، body padding 0 = پاریتی کامل با رفرش
+- پنل → پکیج: رندر درست (chromeSide=true، ۳ بلوک، nav 12px)
+- دکمه‌ی بازگشت مرورگر (پنل → پکیج با SPA): بلوک‌ها دیر append می‌شوند ولی پرولود پنل ترتیب لایه‌ها را نگه داشته → nav 12px و aside flex = کروم سالم
+- پنل → پنل: ۰ بلوک، بدون رگرسیون
+- استایل‌های push‌شده‌ی DigiPay در body رندر می‌شوند و بعد از ناوبری کاملاً پاک می‌شوند (`digipayStyleInBody=false` روی پنل)

@@ -12,11 +12,31 @@
     {{-- کوکی «پنل فعال» — صفحات و منوهای پکیج‌ها با همین کوکی بین پنل جدید/قدیمی سوییچ می‌کنند --}}
     <script>document.cookie = 'ap_panel=new; path=/; max-age=31536000; SameSite=Lax';</script>
 
+    {{-- فاز ۳۸ — رزرو ترتیب لایه‌ها (عیناً مثل module-new) قبل از هر CSSی. روی صفحه‌های پنل
+        بی‌اثر است (هیچ قاعده‌ای در این لایه‌ها نیست) اما اگر با SPA-navigate/دکمه‌ی بازگشت به
+        صفحه‌ی پل برگردیم، mergeNewHead بلوک‌های استایل پل را «دیرتر» به head اضافه می‌کند؛
+        بدون این پرولود، legacy بعد از utilities می‌افتید و کروم پل می‌شکست. این نسخه با نسخه‌ی
+        module-new عیناً یکسان است تا در mergeNewHead dedupe شود (دو بار تعریف نشود). --}}
+    <style>@layer ap-early, theme, base, legacy, ap-late;</style>
+
     @vite(['resources/admin-panel/css/admin.css', 'resources/admin-panel/js/admin.js'])
     @livewireStyles
 
     {{-- فاز ۳۴ — Font Awesome برای آیکون‌های منوی پکیج‌ها (همان منبعی که پنل قدیمی/پل استفاده می‌کند) --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE40xsADsfeQoEypE+enwcOiGjk/bSuGGKHEyjSoQ1zVisanQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    {{-- فاز ۳۸ — پاک‌سازی استایل‌های پل بعد از SPA-navigate (عیناً مثل module-new — dedupe در
+        mergeNewHead). اگر از صفحه‌ی پکیج (پل) به اینجا ناوبری SPA شده باشد، بلوک‌های
+        data-ap-bridge-style پل هنوز در head هستند (Livewire assetها را حذف نمی‌کند) و اسکیل
+        !important قدیمی به سایدبار/تاپ‌بار پنل ضربه زده است؛ این اسکریپت بعد از swap آن‌ها را
+        حذف می‌کند (صفحه‌ی پنل #ap-chrome-side ندارد → شرط برقرار است). --}}
+    <script>
+        document.addEventListener('livewire:navigated', function () {
+            if (! document.getElementById('ap-chrome-side')) {
+                document.head.querySelectorAll('[data-ap-bridge-style]').forEach(function (el) { el.remove(); });
+            }
+        });
+    </script>
 </head>
 <body class="min-h-screen">
 
