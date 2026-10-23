@@ -1661,3 +1661,36 @@ Smoke+Unit: 14 ✓ / 1 skip | Catalog: 19 ✓ | Security: 62 ✓ | Extra: 27 ✓
 - حذف پوشه Modules لازم نیست؛ اما اگر دیتابیس را از نو ساخته‌اند، بعد از نصب باید پکیج‌ها را از بازار دوباره نصب کرد تا مایگریشن‌های خودشان (جداولشان) اجرا شود.
 
 **کامیت:** میزبان → docs/project-analysis
+
+---
+
+## Phase 48 — تحلیل لاگ سرور کاربر + توقف graceful صف و زمان‌بند پیش از نصب
+
+**تاریخ:** 2026-10-25 | **ورودی کاربر:** لاگ `laravel.log` سرور (سه رکورد) برای پیگیری «فاز ۴۶/۴۷ هنوز اعمال نشده».
+
+### تحلیل دقیق لاگ (سه رکورد، دو ماهیت متفاوت)
+1. **سه رکورد `production.ERROR`** (فاصله ۴ ثانیه‌ای): ورکر صف — `select * from jobs ... FOR UPDATE SKIP LOCKED` → `Table 'owqdlxcv_testShop.jobs' doesn't exist`. یعنی یک دیمن `queue:work` روی سرور روشن است؛ کانفیگ دیتابیس را در لحظه‌ی استارت در حافظه دارد (`owqdlxcv_testShop` — اتصال موفق، جدول ندارد) و هر ۳~۴ ثانیه لاگ را شلوغ می‌کند. به درخواست وب ربطی ندارد.
+2. **یک رکورد `local.ERROR`** (مهم!): stacktrace کامل نشان می‌دهد:
+   - `Modules/RackWidget/app/Services/LicenseGuard.php(27)` → `LicenseGuard::check('rack-widget')` از `RackWidgetServiceProvider.php(58)` در `boot()`؛
+   - زنجیره: `BootProviders->bootstrap()` → `Kernel->bootstrapWith()` → `public/index.php(53)` — یعنی **درخواست وب** و پرووایدر ماژول **رجیستر شده و تا فاز boot رفته**؛
+   - اتصال دیتابیس درخواست وب: `Database: ''` + `user: ''` (اعتبارنامه‌ی خالی — برخلاف ورکر که کانفیگ قدیمیِ در حافظه داشت) → `Access denied for user ''@'localhost'` → ۵۰۰.
+   - نتیجه: هر جا پرووایدر ماژولی «رجیستر و بوت» شده، **کدِ در حال اجرا روی سرور فاز ۴۶/۴۷ نیست** — با گیتِ فعلی bootstrap/app.php این زنجیره ناممکن است (چه درخواست `/` باشد که لایه‌ی ۱ با ۳۰۲ قطعش می‌کند، چه `/install` که لایه‌ی ۲ مسیرهای اسکن ModuleManifest را خالی می‌کند). دو نشانه‌ی فرعی هم همین را تأیید می‌کنند: کانال لاگ وب `local` ولی ورکر `production` (env/‏.env بعد از استارت ورکر عوض شده) و اعتبارنامه‌ی متفاوت وب/ورکر (ورکر کانفیگ قدیمی درون‌حافظه‌ای دارد).
+   - پس علت، **استکه بودن کد روی سرور** است: pull نشده، یا OpCache با `validate_timestamps=0` فایل قدیمی را سرو می‌کند، یا `bootstrap/cache/config.php` قدیمی مانده.
+
+### راه‌حل عملیاتی (چک‌لیست سرور کاربر)
+1. `git log --oneline -1` روی سرور → باید آخرین کامیت فاز ۴۸ باشد؛ اگر نبود: `git pull` (اگر تداخل بود، تغییرات محلی سرور ذخیره/دور ریخته شود) و سپس `php artisan optimize:clear`.
+2. مطمئن شوید `bootstrap/cache/config.php` وجود ندارد (کانفیگ کش‌شده با اعتبارنامه‌ی قدیمی/خالی = همین خطای «Access denied با user خالی» را می‌سازد).
+3. OpCache ریست شود (cPanel: MultiPHP Manager → Reset OPcache، یا ری‌استارت PHP-FPM؛ نشانه‌ی کلاسیک: artisan درست کار می‌کند ولی وب کد قدیمی اجرا می‌کند).
+4. **ورکر صف را تا پایان نصب خاموش کنید**؛ بعد از نصب دوباره روشن کنید.
+5. تست نهایی: `GET /` باید 302 به /install بدهد (بدون هیچ خطای دیتابیس در لاگ).
+
+### بهبود کد (لایه ۴ — فاز ۴۸)
+- **`bootstrap/app.php`** — داخل گیتِ نصب‌نشده: اگر CLI است و دستور جاری `queue:work` / `queue:listen` / `schedule:run` باشد، با پیام شفاف فارسی روی STDERR و کد خروج ۰ خارج می‌شویم — بدون بوت هیچ پرووایدری و بدون اسپمِ خطای «Table 'jobs' doesn't exist» در laravel.log. بعد از نصب رفتار عادی است. (دستورهای موردنیاز نصب دست‌نخورده‌اند.)
+
+### تست‌ها (دو فاز)
+- فاز ۱ (Smoke/Auth/Cart/Catalog/Checkout/Extra): **115 ✓** (321 assertions)
+- فاز ۲ (Order/Payment/Performance/Scale/Security/Unit): **140 ✓ / 1 skip** (451 assertions)
+- تست دستی گیت: با حذف نشان installed → `queue:work` و `schedule:run` با پیام فارسی و exit=0 متوقف؛ با نشان → رفتار عادی ✓ | `php -l` سبز ✓
+- نکته جانبی (خارج از دامنه این فاز): `route:list` به‌خاطر `abort(403)` در سازنده‌ی `MediaController` هنگام جمع‌آوری روت‌ها HttpException می‌دهد — رفتار قدیمی و بی‌ربط به نصب‌کننده.
+
+**کامیت:** میزبان → docs/project-analysis
