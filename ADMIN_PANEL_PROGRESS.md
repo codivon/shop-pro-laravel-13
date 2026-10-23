@@ -1591,3 +1591,40 @@ Tests: 194 passed / 3 skipped / 0 failed (531 assertions) — ~6.5 دقیقه
 - در ادغام سرویس، `use Throwable;` از imports جا مانده بود → `catch (Throwable)` در namespace بدون ایمپورت هرگز match نمی‌شد (رد شدن بی‌صدا از markAsFailed) — با تست zip-slip کشف و رفع شد.
 
 **کامیت:** میزبان → docs/project-analysis
+
+---
+
+## Phase 46 — رفع نهایی باگ نصب‌کننده: «ماژول‌ها قبل از چکِ نصب بوت نمی‌شوند»
+
+**تاریخ:** 2026-10-25 | **باگ کاربر:** فایل installed نیست ولی به‌جای ریدایرکت به /install خطای ۵۰۰: `SQLSTATE[HY000] [1045] Access denied ... SQL: select * from installed_modules where slug = rack-widget limit 1`
+
+### ریشه‌یابی (چرا فاز ۴۵ کافی نبود)
+- ترتیب بوت لاراول: **اول پرووایدرهای پکیج‌ها (منظوم `LaravelModulesServiceProvider`) و بعد پرووایدرهای خودِ اپ** (`config/app.php`: Nwidart قبل از `AppServiceProvider` لیست شده).
+- nwidart در همان فاز register، پرووایدرهای همه‌ی ماژول‌های فعال (`modules_statuses.json`) را از طریق `ModuleManifest::getProviders()` + `ProviderRepository->load()` رجیستر می‌کند.
+- یعنی پرووایدر ماژول RackWidget (که در `boot()` خودش وضعیت نصبش را از دیتابیس می‌پرسد: `InstalledModule::where('slug','rack-widget')->first()`) **قبل از** «چکِ installed» در `AppServiceProvider::boot()` اجرا می‌شود → با اعتبارنامه‌ی ناقص دیتابیس، همان اولین کوئری ۵۰۰ می‌دهد و ریدایرکت به /install هرگز اتفاق نمی‌افتد.
+- بازتولید محلی با ماژول آزمایشی (provider که در boot از `InstalledModule` کوئری می‌گیرد + `modules_statuses.json` فعال + حذف نشان installed): کل بوت می‌مُرد — دقیقاً همان رفتار کاربر.
+
+### راه‌حل (فاز ۴۶ — گیتِ ماژول در بوت‌استرپ)
+- **`bootstrap/app.php`** — قبل از رجیستر شدن هر پرووایدری، اگر `storage/installed` نیست:
+  ```php
+  $app->resolving(\Nwidart\Modules\ModuleManifest::class, function ($manifest): void {
+      $manifest->paths = \Illuminate\Support\Collection::empty();
+  });
+  ```
+  مسیرهای اسکن ماژول‌ها خالی می‌شوند → هیچ `module.json` خوانده نمی‌شود، هیچ پرووایدر ماژولی رجیستر/بوت نمی‌شود و هیچ فایل helperای از `Modules/` include نمی‌شود.
+- چرا `resolving()`؟ singleton `ModuleManifest` بعداً توسط خودِ nwidart تعریف می‌شود؛ hook ما در اولین resolve (وسط register پکیج، قبل از `getProviders()`) اجرا می‌شود — بدون دست‌زدن به vendor.
+- کش‌ها سد راه نیستند: `ProviderRepository::shouldRecompile` لیست پرووایدرها را مقایسه می‌کند و manifest را خودش از نو می‌سازد؛ بعد از نصب (بودن نشان) ماژول‌ها دوباره لود می‌شوند.
+- گیت هم HTTP و هم console است (نصب‌نشده = هیچ مایگریشن/کش‌سازی ماژول هم نباید بیفتد).
+- نکته‌ی ظریف: مسیر نشان با `__DIR__.'/../storage/installed'` خوانده می‌شود نه `$__installBasePath` (که در ابتدای همان فایل `unset` می‌شود؛ ارجاع بعدی warning و خراب‌شدن هدرِ ریدایرکت می‌داد — در تست دستی کشف شد).
+
+### تست دستی کامل (سرور محلی — سناریوی دقیق کاربر)
+- installed نیست + .env با `DB_DATABASE=`/`DB_USERNAME=` خالی + ماژول فعال موجود → `GET /` = **302 تمیز به /install** (بدون هیچ کوئری دیتابیس؛ قبلاً ۵۰۰) ✓
+- `GET /admin2old` هم 302 به /install ✓
+- صفحات `/install`، wizard، requirements، database همه **200** با env خراب ✓
+- ویزارد: POST با اعتبارنامه‌ی درست → env **بروزرسانی** شد (کلیدهای DB جدید) + **APP_KEY تازه** تولید شد + بقیه کلیدها حفظ شدند → ریدایرکت به مرحله‌ی database ✓
+- پس از برگرداندن نشان installed و حذف ماژول آزمایشی: `GET /` = 200 و `GET /install` = 404 (قفل نصب‌کننده) ✓
+
+### تست‌ها (بدون تغییر مورد انتظار)
+- AdminPanelSmokeTest: 5 ✓ | Unit: 9 ✓ / 1 skipped | Catalog: 19 ✓ | Security: 62 ✓ — همه سبز.
+
+**کامیت:** میزبان → docs/project-analysis
