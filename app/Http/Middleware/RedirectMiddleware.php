@@ -25,19 +25,24 @@ class RedirectMiddleware
         // مسیر درخواست بدون اسلش‌های اول و آخر
         $currentUrl = trim($request->path(), '/');
 
-        // ۱️⃣ اگر فایل .env حاضر نیست، ادامه می‌دهیم
-        if (!file_exists(base_path('.env'))) {
+        /*
+         * فاز ۴۶ — تا وقتی نصب تمام نشده، این میدلور سراسری هیچ کاری نکند.
+         * چک قبلی فقط «وجود .env» بود؛ اما با .env ناقص/بی‌اعتبار (حالت نصب‌نشده)
+         * همین گارد باید فعال باشد تا هیچ کوئری/اتصالی به دیتابیس زده نشود —
+         * صفحات /install هم از گروه web می‌گذرند و این میدلور سراسری است.
+         */
+        if (! application_installed()) {
             return $next($request);
         }
 
-        // ۲️⃣ بررسی اتصال به دیتابیس (فقط وقتی هنوز اتصالی برقرار نشده)
+        // ۱️⃣ بررسی اتصال به دیتابیس (فقط وقتی هنوز اتصالی برقرار نشده)
         try {
             DB::connection()->getPdo();          // سعی در برقراری اتصال
         } catch (\Exception $e) {
             return $next($request);
         }
 
-        // ۳️⃣ وجود جدول redirects — نتیجه کش می‌شود (چک information_schema در هر درخواست ممنوع)
+        // ۲️⃣ وجود جدول redirects — نتیجه کش می‌شود (چک information_schema در هر درخواست ممنوع)
         $hasTable = Cache::rememberForever('redirects.table_exists', function () {
             return Schema::hasTable('redirects');
         });
@@ -47,7 +52,7 @@ class RedirectMiddleware
             return $next($request);
         }
 
-        // ۴️⃣ نقشه ریدایرکت‌ها (جدول معمولاً کوچک است) — کش ۱۰ دقیقه‌ای + باطل‌سازی با رویداد مدل
+        // ۳️⃣ نقشه ریدایرکت‌ها (جدول معمولاً کوچک است) — کش ۱۰ دقیقه‌ای + باطل‌سازی با رویداد مدل
         try {
             $redirects = Cache::remember('redirects.map', now()->addMinutes(10), function () {
                 return Redirect::query()->get(['from', 'to', 'type'])->keyBy('from');
@@ -62,7 +67,7 @@ class RedirectMiddleware
             return redirect($redirect->to, (int) $redirect->type ?: 301);
         }
 
-        // ۵️⃣ در غیر این صورت به میدلورهای بعدی می‌رویم
+        // ۴️⃣ در غیر این صورت به میدلورهای بعدی می‌رویم
         return $next($request);
     }
 }

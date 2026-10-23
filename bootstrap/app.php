@@ -161,9 +161,44 @@ if (is_dir($modulesBasePath)) {
 | ما در لحظه‌ی اولین resolve شدن (وسط register() پکیج) اجرا می‌شود.
 */
 if (! is_file(__DIR__.'/../storage/installed')) {
+    /*
+     * فاز ۴۶ (لایه‌ی اول) — ریدایرکتِ پیش از هر پرووایدر
+     *
+     * این گیت «قبل از رجیستر شدن حتی یک پرووایدر» اجرا می‌شود؛ یعنی پاسخ
+     * دقیق به این نیاز که «قبل از پکیج‌ها چک شود پروژه نصب است یا نه».
+     * هر درخواست HTTP به‌جز مسیرهای /install* بلافاصله با ۳۰۲ به /install
+     * می‌رود — بدون بوتِ هیچ ماژول/میدلور/سرویسی؛ پس هیچ کدِ وابسته به
+     * دیتابیس (پرووایدر ماژول‌ها، پکیج‌های ثالث و ...) فرصت خطا دادن ندارد.
+     *
+     * کنسول (artisan/test) مستثناست — ابزارهای نصب باید کار کنند.
+     * صفحات /install خودشان در AppServiceProvider گارد کامل دارند.
+     */
+    if (PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') {
+        $__installPath = trim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/', '/');
+
+        if (strtok($__installPath ?: '/', '/') !== 'install') {
+            header('Location: /install', true, 302);
+            exit;
+        }
+    }
+
+    /*
+     * فاز ۴۶ (لایه‌ی دوم) — ماژول‌ها در حالت نصب‌نشده لود نشوند
+     * (حتی برای خود صفحات /install و دستورات artisan)
+     */
     $app->resolving(\Nwidart\Modules\ModuleManifest::class, function ($manifest): void {
         $manifest->paths = \Illuminate\Support\Collection::empty();
     });
+
+    /*
+     * فاز ۴۶ (لایه‌ی سوم) — Pulse در حالت نصب‌نشده کاملاً خاموش
+     * recoderهای Pulse در boot پکیج (قبل از AppServiceProvider) فعال می‌شوند
+     * و در پایان درخواست داخل pulse_entries/pulse_aggregates درج می‌کنند؛
+     * با .env ناقص همین درج‌ها خطای دیتابیس می‌دادند. با مقداردهی پیش از
+     * لود کانفیگ، config/pulse.php مقدار enabled=false می‌گیرد.
+     */
+    $_ENV['PULSE_ENABLED'] = 'false';
+    $_SERVER['PULSE_ENABLED'] = 'false';
 }
 
 /*

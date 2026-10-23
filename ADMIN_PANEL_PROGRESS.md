@@ -1628,3 +1628,36 @@ Tests: 194 passed / 3 skipped / 0 failed (531 assertions) — ~6.5 دقیقه
 - AdminPanelSmokeTest: 5 ✓ | Unit: 9 ✓ / 1 skipped | Catalog: 19 ✓ | Security: 62 ✓ — همه سبز.
 
 **کامیت:** میزبان → docs/project-analysis
+
+---
+
+## Phase 47 — سخت‌سازی نهایی مسیر نصب: ریدایرکتِ پیش از هر پرووایدر + خاموشی کامل دیتابیس روی /install
+
+**تاریخ:** 2026-10-25 | **پیگیری باگ کاربر (فاز ۴۶ کافی نبود):** روی سرور، `/` درست به /install ریدایرکت می‌شد ولی **خود صفحات /install ۵۰۰ می‌دادند**.
+
+### ریشه‌یابی (با شنود SQL روی مسیر نصب)
+با `DB::listen` موقت روی حالت نصب‌نشده، سه کوئری زنده پیدا شد:
+1. `select ... from redirects` — میدلور **سراسری** `RedirectMiddleware` (گارد قبلی‌اش فقط «وجود .env» بود، نه وضعیت نصب)؛
+2. `insert into pulse_entries` و `pulse_aggregates` — **Laravel Pulse** که recoderهایش در boot پکیج (قبل از AppServiceProvider) فعال می‌شوند و در پایان درخواست درج می‌کنند.
+
+پرووایدرهای ماژول‌ها (فاز ۴۶) درست بسته شده بودند — این دو لایه باقی‌مانده بودند.
+
+### سه لایه‌ی دفاعی جدید
+- **لایه ۱ — `bootstrap/app.php`: ریدایرکتِ پیش از هر پرووایدر.** اگر `storage/installed` نیست و درخواست HTTP به‌جز `/install*` است، بلافاصله `header('Location: /install')` + `exit` — یعنی «چک نصب، قبل از پکیج‌ها» به‌صورت واقعی: حتی یک پرووایدر (ماژول/پکیج ثالث/میدلور) بوت نمی‌شود. کنسول مستثنا (artisan/test سالم بمانند).
+- **لایه ۲ — `bootstrap/app.php`: خاموشی کامل Pulse در حالت نصب‌نشده** با مقداردهی `$_ENV['PULSE_ENABLED']='false'` پیش از لود کانفیگ (چون boot پکیج Pulse قبل از AppServiceProvider است؛ تنظیم کانفیگ در AppServiceProvider دیر می‌شد).
+- **لایه ۳ — `RedirectMiddleware`: گارد `application_installed()`** جایگزین گارد ضعیف «وجود .env» — در حالت نصب‌نشده این میدلور سراسری صفر کوئری می‌زند.
+
+### تست دستی (سرور محلی — با ماژول آزمایشی فعال + حذف نشان installed)
+- `.env` با اعتبارنامه‌ی خالی (سناریوی کاربر): `GET /` و `GET /admin2old` = **302 → /install** | `GET /install`، wizard، requirements، database = **200** | **صفر کوئری SQL در کل لاگ** ✓
+- `.env` با دیتابیس خالی (وصل ولی بدون جدول): همه‌ی بالا 200/302 و صفر خطا ✓
+- کوکی سشن قدیمی/خراب: /install = 200 ✓
+- بعد از برگرداندن نشان: `/` = 200 و `/install` = 404 ✓
+
+### تست‌ها
+Smoke+Unit: 14 ✓ / 1 skip | Catalog: 19 ✓ | Security: 62 ✓ | Extra: 27 ✓ | Auth: 24 ✓ — همه سبز.
+
+### نکته عملیاتی برای سرور کاربر
+- بعد از pull: `php artisan optimize:clear` و ترجیحاً ری‌استارت PHP-FPM/OpCache (اگر opcache با validate_timestamps=0 تنظیم شده باشد، کد جدید بدون ری‌استارت اعمال نمی‌شود).
+- حذف پوشه Modules لازم نیست؛ اما اگر دیتابیس را از نو ساخته‌اند، بعد از نصب باید پکیج‌ها را از بازار دوباره نصب کرد تا مایگریشن‌های خودشان (جداولشان) اجرا شود.
+
+**کامیت:** میزبان → docs/project-analysis
