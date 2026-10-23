@@ -1694,3 +1694,34 @@ Smoke+Unit: 14 ✓ / 1 skip | Catalog: 19 ✓ | Security: 62 ✓ | Extra: 27 ✓
 - نکته جانبی (خارج از دامنه این فاز): `route:list` به‌خاطر `abort(403)` در سازنده‌ی `MediaController` هنگام جمع‌آوری روت‌ها HttpException می‌دهد — رفتار قدیمی و بی‌ربط به نصب‌کننده.
 
 **کامیت:** میزبان → docs/project-analysis
+---
+
+## Phase 49 — قالب دوم فروشگاه «سانیار» — فاز A: اسکلت و زیرساخت
+
+**تاریخ:** 2026-10-24 | **برنچ:** docs/project-analysis | **تست (پس از merge با فازهای ۴۴–۴۸ میزبان و اجرای مایگریشن installed_themes):** ۲۵۳ passed / 0 failed / 3 skipped (فاز A: 224 + فاز B: 29 — 751 assertions)؛ تم سانیار در مخزن مستقل themes/Saniar کامیت شد (commit 76217fa)
+
+### معماری قالب‌ها (خروجی مطالعه عمیق)
+- themes/<Name> با PSR-4 `Themes\` → انتخاب تم از env `CURRENT_THEME` → ثبت داینامیک `Themes\<Name>\src\ThemeServiceProvider` در `AppServiceProvider::loadTheme()`؛ viewها با namespace `front::`؛ assetها با symlink `public/themes/<Name>` → `src/resources/assets`؛ seed اولیه ویجت‌ها با `php artisan theme:config` (run_theme_config → widget_seeder مال تم فعال).
+- **نکته توزیع:** themes/.gitignore فقط WeblakShop را در گیت میزبان نگه می‌دارد (تم پیش‌فرض محصول)؛ تم‌های دیگر مثل ماژول‌ها از پنل با ZIP نصب می‌شوند → **قالب سانیار مخزن گیت مستقل گرفت** (themes/Saniar/.git، برنچ master).
+
+### تحویل‌شده‌های فاز A
+1. **اسکلت کامل** `themes/Saniar`: کپی ساختار WeblakShop (۳۰ کنترلر + ۱۲ کنترلر sellers + Requests + routes/web.php با ۱۷۵ روت + helpers + lang) با namespace `Themes\Saniar\src` — بدون هیچ تغییری در WeblakShop یا کد میزبان.
+2. **Assets سانیار** (از github codivon/saniar-html-template): Bootstrap 5 RTL + Bootstrap Icons + Swiper + Waves + Timer + Touchspin + jQuery + IranYekan؛ ۱۵MB در src/resources/assets + ۳۷ صفحه HTML خام در reference/ برای فازهای بعد.
+3. **config/general.php سانیار**: theme_name/asset_path/links/demo/socials (آیکون‌های bootstrap-icons)/sliderGroups/bannerGroups/linkGroups/settings/pages/errors مطابق قرارداد میزبان.
+4. **Layout اصلی داینامیک** (layouts/master.blade.php): هدر سانیار (لوگو از option، جستجو به front.products.index، سبد با شمارنده واقعی، auth dropdown داینامیک)، مگامنو از Menu+Category (تب دسته‌بندی محصولات + منوهای پنل + تخفیف‌ها + فروشندگان)، فوتر از linkGroups+socials+enamad+ساماندهی، منوی موبایل offcanvas درختی، سبد offcanvas با اقلام واقعی، floating contact از optionها، GTM/Pixel، نوار سریع ادمین، بنر بالای هدر — همه داینامیک.
+5. **صفحه اصلی + سیستم ویجت**: index.blade با حلقه ویجت (سازگار با WidgetBuilder پنل + WidgetRegistry ماژول‌ها) و ۱۱ ویجت سانیار: main-slider (Swiper اصلی + اسلایدر عمودی شگفت‌انگیز با moment_products — افزوده به get_widget)، products-slider (پرفروش/جدید/تخفیف‌دار)، بنرها (۱/۲/۴تایی)، دسته‌بندی‌ها، بلاگ، لوگوی همکاران، خدمات، FAQ آکاردئونی.
+6. **widget_seeder سانیار**: چیدمان پیش‌فرض ۱۱ ویجت خانه + ۴ ویجت صفحه مقالات؛ رفع باگ کلیدهای تکراری (widget_options UNIQUE(widget_id,key)) با بازنویسی آپشن‌ها بدون merge.
+7. **404 اختصاصی**: fallback روت تم به config('front.errors.404) تغییر کرد → صفحه 404 برند‌دار سانیار (noindex).
+8. **SEO پایه در layout**: canonical، OG، Twitter Card، robots، JSON-LD WebSite+SearchAction در index، noindex در 404.
+
+### باگ‌های کشف‌شده (لاتنت میزبان — بدون تغییر کد میزبان، فقط ریشه‌یابی و ثبت)
+1. `front.blogs.index` تعریف‌نشده (روت واقعی: front.blog.**index** تک‌عدد) — در partials/menu/static-menus تم WeblakShop هم استفاده شده → اگر ادمین منوی static نوع posts بسازد، ویترین WeblakShop هم 500 می‌دهد (لاتنت).
+2. `Category::getLinkAttribute()` برای postcat به `front.posts.category` اشاره می‌کند که **در هیچ فایل روتی تعریف نشده** → هر `->link` روی دسته مقاله 500 می‌دهد (لاتنت در WeblakShop static-menus). در سانیار از `route('front.articles.index', ['cat' => slug])` استفاده شد.
+3. `php artisan dump-autoload` سفارشی (Illuminate Composer) در این سندباکس classmap را واقعا بازتولید نمی‌کند — با composer.phar مستقیم درست شد.
+
+### تصمیم‌های معماری (مطابق خواسته کاربر)
+- CURRENT_THEME روی WeblakShop می‌ماند (تست‌ها سبز)؛ سانیار از پنل np.themes قابل فعال‌سازی است و برای توسعه با flip موقت .env تست شد.
+- تبدیل Livewire 4 + SPA (wire:navigate) طبق خواسته کاربر «در آخر» (فاز I) انجام می‌شود؛ سانیار فعلاً Blade خالص مثل ساختار تم‌ها.
+
+### فازبندی کل پروژه قالب سانیار (۹ فاز)
+A=۴۹ اسکلت ✓ | B=۵۰ تکمیل ویجت‌های خانه | C=۵۱ کاتالوگ (category/search/product/compare/favorite/brand/specials) | D=۵۲ سبد+چک‌اوت+پرداخت+فاکتور | E=۵۳ احراز هویت | F=۵۴ پنل کاربر | G=۵۵ محتوا (بلاگ/تماس/درباره/FAQ/CMS) | H=۵۶ فروشندگان (ویترین+auth+پنل) | I=۵۷ Livewire4+SPA+SEO نهایی+تست اختصاصی تم.
