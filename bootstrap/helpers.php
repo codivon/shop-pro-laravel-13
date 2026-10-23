@@ -108,6 +108,21 @@ function option_update($option_name, $option_value)
 
 function option($option_name, $default_value = '')
 {
+    /*
+     * فاز ۵۱ — پیش از نصب، هیچ گزینه‌ای از دیتابیس خوانده نمی‌شود.
+     * روی کلون خام (بدون نشان storage/installed و با .envِ خودکارِ ساخته‌شده از
+     * .env.example که اعتبارنامه‌ی دیتابیسش خالی است)، هر فراخوانی option()
+     * که به دیتابیس برسد (کش گزینه‌ها هم سرد است) با «Access denied» ۵۰۰ می‌دهد؛
+     * نمونه‌ی واقعی: SecurityHeaders → SecuritySettings::headersEnabled() →
+     * option('security_headers_enabled') روی صفحات /install خودِ نصب‌کننده.
+     * چون option() در میدلورها/کامپوزرها/سرویس‌های مختلف صدا زده می‌شود، گارد
+     * را در همین نقطه‌ی مرکزی می‌گذاریم تا هر مصرف‌کننده‌ای ایمن باشد؛ مقدار
+     * پیش‌فرض آرگومان برمی‌گردد و بعد از نصب رفتار عادی است.
+     */
+    if (! application_installed()) {
+        return $default_value;
+    }
+
     $non_language_options = config('general.non_language_options');
 
     if (in_array($option_name, $non_language_options)) {

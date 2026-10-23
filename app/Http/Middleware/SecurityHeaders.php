@@ -24,6 +24,17 @@ class SecurityHeaders
     {
         $response = $next($request);
 
+        /*
+         * فاز ۵۱ — تا پیش از نصب، وضعیت هدرها از دیتابیس پرسیده نمی‌شود.
+         * این میدلور سراسری است و روی خود صفحات /install هم اجرا می‌شود؛
+         * SecuritySettings::headersEnabled() از طریق option() به دیتابیس
+         * می‌رسد و روی کلون خام (بدون نشان installed و با اعتبارنامه‌ی خالی
+         * .env خودکار) درخواست نصب را ۵۰۰ می‌کرد (لاگ واقعی سرور کاربر).
+         */
+        if (! application_installed()) {
+            return $response;
+        }
+
         if (! SecuritySettings::headersEnabled()) {
             return $response;
         }
