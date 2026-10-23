@@ -45,11 +45,21 @@
                         @include('front::widgets.main-slider')
                         @break
 
+                    @case('fullscreen-slider')
+                        @include('front::widgets.fullscreen-slider')
+                        @break
+
                     @case('products-slider')
                     @case('products-default-block')
-                    @case('products-moment-block')
-                    @case('products-colorful-block')
                         @include('front::widgets.products-slider')
+                        @break
+
+                    @case('products-moment-block')
+                        @include('front::widgets.products-moment-block')
+                        @break
+
+                    @case('products-colorful-block')
+                        @include('front::widgets.products-colorful-block')
                         @break
 
                     @case('middle-banners')

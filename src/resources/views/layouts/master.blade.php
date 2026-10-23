@@ -56,6 +56,8 @@
     <link rel="stylesheet" href="{{ theme_asset('plugin/bootstrap-touchspin/jquery.bootstrap-touchspin.min.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('css/style.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('css/responsive.css') }}">
+    {{-- سانیار — فاز B: استایل‌های ویجت‌های صفحه اصلی (تمام‌صفحه/رنگی/شگفت‌انگیز) --}}
+    <link rel="stylesheet" href="{{ theme_asset('css/widgets.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('plugin/go-to-top/style.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('plugin/rasta-contact/style.css') }}">
 

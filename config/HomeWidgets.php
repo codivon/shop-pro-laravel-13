@@ -103,6 +103,14 @@ return [
                 'class'      => 'col-md-4 col-6',
             ],
             [
+                'title'      => 'تاریخ پایان پیشنهاد (تایمر شگفت‌انگیز)',
+                'key'        => 'timer_date',
+                'input-type' => 'input',
+                'type'       => 'date',
+                'class'      => 'col-md-4 col-6',
+                'help'       => 'اگر خالی باشد تایمر نمایش داده نمی‌شود؛ با رسیدن تاریخ، تایمر خودبه‌خود مخفی می‌شود.',
+            ],
+            [
                 'title'      => 'نوع محصولات',
                 'key'        => 'products_type',
                 'input-type' => 'select',
@@ -248,6 +256,7 @@ return [
             'link'             => 'nullable|string',
             'link_title'       => 'nullable|string',
             'number'           => 'required',
+            'timer_date'       => 'nullable|date',
             'categories'       => 'nullable|array',
             'categories.*'     => 'exists:categories,id',
         ]
@@ -420,6 +429,14 @@ return [
         'image' => 'widgets/special.jpg',
         'options' => [
             [
+                'title'      => 'عنوان',
+                'key'        => 'title',
+                'input-type' => 'input',
+                'type'       => 'text',
+                'class'      => 'col-md-4 col-6',
+                'help'       => 'عنوان بلوک رنگی؛ مثلاً «پیشنهاد ویژه هفته».',
+            ],
+            [
                 'title'      => 'نوع محصولات',
                 'key'        => 'products_type',
                 'input-type' => 'select',
@@ -584,6 +601,7 @@ return [
             'block_color'      => 'nullable|string',
             'number'           => 'required',
             'image'            => 'nullable|image',
+            'title'            => 'nullable|string|max:255',
         ]
     ],
 

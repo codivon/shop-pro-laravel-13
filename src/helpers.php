@@ -92,7 +92,12 @@ function get_widget_uncached($widget)
     switch ($widget->key) {
 
         case 'fullscreen-slider': {
-            $variables['fullscreen_slider'] = Slider::detectLang()
+            // سانیار — فاز B: اسلایدرهای بدون زبان (lang=NULL) هم نمایش داده می‌شوند؛
+            // detectLang سخت‌گیر میزبان آن‌ها را حذف می‌کند (همان کلاس باگ فاز ۳۰ پنل).
+            $variables['fullscreen_slider'] = Slider::query()
+                ->where(function ($query) {
+                    $query->whereNull('lang')->orWhere('lang', app()->getLocale());
+                })
                 ->whereJsonContains('groups', 'fullscreen_slider')
                 ->whereJsonContains('pages', $widget->page)
                 ->where('published', true)
@@ -100,7 +105,10 @@ function get_widget_uncached($widget)
                 ->take($widget->option('number', 5))
                 ->get();
 
-            $variables['mobile_sliders'] = Slider::detectLang()
+            $variables['mobile_sliders'] = Slider::query()
+                ->where(function ($query) {
+                    $query->whereNull('lang')->orWhere('lang', app()->getLocale());
+                })
                 ->whereJsonContains('groups', 'mobile_sliders')
                 ->whereJsonContains('pages', $widget->page)
                 ->where('published', true)
@@ -259,18 +267,27 @@ function get_widget_uncached($widget)
         case 'products-default-block':
         case 'products-moment-block':
         case 'products-colorful-block': {
+            // سانیار — فاز B: اسلاید «پیشنهاد شگفت‌انگیز» علاوه بر قیمت، به توضیح کوتاه و
+            // مشخصات ویژه (special) محصول هم نیاز دارد؛ بقیه بلوک‌ها مثل قبل سبک می‌مانند.
+            $isMomentBlock = ($widget->key === 'products-moment-block');
+
             $products = Product::query()
-                ->with('lowestPrice', 'category:id,title,slug,type')
-                ->select(
-                    'id',
-                    'title',
-                    'type',
-                    'category_id',
-                    'slug',
-                    'image',
-                    'special',
-                    'image_alt'
-                );
+                ->with('lowestPrice', 'category:id,title,slug,type');
+
+            if ($isMomentBlock) {
+                $products->with([
+                    'specifications' => function ($query) {
+                        $query->wherePivot('special', true);
+                    },
+                ]);
+            }
+
+            $columns = ['id', 'title', 'title_en', 'type', 'category_id', 'slug', 'image', 'special', 'image_alt'];
+            if ($isMomentBlock) {
+                $columns[] = 'description';
+            }
+
+            $products->select(...$columns);
 
             $category_filter = $widget->options->where('key', 'categories')->first();
             if ($ids = front_widget_category_ids($category_filter, $widget->option('sub_category_products', 'yes') == 'yes')) {

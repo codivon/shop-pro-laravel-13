@@ -2,8 +2,14 @@
 @php
     $lowest_price = $product->lowestPrice;
     $discount_percent = 0;
-    if ($lowest_price && $lowest_price->hasDiscount() && $lowest_price->regularPrice() > 0) {
-        $discount_percent = (int) round(100 - ($lowest_price->salePrice() / $lowest_price->regularPrice()) * 100);
+    if ($lowest_price && $lowest_price->hasDiscount()) {
+        if ($lowest_price->regularPrice() > 0 && $lowest_price->salePrice() > 0) {
+            $discount_percent = (int) round(100 - ($lowest_price->salePrice() / $lowest_price->regularPrice()) * 100);
+        }
+        // fallback: درصد ذخیره‌شده روی خود قیمت (ستون discount)
+        if ($discount_percent <= 0 && is_numeric($lowest_price->discount) && $lowest_price->discount > 0 && $lowest_price->discount <= 100) {
+            $discount_percent = (int) round($lowest_price->discount);
+        }
     }
 @endphp
 <div class="product-box">
