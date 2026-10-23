@@ -8,7 +8,7 @@ use App\Models\Admin;
 use App\Models\InstalledTheme;
 use App\Models\PackagePurchase;
 use App\Services\PackageApiService;
-use App\Services\ThemeInstallerService;
+use App\Services\PackageInstallerService;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Cache;
@@ -169,9 +169,9 @@ class ThemeMarketTest extends TestCase
             '*/api/v1/templates/download/dl_token' => Http::response($zipBytes),
         ]);
 
-        $installer = new ThemeInstallerService(new PackageApiService);
+        $installer = new PackageInstallerService(new PackageApiService, new \Illuminate\Filesystem\Filesystem);
 
-        $installed = $installer->install('test-theme', 'dl_token', null, 'normal', null);
+        $installed = $installer->installTemplate('test-theme', 'dl_token', null, 'normal', null);
 
         $this->assertSame('TestTheme', $installed->name);
         $this->assertSame(InstalledTheme::STATUS_INSTALLED, $installed->status);
@@ -195,10 +195,10 @@ class ThemeMarketTest extends TestCase
             '*/api/v1/templates/download/dl_evil' => Http::response($zipBytes),
         ]);
 
-        $installer = new ThemeInstallerService(new PackageApiService);
+        $installer = new PackageInstallerService(new PackageApiService, new \Illuminate\Filesystem\Filesystem);
 
         try {
-            $installer->install('evil-theme', 'dl_evil', null, 'normal', null);
+            $installer->installTemplate('evil-theme', 'dl_evil', null, 'normal', null);
             $this->fail('ZIP با ورودی Zip-Slip باید رد شود');
         } catch (\RuntimeException $e) {
             $this->assertStringContainsString('غیرمجاز', $e->getMessage());
@@ -218,10 +218,10 @@ class ThemeMarketTest extends TestCase
             '*/api/v1/templates/download/dl_hash' => Http::response($zipBytes),
         ]);
 
-        $installer = new ThemeInstallerService(new PackageApiService);
+        $installer = new PackageInstallerService(new PackageApiService, new \Illuminate\Filesystem\Filesystem);
 
         try {
-            $installer->install('hash-theme', 'dl_hash', str_repeat('a', 64), 'normal', null);
+            $installer->installTemplate('hash-theme', 'dl_hash', str_repeat('a', 64), 'normal', null);
             $this->fail('عدم تطابق هش باید رد شود');
         } catch (\RuntimeException $e) {
             $this->assertStringContainsString('یکپارچگی', $e->getMessage());
@@ -238,9 +238,9 @@ class ThemeMarketTest extends TestCase
             '*/api/v1/templates/download/*' => Http::response($zipBytes),
         ]);
 
-        $installer = new ThemeInstallerService(new PackageApiService);
-        $installer->install('backup-theme', 'dl_1', null, 'normal', null);
-        $installer->install('backup-theme', 'dl_2', null, 'normal', null);
+        $installer = new PackageInstallerService(new PackageApiService, new \Illuminate\Filesystem\Filesystem);
+        $installer->installTemplate('backup-theme', 'dl_1', null, 'normal', null);
+        $installer->installTemplate('backup-theme', 'dl_2', null, 'normal', null);
 
         $this->assertDirectoryExists($this->workspace.'/themes/TestTheme');
         $this->assertDirectoryExists($this->workspace.'/themes/.backups');
@@ -277,11 +277,41 @@ class ThemeMarketTest extends TestCase
             ]),
         ]);
 
-        Livewire::withQueryParams(['type' => ''])
+        Livewire::withQueryParams(['type' => 'package'])
             ->test(PackageIndex::class)
             ->assertOk()
             ->assertSee('پکیج الف', false);
 
+    }
+
+    #[Test]
+    public function bazaar_all_tab_renders_templates_first_then_packages(): void
+    {
+        $this->actingCreator();
+
+        $this->fakeHttp([
+            '*/api/v1/templates*' => Http::response([
+                'data' => [
+                    ['slug' => 'moonlight', 'name' => 'قالب ماه‌تاب', 'purchases_count' => 3],
+                ],
+                'meta' => ['current_page' => 1, 'last_page' => 1, 'total' => 1],
+            ]),
+            '*/api/v1/packages*' => Http::response([
+                'data' => [
+                    ['slug' => 'pkg-a', 'name' => 'پکیج الف', 'is_free' => true],
+                ],
+                'meta' => ['current_page' => 1, 'last_page' => 1, 'total' => 1],
+            ]),
+        ]);
+
+        // فاز ۴۵ — تب «همه» (پیش‌فرض): اول بخش قالب‌ها بعد بخش پکیج‌ها
+        Livewire::withQueryParams(['type' => ''])
+            ->test(PackageIndex::class)
+            ->assertOk()
+            ->assertSee('قالب ماه‌تاب', false)
+            ->assertSee('مشاهده همه قالب‌ها', false)
+            ->assertSee('پکیج الف', false)
+            ->assertSee('مشاهده همه پکیج‌ها', false);
     }
 
     #[Test]
@@ -474,7 +504,7 @@ class ThemeMarketTest extends TestCase
     {
         $creator = $this->actingCreator();
 
-        $installer = new ThemeInstallerService(new PackageApiService);
+        $installer = new PackageInstallerService(new PackageApiService, new \Illuminate\Filesystem\Filesystem);
 
         $themeDir = $this->workspace.'/themes/ActiveTheme';
         mkdir($themeDir.'/config', 0777, true);
@@ -491,7 +521,7 @@ class ThemeMarketTest extends TestCase
         //  این تست فقط گارد active را وقتی پوشش می‌دهد که env یکی باشد)
 
         try {
-            $installer->uninstall('not-installed-slug');
+            $installer->uninstallTheme('not-installed-slug');
             $this->fail('حذف قالب نصب‌نشده باید خطا بدهد');
         } catch (\RuntimeException $e) {
             $this->assertStringContainsString('نصب نشده', $e->getMessage());
@@ -506,7 +536,7 @@ class ThemeMarketTest extends TestCase
         mkdir($this->workspace.'/themes/OldTheme/config', 0777, true);
         file_put_contents($this->workspace.'/themes/OldTheme/config/general.php', '<?php return ["theme_name" => "OldTheme"];');
 
-        $this->assertTrue($installer->uninstall('old-theme'));
+        $this->assertTrue($installer->uninstallTheme('old-theme'));
         $this->assertDirectoryDoesNotExist($this->workspace.'/themes/OldTheme');
         $this->assertNull(InstalledTheme::where('slug', 'old-theme')->first());
     }

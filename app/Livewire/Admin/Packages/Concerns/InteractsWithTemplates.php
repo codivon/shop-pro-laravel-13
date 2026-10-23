@@ -6,7 +6,7 @@ use App\Jobs\InstallThemeJob;
 use App\Models\InstalledTheme;
 use App\Models\PackagePurchase;
 use App\Services\PackageApiService;
-use App\Services\ThemeInstallerService;
+use App\Services\PackageInstallerService;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
@@ -209,7 +209,7 @@ trait InteractsWithTemplates
         }
 
         try {
-            app(ThemeInstallerService::class)->activate($installed->name);
+            app(PackageInstallerService::class)->activateTheme($installed->name);
 
             $this->dispatch('toast', message: 'قالب «'.$installed->name.'» به عنوان قالب فعال تنظیم شد.', type: 'success');
             $this->loadTemplates();
@@ -260,7 +260,7 @@ trait InteractsWithTemplates
         auth('adminPanel')->user()?->can('themes.delete') ?: abort(403);
 
         try {
-            app(ThemeInstallerService::class)->uninstall($slug);
+            app(PackageInstallerService::class)->uninstallTheme($slug);
 
             $this->dispatch('toast', message: 'قالب با موفقیت حذف شد.', type: 'success');
             $this->loadTemplates();

@@ -64,11 +64,32 @@ class PackageIndex extends Component
     /* ---------------- فاز ۴۴ — قالب‌ها (Templates) ---------------- */
 
     /**
-     * تب فعال بازار: '' = پکیج‌ها | 'template' = قالب‌ها
-     * (URL فارندلی: /packages?type=template)
+     * تب فعال بازار — فاز ۴۵: سه‌حالته
+     *  ''        = «همه» (پیش‌فرض لندینگ) — اول قالب‌ها بعد پکیج‌ها
+     *  'template' = فقط قالب‌ها
+     *  'package'  = فقط پکیج‌ها
+     * (URL فارندلی: /packages?type=template یا ?type=package)
      */
     #[Url(as: 'type', except: '')]
     public string $type = '';
+
+    /** تب «همه» فعال است؟ (پیش‌فرض لندینگ بازار) */
+    public function showsAll(): bool
+    {
+        return $this->type === '';
+    }
+
+    /** آیا بخش قالب‌ها باید نمایش داده شود؟ (تب همه + تب قالب‌ها) */
+    public function showsTemplates(): bool
+    {
+        return in_array($this->type, ['', 'template'], true);
+    }
+
+    /** آیا بخش پکیج‌ها باید نمایش داده شود؟ (تب همه + تب پکیج‌ها) */
+    public function showsPackages(): bool
+    {
+        return in_array($this->type, ['', 'package'], true);
+    }
 
     public array $templates = [];
 
@@ -269,8 +290,10 @@ class PackageIndex extends Component
     }
 
     /**
-     * فاز ۴۴ — دیسپچر بازار: پکیج‌ها یا قالب‌ها بر اساس تب فعال.
-     * (همه‌ی نقاطی که قبلاً loadPackages صدا می‌زدند به این متد منتقل شدند)
+     * فاز ۴۵ — دیسپچر بازار:
+     *  - تب قالب‌ها → فقط قالب‌ها
+     *  - تب پکیج‌ها → فقط پکیج‌ها
+     *  - تب «همه» (پیش‌فرض) → هر دو؛ قالب‌ها اول نمایش داده می‌شوند
      */
     public function loadMarket(): void
     {
@@ -280,6 +303,14 @@ class PackageIndex extends Component
             return;
         }
 
+        if ($this->type === 'package') {
+            $this->loadPackages();
+
+            return;
+        }
+
+        // تب «همه» — هر دو بخش (کش/فیوز مشترک است)
+        $this->loadTemplates();
         $this->loadPackages();
     }
 

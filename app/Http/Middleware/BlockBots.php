@@ -15,6 +15,11 @@ class BlockBots
 {
     public function handle(Request $request, Closure $next)
     {
+        // فاز ۴۵ — تا زمانی که نصب تمام نشده، تلهٔ ربات (وابسته به دیتابیس) بوت نمی‌شود
+        if (! application_installed()) {
+            return $next($request);
+        }
+
         $ip = $request->ip();
 
         if ($ip && BotTrap::isBlocked($ip)) {

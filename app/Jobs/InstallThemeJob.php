@@ -4,7 +4,7 @@ namespace App\Jobs;
 
 use App\Models\InstalledTheme;
 use App\Models\PackagePurchase;
-use App\Services\ThemeInstallerService;
+use App\Services\PackageInstallerService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -35,11 +35,11 @@ class InstallThemeJob implements ShouldQueue
         $this->onConnection(config('packages.queue.connection', 'database'));
     }
 
-    public function handle(ThemeInstallerService $installer): void
+    public function handle(PackageInstallerService $installer): void
     {
         Log::info('InstallThemeJob started', ['slug' => $this->slug, 'purchase_type' => $this->purchaseType]);
 
-        $installer->install(
+        $installer->installTemplate(
             $this->slug,
             $this->downloadToken,
             $this->expectedHash,

@@ -16,13 +16,13 @@
                 </div>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                {{-- فاز ۴۴ — تب بازار: پکیج‌ها / قالب‌ها --}}
+                {{-- فاز ۴۵ — تب بازار: همه / قالب‌ها / پکیج‌ها (پیش‌فرض: همه) --}}
                 <div class="inline-flex rounded-xl border border-line bg-surface-2 p-1 dark:border-night-line dark:bg-night-3" role="tablist" aria-label="انتخاب بخش بازار">
                     <button type="button" wire:click="$set('type', '')"
-                            class="rounded-lg px-4 py-1.5 text-[13px] font-bold transition-all {{ $type !== 'template' ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-2 hover:text-ink dark:text-night-ink-2 dark:hover:text-night-ink' }}"
-                            role="tab" aria-selected="{{ $type !== 'template' ? 'true' : 'false' }}">
-                        <x-admin-panel::icon name="package" class="me-1 inline size-4" />
-                        پکیج‌ها
+                            class="rounded-lg px-4 py-1.5 text-[13px] font-bold transition-all {{ $type === '' ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-2 hover:text-ink dark:text-night-ink-2 dark:hover:text-night-ink' }}"
+                            role="tab" aria-selected="{{ $type === '' ? 'true' : 'false' }}">
+                        <x-admin-panel::icon name="sparkles" class="me-1 inline size-4" />
+                        همه
                     </button>
                     <button type="button" wire:click="$set('type', 'template')"
                             class="rounded-lg px-4 py-1.5 text-[13px] font-bold transition-all {{ $type === 'template' ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-2 hover:text-ink dark:text-night-ink-2 dark:hover:text-night-ink' }}"
@@ -30,9 +30,15 @@
                         <x-admin-panel::icon name="layout-template" class="me-1 inline size-4" />
                         قالب‌ها
                     </button>
+                    <button type="button" wire:click="$set('type', 'package')"
+                            class="rounded-lg px-4 py-1.5 text-[13px] font-bold transition-all {{ $type === 'package' ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-2 hover:text-ink dark:text-night-ink-2 dark:hover:text-night-ink' }}"
+                            role="tab" aria-selected="{{ $type === 'package' ? 'true' : 'false' }}">
+                        <x-admin-panel::icon name="package" class="me-1 inline size-4" />
+                        پکیج‌ها
+                    </button>
                 </div>
 
-                @if ($type !== 'template')
+                @if ($type === 'package')
                     <a href="{{ route('np.packages.installed') }}" class="ap-btn-outline !py-2">
                         <x-admin-panel::icon name="layers" class="size-4" />
                         ماژول‌های نصب‌شده
@@ -56,7 +62,7 @@
     </div>
 
     {{-- ============ بنر اشتراک (پورت pkg-sub-banner) ============ --}}
-    @if ($type !== 'template' && !empty($subscriptionSummary) && ($subscriptionSummary['has_active_subscription'] ?? false))
+    @if ($type === 'package' && !empty($subscriptionSummary) && ($subscriptionSummary['has_active_subscription'] ?? false))
         <div class="relative flex flex-wrap items-center gap-4 overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-l from-emerald-50 to-teal-50 p-4 dark:border-emerald-500/25 dark:from-emerald-500/10 dark:to-teal-500/10 sm:p-5">
             <div class="pointer-events-none absolute -end-10 -top-10 size-32 rounded-full bg-emerald-400/20 blur-2xl" aria-hidden="true"></div>
             <span class="relative flex size-11 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/30">
@@ -109,8 +115,19 @@
         </div>
     @endif
 
+    {{-- ============ فاز ۴۵ — جستجوی واحد تب «همه» (قالب + پکیج هم‌زمان) ============ --}}
+    @if ($this->showsAll())
+        <div class="ap-card p-4" wire:key="market-all-search">
+            <label class="mb-1.5 block text-xs font-semibold" for="market-search">جستجو در بازار (قالب‌ها و پکیج‌ها)</label>
+            <div class="relative">
+                <x-admin-panel::icon name="search" class="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
+                <input id="market-search" type="text" wire:model.live.debounce.400ms="search" class="ap-input !pe-9 !py-2" placeholder="نام قالب یا پکیج…">
+            </div>
+        </div>
+    @endif
+
     {{-- ============ خطای API (پورت pkg-empty-state + جزئیات خطا) ============ --}}
-    @if ($type !== 'template' && $apiError)
+    @if ($this->showsPackages() && $apiError)
         <div class="ap-card flex flex-col items-center gap-2 p-8 text-center">
             <span class="flex size-12 items-center justify-center rounded-2xl bg-red-50 text-red-500 dark:bg-red-500/10 dark:text-red-400">
                 <x-admin-panel::icon name="triangle-alert" class="size-6" />
@@ -129,7 +146,7 @@
     @endif
 
     {{-- ============ نوار پیشرفت نصب‌های در جریان (پورت progress.js) ============ --}}
-    @if ($type !== 'template' && count($pendingSlugs))
+    @if ($this->showsPackages() && count($pendingSlugs))
         <div wire:poll.4s="refreshPending"
              class="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 dark:border-amber-500/25 dark:bg-amber-500/10">
             <svg class="size-5 animate-spin text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
@@ -146,7 +163,7 @@
         </div>
     @endif
 
-    @if ($type !== 'template')
+    @if ($type === 'package')
     {{-- ============ کارت‌های آماری (پورت pkg-stat — کارت‌های کل/رایگان/پولی مثل فیلتر وضعیت قیمت عمل می‌کنند) ============ --}}
     @php
         // آمار از priceCounts (بازار کامل) — در حالت فیلتر هم عددها ثابت می‌مانند
@@ -194,7 +211,7 @@
     </div>
     @endif
 
-    @if ($type !== 'template')
+    @if ($type === 'package')
     {{-- ============ جستجو و فیلتر (پورت pkg-filter — دسته‌بندی select مثل قدیمی) ============ --}}
     <div class="ap-card p-4 sm:p-5">
         <form wire:submit="applyFilters" class="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
@@ -276,9 +293,41 @@
     @endif
 
     {{-- ============ شبکه پکیج‌ها (پورت pkg-grid / pkg-card) ============ --}}
-    @if ($type !== 'template' && count($packages))
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            @foreach ($packages as $pkg)
+    @if ($this->showsPackages())
+        {{-- فاز ۴۵ — سربرگ بخش پکیج‌ها در تب «همه» --}}
+        @if ($this->showsAll())
+            @php
+                $pkgTotalForHeader = (int) ($paginationMeta['total'] ?? count($packages));
+            @endphp
+            <div class="flex flex-wrap items-center justify-between gap-3" wire:key="market-pkg-header">
+                <div class="flex items-center gap-2.5">
+                    <span class="flex size-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-500/12 dark:text-violet-400">
+                        <x-admin-panel::icon name="package" class="size-5" />
+                    </span>
+                    <div>
+                        <h2 class="flex items-center gap-2 text-sm font-extrabold">
+                            پکیج‌ها
+                            @if ($pkgTotalForHeader)
+                                <span class="fa-digits rounded-md bg-surface-2 px-1.5 py-0.5 text-[10px] font-bold text-ink-2 dark:bg-night-3 dark:text-night-ink-2">{{ number_format($pkgTotalForHeader) }}</span>
+                            @endif
+                        </h2>
+                        <p class="text-[11px] text-ink-3 dark:text-night-ink-2">افزونه‌های آماده برای گسترش فروشگاه — پرداخت، اعلان، سئو و…</p>
+                    </div>
+                </div>
+                <button type="button" wire:click="$set('type', 'package')" class="ap-btn-outline !py-2 !text-xs">
+                    مشاهده همه پکیج‌ها
+                    <x-admin-panel::icon name="chevron-left" class="size-3.5" />
+                </button>
+            </div>
+        @endif
+
+        @if (count($packages))
+        @php
+            // فاز ۴۵ — در تب «همه» فقط ۶ پکیج اول نمایش داده می‌شود (کاربر گيج نشود)
+            $visiblePackages = $this->showsAll() ? array_slice($packages, 0, 6) : $packages;
+        @endphp
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3" wire:key="market-pkg-grid">
+            @foreach ($visiblePackages as $pkg)
                 @php
                     $slug = $pkg['slug'] ?? '';
                     $isPurchased = in_array($slug, $purchasedSlugs);
@@ -432,7 +481,34 @@
                 </div>
             @endforeach
         </div>
+        @endif
 
+        {{-- فاز ۴۵ — صفحه‌بندی فقط در تب اختصاصی پکیج‌ها --}}
+        @if ($type === 'package' && ! count($packages) && ! $apiError)
+            <div class="ap-card flex flex-col items-center justify-center gap-2 p-10 text-center">
+                <span class="flex size-12 items-center justify-center rounded-2xl bg-surface-2 text-ink-3 dark:bg-night-3">
+                    <x-admin-panel::icon name="package" class="size-6" />
+                </span>
+                @if ($free === 'free')
+                    <p class="text-sm font-bold">پکیج رایگانی یافت نشد</p>
+                    <p class="text-xs text-ink-3 dark:text-night-ink-2">همه‌ی پکیج‌های این بخش پولی هستند یا فیلترها را تغییر دهید.</p>
+                @elseif ($free === 'paid')
+                    <p class="text-sm font-bold">پکیج پولی یافت نشد</p>
+                    <p class="text-xs text-ink-3 dark:text-night-ink-2">پکیج‌های این بخش رایگان هستند یا فیلترها را تغییر دهید.</p>
+                @else
+                    <p class="text-sm font-bold">پکیجی برای نمایش وجود ندارد</p>
+                    <p class="text-xs text-ink-3 dark:text-night-ink-2">فیلترها را تغییر دهید یا اتصال به سرور پکیج‌ها را بررسی کنید.</p>
+                @endif
+                @if ($free !== '' || $search !== '' || $category !== '' || $sort !== '')
+                    <button type="button" wire:click="resetFilters" class="ap-btn-outline mt-1 !py-2">
+                        <x-admin-panel::icon name="rotate-ccw" class="size-4" />
+                        حذف همه‌ی فیلترها
+                    </button>
+                @endif
+            </div>
+        @endif
+
+        @if ($type === 'package')
         {{-- صفحه‌بندی سرور دست‌ساز بر اساس meta پاسخ API --}}
         @php
             $lastPage = (int) ($paginationMeta['last_page'] ?? $paginationMeta['lastPage'] ?? 1);
@@ -501,10 +577,42 @@
                 </button>
             @endif
         </div>
+        @endif
     @endif
 
-    {{-- ============ فاز ۴۴ — بازار قالب‌ها (Templates) ============ --}}
-    @if ($type === 'template')
+    {{-- ============ فاز ۴۴ — بازار قالب‌ها (Templates) — فاز ۴۵: بخش اولِ تب «همه» ============ --}}
+    @if ($this->showsTemplates())
+        @php
+            // فاز ۴۵ — در تب «همه» فقط ۶ قالب اول نمایش داده می‌شود (قالب‌ها اول دیده می‌شوند)
+            $tplList = $this->showsAll() ? array_slice($templates, 0, 6) : $templates;
+        @endphp
+
+        {{-- فاز ۴۵ — سربرگ بخش قالب‌ها در تب «همه» --}}
+        @if ($this->showsAll())
+            @php
+                $tplTotalForHeader = (int) ($templateMeta['total'] ?? count($templates));
+            @endphp
+            <div class="flex flex-wrap items-center justify-between gap-3" wire:key="market-tpl-header">
+                <div class="flex items-center gap-2.5">
+                    <span class="flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
+                        <x-admin-panel::icon name="layout-template" class="size-5" />
+                    </span>
+                    <div>
+                        <h2 class="flex items-center gap-2 text-sm font-extrabold">
+                            قالب‌ها
+                            @if ($tplTotalForHeader)
+                                <span class="fa-digits rounded-md bg-surface-2 px-1.5 py-0.5 text-[10px] font-bold text-ink-2 dark:bg-night-3 dark:text-night-ink-2">{{ number_format($tplTotalForHeader) }}</span>
+                            @endif
+                        </h2>
+                        <p class="text-[11px] text-ink-3 dark:text-night-ink-2">پوسته‌های آماده برای چهره‌ی فروشگاه — خرید و نصب یک‌کلیکی</p>
+                    </div>
+                </div>
+                <button type="button" wire:click="$set('type', 'template')" class="ap-btn-outline !py-2 !text-xs">
+                    مشاهده همه قالب‌ها
+                    <x-admin-panel::icon name="chevron-left" class="size-3.5" />
+                </button>
+            </div>
+        @endif
 
         {{-- خطای API قالب‌ها --}}
         @if ($templateError)
@@ -531,7 +639,8 @@
             </div>
         @endif
 
-        {{-- جستجوی قالب‌ها --}}
+        @if ($type === 'template')
+        {{-- جستجوی قالب‌ها — فقط تب اختصاصی قالب‌ها (در تب «همه» جستجوی واحد بالا هست) --}}
         <div class="ap-card p-4">
             <form wire:submit="applyFilters" class="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
                 <div class="sm:col-span-2">
@@ -543,11 +652,12 @@
                 </div>
             </form>
         </div>
+        @endif
 
         {{-- شبکه قالب‌ها --}}
-        @if (count($templates))
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                @foreach ($templates as $tpl)
+        @if (count($tplList))
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3" wire:key="market-tpl-grid">
+                @foreach ($tplList as $tpl)
                     @php
                         $tSlug      = $tpl['slug'] ?? '';
                         $tName      = $tpl['name'] ?? $tSlug;
@@ -627,7 +737,8 @@
                 @endforeach
             </div>
 
-            {{-- صفحه‌بندی قالب‌ها --}}
+            @if ($type === 'template')
+            {{-- صفحه‌بندی قالب‌ها — فقط تب اختصاصی قالب‌ها --}}
             @php
                 $tLastPage = (int) ($templateMeta['last_page'] ?? 1);
                 $tCurrent  = (int) ($templateMeta['current_page'] ?? $page);
@@ -655,6 +766,7 @@
                         </button>
                     </nav>
                 </div>
+            @endif
             @endif
         @elseif (! $templateError)
             <div class="ap-card flex flex-col items-center justify-center gap-2 p-10 text-center">

@@ -1538,3 +1538,56 @@ Tests: 194 passed / 3 skipped / 0 failed (531 assertions) — ~6.5 دقیقه
 - `tests/Feature/Extra/ThemeMarketTest.php` (۱۴) — قرارداد API (assertSentInOrder)، نصب ZIP واقعی + Zip-Slip + هش + بکاپ، رندر دو تب بازار، خرید پولی/مجدد/اختصاصی، callback موفق/ناموفق، حذف قالب.
 
 **کامیت:** میزبان → docs/project-analysis
+
+
+---
+
+## Phase 45 — بازطراحی تب امنیت + سرویس واحد بازار + تب «همه» + رفع نصب‌کننده
+
+**تاریخ:** 2026-10-24 | **زیربنا:** فاز A: 224 passed / 3 skipped (697 assertions) + فاز B: 29 passed
+
+### بخش ۱ — بازطراحی مدرن تب «امنیت» تنظیمات برنامه‌نویس (درخواست کاربر: ظاهر چک‌باکس/رادیو پیش‌فرض خوب نیست)
+
+- **کامپوننت جدید `x-admin-panel::toggle`** (`resources/views/admin-panel/components/toggle.blade.php`): سوییچ iOS-سبک با ورودی checkbox واقعی (`sr-only` + `peer-checked`) — سازگاری کامل با `wire:model`، بازخورد بصری «همان لحظه» بدون رفت‌وبرگشت سرور، حرکت دستگیره با `inset-inline-start` (کاملاً RTL-ایمن و انیمیشن springی) + حالت focus و disabled و سایز `sm`.
+- **تب امنیت**: هر ۹ چک‌باکس → سوییچ مدرن؛ کلیدهای اصلی با کارت گرادیانی برند + چیپ «کلید اصلی»؛ **با خاموش‌کردن کلید اصلی (کپچا/قفل/2FA) زیرتنظیمات همان لحظه کم‌رنگ و غیرقابل‌کلیک می‌شوند** (Alpine `x-data` + `x-on:change` روی سوییچ).
+- **کانال 2FA**: سه کارت رادیویی (ایمیل/پیامک/هر دو) با آیکون + نشان تیک انیمیشنی (`peer-checked:scale-100`) و highlight کارت انتخاب‌شده.
+- جدول قفل تلاش‌ها و کارت‌های آماری تمیز شد؛ **۴ چک‌باکس تب‌های دیگر (کرون/حالت توسعه/دیباگ‌بار/آپدیت قدیمی) هم برای یکدستی سوییچ شدند**؛ لیبل‌های `aria-label` برای همه کنترل‌ها.
+
+### بخش ۲ — سرویس واحد بازار: پکیج + قالب در یک کلاس (درخواست کاربر)
+
+- `ThemeInstallerService` **حذف شد**؛ همه‌ی متدهایش به `PackageInstallerService` منتقل شدند (سرویس‌دهنده یکی است — پس نصب هم یکی):
+  - `installTemplate()` / `themesPath()` / `activateTheme()` / `uninstallTheme()` + internals (`downloadTemplateZip`، `extractThemeZip` با اسکن Zip-Slip، `detectThemeRootDir`، `readThemeVersion`، `refreshThemeFramework`).
+- ارجاع‌ها: `InstallThemeJob` → `installTemplate()`؛ `InteractsWithTemplates` → `activateTheme/uninstallTheme`؛ `ThemeMarketTest` → سازندهٔ دوآرگومانی.
+- لایه‌ی API از قبل واحد بود (`PackageApiService` — پکیج + قالب با هم).
+
+### بخش ۳ — تب «همه» در بازار (درخواست کاربر: لندینگِ قالب‌ها + پکیج‌ها با سویچ)
+
+- `$type` سه‌حالته شد: `''` = **همه (پیش‌فرض لندینگ)** | `template` | `package` — لینک‌های قدیمی `?type=template` سر جایشان.
+- **لندینگ «همه»**: اول بخش «قالب‌ها» (سربرگ با آیکون + شمارنده + «مشاهده همه قالب‌ها»)، بعد بخش «پکیج‌ها» — هر بخش فقط ۶ کارت اول (ضد سردرگمی) + **جستجوی واحد** که هم‌زمان قالب و پکیج را می‌گردد.
+- کارت‌های آماری/فیلتر پیشرفته/صفحه‌بندی فقط در تب اختصاصی هر بخش؛ خطا و نوار «در حال نصب» هر بخش مستقل در تب «همه» هم دیده می‌شود.
+- `loadMarket()`: در حالت همه هر دو لیست را (با کش/فیوز مشترک) می‌خواند؛ هلپرهای `showsTemplates()/showsPackages()/showsAll()` برای گیت‌های ویو.
+
+### بخش ۴ — رفع نصب‌کننده: «اول وضعیت نصب، بعد هرچیز دیگر» (باگ کاربر: installed نیست + env هست → خطای اتصال دیتابیس)
+
+- **`AppServiceProvider::boot()`** بازنویسی شد: اگر `storage/installed` نیست (فارغ از وجود/نبود .env):
+  1. درایورهای `session/cache/queue` روی `file/sync` قفل می‌شوند → هیچ مسیری (حتی خود صفحات /install با StartSession) به دیتابیس دست نمی‌زند؛
+  2. درخواست‌های خارج از `/install` با **`HttpResponseException`** دقیقاً در بوت قطع و به `/install` ریدایرکت می‌شوند (قبلاً `redirect()->send()` پاسخ را می‌فرستاد ولی اجرا ادامه می‌یافت)؛
+  3. `loadTheme()`/کامپوزرها فقط بعد از نصب بوت می‌شوند.
+- **`BlockBots`**: گارد `application_installed()` (تلهٔ ربات دیتابیسی تا بعد از نصب خاموش است).
+- **`MyEnvironmentManager::saveFileWizard`**: اگر .env موجود باشد با اطلاعات جدید ویزارد **بروزرسانی** می‌شود و **APP_KEY همیشه تازه تولید و جایگزین می‌شود** (حتی اگر از قبل هست) — سشن/کوکی‌های نصب قبلی باطل می‌شوند. اگر .env نیست، از فرم ساخته می‌شود (رفتار قبلی حفظ شد).
+
+### تست دستی نصب (سرور محلی)
+- installed نیست + env سالم → `GET /` 302 به `/install` (200) ✓
+- **installed نیست + env با رمز اشتباه دیتابیس → 302 به `/install` بدون هیچ خطای دیتابیس؛ صفحات wizard/requirements 200** ✓ (باگ کاربر)
+- env اصلاً نیست → bootstrap از نمونه می‌سازد → 302 به `/install` (200) ✓
+- ویزارد: بروزرسانی env موجود با DB جدید + APP_KEY جدید + حفظ بقیه کلیدها (ADMIN_ROUTE_PREFIX و…) ✓
+- بعد از نصب: `/` 200 و `/install` 404 (قفل نصب‌کننده) ✓
+
+### تست‌ها
+- `ThemeMarketTest` → ۱۵ تست (تست جدید `bazaar_all_tab_renders_templates_first_then_packages` + تب پکیج‌ها حالا `?type=package`).
+- فاز A: **224 passed / 3 skipped** | فاز B (Scale): **29 passed** — همه سبز.
+
+### نکتهٔ کشف‌شده
+- در ادغام سرویس، `use Throwable;` از imports جا مانده بود → `catch (Throwable)` در namespace بدون ایمپورت هرگز match نمی‌شد (رد شدن بی‌صدا از markAsFailed) — با تست zip-slip کشف و رفع شد.
+
+**کامیت:** میزبان → docs/project-analysis

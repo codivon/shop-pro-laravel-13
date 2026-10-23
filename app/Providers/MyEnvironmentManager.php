@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use RachidLaasri\LaravelInstaller\Helpers\EnvironmentManager;
 
 /**
@@ -17,8 +16,10 @@ use RachidLaasri\LaravelInstaller\Helpers\EnvironmentManager;
  * نسخه‌ی جدید:
  *   1) کلیدهای موجود .env را می‌خواند و «فقط» کلیدهای مربوط به ویزارد را
  *      به‌روزرسانی می‌کند (merge) — بقیه دست‌نخورده می‌مانند؛
- *   2) اگر APP_KEY از قبل هست، همان حفظ می‌شود (بوت ایمن bootstrap/app.php آن را
- *      ساخته است)؛ نبود → همین‌جا ساخته می‌شود؛
+ *   2) فاز ۴۵ — اگر .env از قبل هست، کلیدهای ویزارد (اعتبارنامه‌ی دیتابیس و ...)
+ *      با اطلاعات جدید بروزرسانی می‌شوند و APP_KEY نیز «همیشه» به‌صورت تازه
+ *      تولید و جایگزین می‌شود (نصب = محیط تازه؛ سشن/کوکی‌های نصب قبلی باید
+ *      باطل شوند). نبود APP_KEY هم همین‌جا ساخته می‌شود؛
  *   3) کلیدهای تکراری حذف و فایل به‌صورت اتمیک (tmp+rename) نوشته می‌شود؛
  *   4) اگر کش پیکربندی از نصب قبلی مانده باشد حذف می‌شود تا .env همان لحظه
  *      اعمال شود (روی هاست اشتراکی artisan config:clear همیشه در دسترس نیست).
@@ -157,17 +158,17 @@ class MyEnvironmentManager extends EnvironmentManager
                 $outLines[] = 'ADMIN_ROUTE_PREFIX=admin2old';
             }
 
-            // ---------- 4) تضمین APP_KEY ----------
+            // ---------- 4) فاز ۴۵ — APP_KEY همیشه تازه تولید می‌شود ----------
+            // (نصب = محیط تازه؛ حتی وقتی .env از نصب قبلی مانده، کلید جدید نوشته
+            // می‌شود تا کوکی/سشن‌های قبلی اعتبار نداشته باشند)
             $content = implode("\n", $outLines);
 
-            if (! preg_match('/^APP_KEY=base64:\S{20,}/m', $content)) {
-                $key = 'base64:'.base64_encode(Str::random(32));
+            $key = 'base64:'.base64_encode(random_bytes(32));
 
-                if (preg_match('/^APP_KEY=.*$/m', $content)) {
-                    $content = preg_replace('/^APP_KEY=.*$/m', 'APP_KEY='.$key, $content, 1);
-                } else {
-                    $content = 'APP_KEY='.$key."\n".$content;
-                }
+            if (preg_match('/^APP_KEY=.*$/m', $content)) {
+                $content = preg_replace('/^APP_KEY=.*$/m', 'APP_KEY='.$key, $content, 1);
+            } else {
+                $content = 'APP_KEY='.$key."\n".$content;
             }
 
             // ---------- 5) نوشتن اتمیک + حذف کش پیکربندی ----------

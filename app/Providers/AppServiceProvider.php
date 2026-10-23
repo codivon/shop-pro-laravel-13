@@ -86,29 +86,50 @@ class AppServiceProvider extends ServiceProvider
         // تا ‎@can و auth() در رندر مجدد کامپوننت‌ها (adminPanel/seller/web) درست کار کنند
         \Illuminate\Support\Facades\Route::pushMiddlewareToGroup('web', \App\Http\Middleware\ResolveDefaultGuard::class);
 
+        /*
+         * فاز ۴۵ — ترتیب درستِ نصب: «اول وضعیت نصب، بعد هرچیز دیگر»
+         * قبلاً loadTheme() قبل از بررسی نصب اجرا می‌شد و سشن/کش ممکن بود قبل از
+         * ریدایرکت به /install به دیتابیس دست بزنند → با .env قدیمی (اعتبارنامه‌ی
+         * نامعتبر) به‌جای صفحه‌ی نصب، خطای «اتصال به دیتابیس» دیده می‌شد.
+         *
+         * قاعدهٔ جدید: اگر فایل storage/installed نیست، فارغ از وجود/عدم وجود .env:
+         *   ۱) درایورهای session/cache روی file قفل می‌شوند تا هیچ مسیری (حتی
+         *      خودِ صفحات /install با StartSession) به دیتابیس دست نزند؛
+         *   ۲) درخواست‌های خارج از /install با HttpResponseException دقیقاً در
+         *      همین‌جا قطع و به /install ریدایرکت می‌شوند (send() فقط پاسخ را
+         *      می‌فرستاد و اجرای بوت/میدلورها ادامه پیدا می‌کرد).
+         */
+        if (! application_installed()) {
+            if (! $this->app->runningInConsole()) {
+                config([
+                    'session.driver' => 'file',
+                    'cache.default'  => 'file',
+                    'queue.default'  => 'sync',
+                ]);
+
+                if (! file_exists(base_path('.env'))) {
+                    copy(base_path('.env.example'), base_path('.env'));
+                }
+
+                $this->app->bind(EnvironmentManager::class, MyEnvironmentManager::class);
+
+                if (request()->segment(1) !== 'install') {
+                    throw new \Illuminate\Http\Exceptions\HttpResponseException(redirect('install'));
+                }
+            }
+
+            return; // نصب انجام نشده — هیچ سرویس وابسته به دیتابیس/قالب بوت نشود
+        }
+
         $this->loadTheme();
 
-        if (application_installed()) {
+        // کامپوزرهای ویو lazy هستند (فقط هنگام رندر ویو اجرا می‌شوند) و
+        // بدون آن‌ها ویوهای تم در تست‌ها/کنسول با متغیرهای تعریف‌نشده
+        // (مثل $menus) 500 می‌دهند — پس در حالت کنسول هم ثبت می‌شوند
+        $this->viewComposer();
 
-            // کامپوزرهای ویو lazy هستند (فقط هنگام رندر ویو اجرا می‌شوند) و
-            // بدون آن‌ها ویوهای تم در تست‌ها/کنسول با متغیرهای تعریف‌نشده
-            // (مثل $menus) 500 می‌دهند — پس در حالت کنسول هم ثبت می‌شوند
-            $this->viewComposer();
-
-            if (!$this->app->runningInConsole()) {
-                $this->configs();
-            }
-
-        } else if (!application_installed() && !$this->app->runningInConsole()) {
-            if (!file_exists(base_path('.env'))) {
-                copy(base_path('.env.example'), base_path('.env'));
-            }
-
-            $this->app->bind(EnvironmentManager::class, MyEnvironmentManager::class);
-
-            if (request()->segment(1) != 'install') {
-                return redirect('install')->send();
-            }
+        if (! $this->app->runningInConsole()) {
+            $this->configs();
         }
 
         Validator::extend(

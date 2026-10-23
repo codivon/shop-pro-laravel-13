@@ -84,10 +84,10 @@
                 </div>
 
                 <form wire:submit="saveSharedHosting" class="space-y-3">
-                    <label class="flex cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                    <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
                         <span class="text-[13px] font-bold">فعال‌سازی اجرای صف با دو Cron Job (هاست اشتراکی)</span>
-                        <input type="checkbox" wire:model="sharedHostingCronEnabled" class="size-5 cursor-pointer rounded border-line text-brand-600">
-                    </label>
+                        <x-admin-panel::toggle wire:model="sharedHostingCronEnabled" aria-label="فعال‌سازی اجرای صف با دو Cron Job" />
+                    </div>
 
                     <div class="rounded-xl border border-line p-4 dark:border-night-line">
                         <p class="text-xs font-bold">دستورهایی که باید در پنل Cron Job هاست خود وارد کنید:</p>
@@ -183,29 +183,29 @@
                     </div>
 
                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                        <label class="flex cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                        <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
                             <span>
                                 <span class="block text-[13px] font-bold">حالت توسعه</span>
                                 <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">APP_DEBUG — در حالت توسعه فایل‌ها کامپایل نشده‌اند</span>
                             </span>
-                            <input type="checkbox" wire:model="appDebugMode" class="size-5 cursor-pointer rounded border-line text-brand-600">
-                        </label>
+                            <x-admin-panel::toggle wire:model="appDebugMode" size="sm" aria-label="حالت توسعه (APP_DEBUG)" />
+                        </div>
 
-                        <label class="flex cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                        <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
                             <span>
                                 <span class="block text-[13px] font-bold">دیباگ بار</span>
                                 <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">DEBUGBAR_ENABLED</span>
                             </span>
-                            <input type="checkbox" wire:model="debugbarEnabled" class="size-5 cursor-pointer rounded border-line text-brand-600">
-                        </label>
+                            <x-admin-panel::toggle wire:model="debugbarEnabled" size="sm" aria-label="دیباگ بار" />
+                        </div>
 
-                        <label class="flex cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                        <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
                             <span>
                                 <span class="block text-[13px] font-bold">متد قدیمی آپدیت</span>
                                 <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">این متد اکسپایر شده</span>
                             </span>
-                            <input type="checkbox" wire:model="enableOldUpdates" class="size-5 cursor-pointer rounded border-line text-brand-600">
-                        </label>
+                            <x-admin-panel::toggle wire:model="enableOldUpdates" size="sm" aria-label="متد قدیمی آپدیت" />
+                        </div>
                     </div>
 
                     <button type="submit" class="ap-btn-primary !py-2.5">
@@ -333,95 +333,125 @@
                 </div>
             </div>
 
-            {{-- ============ تب امنیت (فاز ۴۴) ============ --}}
+            {{-- ============ تب امنیت (فاز ۴۴ — بازطراحی مدرن در فاز ۴۵) ============ --}}
             <div x-show="tab === 'security'" x-cloak class="animate-fade-in space-y-4 p-5 sm:p-6">
-                <form wire:submit="saveSecurity" class="space-y-6">
+                <form wire:submit="saveSecurity" class="space-y-5">
 
                     {{-- ───── کپچا (ربات‌گیر) ───── --}}
-                    <section class="rounded-xl border border-line dark:border-night-line">
+                    <section x-data="{ main: @js((bool) $securityCaptchaEnabled) }" class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
                         <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">
                             <x-admin-panel::icon name="bot" class="size-4.5 text-brand-600 dark:text-brand-400" />
                             <h3 class="text-[13px] font-bold">ربات‌گیر (کپچا)</h3>
+                            <span class="ms-auto text-[10px] font-semibold text-ink-3 dark:text-night-ink-2">تشخیص انسان از ربات</span>
                         </div>
                         <div class="space-y-3 p-4">
-                            <label class="flex cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-brand-200 bg-brand-50/60 p-3.5 dark:border-brand-500/20 dark:bg-brand-500/10">
-                                <span>
-                                    <span class="block text-[13px] font-bold">کلید اصلی کپچا</span>
-                                    <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">با خاموش‌کردن این کلید، کپچا در همه‌ی نقاط غیرفعال می‌شود</span>
+                            {{-- کلید اصلی — سوییچ بزرگ --}}
+                            <div class="flex items-center justify-between gap-3 rounded-xl border border-brand-200 bg-gradient-to-l from-brand-50/90 via-brand-50/40 to-transparent p-3.5 dark:border-brand-500/20 dark:from-brand-500/10 dark:via-brand-500/5 dark:to-transparent">
+                                <span class="flex min-w-0 items-center gap-3">
+                                    <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-600/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
+                                        <x-admin-panel::icon name="key-round" class="size-4.5" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="flex flex-wrap items-center gap-1.5">
+                                            <span class="text-[13px] font-bold">کلید اصلی کپچا</span>
+                                            <span class="rounded-md bg-brand-600/10 px-1.5 py-0.5 text-[10px] font-bold text-brand-700 dark:bg-brand-500/15 dark:text-brand-400">کلید اصلی</span>
+                                        </span>
+                                        <span class="block text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">با خاموش‌کردن این کلید، کپچا در همه‌ی نقاط غیرفعال می‌شود</span>
+                                    </span>
                                 </span>
-                                <input type="checkbox" wire:model="securityCaptchaEnabled" class="size-5 cursor-pointer rounded border-line text-brand-600">
-                            </label>
-
-                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                <label class="flex cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
-                                    <span class="text-[13px] font-bold">ورود مدیر (هر دو پنل)</span>
-                                    <input type="checkbox" wire:model="securityCaptchaAdminLogin" class="size-5 cursor-pointer rounded border-line text-brand-600">
-                                </label>
-                                <label class="flex cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
-                                    <span class="text-[13px] font-bold">ثبت‌نام مشتری</span>
-                                    <input type="checkbox" wire:model="securityCaptchaRegister" class="size-5 cursor-pointer rounded border-line text-brand-600">
-                                </label>
-                                <label class="flex cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
-                                    <span>
-                                        <span class="block text-[13px] font-bold">ورود مشتری</span>
-                                        <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">قدم اول ورود فروشگاه (موبایل/ایمیل)</span>
-                                    </span>
-                                    <input type="checkbox" wire:model="securityCaptchaCustomerLogin" class="size-5 cursor-pointer rounded border-line text-brand-600">
-                                </label>
-                                <label class="flex cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
-                                    <span>
-                                        <span class="block text-[13px] font-bold">دیدگاه‌ها و بررسی‌ها</span>
-                                        <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">سوال محصول، دیدگاه وبلاگ و امتیازدهی</span>
-                                    </span>
-                                    <input type="checkbox" wire:model="securityCaptchaComments" class="size-5 cursor-pointer rounded border-line text-brand-600">
-                                </label>
+                                <x-admin-panel::toggle wire:model="securityCaptchaEnabled" x-on:change="main = $event.target.checked" aria-label="کلید اصلی کپچا" />
                             </div>
 
-                            <div class="rounded-xl border border-line p-4 dark:border-night-line">
-                                <label class="mb-1.5 block text-xs font-semibold">تلهٔ زمان — حداقل ثانیه‌ی پرکردن فرم</label>
-                                <p class="mb-2.5 text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">فرم‌های ارسال‌شده سریع‌تر از این مقدار رد می‌شوند (رفتار ربات). صفر = غیرفعال.</p>
-                                <div class="flex items-center gap-2">
-                                    <input type="number" min="0" max="300" wire:model="securityTimeTrapSeconds" class="ap-input w-28 text-center font-mono">
-                                    <span class="text-xs text-ink-3 dark:text-night-ink-2">ثانیه</span>
-                                </div>
-                                @error('securityTimeTrapSeconds') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                            {{-- نقاط فعال‌سازی — با خاموشی کلید اصلی کم‌رنگ می‌شوند --}}
+                            <div class="grid grid-cols-1 gap-3 transition-opacity duration-300 sm:grid-cols-2" x-bind:class="!main ? 'pointer-events-none opacity-40' : ''" aria-hidden="{{ !((bool) $securityCaptchaEnabled) ? 'true' : 'false' }}">
+                                @foreach ([
+                                    ['key' => 'securityCaptchaAdminLogin',    'label' => 'ورود مدیر',            'desc' => 'فرم ورود هر دو پنل مدیریت',        'icon' => 'user-cog'],
+                                    ['key' => 'securityCaptchaRegister',      'label' => 'ثبت‌نام مشتری',        'desc' => 'فرم ایجاد حساب جدید فروشگاه',      'icon' => 'users'],
+                                    ['key' => 'securityCaptchaCustomerLogin', 'label' => 'ورود مشتری',           'desc' => 'قدم اول ورود (موبایل/ایمیل)',      'icon' => 'user'],
+                                    ['key' => 'securityCaptchaComments',      'label' => 'دیدگاه‌ها و بررسی‌ها', 'desc' => 'سوال محصول، دیدگاه وبلاگ، امتیاز', 'icon' => 'message-square'],
+                                ] as $point)
+                                    <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                                        <span class="flex min-w-0 items-center gap-2.5">
+                                            <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                                <x-admin-panel::icon name="{{ $point['icon'] }}" class="size-4" />
+                                            </span>
+                                            <span class="min-w-0">
+                                                <span class="block truncate text-[13px] font-bold">{{ $point['label'] }}</span>
+                                                <span class="block truncate text-[11px] text-ink-3 dark:text-night-ink-2">{{ $point['desc'] }}</span>
+                                            </span>
+                                        </span>
+                                        <x-admin-panel::toggle wire:model="{{ $point['key'] }}" size="sm" aria-label="کپچای {{ $point['label'] }}" />
+                                    </div>
+                                @endforeach
                             </div>
+
+                            {{-- تلهٔ زمان --}}
+                            <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line p-3.5 transition-opacity duration-300 dark:border-night-line" x-bind:class="!main ? 'pointer-events-none opacity-40' : ''">
+                                <span class="flex min-w-0 items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="clock" class="size-4" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-[13px] font-bold">تلهٔ زمان — حداقل ثانیه‌ی پرکردن فرم</span>
+                                        <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">ارسال سریع‌تر از این مقدار، رفتار ربات تلقی و رد می‌شود (صفر = غیرفعال)</span>
+                                    </span>
+                                </span>
+                                <span class="flex items-center gap-2">
+                                    <input type="number" min="0" max="300" wire:model="securityTimeTrapSeconds" class="ap-input w-24 text-center font-mono" aria-label="حداقل ثانیه پر کردن فرم">
+                                    <span class="text-[11px] text-ink-3 dark:text-night-ink-2">ثانیه</span>
+                                </span>
+                            </div>
+                            @error('securityTimeTrapSeconds') <p class="text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                         </div>
                     </section>
 
                     {{-- ───── هانی‌پات ───── --}}
-                    <section class="rounded-xl border border-line dark:border-night-line">
+                    <section class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
                         <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">
                             <x-admin-panel::icon name="eye-off" class="size-4.5 text-brand-600 dark:text-brand-400" />
                             <h3 class="text-[13px] font-bold">هانی‌پات</h3>
                         </div>
                         <div class="p-4">
-                            <label class="flex cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
-                                <span>
-                                    <span class="block text-[13px] font-bold">فعال‌بودن هانی‌پات</span>
-                                    <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">فیلد مخفی‌ای که فقط ربات‌ها پر می‌کنند؛ پرشدنش به مسدودسازی IP منجر می‌شود</span>
+                            <div class="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                                <span class="flex min-w-0 items-center gap-3">
+                                    <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">
+                                        <x-admin-panel::icon name="triangle-alert" class="size-4.5" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-[13px] font-bold">فعال‌بودن هانی‌پات</span>
+                                        <span class="block text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">فیلد مخفی‌ای که فقط ربات‌ها پر می‌کنند؛ پرشدنش به مسدودسازی IP منجر می‌شود</span>
+                                    </span>
                                 </span>
-                                <input type="checkbox" wire:model="securityHoneypotEnabled" class="size-5 cursor-pointer rounded border-line text-brand-600">
-                            </label>
+                                <x-admin-panel::toggle wire:model="securityHoneypotEnabled" aria-label="فعال بودن هانی‌پات" />
+                            </div>
                         </div>
                     </section>
 
                     {{-- ───── قفل تلاش‌ها ───── --}}
-                    <section class="rounded-xl border border-line dark:border-night-line">
+                    <section x-data="{ main: @js((bool) $securityLockoutEnabled) }" class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
                         <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">
                             <x-admin-panel::icon name="lock" class="size-4.5 text-brand-600 dark:text-brand-400" />
-                            <h3 class="text-[13px] font-bold">قفل تلاش‌ها (ضد حملهٔ brute-force)</h3>
+                            <h3 class="text-[13px] font-bold">قفل تلاش‌ها</h3>
+                            <span class="ms-auto text-[10px] font-semibold text-ink-3 dark:text-night-ink-2">ضد حمله‌ی brute-force</span>
                         </div>
                         <div class="space-y-3 p-4">
-                            <label class="flex cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-brand-200 bg-brand-50/60 p-3.5 dark:border-brand-500/20 dark:bg-brand-500/10">
-                                <span>
-                                    <span class="block text-[13px] font-bold">کلید اصلی قفل تلاش‌ها</span>
-                                    <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">با خاموش‌کردن این کلید، محدودیت تلاش در همه‌ی نقاط برداشته می‌شود (توصیه نمی‌شود)</span>
+                            <div class="flex items-center justify-between gap-3 rounded-xl border border-brand-200 bg-gradient-to-l from-brand-50/90 via-brand-50/40 to-transparent p-3.5 dark:border-brand-500/20 dark:from-brand-500/10 dark:via-brand-500/5 dark:to-transparent">
+                                <span class="flex min-w-0 items-center gap-3">
+                                    <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-600/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
+                                        <x-admin-panel::icon name="key-round" class="size-4.5" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="flex flex-wrap items-center gap-1.5">
+                                            <span class="text-[13px] font-bold">کلید اصلی قفل تلاش‌ها</span>
+                                            <span class="rounded-md bg-brand-600/10 px-1.5 py-0.5 text-[10px] font-bold text-brand-700 dark:bg-brand-500/15 dark:text-brand-400">کلید اصلی</span>
+                                        </span>
+                                        <span class="block text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">با خاموش‌کردن آن، محدودیت تلاش در همه‌ی نقاط برداشته می‌شود (توصیه نمی‌شود)</span>
+                                    </span>
                                 </span>
-                                <input type="checkbox" wire:model="securityLockoutEnabled" class="size-5 cursor-pointer rounded border-line text-brand-600">
-                            </label>
+                                <x-admin-panel::toggle wire:model="securityLockoutEnabled" x-on:change="main = $event.target.checked" aria-label="کلید اصلی قفل تلاش ها" />
+                            </div>
 
-                            <div class="overflow-hidden rounded-xl border border-line dark:border-night-line">
+                            <div class="overflow-hidden rounded-xl border border-line transition-opacity duration-300 dark:border-night-line" x-bind:class="!main ? 'pointer-events-none opacity-40' : ''">
                                 <table class="w-full text-[13px]">
                                     <thead>
                                         <tr class="bg-surface-2 text-start dark:bg-night-3/50">
@@ -431,39 +461,23 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-line dark:divide-night-line">
-                                        <tr>
-                                            <td class="p-3 font-bold">ورود مدیر</td>
-                                            <td class="p-3">
-                                                <input type="number" min="1" max="100" wire:model="securityLockoutAdminMax" class="ap-input w-24 text-center font-mono">
-                                                @error('securityLockoutAdminMax') <p class="mt-1 text-[11px] font-medium text-red-600">{{ $message }}</p> @enderror
-                                            </td>
-                                            <td class="p-3">
-                                                <input type="number" min="1" max="1440" wire:model="securityLockoutAdminMinutes" class="ap-input w-24 text-center font-mono">
-                                                @error('securityLockoutAdminMinutes') <p class="mt-1 text-[11px] font-medium text-red-600">{{ $message }}</p> @enderror
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="p-3 font-bold">ورود مشتری</td>
-                                            <td class="p-3">
-                                                <input type="number" min="1" max="100" wire:model="securityLockoutCustomerMax" class="ap-input w-24 text-center font-mono">
-                                                @error('securityLockoutCustomerMax') <p class="mt-1 text-[11px] font-medium text-red-600">{{ $message }}</p> @enderror
-                                            </td>
-                                            <td class="p-3">
-                                                <input type="number" min="1" max="1440" wire:model="securityLockoutCustomerMinutes" class="ap-input w-24 text-center font-mono">
-                                                @error('securityLockoutCustomerMinutes') <p class="mt-1 text-[11px] font-medium text-red-600">{{ $message }}</p> @enderror
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="p-3 font-bold">دیدگاه‌ها و بررسی‌ها</td>
-                                            <td class="p-3">
-                                                <input type="number" min="1" max="100" wire:model="securityLockoutCommentsMax" class="ap-input w-24 text-center font-mono">
-                                                @error('securityLockoutCommentsMax') <p class="mt-1 text-[11px] font-medium text-red-600">{{ $message }}</p> @enderror
-                                            </td>
-                                            <td class="p-3">
-                                                <input type="number" min="1" max="1440" wire:model="securityLockoutCommentsMinutes" class="ap-input w-24 text-center font-mono">
-                                                @error('securityLockoutCommentsMinutes') <p class="mt-1 text-[11px] font-medium text-red-600">{{ $message }}</p> @enderror
-                                            </td>
-                                        </tr>
+                                        @foreach ([
+                                            ['label' => 'ورود مدیر',             'max' => 'securityLockoutAdminMax',        'minutes' => 'securityLockoutAdminMinutes'],
+                                            ['label' => 'ورود مشتری',            'max' => 'securityLockoutCustomerMax',     'minutes' => 'securityLockoutCustomerMinutes'],
+                                            ['label' => 'دیدگاه‌ها و بررسی‌ها', 'max' => 'securityLockoutCommentsMax',     'minutes' => 'securityLockoutCommentsMinutes'],
+                                        ] as $row)
+                                            <tr>
+                                                <td class="p-3 font-bold">{{ $row['label'] }}</td>
+                                                <td class="p-3">
+                                                    <input type="number" min="1" max="100" wire:model="{{ $row['max'] }}" class="ap-input w-24 text-center font-mono" aria-label="سقف تلاش {{ $row['label'] }}">
+                                                    @error($row['max']) <p class="mt-1 text-[11px] font-medium text-red-600">{{ $message }}</p> @enderror
+                                                </td>
+                                                <td class="p-3">
+                                                    <input type="number" min="1" max="1440" wire:model="{{ $row['minutes'] }}" class="ap-input w-24 text-center font-mono" aria-label="پنجره دقیقه {{ $row['label'] }}">
+                                                    @error($row['minutes']) <p class="mt-1 text-[11px] font-medium text-red-600">{{ $message }}</p> @enderror
+                                                </td>
+                                            </tr>
+                                        @endforeach
                                     </tbody>
                                 </table>
                             </div>
@@ -471,60 +485,87 @@
                     </section>
 
                     {{-- ───── هدرهای امنیتی ───── --}}
-                    <section class="rounded-xl border border-line dark:border-night-line">
+                    <section class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
                         <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">
                             <x-admin-panel::icon name="shield" class="size-4.5 text-brand-600 dark:text-brand-400" />
                             <h3 class="text-[13px] font-bold">هدرهای امنیتی</h3>
                         </div>
                         <div class="space-y-3 p-4">
-                            <label class="flex cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
-                                <span>
-                                    <span class="block text-[13px] font-bold">هدرهای استاندارد امنیتی</span>
-                                    <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">X-Frame-Options، X-Content-Type-Options، Referrer-Policy و Permissions-Policy</span>
+                            <div class="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                                <span class="flex min-w-0 items-center gap-3">
+                                    <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:bg-sky-500/15 dark:text-sky-400">
+                                        <x-admin-panel::icon name="code-2" class="size-4.5" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-[13px] font-bold">هدرهای استاندارد امنیتی</span>
+                                        <span class="block text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">X-Frame-Options، X-Content-Type-Options، Referrer-Policy و Permissions-Policy</span>
+                                    </span>
                                 </span>
-                                <input type="checkbox" wire:model="securityHeadersEnabled" class="size-5 cursor-pointer rounded border-line text-brand-600">
-                            </label>
-                            <label class="flex cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
-                                <span>
-                                    <span class="block text-[13px] font-bold">HSTS (Strict-Transport-Security)</span>
-                                    <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">مرورگر را مجبور می‌کند همیشه HTTPS — فقط روی اتصال امن ارسال می‌شود</span>
+                                <x-admin-panel::toggle wire:model="securityHeadersEnabled" aria-label="هدرهای استاندارد امنیتی" />
+                            </div>
+                            <div class="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                                <span class="flex min-w-0 items-center justify-between gap-3">
+                                    <span class="flex min-w-0 items-center gap-3">
+                                        <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
+                                            <x-admin-panel::icon name="shield" class="size-4.5" />
+                                        </span>
+                                        <span class="min-w-0">
+                                            <span class="block text-[13px] font-bold">HSTS <small class="font-normal text-ink-3 dark:text-night-ink-2" dir="ltr">(Strict-Transport-Security)</small></span>
+                                            <span class="block text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">مرورگر را مجبور می‌کند همیشه HTTPS — فقط روی اتصال امن ارسال می‌شود</span>
+                                        </span>
+                                    </span>
                                 </span>
-                                <input type="checkbox" wire:model="securityHstsEnabled" class="size-5 cursor-pointer rounded border-line text-brand-600">
-                            </label>
+                                <x-admin-panel::toggle wire:model="securityHstsEnabled" aria-label="HSTS" />
+                            </div>
                         </div>
                     </section>
 
                     {{-- ───── ورود دومرحله‌ای مدیر (2FA) ───── --}}
-                    <section class="rounded-xl border border-line dark:border-night-line">
+                    <section x-data="{ main: @js((bool) $adminTwoFactorEnabled) }" class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
                         <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">
                             <x-admin-panel::icon name="user-cog" class="size-4.5 text-brand-600 dark:text-brand-400" />
                             <h3 class="text-[13px] font-bold">ورود دومرحله‌ای مدیر (2FA)</h3>
                             <span class="ap-badge bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-400">جدید</span>
                         </div>
                         <div class="space-y-3 p-4">
-                            <label class="flex cursor-pointer items-center justify-between gap-2.5 rounded-xl border border-brand-200 bg-brand-50/60 p-3.5 dark:border-brand-500/20 dark:bg-brand-500/10">
-                                <span>
-                                    <span class="block text-[13px] font-bold">فعال‌سازی ورود دومرحله‌ای</span>
-                                    <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">پس از ورودِ رمز، کد ۶ رقمی یک‌بارمصرف درخواست می‌شود (قفل ۵ تلاش در ۵ دقیقه، ارسال مجدد هر ۱ دقیقه) — برای هر دو پنل</span>
+                            <div class="flex items-center justify-between gap-3 rounded-xl border border-brand-200 bg-gradient-to-l from-brand-50/90 via-brand-50/40 to-transparent p-3.5 dark:border-brand-500/20 dark:from-brand-500/10 dark:via-brand-500/5 dark:to-transparent">
+                                <span class="flex min-w-0 items-center gap-3">
+                                    <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-600/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
+                                        <x-admin-panel::icon name="key-round" class="size-4.5" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-[13px] font-bold">فعال‌سازی ورود دومرحله‌ای</span>
+                                        <span class="block text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">پس از ورودِ رمز، کد ۶ رقمی یک‌بارمصرف درخواست می‌شود (قفل ۵ تلاش در ۵ دقیقه، ارسال مجدد هر ۱ دقیقه) — برای هر دو پنل</span>
+                                    </span>
                                 </span>
-                                <input type="checkbox" wire:model="adminTwoFactorEnabled" class="size-5 cursor-pointer rounded border-line text-brand-600">
-                            </label>
+                                <x-admin-panel::toggle wire:model="adminTwoFactorEnabled" x-on:change="main = $event.target.checked" aria-label="فعال سازی ورود دومرحله ای" />
+                            </div>
 
-                            <div class="rounded-xl border border-line p-4 dark:border-night-line">
+                            <div class="rounded-xl border border-line p-4 transition-opacity duration-300 dark:border-night-line" x-bind:class="!main ? 'pointer-events-none opacity-40' : ''">
                                 <p class="mb-2.5 text-xs font-semibold">کانال ارسال کد</p>
                                 <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-                                    <label class="flex cursor-pointer items-center gap-2.5 rounded-xl border p-3.5 transition-colors dark:border-night-line {{ $adminTwoFactorChannel === 'email' ? 'border-brand-500 bg-brand-50/60 dark:bg-brand-500/10' : 'border-line bg-surface-2 dark:bg-night-3' }}">
-                                        <input type="radio" value="email" wire:model="adminTwoFactorChannel" class="size-4 cursor-pointer text-brand-600">
-                                        <span class="text-[13px] font-bold">ایمیل</span>
-                                    </label>
-                                    <label class="flex cursor-pointer items-center gap-2.5 rounded-xl border p-3.5 transition-colors dark:border-night-line {{ $adminTwoFactorChannel === 'sms' ? 'border-brand-500 bg-brand-50/60 dark:bg-brand-500/10' : 'border-line bg-surface-2 dark:bg-night-3' }}">
-                                        <input type="radio" value="sms" wire:model="adminTwoFactorChannel" class="size-4 cursor-pointer text-brand-600">
-                                        <span class="text-[13px] font-bold">پیامک</span>
-                                    </label>
-                                    <label class="flex cursor-pointer items-center gap-2.5 rounded-xl border p-3.5 transition-colors dark:border-night-line {{ $adminTwoFactorChannel === 'both' ? 'border-brand-500 bg-brand-50/60 dark:bg-brand-500/10' : 'border-line bg-surface-2 dark:bg-night-3' }}">
-                                        <input type="radio" value="both" wire:model="adminTwoFactorChannel" class="size-4 cursor-pointer text-brand-600">
-                                        <span class="text-[13px] font-bold">هر دو</span>
-                                    </label>
+                                    @foreach ([
+                                        ['value' => 'email', 'label' => 'ایمیل',  'icon' => 'mail',       'desc' => 'ایمیل ثبت‌شدهٔ مدیر'],
+                                        ['value' => 'sms',   'label' => 'پیامک', 'icon' => 'smartphone', 'desc' => 'شماره تلفن مدیر'],
+                                        ['value' => 'both',  'label' => 'هر دو', 'icon' => 'layers',     'desc' => 'ایمیل + پیامک هم‌زمان'],
+                                    ] as $channel)
+                                        <label class="relative block cursor-pointer">
+                                            <input type="radio" value="{{ $channel['value'] }}" wire:model="adminTwoFactorChannel" class="peer sr-only">
+                                            <div class="flex items-center gap-2.5 rounded-xl border p-3.5 transition-all duration-200 border-line bg-surface-2 hover:border-brand-300/70 dark:border-night-line dark:bg-night-3 dark:hover:border-brand-500/30 peer-checked:border-brand-500 peer-checked:bg-brand-50/70 peer-checked:shadow-sm peer-checked:shadow-brand-500/10 dark:peer-checked:border-brand-500/60 dark:peer-checked:bg-brand-500/10">
+                                                <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                                    <x-admin-panel::icon name="{{ $channel['icon'] }}" class="size-4" />
+                                                </span>
+                                                <span class="min-w-0">
+                                                    <span class="block text-[13px] font-bold">{{ $channel['label'] }}</span>
+                                                    <span class="block truncate text-[10px] text-ink-3 dark:text-night-ink-2">{{ $channel['desc'] }}</span>
+                                                </span>
+                                            </div>
+                                            {{-- نشان تیک — خواهرِ ورودی است تا peer-checked رویش اثر بگذارد --}}
+                                            <span class="pointer-events-none absolute end-2.5 top-1/2 flex size-5 -translate-y-1/2 scale-50 items-center justify-center rounded-full bg-brand-600 text-white opacity-0 shadow transition-all duration-200 peer-checked:scale-100 peer-checked:opacity-100">
+                                                <x-admin-panel::icon name="check" class="size-3" />
+                                            </span>
+                                        </label>
+                                    @endforeach
                                 </div>
                                 <p class="mt-3 flex items-start gap-1.5 text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">
                                     <x-admin-panel::icon name="info" class="mt-0.5 size-3.5 shrink-0" />
@@ -542,6 +583,7 @@
                         </button>
                     </div>
                 </form>
+            </div>
             </div>
         </div>
     </div>
