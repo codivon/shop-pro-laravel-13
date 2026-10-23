@@ -66,8 +66,10 @@ class OrderTest extends TestCase
         $response = $this->actingAs($user, 'web')->get('/profile/orders?status=paid');
         $content = $response->getContent();
 
-        $this->assertStringContainsString((string) $paidOrder->id, $content);
-        $this->assertStringNotContainsString((string) $unpaidOrder->id, $content);
+        // لینک جزئیات سفارش پرداخت‌شده باید باشد؛ لینک سفارش پرداخت‌نشده نباید
+        // (به‌جای شناسه خام که ممکن است در قیمت‌ها هم ظاهر شود)
+        $this->assertStringContainsString('orders/' . $paidOrder->id, $content);
+        $this->assertStringNotContainsString('orders/' . $unpaidOrder->id, $content);
     }
 
     #[Test]
@@ -118,14 +120,25 @@ class OrderTest extends TestCase
     {
         Notification::fake();
 
+        // دیتابیس تست ممکن است هیچ مدیری نداشته باشد → یک مدیر می‌سازیم
+        // تا listener (Admin::whereIn('level', ['admin','creator'])) چیزی برای اطلاع‌رسانی داشته باشد
+        \App\Models\Admin::create([
+            'first_name' => 'مدیر',
+            'last_name'  => 'تستی',
+            'username'   => 'test-admin-' . \Illuminate\Support\Str::random(6),
+            'level'      => 'admin',
+            'password'   => \Illuminate\Support\Facades\Hash::make('admin-secret'),
+        ]);
+
         $user = $this->newUser();
         $product = $this->newProduct();
         [$order] = $this->newPaidOrder($user, $product);
 
         event(new OrderPaid($order));
 
-        // اعلان پرداخت سفارش برای مدیران ارسال می‌شود (بدون شرط)
+        // اعلان پرداخت سفارش برای مدیران ارسال می‌شود
         $admins = \App\Models\Admin::whereIn('level', ['admin', 'creator'])->get();
+        $this->assertNotEmpty($admins, 'حداقل یک مدیر باید وجود داشته باشد');
         Notification::assertSentTo($admins, \App\Notifications\Order\OrderPaid::class);
     }
 

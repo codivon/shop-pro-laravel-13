@@ -21,7 +21,13 @@ class AddressesController extends Controller
 
     public function show($id)
     {
-        $address=Address::find($id);
+        // امنیت: کاربر فقط باید آدرس خودش را ببیند (رفع IDOR)
+        $address = Address::where('user_id', auth()->id())->find($id);
+
+        if (! $address) {
+            return response()->json(['message' => 'یافت نشد'], 404);
+        }
+
         return response()->json(['address'=>$address]);
     }
 
