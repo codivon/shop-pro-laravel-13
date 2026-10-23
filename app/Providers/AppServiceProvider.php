@@ -5,7 +5,9 @@ namespace App\Providers;
 use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Filter;
+use App\Models\Price;
 use App\Observers\ProductObserver;
+use App\Observers\PriceObserver;
 use App\Models\Page;
 use App\Models\Post;
 use App\Models\Product;
@@ -15,6 +17,7 @@ use App\Observers\CategoryObserver;
 use App\Observers\PostObserver;
 use App\Observers\SliderObserver;
 use App\Services\PulseService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
@@ -73,6 +76,8 @@ class AppServiceProvider extends ServiceProvider
     {
 
         Schema::defaultStringLength(191);
+
+        $this->registerRateLimiters();
 
         // مسیر build پنل جدید (خروجی Vite جدا از Mix)
         \Illuminate\Support\Facades\Vite::useBuildDirectory('admin-panel');
@@ -147,6 +152,31 @@ class AppServiceProvider extends ServiceProvider
         }
     }
 
+    /**
+     * FIX مقیاس: rate-limiter های ویترین — فقط در production فعالند تا
+     * ربات‌ها نتوانند جستجو/جستجوی زنده را هدر بدهند؛ در تست/سندباکس محدود نیستند.
+     */
+    private function registerRateLimiters(): void
+    {
+        $isProduction = $this->app->environment('production');
+
+        \Illuminate\Support\Facades\RateLimiter::for('front-search', function ($request) use ($isProduction) {
+            if (! $isProduction) {
+                return \Illuminate\Cache\RateLimiting\Limit::none();
+            }
+
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(300)->by(optional($request->user())->id ?: 'search|'.$request->ip());
+        });
+
+        \Illuminate\Support\Facades\RateLimiter::for('front-ajax-search', function ($request) use ($isProduction) {
+            if (! $isProduction) {
+                return \Illuminate\Cache\RateLimiting\Limit::none();
+            }
+
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(600)->by(optional($request->user())->id ?: 'ajax|'.$request->ip());
+        });
+    }
+
     private function viewComposer()
     {
         // SHARE WITH SPECIFIC VIEW
@@ -194,6 +224,7 @@ class AppServiceProvider extends ServiceProvider
     private function observers()
     {
         Product::observe(ProductObserver::class);
+        Price::observe(PriceObserver::class);
         Slider::observe(SliderObserver::class);
         Banner::observe(BannerObserver::class);
         Post::observe(PostObserver::class);
@@ -213,20 +244,28 @@ class AppServiceProvider extends ServiceProvider
 
     protected function registerTaggableObservers()
     {
-        // مسیر مدل‌ها
-        $modelsPath = app_path('Models');
+        // مسیر مدل‌ها — نتیجهٔ اسکن کش می‌شود تا هر ریکوئست کل پوشه اسکن نشود
+        $taggableModels = Cache::remember('app.models.using_taggable', 3600, function () {
+            $modelsPath = app_path('Models');
+            $models = [];
 
-        if (!is_dir($modelsPath)) {
-            return;
-        }
-
-        // همه فایل‌های مدل را اسکن کن
-        foreach (File::files($modelsPath) as $file) {
-            $modelClass = 'App\\Models\\' . $file->getFilenameWithoutExtension();
-
-            if (class_exists($modelClass) && $this->usesTaggableTrait($modelClass)) {
-                $modelClass::observe(\App\Observers\TaggableObserver::class);
+            if (! is_dir($modelsPath)) {
+                return $models;
             }
+
+            foreach (File::files($modelsPath) as $file) {
+                $modelClass = 'App\\Models\\' . $file->getFilenameWithoutExtension();
+
+                if (class_exists($modelClass) && $this->usesTaggableTrait($modelClass)) {
+                    $models[] = $modelClass;
+                }
+            }
+
+            return $models;
+        });
+
+        foreach ($taggableModels as $modelClass) {
+            $modelClass::observe(\App\Observers\TaggableObserver::class);
         }
     }
 
@@ -237,33 +276,39 @@ class AppServiceProvider extends ServiceProvider
 
     protected function registerObservers(): void
     {
-        // مسیر مدل‌ها
-        $modelsPath = app_path('Models');
+        // لیست مدل‌ها کش می‌شود تا هر ریکوئست دایرکتوری Models اسکن نشود
+        $modelClasses = Cache::remember('app.models.all_classes', 3600, function () {
+            $modelsPath = app_path('Models');
 
-        if (!File::exists($modelsPath)) {
-            return;
-        }
+            if (!File::exists($modelsPath)) {
+                return [];
+            }
 
-        // دریافت همه فایل‌های مدل
-        $modelFiles = File::files($modelsPath);
+            $classes = [];
 
-        foreach ($modelFiles as $file) {
-            $modelClass = 'App\\Models\\' . $file->getFilenameWithoutExtension();
+            foreach (File::files($modelsPath) as $file) {
+                $modelClass = 'App\\Models\\' . $file->getFilenameWithoutExtension();
 
-            // بررسی وجود کلاس مدل
-            if (class_exists($modelClass)) {
-                // مدل‌هایی که نباید Observer داشته باشند
-                $excludedModels = [
-                    'App\Models\Activity',
-                    'App\Models\ActivityLog',
-                ];
+                if (class_exists($modelClass)) {
+                    $classes[] = $modelClass;
+                }
+            }
 
-                if (!in_array($modelClass, $excludedModels)) {
-                    try {
-                        $modelClass::observe(\App\Observers\GlobalActivityObserver::class);
-                    } catch (\Exception $e) {
-                        // خطا را نادیده بگیر
-                    }
+            return $classes;
+        });
+
+        // مدل‌هایی که نباید Observer داشته باشند
+        $excludedModels = [
+            'App\\Models\\Activity',
+            'App\\Models\\ActivityLog',
+        ];
+
+        foreach ($modelClasses as $modelClass) {
+            if (!in_array($modelClass, $excludedModels)) {
+                try {
+                    $modelClass::observe(\App\Observers\GlobalActivityObserver::class);
+                } catch (\Exception $e) {
+                    // خطا را نادیده بگیر
                 }
             }
         }

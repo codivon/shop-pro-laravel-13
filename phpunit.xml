@@ -18,6 +18,8 @@
     <server name="QUEUE_CONNECTION" value="sync"/>
     <server name="SESSION_DRIVER" value="array"/>
     <server name="TELESCOPE_ENABLED" value="false"/>
+    <!-- مقیاس: مجموعهٔ کامل تست‌ها (۲۰۰+ تست + تست ۱۰۰۰ کاربر همزمان) به حافظهٔ بیشتری نیاز دارد -->
+    <ini name="memory_limit" value="2G"/>
   </php>
   <source>
     <include>

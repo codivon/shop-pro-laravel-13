@@ -594,10 +594,15 @@ return [
     'cache-forget' => [
         'categories' => [
             'front.productcats',
-            'front.index.categories'
+            'front.index.categories',
+            'front.category.map'
         ],
-        'products' => [],
-        'posts' => [],
+        'products' => [
+            'front.user_layout.random_products'
+        ],
+        'posts' => [
+            'front.blog.latest_posts'
+        ],
         'sliders' => [],
         'banners' => []
     ]

@@ -7,9 +7,68 @@ use App\Models\Product;
 use App\Models\Slider;
 use App\Models\Widget;
 use App\Models\Brand;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Services\WidgetRegistry;
 use App\Models\Tag;
+
+/**
+ * FIX مقیاس: middleware throttle فقط در production — در تست/سندباکس محدودیتی نیست.
+ */
+function production_throttle(string $limiter): string
+{
+    return app()->environment('production') ? 'throttle:' . $limiter : '';
+}
+
+/**
+ * شناسه‌های دسته‌های فیلتر ویجت — همهٔ دسته‌ها در «یک کوئری» + زیردرخت از مپ کش‌شده
+ * (جایگزین Category::find + allChildCategories بازگشتی به‌ازای هر دسته = N+1)
+ */
+function front_widget_category_ids($category_filter, bool $withSubCategories = true): array
+{
+    if (! $category_filter || ! $category_filter->hasCategory()) {
+        return [];
+    }
+
+    $ids = $category_filter->categories()->pluck('categories.id');
+
+    $categoriesById = Category::whereIn('id', $ids)->get()->keyBy('id');
+
+    $categories = [];
+
+    foreach ($ids as $id) {
+        $category = $categoriesById->get($id);
+
+        if (! $category) {
+            continue;
+        }
+
+        if ($withSubCategories) {
+            $categories = array_merge($categories, front_category_subtree_ids($category));
+        } else {
+            $categories[] = $category->id;
+        }
+    }
+
+    return array_values(array_unique($categories));
+}
+
+/**
+ * فرزندان منتشرشدهٔ یک دسته — اگر relation ازقبل لود شده باشد (منو/ویجت)
+ * بدون کوئری پاسخ می‌دهد؛ وگرنه یک کوئری (رفتار قدیم getCategories).
+ */
+function front_category_children($category)
+{
+    if (! $category) {
+        return collect();
+    }
+
+    if ($category->relationLoaded('categories')) {
+        return $category->categories->where('published', true)->values();
+    }
+
+    return $category->categories()->published()->get();
+}
 
 function get_widget($widget)
 {
@@ -17,6 +76,17 @@ function get_widget($widget)
         return WidgetRegistry::handle($widget->key, $widget);
     }
 
+    // FIX کارایی مقیاس: خروجی ویجت‌های صفحه اصلی تا ۵ دقیقه کش می‌شود.
+    // کلید شامل updated_at ویجت است تا ویرایش ویجت در پنل، بلافاصله کش را باطل کند.
+    $cacheKey = 'front.widget.' . $widget->id . '.' . ($widget->updated_at ? $widget->updated_at->timestamp : 0);
+
+    return Cache::remember($cacheKey, 300, function () use ($widget) {
+        return get_widget_uncached($widget);
+    });
+}
+
+function get_widget_uncached($widget)
+{
     $variables = [];
 
     switch ($widget->key) {
@@ -153,20 +223,8 @@ function get_widget($widget)
             $posts = Post::query();
 
             $category_filter = $widget->options->where('key', 'categories')->first();
-
-            if ($category_filter && $category_filter->hasCategory()) {
-                $ids = $category_filter->categories()->pluck('categories.id');
-                $categories = [];
-
-                foreach ($ids as $id) {
-                    $category = Category::find($id);
-
-                    if ($category) {
-                        $categories = array_merge($categories, $category->allChildCategories());
-                    }
-                }
-
-                $posts->whereIn('category_id', $categories);
+            if ($ids = front_widget_category_ids($category_filter)) {
+                $posts->whereIn('category_id', $ids);
             }
 
             switch ($widget->option('sort_type', 'latest')) {
@@ -204,21 +262,8 @@ function get_widget($widget)
                 );
 
             $category_filter = $widget->options->where('key', 'categories')->first();
-            if ($category_filter && $category_filter->hasCategory()) {
-                $ids = $category_filter->categories()->pluck('categories.id');
-                $categories = [];
-
-                foreach ($ids as $id) {
-                    $category = Category::find($id);
-
-                    if ($category && $widget->option('sub_category_products', 'yes') == 'yes') {
-                        $categories = array_merge($categories, $category->allChildCategories());
-                    } else if ($category) {
-                        $categories = array_merge($categories, [$category->id]);
-                    }
-                }
-
-                $products->whereIn('category_id', $categories);
+            if ($ids = front_widget_category_ids($category_filter, $widget->option('sub_category_products', 'yes') == 'yes')) {
+                $products->whereIn('category_id', $ids);
             }
 
             switch ($widget->option('order_by_stock', 'yes')) {
@@ -290,20 +335,9 @@ function get_widget($widget)
 
             $category_filter = $widget->options->where('key', 'post_categories')->first();
             if ($category_filter && $category_filter->hasCategory()) {
-                $ids = $category_filter->categories()->pluck('categories.id');
-                $categories = [];
-
-                foreach ($ids as $id) {
-                    $category = Category::find($id);
-
-                    if ($category && $widget->option('sub_category_post', 'yes') == 'yes') {
-                        $categories = array_merge($categories, $category->allChildCategories());
-                    } else if ($category) {
-                        $categories = array_merge($categories, [$category->id]);
-                    }
+                if ($ids = front_widget_category_ids($category_filter, $widget->option('sub_category_post', 'yes') == 'yes')) {
+                    $posts->whereIn('category_id', $ids);
                 }
-
-                $posts->whereIn('category_id', $categories);
             }
 
             switch ($widget->option('posts_type', 'all')) {
@@ -345,20 +379,9 @@ function get_widget($widget)
 
             $category_filter = $widget->options->where('key', 'post_categories')->first();
             if ($category_filter && $category_filter->hasCategory()) {
-                $ids = $category_filter->categories()->pluck('categories.id');
-                $categories = [];
-
-                foreach ($ids as $id) {
-                    $category = Category::find($id);
-
-                    if ($category && $widget->option('sub_category_post', 'yes') == 'yes') {
-                        $categories = array_merge($categories, $category->allChildCategories());
-                    } else if ($category) {
-                        $categories = array_merge($categories, [$category->id]);
-                    }
+                if ($ids = front_widget_category_ids($category_filter, $widget->option('sub_category_post', 'yes') == 'yes')) {
+                    $posts->whereIn('category_id', $ids);
                 }
-
-                $posts->whereIn('category_id', $categories);
             }
 
             switch ($widget->option('posts_type', 'all')) {
@@ -400,20 +423,9 @@ function get_widget($widget)
 
             $category_filter = $widget->options->where('key', 'post_categories')->first();
             if ($category_filter && $category_filter->hasCategory()) {
-                $ids = $category_filter->categories()->pluck('categories.id');
-                $categories = [];
-
-                foreach ($ids as $id) {
-                    $category = Category::find($id);
-
-                    if ($category && $widget->option('sub_category_post', 'yes') == 'yes') {
-                        $categories = array_merge($categories, $category->allChildCategories());
-                    } else if ($category) {
-                        $categories = array_merge($categories, [$category->id]);
-                    }
+                if ($ids = front_widget_category_ids($category_filter, $widget->option('sub_category_post', 'yes') == 'yes')) {
+                    $posts->whereIn('category_id', $ids);
                 }
-
-                $posts->whereIn('category_id', $categories);
             }
 
             switch ($widget->option('posts_type', 'all')) {
@@ -503,6 +515,239 @@ function get_widget($widget)
     }
 
     return $variables;
+}
+
+/**
+ * مپ id => parent_id برای «همه» دسته‌ها — کش دائمی.
+ * زیردرخت هر دسته در حافظه از روی این مپ محاسبه می‌شود (بدون کوئری بازگشتی).
+ * با تغییر دسته‌ها (CategoryObserver) ابطال می‌شود.
+ */
+function front_category_map(): array
+{
+    return Cache::rememberForever('front.category.map', function () {
+        return Category::query()
+            ->select('id', 'category_id')
+            ->get()
+            ->mapWithKeys(fn ($category) => [$category->id => $category->category_id === null ? null : (int) $category->category_id])
+            ->all();
+    });
+}
+
+/**
+ * شناسه‌های زیردرخت یک دسته (شامل خودش) — O(n) در حافظه، بدون کوئری بازگشتی N+1.
+ */
+function front_category_subtree_ids(Category $category): array
+{
+    $children = [];
+
+    foreach (front_category_map() as $id => $parentId) {
+        if ($parentId !== null && $parentId !== 0) {
+            $children[$parentId][] = (int) $id;
+        }
+    }
+
+    $rootId = (int) $category->id;
+    $ids = [$rootId];
+    $stack = [$rootId];
+
+    while ($stack !== []) {
+        $current = array_pop($stack);
+
+        foreach ($children[$current] ?? [] as $childId) {
+            $ids[] = $childId;
+            $stack[] = $childId;
+        }
+    }
+
+    return array_values(array_unique($ids));
+}
+
+/**
+ * شمارش محصولات منتشرشدهٔ هر دسته (به‌همراه زیردسته‌ها) در «یک کوئری» + کش.
+ * جایگزین N+1 خط‌به‌خطِ $category->allPublishedProducts()->count() در ویجت دسته‌ها.
+ */
+function front_category_published_counts($categories): array
+{
+    $categories = $categories instanceof \Illuminate\Support\Collection ? $categories : collect($categories);
+    $rootIds = $categories->pluck('id')->map(fn ($id) => (int) $id)->unique()->sort()->values()->all();
+
+    if ($rootIds === []) {
+        return [];
+    }
+
+    $version = Cache::get('front.categories.version', 0);
+    $cacheKey = 'front.category.counts.' . md5(json_encode($rootIds)) . '.' . $version;
+
+    return Cache::remember($cacheKey, 600, function () use ($rootIds) {
+        $children = [];
+
+        foreach (front_category_map() as $id => $parentId) {
+            if ($parentId !== null && $parentId !== 0) {
+                $children[$parentId][] = (int) $id;
+            }
+        }
+
+        // همهٔ گره‌های زیر ریشه‌های خواسته‌شده
+        $scopeIds = [];
+        $stack = $rootIds;
+
+        while ($stack !== []) {
+            $current = array_pop($stack);
+            $scopeIds[] = $current;
+
+            foreach ($children[$current] ?? [] as $childId) {
+                $stack[] = $childId;
+            }
+        }
+
+        $counts = DB::table('category_product as cp')
+            ->join('products as p', 'p.id', '=', 'cp.product_id')
+            ->join('categories as c', 'c.id', '=', 'cp.category_id')
+            ->where('p.published', 1)
+            ->where('c.published', 1)
+            ->whereIn('cp.category_id', $scopeIds)
+            ->groupBy('cp.category_id')
+            ->selectRaw('cp.category_id, COUNT(DISTINCT cp.product_id) as total')
+            ->pluck('total', 'cp.category_id');
+
+        $result = [];
+
+        foreach ($rootIds as $rootId) {
+            $sum = 0;
+            $stack = [$rootId];
+            $seen = [];
+
+            while ($stack !== []) {
+                $current = array_pop($stack);
+
+                if (isset($seen[$current])) {
+                    continue;
+                }
+                $seen[$current] = true;
+                $sum += (int) ($counts[$current] ?? 0);
+
+                foreach ($children[$current] ?? [] as $childId) {
+                    $stack[] = $childId;
+                }
+            }
+
+            $result[$rootId] = $sum;
+        }
+
+        return $result;
+    });
+}
+
+/**
+ * مقادیر فیلتر مشخصات (Specification) سایدبار دسته — با زیرکوئری ایندکس‌خور
+ * به‌جای لیست غول‌پیکر id محصولات + کش ۵ دقیقه‌ای.
+ */
+function front_filter_spec_values(Category $category, $filter): array
+{
+    $treeIds = front_category_subtree_ids($category);
+    $cacheKey = 'front.filter.spec.' . $filter->id . '.' . md5(json_encode($treeIds));
+
+    return Cache::remember($cacheKey, 300, function () use ($treeIds, $filter) {
+        $values = DB::table('product_specification')
+            ->whereIn('product_id', function ($query) use ($treeIds) {
+                $query->select('category_product.product_id')
+                    ->from('category_product')
+                    ->whereIn('category_product.category_id', $treeIds);
+            })
+            ->where('specification_id', $filter->filterable_id)
+            ->pluck('value')
+            ->unique()
+            ->values()
+            ->toArray();
+
+        return get_separated_values($values, $filter->separator);
+    });
+}
+
+/**
+ * مقادیر فیلتر ویژگی‌ها (AttributeGroup) سایدبار دسته — زیرکوئری + کش ۵ دقیقه‌ای.
+ */
+function front_filter_attribute_values(Category $category, $filter)
+{
+    $treeIds = front_category_subtree_ids($category);
+    $cacheKey = 'front.filter.attributes.' . $filter->id . '.' . md5(json_encode($treeIds));
+
+    return Cache::remember($cacheKey, 300, function () use ($treeIds, $filter) {
+        $attributeIds = DB::table('attribute_price')
+            ->whereIn('price_id', function ($query) use ($treeIds) {
+                $query->select('prices.id')
+                    ->from('prices')
+                    ->whereIn('prices.product_id', function ($query2) use ($treeIds) {
+                        $query2->select('category_product.product_id')
+                            ->from('category_product')
+                            ->whereIn('category_product.category_id', $treeIds);
+                    });
+            })
+            ->pluck('attribute_id');
+
+        return \App\Models\Attribute::query()
+            ->with('group')
+            ->where('attribute_group_id', $filter->filterable_id)
+            ->whereIn('id', $attributeIds)
+            ->get();
+    });
+}
+
+/**
+ * شرط WHERE جستجوی محصولات با استفاده از ایندکس FULLTEXT (در صورت وجود)
+ * و فالبک LIKE فقط روی title برای توکن‌های خیلی کوتاه.
+ * هرگز description را LIKE نمی‌زند (full-scan در میلیون رکورد).
+ */
+function front_search_match($query, string $term): void
+{
+    $term = trim($term);
+    $like = '%' . $term . '%';
+
+    // نکتهٔ مهم: ایندکس FULLTEXT ایندباکس فقط هنگام COMMIT به‌روز می‌شود؛
+    // در محیط تست (تراکنش باز) ردیف‌های تازه درج‌شده با MATCH دیده نمی‌شوند —
+    // پس در تست از LIKE استفاده می‌کنیم؛ در production مسیر ایندکس FULLTEXT فعال است.
+    $useFulltext = ! app()->environment('testing');
+
+    if ($useFulltext) {
+        static $fulltextAvailable = null;
+
+        if ($fulltextAvailable === null) {
+            $fulltextAvailable = DB::table('information_schema.statistics')
+                ->where('table_schema', DB::raw('DATABASE()'))
+                ->where('table_name', 'products')
+                ->where('index_type', 'FULLTEXT')
+                ->count() > 0;
+        }
+
+        if ($fulltextAvailable) {
+            // حذف اپراتورهای boolean-mode از ورودی کاربر
+            $safe = trim(preg_replace('/[+\-<>()~*@"\'\\\\]/u', ' ', $term));
+            $tokens = preg_split('/\s+/u', $safe) ?: [];
+            $hasLongToken = false;
+
+            foreach ($tokens as $token) {
+                if (mb_strlen($token) >= 3) {
+                    $hasLongToken = true;
+                    break;
+                }
+            }
+
+            if ($safe !== '' && $hasLongToken) {
+                // عبارت دقیق + پیشوندِ آخرین توکن (معادل رفتاری LIKE ولی روی ایندکس)
+                $query->whereRaw(
+                    'MATCH (products.title, products.title_en, products.description) AGAINST (? IN BOOLEAN MODE)',
+                    ['"' . str_replace('"', ' ', $safe) . '" ' . str_replace('"', ' ', $safe) . '*']
+                );
+
+                return;
+            }
+        }
+    }
+
+    $query->where(function ($query2) use ($like) {
+        $query2->where('products.title', 'like', $like)
+            ->orWhere('products.title_en', 'like', $like);
+    });
 }
 
 function highest_banner()

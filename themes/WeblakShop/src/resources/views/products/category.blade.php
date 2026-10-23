@@ -68,7 +68,7 @@
                                     </div>
                                 </div>
 
-                                @foreach($category->getCategories() as $cat)
+                                @foreach(front_category_children($category) as $cat)
                                     <div class="col-lg-3 col-md-4 col-sm-6 col-12 px-10 mb-1 px-res-0">
                                         <div class="product-card mb-2 mx-res-0 category-index">
                                             <div class="product-card-body">

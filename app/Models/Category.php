@@ -184,12 +184,21 @@ class Category extends Model
         return $categories;
     }
 
+    /**
+     * FIX مقیاس: قبلاً داخل حلقه، $all_categories->where(...) روی کل کالکشن
+     * اجرا می‌شد = O(n²)؛ برای هزاران دسته در هر بازسازی منو سنگین بود.
+     * حالا یک‌بار groupBy می‌شود = O(n).
+     */
     private function setCategoriesRelations($categories, $all_categories)
     {
+        $byParent = $all_categories->groupBy('category_id');
+
         foreach ($categories as $category) {
-            if ($all_categories->where('category_id', $category->id)->count()) {
-                $category->setRelation('categories', $all_categories->where('category_id', $category->id));
-                $this->setCategoriesRelations($all_categories->where('category_id', $category->id), $all_categories);
+            $children = $byParent->get($category->id);
+
+            if ($children && $children->count()) {
+                $category->setRelation('categories', $children);
+                $this->setCategoriesRelations($children, $all_categories);
             }
         }
     }

@@ -30,7 +30,18 @@ trait LogsSearch
     protected function logProductSearch(Request $request, $products, $categories, $brand, $brand_categories)
     {
        $keyword= $request->q ? $request->q : $request->s;
-       $keyword = $keyword ? $keyword : $categories->title;
+
+       // FIX: قبلاً وقتی $categories یک Model بود (نه Collection)،
+       // $categories->count() و ->pluck('id') از طریق __call به Query Builder
+       // منتقل می‌شد و «کل جدول categories» خوانده می‌شد!
+       if (! $keyword) {
+           if ($categories instanceof \Illuminate\Database\Eloquent\Model) {
+               $keyword = $categories->title;
+           } elseif ($categories instanceof \Illuminate\Support\Collection) {
+               $keyword = $categories->first()?->title;
+           }
+       }
+
         return Search::create([
             'user_id' => $this->safeSearchUserId(),
             'ip_address' => $request->ip(),

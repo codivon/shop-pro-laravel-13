@@ -27,7 +27,7 @@
             <ul>
 
                 @if($menu->category->getCategoriesCount())
-                    @foreach ($menu->category->getCategories() as $childCategory)
+                    @foreach (front_category_children($menu->category) as $childCategory)
                         @include('front::partials.mobile-menu.child-category', ['category' => $childCategory])
                     @endforeach
                 @endif

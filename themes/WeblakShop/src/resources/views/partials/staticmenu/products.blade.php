@@ -13,7 +13,9 @@
                     <li class="list-category">
                         <a href="{{ $category->link }}" class="list-category-megamenu">همه دسته بندی های {{ $category->title }}</a>
                     </li>
-                        @foreach ($category->getCategories() as $childCategory)
+                        {{-- FIX مقیاس: از relation ازقبل-لود شدهٔ getWithChilds استفاده می‌شود
+                        (قبلاً به‌ازای هر دستهٔ ریشه یک کوئری اجرا می‌شد = N+1) --}}
+                        @foreach ($category->categories->where('published', true)->values() as $childCategory)
                         @include('front::partials.megamenu.child-category', ['category' => $childCategory])
                         @endforeach
 

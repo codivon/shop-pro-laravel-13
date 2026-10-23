@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 
 class Product extends Model
 {
@@ -35,6 +36,46 @@ class Product extends Model
     }
 
     //------------- start relations
+
+    /**
+     * آیا ستون‌های دینرمال‌شده (in_stock / min_price) روی جدول products موجودند؟
+     * نتیجه در هر پروسه یک‌بار محاسبه می‌شود تا در هر ریکوئست کوئری اضافه نزند.
+     */
+    public static function denormalizedReady(): bool
+    {
+        static $ready = null;
+
+        if ($ready === null) {
+            $ready = Schema::hasColumn('products', 'in_stock')
+                && Schema::hasColumn('products', 'min_price');
+        }
+
+        return $ready;
+    }
+
+    /**
+     * همگام‌سازی in_stock و min_price یک محصول در «یک کوئری» بر اساس جدول prices.
+     * توسط PriceObserver بعد از هر ذخیره/حذف قیمت صدا زده می‌شود.
+     * آپدیت مستقیم DB است تا رویدادهای مدل دوباره fire نشوند (حلقه بی‌نهایت).
+     */
+    public static function syncStockAndMinPrice(int $productId): void
+    {
+        if (! self::denormalizedReady()) {
+            return;
+        }
+
+        $row = DB::table('prices')
+            ->where('product_id', $productId)
+            ->whereNull('deleted_at')
+            ->selectRaw("COALESCE(MAX(stock > 0), 0) as in_stock")
+            ->selectRaw("MIN(IF(stock > 0, IF(discount_expire_at IS NULL OR DATE(discount_expire_at) > NOW(), discount_price, regular_price), NULL)) as min_price")
+            ->first();
+
+        DB::table('products')->where('id', $productId)->update([
+            'in_stock'  => (int) ($row->in_stock ?? 0),
+            'min_price' => $row->min_price,
+        ]);
+    }
 
     public function category()
     {

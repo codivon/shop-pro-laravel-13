@@ -64,12 +64,33 @@ class ProductController extends Controller
     public function categoryProducts(Request $request, Category $category)
     {
         $this->isShowable($category);
-        $ids = $category->allPublishedProducts()->pluck('id');
-        $products = Product::orderByStock()->frontFilter($category)->latest()->whereIn('products.id', $ids)->paginate(20);
-        $min_price = Price::where('stock', '>', 0)->whereIn('product_id', $ids)->min('price');
-        $max_price = Price::where('stock', '>', 0)->whereIn('product_id', $ids)->max('price');
+
+        // FIX مقیاس: به‌جای pluck همه idهای محصول (لیست غول‌پیکر در میلیون رکورد)،
+        // از زیردرخت دسته‌ها + whereHas ایندکس‌خور استفاده می‌شود
+        $treeIds = front_category_subtree_ids($category);
+
+        $products = Product::orderByStock()
+            ->frontFilter($category)
+            ->published()
+            ->whereHas('categories', function ($query) use ($treeIds) {
+                $query->whereIn('categories.id', $treeIds)->published();
+            })
+            ->with(['lowestPrice', 'category:id,title,slug', 'labels'])
+            ->latest()
+            ->paginate(20);
+
+        $priceScope = function ($query) use ($treeIds) {
+            $query->select('category_product.product_id')
+                ->from('category_product')
+                ->whereIn('category_product.category_id', $treeIds);
+        };
+
+        $min_price = Price::where('stock', '>', 0)->whereIn('product_id', $priceScope)->min('price');
+        $max_price = Price::where('stock', '>', 0)->whereIn('product_id', $priceScope)->max('price');
+
         // ثبت جستجو در دیتابیس
-        $this->logProductSearch($request, $products, $category, '', '');
+        $this->logProductSearch($request, $products, collect([$category]), '', '');
+
         return view('front::products.category-products', compact('products', 'category', 'min_price', 'max_price'));
     }
 
@@ -99,16 +120,15 @@ class ProductController extends Controller
         }
 
         // ========== محصولات ==========
+        // FIX مقیاس: جستجو با ایندکس FULLTEXT (به‌جای LIKE ٪…٪ روی description که full-scan است)
+        // FIX: select های قبلی ستون‌های price/discount را می‌خواند که سال‌هاست حذف شده‌اند
+        // (قبلاً اتفاقی کار می‌کرد چون orderByStock قدیمی با select('*') لیست را بازنویسی می‌کرد)
         $products = Product::published()
-            ->select('id', 'title', 'slug', 'image', 'price', 'discount', 'sell', 'view', 'special')
+            ->select('id', 'title', 'title_en', 'slug', 'image', 'type', 'sell', 'view', 'special', 'special_end_date', 'published', 'created_at')
             ->where(function ($query) use ($q) {
-                $query->where('title', 'like', '%' . $q . '%')
-                    ->orWhere('title_en', 'like', '%' . $q . '%')
-                    ->orWhere('description', 'like', '%' . $q . '%');
+                front_search_match($query, $q);
             })
-            ->with(['prices' => function ($query) {
-                $query->where('published', true)->latest();
-            }])
+            ->with(['lowestPrice', 'category:id,title,slug', 'labels'])
             ->orderByStock()
             ->latest()
             ->paginate(20);
@@ -151,6 +171,7 @@ class ProductController extends Controller
         $products = Product::detectLang()
             ->published()
             ->special()
+            ->with(['lowestPrice', 'category:id,title,slug', 'labels'])
             ->latest()
             ->paginate(20);
 
@@ -161,6 +182,7 @@ class ProductController extends Controller
     {
         $products = Product::published()
             ->where('moment', true)
+            ->with(['lowestPrice', 'category:id,title,slug', 'labels'])
             ->latest()
             ->paginate(20);
         return view('front::products.specials', compact('products'));
@@ -171,6 +193,7 @@ class ProductController extends Controller
         $products = Product::published()
             ->available()
             ->discount()
+            ->with(['lowestPrice', 'category:id,title,slug', 'labels'])
             ->latest()
             ->paginate(20);
 
@@ -186,13 +209,12 @@ class ProductController extends Controller
         }
 
         // جستجوی محصولات با اولویت
+        // FIX مقیاس: WHERE با ایندکس FULLTEXT — فقط ردیف‌های منطبق CASE و مرتب‌سازی می‌شوند
         $products = DB::table('products')
             ->select('id', 'title', 'slug', 'image', 'sell')
             ->where('published', 1)
             ->where(function ($q) use ($searchTerm) {
-                $q->where('title', 'like', $searchTerm . '%')      // اولویت 1: شروع با عبارت
-                ->orWhere('title', 'like', '%' . $searchTerm . '%')  // اولویت 2: شامل عبارت
-                ->orWhere('title_en', 'like', '%' . $searchTerm . '%');
+                front_search_match($q, $searchTerm);
             })
             ->orderByRaw("CASE
             WHEN title LIKE ? THEN 1
@@ -255,6 +277,7 @@ class ProductController extends Controller
             $related_products = Product::published()
                 ->where('id', '!=', $product->id)
                 ->where('category_id', $product->category->id)
+                ->with(['lowestPrice', 'category:id,title,slug', 'labels'])
                 ->latest()
                 ->take(6)
                 ->get();
@@ -262,6 +285,7 @@ class ProductController extends Controller
             $related_products = Product::published()
                 ->where('id', '!=', $product->id)
                 ->whereNull('category_id')
+                ->with(['lowestPrice', 'category:id,title,slug', 'labels'])
                 ->latest()
                 ->take(6)
                 ->get();
@@ -271,7 +295,10 @@ class ProductController extends Controller
 
         $selected_price = $product->getPrices()->first();
 
-        $attributeGroups = AttributeGroup::orderBy('ordering')->get();
+        // FIX مقیاس: گروه‌های ویژگی تقریباً ثابت‌اند — ۱۰ دقیقه کش می‌شوند
+        $attributeGroups = Cache::remember('front.attributeGroups', 600, function () {
+            return AttributeGroup::orderBy('ordering')->get();
+        });
 
         $similar_products_count = Product::whereNotIn('id', [$product->id])
             ->whereNotNull('spec_type_id')

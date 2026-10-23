@@ -18,7 +18,11 @@ class Menu extends Model
 
     public function childrenmenus()
     {
-        return $this->hasMany(Menu::class)->with('menus')->orderBy('ordering');
+        // FIX مقیاس: category.categories همراه فرزندان لود می‌شود تا رندر منو
+        // به‌ازای هر آیتم فرزند، کوئری جداگانه ($menu->category) نزند
+        return $this->hasMany(Menu::class)
+            ->with(['menus', 'category.categories'])
+            ->orderBy('ordering');
     }
 
     public function category()

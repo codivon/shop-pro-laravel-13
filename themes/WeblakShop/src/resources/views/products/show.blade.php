@@ -694,11 +694,15 @@
                                                         مشخصات فنی
                                                         <span>{{$product->title}}</span>
                                                     </h2>
+                                                    @php
+                                                        // FIX مقیاس: مشخصات یک‌بار لود می‌شوند (قبلاً به‌ازای هر گروه یک کوئری = N+1)
+                                                        $product_specifications = $product->specifications;
+                                                    @endphp
                                                     @foreach($product->specificationGroups->unique() as $group)
                                                         <section>
                                                             <h3 class="params-title">{{ $group->name }}</h3>
                                                             <ul class="params-list">
-                                                                @foreach($product->specifications()->where('specification_group_id', $group->id)->get() as $specification)
+                                                                @foreach($product_specifications->where('pivot.specification_group_id', $group->id) as $specification)
                                                                     <li>
                                                                         <div class="col-lg-3 col-md-3 col-xs-12 pull-right"
                                                                              style="padding:0;">

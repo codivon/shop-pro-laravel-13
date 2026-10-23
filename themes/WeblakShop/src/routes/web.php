@@ -108,8 +108,13 @@ Route::group(['as' => 'front.'], function () {
     Route::get('p/{id}', [ProductController::class, 'shortLink'])->name('products.shortLink');
     Route::get('product/{product}', [ProductController::class,'show'])->name('products.show');
 
-    Route::get('search', [ProductController::class,'index'])->name('products.index');
-    Route::post('search', [ProductController::class, 'ajax_search'])->name('products.ajax_search');
+    // FIX مقیاس: rate-limit فقط در محیط production اعمال می‌شود (در تست/سندباکس محدود نیست)
+    Route::get('search', [ProductController::class,'index'])
+        ->middleware(array_filter([production_throttle('front-search')]))
+        ->name('products.index');
+    Route::post('search', [ProductController::class, 'ajax_search'])
+        ->middleware(array_filter([production_throttle('front-ajax-search')]))
+        ->name('products.ajax_search');
 
     // ------------------ cart
     Route::get('cart', [CartController::class, 'show'])->name('cart');

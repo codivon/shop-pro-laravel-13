@@ -37,7 +37,8 @@ class Viewer
             ViewerModel::create([
                 'ip'      => request()->ip(),
                 'page_path'    => @$page_path[1],
-                'product_path' => urldecode(@$page_path[2]),
+                // FIX PHP 8.4 deprecation: urldecode(null) — وقتی segment وجود ندارد
+                'product_path' => isset($page_path[2]) ? urldecode((string) $page_path[2]) : null,
                 'path'    => request()->getRequestUri(),
                 'auth'    => auth()->check(),
                 'admin_id' => auth('adminPanel')->check() ? auth('adminPanel')->user()->id : null,
