@@ -18,7 +18,7 @@
                             <div class="breadcrumb-wrapper col-12">
                                 <ol class="breadcrumb no-border">
                                     <li class="breadcrumb-item">مدیریت</li>
-                                    <li class="breadcrumb-item"><a href="{{ route('admin.packages.index') }}">بازار پکیج‌ها</a></li>
+                                    <li class="breadcrumb-item"><a href="{{ route('admin.packages.index') }}">بازار</a></li>
                                     <li class="breadcrumb-item active">ماژول‌های نصب‌شده</li>
                                 </ol>
                             </div>
@@ -210,9 +210,9 @@
                             <i class="feather icon-inbox"></i>
                         </div>
                         <h5>هیچ ماژولی نصب نشده است!</h5>
-                        <p>برای نصب اولین پکیج به بازار پکیج‌ها بروید.</p>
+                        <p>برای نصب اولین پکیج به بازار بروید.</p>
                         <a href="{{ route('admin.packages.index') }}" class="btn pkg-btn-primary mt-2">
-                            <i class="feather icon-package"></i> رفت به بازار پکیج‌ها
+                            <i class="feather icon-package"></i> رفت به بازار
                         </a>
                     </div>
                 @endif

@@ -118,7 +118,7 @@
                         @can('packages.index')
                             <li class="{{ active_class('admin.packages.index') }}">
                                 <a href="{{ route('admin.packages.index') }}"><i class="fa-solid fa-circle"></i><span
-                                        class="menu-item">لیست پکیج ها</span></a>
+                                        class="menu-item">پکیج‌ها و قالب‌ها</span></a>
                             </li>
                         @endcan
 

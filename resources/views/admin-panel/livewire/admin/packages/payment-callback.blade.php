@@ -6,7 +6,7 @@
         </span>
         <h1 class="text-base font-bold">در حال بررسی نتیجه پرداخت…</h1>
         <p class="mt-2 text-[13px] leading-6 text-ink-2 dark:text-night-ink-2">
-            نتیجه پرداخت بررسی و به بازار پکیج‌ها منتقل می‌شود.
+            نتیجه پرداخت بررسی و به بازار منتقل می‌شود.
         </p>
         @if ($result)
             <p class="mt-4 rounded-xl bg-surface-2 p-3 text-xs text-ink-2 dark:bg-night-3 dark:text-night-ink-2">

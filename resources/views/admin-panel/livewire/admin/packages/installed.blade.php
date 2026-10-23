@@ -14,7 +14,7 @@
         </div>
         <a href="{{ route('np.packages.index') }}" class="ap-btn-outline !py-2">
             <x-admin-panel::icon name="package" class="size-4" />
-            بازار پکیج‌ها
+            بازار
         </a>
     </div>
 
@@ -107,7 +107,7 @@
                                     <x-admin-panel::icon name="package" class="size-6" />
                                 </span>
                                 <p class="text-sm font-bold">ماژولی نصب نشده است</p>
-                                <p class="mt-1 text-xs text-ink-3 dark:text-night-ink-2">پکیج‌های موردنظر را از بازار پکیج‌ها نصب کنید.</p>
+                                <p class="mt-1 text-xs text-ink-3 dark:text-night-ink-2">پکیج‌های موردنظر را از بازار نصب کنید.</p>
                             </td>
                         </tr>
                     @endforelse

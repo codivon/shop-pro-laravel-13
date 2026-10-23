@@ -59,11 +59,11 @@ return [
                     'live' => true,
                 ],
                 [
-                    'label' => 'پکیج‌ها',
+                    'label' => 'بازار',
                     'icon' => 'package',
                     'children' => [
                         [
-                            'label' => 'لیست پکیج‌ها',
+                            'label' => 'پکیج‌ها و قالب‌ها',
                             'route' => 'np.packages.index',
                             'permission' => 'packages.index',
                             'icon' => 'package',

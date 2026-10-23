@@ -136,6 +136,7 @@ use App\Livewire\Admin\Settings\Others;
 use App\Livewire\Admin\Settings\SmsSettings;
 use App\Livewire\Admin\System\Developer;
 use App\Livewire\Admin\System\BaleSettings;
+use App\Livewire\Admin\Auth\TwoFactorChallenge;
 use App\Livewire\Admin\Packages\PackageIndex;
 use App\Livewire\Admin\Packages\PackageInstalled;
 use App\Livewire\Admin\Packages\PackagePaymentCallback;
@@ -167,6 +168,9 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
     */
     Route::middleware(\App\Http\Middleware\GuestAdminPanel::class)->group(function () {
         Route::get('login', Login::class)->name('login');
+
+        // فاز ۴۴ — چالش ورود دومرحله‌ای مدیر (بین تأیید اعتبارنامه و ورود کامل)
+        Route::get('two-factor', TwoFactorChallenge::class)->name('two-factor.challenge');
     });
 
     Route::get('logout', LogoutController::class)->name('logout');

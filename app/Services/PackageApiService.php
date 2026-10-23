@@ -95,6 +95,79 @@ class PackageApiService
     }
 
     /* ===================================================================
+     *  قالب‌ها (Templates) — فاز ۴۴
+     *  قرارداد کامل: مستند API-AGENT-SPEC §5.2 — بدون لایسنس؛
+     *  دو نوع خرید: normal (پیش‌فرض) و exclusive (انتقال کامل).
+     * =================================================================== */
+
+    /** لیست قالب‌ها — GET /api/v1/templates (search, category(int), per_page) */
+    public function listTemplates(array $query = []): array
+    {
+        return $this->request('GET', '/api/v1/templates', $query);
+    }
+
+    /** جزئیات یک قالب — GET /api/v1/templates/{slug} (price, discount_price, exclusive_price, ...) */
+    public function getTemplate(string $slug): array
+    {
+        return $this->request('GET', "/api/v1/templates/{$slug}");
+    }
+
+    /**
+     * خرید قالب — POST /api/v1/templates/{slug}/purchase
+     * پاسخ پولی: { payment_url, transaction_id, amount, gateway }
+     * خرید مجدهای normal: توکن دانلود مستقیم (download_token)
+     */
+    public function createTemplatePurchase(string $slug, string $purchaseType, string $callbackUrl, ?int $adminId = null): array
+    {
+        return $this->request('POST', "/api/v1/templates/{$slug}/purchase", [
+            'purchase_type' => $purchaseType === 'exclusive' ? 'exclusive' : 'normal',
+            'callback_url'  => $callbackUrl,
+            'project_key'   => $this->projectKey,
+            'admin_id'      => $adminId,
+        ]);
+    }
+
+    /** تأیید پرداخت قالب — POST /api/v1/templates/payments/{transactionId}/verify (soft 4xx مثل پکیج‌ها) */
+    public function verifyTemplatePayment(string $transactionId): array
+    {
+        return $this->request('POST', "/api/v1/templates/payments/{$transactionId}/verify", [], true);
+    }
+
+    /** بررسی نسخه جدید قالب — GET /api/v1/templates/{slug}/check-update */
+    public function checkTemplateUpdate(string $slug, string $currentVersion): array
+    {
+        return $this->request('GET', "/api/v1/templates/{$slug}/check-update", [
+            'current_version' => $currentVersion,
+        ]);
+    }
+
+    /** لینک دانلود یک‌بارمصرف قالب — POST /api/v1/templates/{slug}/download-url → { download_url, file_hash } */
+    public function createTemplateDownloadUrl(string $slug): array
+    {
+        return $this->request('POST', "/api/v1/templates/{$slug}/download-url");
+    }
+
+    /** دانلود سمت سرور قالب با auth — GET /api/v1/templates/{slug}/download (پاسخ: ZIP باینری) */
+    public function downloadTemplate(string $slug): \Illuminate\Http\Client\Response
+    {
+        return Http::timeout((int) config('packages.download.timeout', 300))
+            ->connectTimeout((int) config('packages.download.connect_timeout', 30))
+            ->withToken($this->token)
+            ->withHeaders([
+                'Accept'        => 'application/json',
+                'X-Project-Key' => $this->projectKey,
+                'X-Project-Url' => request()->root(),
+            ])
+            ->get("{$this->baseUrl}/api/v1/templates/{$slug}/download");
+    }
+
+    /** URL دانلود با توکن یک‌بارمصرف قالب */
+    public function getTemplateDownloadUrl(string $downloadToken): string
+    {
+        return "{$this->baseUrl}/api/v1/templates/download/{$downloadToken}";
+    }
+
+    /* ===================================================================
      *  درخواست HTTP مشترک
      * =================================================================== */
 
@@ -141,7 +214,12 @@ class PackageApiService
                 throw new RuntimeException($errorMessage ?: 'ارتباط با سرور پکیج‌ها برقرار نشد.');
             }
 
-            return $response->json();
+            $json = $response->json();
+            if ($json === null) {
+                Log::warning('PKG-API-DEBUG null json', ['endpoint' => $endpoint, 'status' => $response->status(), 'body' => substr($response->body(), 0, 200)]);
+            }
+
+            return $json;
         } catch (ConnectionException $e) {
             Log::error('Packages API connection error', [
                 'endpoint' => $endpoint,

@@ -1468,3 +1468,73 @@ Tests: 194 passed / 3 skipped / 0 failed (531 assertions) — ~6.5 دقیقه
 ### تنظیمات مقیاس (env)
 `SCALE_PRODUCTS=30000` `SCALE_USERS=20000` `SCALE_CONCURRENT=1000`
 
+
+---
+
+## Phase 44 — تب «امنیت» در تنظیمات برنامه‌نویس + 2FA مدیر + بازار قالب‌ها (تغییر نام بازار)
+
+**تاریخ:** 2026-10-24 | **زیربنا:** 252 passed / 0 failed / 3 skipped (فاز A: 223 + فاز B: 29)
+
+### بخش ۱ — تب «امنیت» در تنظیمات برنامه‌نویس (`np.developer.index`)
+
+تب پنجم (کلید Alpine: `security`) بعد از «آپدیت‌کننده» در `developer.blade.php` + اکشن `saveSecurity()` در `Developer.php` (فقط سازنده، اعتبارسنجی محدوده‌ها).
+
+**سرویس مرکزی `app/Services/SecuritySettings.php`** — همه کلیدها در جدول options (ثبت در `config/general.php → non_language_options`) و پیش‌فرض‌ها دقیقاً معادل رفتار قبلی:
+
+| کلید | پیش‌فرض | اثر |
+|---|---|---|
+| `security_captcha_enabled` | از `config('security.login_captcha')` | کلید اصلی کپچا |
+| `security_captcha_admin_login` | on | ورود مدیر (هر دو پنل) |
+| `security_captcha_register` | on | ثبت‌نام |
+| `security_captcha_customer_login` | off (جدید) | قدم اول ورود مشتری (POST /login → Check_Mobile_Email) |
+| `security_captcha_comments` | off (جدید) | پرسش محصول + دیدگاه مقاله + بررسی محصول |
+| `security_time_trap_seconds` | 3 | تلهٔ زمان؛ ۰ = خاموش |
+| `security_honeypot_enabled` | on | هانی‌پات |
+| `security_lockout_enabled` | on | کلید اصلی قفل تلاش |
+| `security_lockout_{admin,customer,comments}_{max,minutes}` | 5/15، 5/1، 5/10 | سقف + پنجرهٔ دقیقه‌ای هر نقطه |
+| `security_headers_enabled` | on | هدرهای امنیتی |
+| `security_hsts_enabled` | off | HSTS (فقط روی HTTPS — RFC 6797) |
+| `admin_2fa_enabled` + `admin_2fa_channel` | off + email | ورود دومرحله‌ای مدیر |
+
+**سیم‌کشی رفتار واقعی:**
+- `BotDetector` — هانی‌پات و تلهٔ زمان از تنظیمات؛ `LoginThrottle` — سقف/پنجره/کلید اصلی از تنظیمات (قفل تدریجی حفظ شد)؛ `LoginRequest` (ورود مشتری Breeze) — همان؛ `SecurityHeaders` — کلید اصلی + HSTS.
+- کپچای ثبت‌نام: `RegisterRequest` + ویو قالب `register.blade.php` گیت‌دار شد.
+- ورود مشتری (قالب): `UserController::Check_Mobile_Email` — هانی‌پات/تلهٔ زمان/کپچا + ویو `auth/login.blade.php` (فیلدهای مخفی + `<x-captcha />` گیت‌دار). `CheckPassword` — قفل تلاش مشتری (RateLimiter `front-login:*`).
+- دیدگاه‌ها: سرویس جدید **`CommentProtection`** (هانی‌پات→trap + تلهٔ زمان + کپچا + قفل تلاش `comments:*`) وصل شد به `ProductController::comments`، `ArticleController::commentStore` و `ReviewController::store` + فرم‌های قالب (`components/comments.blade.php`، `articles/partials/comments.blade.php`، `products/partials/add-review.blade.php`) با `{!! CommentProtection::hiddenFields() !!}` + کپچای گیت‌دار. (نکته: روت `post.comments` به `BlogController::comments` اشاره می‌کند که وجود ندارد — دیدگاه وبلاگ واقعاً از `ArticleController::commentStore` می‌گذرد.)
+
+### بخش ۲ — ورود دومرحله‌ای مدیر (2FA)
+
+- **`AdminTwoFactorService`** — کد ۶ رقمی (`random_int`، فقط hash در سشن با نمک app.key)، اعتبار ۵ دقیقه، قفل ۵ تلاش در ۵ دقیقه (RateLimiter بر اساس session id)، ارسال مجدد هر ۶۰ ثانیه، `Session::regenerate()` در شروع چالش (ضد fixation) و پس از ورود.
+- **صفحهٔ چالش** — `App\Livewire\Admin\Auth\TwoFactorChallenge` + ویو `admin-panel::livewire/admin/auth/two-factor-challenge.blade.php` (شمارش معکوس اعتبار/ارسال با Alpine، نمایش مقصد ماسک‌شده ایمیل/موبایل) — روت `np.two-factor.challenge` (`/admin/{prefix}/two-factor`) داخل گروه GuestAdminPanel.
+- **هر دو پنل**: سرویس جدید **`AdminAuthResolver`** (یافتن Admin با username/email + تأیید رمز **بدون login** — چون `SessionGuard::validate()` فقط bool برمی‌گرداند) → در صورت فعال بودن 2FA: `startChallenge()` → ریدایرکت به چالش → پس از تأیید کد، `login()` واقعی + ریدایرکت به مقصد (np.dashboard یا `/admin-old/{prefix}`). اعمال در `Login.php` (Livewire) و `AdminLoginController` (پنل قدیمی؛ چک status ACTIVE با مدل، بدون تغییر ویوها).
+- **کانال‌ها**: ایمیل → Mailable موجود `SendMessage` به ایمیل مدیر؛ پیامک → `SmsService` با نوع `VERIFY_CODE` به `option('admin_mobile_number')` (تنظیمات پیامک). اگر مقصد کانال انتخابی خالی باشد پیام راهنمای قابل‌اقدام نمایش داده می‌شود.
+- خروج از هر دو پنل وضعیت چالش را پاک می‌کند؛ `Login::mount` سشنِ در انتظار را به چالش هدایت می‌کند.
+
+### بخش ۳ — «بازار پکیج‌ها» → «بازار» + فروش قالب‌ها (Templates)
+
+**تغییر نام** (منو، Title، h1، برچسب‌ها — پنل جدید و قدیمی): گروه منو «بازار»، آیتم «پکیج‌ها و قالب‌ها»، برچسب دسترسی `packages` → «بازار (پکیج و قالب)». روت‌ها/نام‌های روت بدون تغییر (سازگاری کامل).
+
+**سرویس API (`PackageApiService`)** — ۷ متد جدید طبق مستند OpShop Updater §5.2: `listTemplates` / `getTemplate` / `createTemplatePurchase(normal|exclusive)` / `verifyTemplatePayment` / `checkTemplateUpdate` / `createTemplateDownloadUrl` / `getTemplateDownloadUrl` (+`downloadTemplate` سرور-سمت).
+
+**دیتابیس** (مایگریشن `2026_10_24_100001_theme_market_for_bazaar`): ستون `type` روی `package_purchases` (package|template) + جدول `installed_themes` (slug/name/version/purchase_type/transaction_id/status/last_error). مدل **`InstalledTheme`** با `markPending/markAsInstalled/markAsFailed/isActive`.
+
+**نصب (`ThemeInstallerService` + `InstallThemeJob`)** — الگوی امن PackageInstallerService/ThemeIndex: دانلود (توکن یک‌بارمصرف یا download-url) → **تأیید SHA-256** → اسکن **Zip-Slip** → تشخیص نام قالب از `config/general.php` داخل ZIP → بکاپ نسخهٔ قبلی به `themes/.backups/<name>_<time>` → استخراج به `themes/<Name>` → ثبت نسخه → dump-autoload + vendor:publish + shop:link (قابل خاموش‌کردن با `packages.themes.refresh_after_install` برای تست). مسیر themes با `packages.themes.path` قابل بازنویسی است. `activate()` همان زنجیرهٔ symlink+env+publish+shop:link؛ `uninstall()` قالب فعال را منع می‌کند و دارایی‌های public را با گارد مسیر پاک می‌کند.
+
+**جریان خرید**: مودال جزئیات قالب (Livewire — `$tDetail*`) با کارت‌های قیمت عادی/اختصاصی + تأیید دومرحله‌ای خرید اختصاصی (هشدار «حذف از بازار») → خرید پولی: رکورد `PackagePurchase(type=template)` + ریدایرکت `payment_url` → درگاه → callback پنل با `?type=template` → **`handleTemplateCallback`** (شاخهٔ جدید در `PackagePaymentCallback`) → `verifyTemplatePayment` → `InstallThemeJob`. خرید مجددهٔ normal / رایگان → همان لحظه `download_token` → نصب فوری. نصب‌ها با `wire:poll.4s="refreshPendingTemplates"` تا toast نتیجه دنبال می‌شوند.
+
+**UI بازار**: کنترل تب «پکیج‌ها / قالب‌ها» در سربرگ (`?type=template` فارندلی)، گرید کارت‌های قالب (کاور/placeholder گرادیانی، نشان فعال/نصب‌شده/خریداری‌شده، مُهر «در حال نصب»، hover اورلی جزئیات، فروش‌شمار)، جستجوی اختصاصی، صفحه‌بندی، خطای API مستقل (همان فیوز ۹۰ ثانیه‌ای)، مودال جزئیات با نسخه‌ها/حجم/اکشن‌های فعال‌سازی-به‌روزرسانی-حذف.
+
+**رفع باگ‌های کشف‌شده در این فاز:**
+1. `SessionGuard::validate()` فقط bool برمی‌گرداند (نه مدل) → ساخت `AdminAuthResolver` با provider مستقیم.
+2. تداخل تریت (`api()` در دو تریت) → حذف از تریت قالب.
+3. regex درایو ویندوز در اسکن Zip-Slip (`/[\\\/]/` → «Unknown modifier») → delimiter `#` + escape درست.
+4. `moveDirectory` بدون پدر موجود شکست می‌خورد → mkdir ریشهٔ themes قبل از انتقال.
+5. `type`/`version` خارج از `$fillable`/NOT NULL → افزودن به fillable و ایمن‌سازی مقادیر.
+6. quirk ویرایشی: `ValidationException::errors('key')` قابل‌اعتماد نیست → `errors()['key']`.
+
+### تست‌های جدید (۴۰ تست)
+- `tests/Feature/Security/SecuritySettingsTest.php` (۱۷) — ذخیرهٔ تب (فقط سازنده)، گیت‌های کپچا/هانی‌پات/تلهٔ زمان/قفل/هدرها/HSTS، `CommentProtection`، ورود مشتری.
+- `tests/Feature/Security/AdminTwoFactorTest.php` (۹) — جریان کامل ایمیل، قفل ۵ تلاش، throttle ارسال مجدد ۶۰ ثانیه، انقضا، کانال پیامک بدون شماره، هر دو کانال، ریدایرکت پنل قدیمی.
+- `tests/Feature/Extra/ThemeMarketTest.php` (۱۴) — قرارداد API (assertSentInOrder)، نصب ZIP واقعی + Zip-Slip + هش + بکاپ، رندر دو تب بازار، خرید پولی/مجدد/اختصاصی، callback موفق/ناموفق، حذف قالب.
+
+**کامیت:** میزبان → docs/project-analysis

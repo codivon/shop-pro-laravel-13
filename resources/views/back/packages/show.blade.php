@@ -18,7 +18,7 @@
                             <div class="breadcrumb-wrapper col-12">
                                 <ol class="breadcrumb no-border">
                                     <li class="breadcrumb-item">مدیریت</li>
-                                    <li class="breadcrumb-item"><a href="{{ route('admin.packages.index') }}">بازار پکیج‌ها</a></li>
+                                    <li class="breadcrumb-item"><a href="{{ route('admin.packages.index') }}">بازار</a></li>
                                     <li class="breadcrumb-item active">{{ $package['name'] ?? $package['slug'] ?? '' }}</li>
                                 </ol>
                             </div>

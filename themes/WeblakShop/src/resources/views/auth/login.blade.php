@@ -29,6 +29,20 @@
             <div class="content-account">
                 <form action="{{ route('front.user.CheckMobileEmail').$params }}" id="login" method="post">
                     @csrf
+
+                    {{-- فاز ۴۴ — تلهٔ زمان (زمان رندر فرم) --}}
+                    <input type="hidden" name="rendered_at" value="{{ time() }}">
+
+                    {{-- فاز ۴۴ — هانی‌پات: فیلد مخفی که فقط ربات‌ها پر می‌کنند --}}
+                    @if(\App\Services\SecuritySettings::honeypotEnabled())
+                        <div style="position:absolute !important;height:0 !important;width:0 !important;margin:0 !important;padding:0 !important;overflow:hidden;opacity:0;" aria-hidden="true" tabindex="-1">
+                            <label for="website_url">وب‌سایت شما</label>
+                            <input id="website_url" type="text" name="website_url" tabindex="-1" autocomplete="off">
+                            <label for="confirm_email">تأیید ایمیل</label>
+                            <input id="confirm_email" type="text" name="confirm_email" tabindex="-1" autocomplete="off">
+                        </div>
+                    @endif
+
                     <label for="email-phone">سلام!<br>
 
                         لطفا شماره موبایل یا ایمیل خود را وارد کنید</label>
@@ -38,6 +52,19 @@
                                         <strong>{{ $message }}</strong>
                                     </span>
                     @enderror
+
+                    {{-- فاز ۴۴ — کپچای ورود مشتری (در صورت فعال بودن از تنظیمات امنیتی) --}}
+                    @if(\App\Services\SecuritySettings::captchaEnabled('customer_login'))
+                        <div class="mt-3">
+                            <x-captcha />
+                        </div>
+                        @error('captcha')
+                        <span class="invalid-feedback" role="alert" style="margin: 10px 0;">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                        @enderror
+                    @endif
+
                     <div class="parent-btn">
                         <button class="dk-btn dk-btn-info text-center mt-5">
                             ورود

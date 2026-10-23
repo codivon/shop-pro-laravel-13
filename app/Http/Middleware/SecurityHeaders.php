@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\SecuritySettings;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -13,6 +14,9 @@ use Illuminate\Http\Request;
  * - Permissions-Policy: قطع دسترسی مرورگر به دوربین/میکروفون/موقعیت
  * CSP سراسری فعال نمی‌شود چون اسکریپت‌های inline زیادی در پنل و قالب وجود دارد
  * (فعال‌سازی ناگهانی آن سایت را می‌شکند) — در فاز بعدی با nonce قابل افزودن است.
+ *
+ * فاز ۴۴: کلید اصلی از تب «امنیت» تنظیمات برنامه‌نویس + HSTS جداگانه
+ * (فقط روی پاسخ‌های HTTPS ارسال می‌شود — مطابق RFC 6797).
  */
 class SecurityHeaders
 {
@@ -20,10 +24,19 @@ class SecurityHeaders
     {
         $response = $next($request);
 
+        if (! SecuritySettings::headersEnabled()) {
+            return $response;
+        }
+
         $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+
+        // HSTS فقط روی اتصال امن معنا دارد؛ در HTTP نادیده گرفته می‌شود و نمی‌فرستیم
+        if (SecuritySettings::hstsEnabled() && $request->secure()) {
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        }
 
         return $response;
     }

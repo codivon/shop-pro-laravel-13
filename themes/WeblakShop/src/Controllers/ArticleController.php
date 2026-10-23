@@ -257,6 +257,9 @@ class ArticleController extends Controller
     // ثبت دیدگاه جدید
     public function commentStore(Request $request, $slug)
     {
+        // فاز ۴۴ — حفاظت ربات‌گیر/کپچا/قفل تلاش برای دیدگاه‌ها (قابل مدیریت از تنظیمات امنیتی)
+        \App\Services\CommentProtection::validateSubmission($request, 'article:'.$slug);
+
         $type = "post";
         $modelMap = [
             'post' => Post::class,

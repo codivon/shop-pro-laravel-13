@@ -19,6 +19,13 @@
                     <div class="col-md-6 col-sm-12">
                         <div class="form-ui">
                             <form id="add-product-review-form" action="{{ route('front.reviews.store') }}" class="px-2" method="post">
+                                {{-- فاز ۴۴ — حفاظت ربات‌گیر (تلهٔ زمان/هانی‌پات) + کپچای اختیاری --}}
+                                {!! \App\Services\CommentProtection::hiddenFields() !!}
+                                @if(\App\Services\SecuritySettings::captchaEnabled('comments'))
+                                <div class="row pr-4 mb-2">
+                                    <x-captcha />
+                                </div>
+                                @endif
                                 <input type="hidden" name="product_id" value="{{ $product->id }}">
                                 <div class="row">
                                     <div class="col-12">

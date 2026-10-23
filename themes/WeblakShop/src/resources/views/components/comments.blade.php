@@ -12,6 +12,13 @@
 
         </div>
         <input type="hidden" name="comment_id">
+        {{-- فاز ۴۴ — حفاظت ربات‌گیر (تلهٔ زمان/هانی‌پات) + کپچای اختیاری --}}
+        {!! \App\Services\CommentProtection::hiddenFields() !!}
+        @if(\App\Services\SecuritySettings::captchaEnabled('comments'))
+            <div class="row pr-4">
+                <x-captcha />
+            </div>
+            @endif
         <div class="form-faq-col">
             <div class="ui-textarea">
                                                   <textarea name="body" title="متن سوال"

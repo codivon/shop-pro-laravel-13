@@ -2,11 +2,13 @@
 
 namespace App\Livewire\Admin\Auth;
 
+use App\Services\AdminAuthResolver;
+use App\Services\AdminTwoFactorService;
 use App\Services\BotDetector;
 use App\Services\CaptchaService;
 use App\Services\LoginThrottle;
+use App\Services\SecuritySettings;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -39,7 +41,7 @@ class Login extends Component
             'password' => ['required', 'string', 'min:6'],
         ];
 
-        if (config('security.login_captcha', true)) {
+        if (SecuritySettings::captchaEnabled('admin_login')) {
             $rules['captcha'] = ['required', 'string', 'min:3', 'max:10'];
         }
 
@@ -63,6 +65,11 @@ class Login extends Component
             return $this->redirectIntended(route('np.dashboard', absolute: false), navigate: true);
         }
 
+        // فاز ۴۴ — اگر سشن در انتظار تأیید دومرحله‌ای است، مستقیم به چالش برو
+        if (SecuritySettings::twoFactorEnabled() && app(AdminTwoFactorService::class)->pending()) {
+            return $this->redirect(route('np.two-factor.challenge', absolute: false), navigate: true);
+        }
+
         // ربات‌گیر: ثبت زمان رندر فرم برای تله‌ی زمان
         $this->renderedAt = (string) now()->getTimestamp();
     }
@@ -82,8 +89,8 @@ class Login extends Component
         $username = $this->username;
         $detector = app(BotDetector::class);
 
-        // ─── ربات‌گیر: تله‌ی فیلد مخفی ⇒ مسدودسازی کامل IP ───
-        if (filled($this->website_url)) {
+        // ─── ربات‌گیر: تله‌ی فیلد مخفی ⇒ مسدودسازی کامل IP (فقط وقتی هانی‌پات روشن است) ───
+        if (SecuritySettings::honeypotEnabled() && filled($this->website_url)) {
             $detector->trap(request());
             $this->reset('password', 'captcha');
             $this->refreshCaptcha();
@@ -114,7 +121,7 @@ class Login extends Component
         }
 
         // ─── کپچا (ضد ربات و credential stuffing) ───
-        if (config('security.login_captcha', true) && !app(CaptchaService::class)->verify($this->captcha)) {
+        if (SecuritySettings::captchaEnabled('admin_login') && !app(CaptchaService::class)->verify($this->captcha)) {
             $this->reset('captcha');
             $this->refreshCaptcha();
 
@@ -123,35 +130,44 @@ class Login extends Component
             ]);
         }
 
-        $credentials = [
-            'username' => $username,
-            'password' => $this->password,
-        ];
+        // ─── تأیید اعتبارنامه (بدون ورود کامل — تا 2FA در صورت فعال بودن اجرا شود) ───
+        $admin = AdminAuthResolver::resolve($username, $this->password);
 
-        // امکان ورود با ایمیل هم وجود داشته باشد
-        if (!Auth::guard('adminPanel')->attempt($credentials, $this->remember)) {
-            $credentials = [
-                'email' => $username,
-                'password' => $this->password,
-            ];
+        if (! $admin) {
+            // ثبت تلاش ناموفق (قفل تدریجی)
+            LoginThrottle::hitFailure($username, $ip);
 
-            if (!Auth::guard('adminPanel')->attempt($credentials, $this->remember)) {
-                // ثبت تلاش ناموفق (قفل تدریجی)
-                LoginThrottle::hitFailure($username, $ip);
+            $this->reset('password', 'captcha');
+            $this->refreshCaptcha();
 
-                $this->reset('password', 'captcha');
-                $this->refreshCaptcha();
-
-                throw ValidationException::withMessages([
-                    'username' => 'اطلاعات ورود نادرست است.',
-                ]);
-            }
+            throw ValidationException::withMessages([
+                'username' => 'اطلاعات ورود نادرست است.',
+            ]);
         }
 
-        // ورود موفق ⇒ پاک‌سازی شمارنده و رفرش سشن
         LoginThrottle::clear($username, $ip);
         app(CaptchaService::class)->flush();
+
+        // ─── ورود دومرحله‌ای (فاز ۴۴) ───
+        if (SecuritySettings::twoFactorEnabled()) {
+            try {
+                app(AdminTwoFactorService::class)->startChallenge(
+                    $admin,
+                    $this->remember,
+                    route('np.dashboard')
+                );
+            } catch (\RuntimeException $e) {
+                throw ValidationException::withMessages([
+                    'username' => $e->getMessage(),
+                ]);
+            }
+
+            return $this->redirect(route('np.two-factor.challenge', absolute: false), navigate: true);
+        }
+
+        // ورود موفق ⇒ رفرش سشن و هدایت به داشبورد
         session()->regenerate();
+        Auth::guard('adminPanel')->login($admin, $this->remember);
 
         return $this->redirectIntended(route('np.dashboard', absolute: false), navigate: true);
     }
@@ -159,7 +175,7 @@ class Login extends Component
     public function render()
     {
         // اطمینان از وجود کد کپچا در سشن برای نمایش تصویر
-        if (config('security.login_captcha', true) && !session('captcha')) {
+        if (SecuritySettings::captchaEnabled('admin_login') && !session('captcha')) {
             app(CaptchaService::class)->generate();
         }
 

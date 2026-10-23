@@ -37,7 +37,7 @@
                                 <i class="feather icon-package"></i>
                             </div>
                             <div>
-                                <h3 class="mb-0">بازار پکیج‌ها</h3>
+                                <h3 class="mb-0">بازار</h3>
                                 <small>پکیج‌های آماده را نصب و مدیریت کنید</small>
                             </div>
                         </div>

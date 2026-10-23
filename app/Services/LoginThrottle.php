@@ -7,19 +7,34 @@ use Illuminate\Support\Facades\RateLimiter;
 /*
  * سرویس محدودساز تلاش ورود (ضد brute-force و credential stuffing)
  * - محدودیت بر اساس «نام کاربری + IP» اعمال می‌شود
- * - هر ۵ تلاش ناموفق ⇒ قفل تدریجی: ۱۵ دقیقه، ۳۰ دقیقه، ۱ ساعت، ... (حداکثر ۲۴ ساعت)
+ * - هر N تلاش ناموفق ⇒ قفل تدریجی: پنجره، پنجره×۲، ... (حداکثر ۲۴ ساعت)
  * - هر دو پنل (جدید/Livewire و قدیمی) از همین سرویس استفاده می‌کنند
+ *
+ * فاز ۴۴: سقف تلاش و پنجرهٔ دقیقه‌ای از تب «امنیت» تنظیمات برنامه‌نویس
+ * (SecuritySettings) خوانده می‌شوند؛ کلید اصلی هم قابل خاموش‌کردن است.
  */
 class LoginThrottle
 {
-    /** حداکثر تلاش مجاز قبل از قفل */
+    /** حداکثر تلاش مجاز قبل از قفل — پیش‌فرض؛ مقدار واقعی از تنظیمات خوانده می‌شود */
     public const MAX_ATTEMPTS = 5;
 
-    /** مدت قفل پایه (ثانیه) */
+    /** مدت قفل پایه (ثانیه) — پیش‌فرض؛ مقدار واقعی = پنجرهٔ تنظیم‌شده */
     public const LOCK_SECONDS = 900; // ۱۵ دقیقه
 
-    /** پنجره شمارش تلاش‌های ناموفق (ثانیه) */
+    /** پنجره شمارش تلاش‌های ناموفق (ثانیه) — پیش‌فرض */
     public const FAILURE_WINDOW = 900;
+
+    /** سقف تلاش بر اساس تنظیمات (نقطهٔ admin) */
+    public static function maxAttempts(): int
+    {
+        return SecuritySettings::lockoutMax('admin');
+    }
+
+    /** پنجرهٔ شمارش تلاش (ثانیه) بر اساس تنظیمات */
+    public static function failureWindow(): int
+    {
+        return SecuritySettings::lockoutWindowSeconds('admin');
+    }
 
     /**
      * کلید شمارنده‌ی تلاش‌های ناموفق
@@ -42,6 +57,10 @@ class LoginThrottle
      */
     public static function tooManyAttempts(string $username, string $ip): bool
     {
+        if (! SecuritySettings::lockoutEnabled()) {
+            return false;
+        }
+
         return RateLimiter::tooManyAttempts(self::lockKey($username, $ip), 1);
     }
 
@@ -58,19 +77,25 @@ class LoginThrottle
      */
     public static function hitFailure(string $username, string $ip): void
     {
-        $key = self::key($username, $ip);
+        if (! SecuritySettings::lockoutEnabled()) {
+            return;
+        }
+
+        $key          = self::key($username, $ip);
+        $maxAttempts  = self::maxAttempts();
+        $window       = self::failureWindow();
 
         // اگر قفل فعال است، قفل را تمدید نکن — فقط صبر تا پایان
         if (RateLimiter::tooManyAttempts(self::lockKey($username, $ip), 1)) {
             return;
         }
 
-        $hits = RateLimiter::hit($key, self::FAILURE_WINDOW);
+        $hits = RateLimiter::hit($key, $window);
 
         // هر بار که به سقف رسید ⇒ قفل تدریجی و صفر شدن شمارنده
-        if ($hits >= self::MAX_ATTEMPTS) {
-            $round   = intdiv($hits, self::MAX_ATTEMPTS); // دوره‌ی شکست: ۱، ۲، ۳، ...
-            $seconds = (int) min(self::LOCK_SECONDS * (2 ** ($round - 1)), 86400); // حداکثر ۲۴ ساعت
+        if ($hits >= $maxAttempts) {
+            $round   = max(1, intdiv($hits, $maxAttempts)); // دوره‌ی شکست: ۱، ۲، ۳، ...
+            $seconds = (int) min($window * (2 ** ($round - 1)), 86400); // حداکثر ۲۴ ساعت
 
             RateLimiter::clear($key);                    // شمارنده‌ی تلاش‌ها صفر شود
             RateLimiter::hit(self::lockKey($username, $ip), $seconds); // قفل فعال شود

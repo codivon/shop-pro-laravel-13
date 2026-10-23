@@ -32,6 +32,9 @@ class ReviewController extends Controller
 
     public function store(Request $request)
     {
+        // فاز ۴۴ — حفاظت ربات‌گیر/کپچا/قفل تلاش برای بررسی‌ها (قابل مدیریت از تنظیمات امنیتی)
+        \App\Services\CommentProtection::validateSubmission($request, 'review:'.(int) $request->input('product_id'));
+
         $product = Product::findOrFail($request->product_id);
         $data = $this->validate($request, [
             'title'       => 'required|string',

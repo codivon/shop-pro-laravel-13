@@ -68,9 +68,9 @@ return [
             ]
         ],
         'packages' => [
-            'title' => 'پکیج ها',
+            'title' => 'بازار (پکیج و قالب)',
             'values' => [
-                'index' => 'لیست پکیج ها',
+                'index' => 'پکیج‌ها و قالب‌ها',
                 'installed' => 'پکیج های نصب شده',
             ]
         ],
@@ -477,5 +477,25 @@ return [
         'multi_language_enabled',
         'debugbar_enabled',
         'user_register_gift_credit',
+
+        // فاز ۴۴ — تنظیمات امنیتی (تب «امنیت» تنظیمات برنامه‌نویس) — مستقل از زبان
+        'security_captcha_enabled',
+        'security_captcha_admin_login',
+        'security_captcha_register',
+        'security_captcha_customer_login',
+        'security_captcha_comments',
+        'security_time_trap_seconds',
+        'security_honeypot_enabled',
+        'security_lockout_enabled',
+        'security_lockout_admin_max',
+        'security_lockout_admin_minutes',
+        'security_lockout_customer_max',
+        'security_lockout_customer_minutes',
+        'security_lockout_comments_max',
+        'security_lockout_comments_minutes',
+        'security_headers_enabled',
+        'security_hsts_enabled',
+        'admin_2fa_enabled',
+        'admin_2fa_channel',
     ]
 ];

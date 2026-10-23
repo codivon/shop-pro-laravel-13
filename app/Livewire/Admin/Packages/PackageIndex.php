@@ -4,6 +4,8 @@ namespace App\Livewire\Admin\Packages;
 
 use App\Jobs\UpdatePackageJob;
 use App\Livewire\Admin\Packages\Concerns\InteractsWithPackages;
+use App\Livewire\Admin\Packages\Concerns\InteractsWithTemplates;
+use App\Models\InstalledTheme;
 use App\Models\InstalledModule;
 use App\Models\ModuleInstallLog;
 use App\Models\PackageCache;
@@ -19,10 +21,11 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 use RuntimeException;
 
-#[Title('بازار پکیج‌ها')]
+#[Title('بازار')]
 class PackageIndex extends Component
 {
     use InteractsWithPackages;
+    use InteractsWithTemplates;
 
     /* ---------------- فیلترها (State در URL — پورت query های index قدیمی) ---------------- */
 
@@ -57,6 +60,43 @@ class PackageIndex extends Component
         'free' => 'رایگان',
         'paid' => 'پولی',
     ];
+
+    /* ---------------- فاز ۴۴ — قالب‌ها (Templates) ---------------- */
+
+    /**
+     * تب فعال بازار: '' = پکیج‌ها | 'template' = قالب‌ها
+     * (URL فارندلی: /packages?type=template)
+     */
+    #[Url(as: 'type', except: '')]
+    public string $type = '';
+
+    public array $templates = [];
+
+    public array $templateMeta = [];
+
+    public ?string $templateError = null;
+
+    /** slug => queued|running برای قالب‌های در حال نصب */
+    public array $templatePendingSlugs = [];
+
+    /** نقشه‌ی قالب‌های نصب‌شده: slug => [name, version, status, is_active] */
+    public array $installedThemesMap = [];
+
+    /* ---------------- فاز ۴۴ — مودال جزئیات قالب ---------------- */
+
+    public bool $tDetailOpen = false;
+
+    public bool $tDetailLoading = false;
+
+    public ?string $tDetailError = null;
+
+    public ?array $tDetail = null;
+
+    /** normal | exclusive */
+    public string $tDetailPurchaseType = 'normal';
+
+    /** تأیید دومرحله‌ای خرید اختصاصی (هشدار حذف قالب از بازار) */
+    public bool $tExclusiveConfirmed = false;
 
     /** صفحه‌بندی سرور دست‌ساز بر اساس meta پاسخ API (قدیمی pagination سمت API بود) */
     public int $page = 1;
@@ -144,7 +184,7 @@ class PackageIndex extends Component
         // نتیجه پرداخت از callback (پورت session('payment_result') در ویوی قدیمی)
         $this->paymentResult = session('payment_result');
 
-        $this->loadPackages();
+        $this->loadMarket();
     }
 
     public function updatingSearch(): void
@@ -172,10 +212,16 @@ class PackageIndex extends Component
      * URL را عوض می‌کردند و لیست با Enter (submit فرم) تازه می‌شد؛ اکنون
      * با هر تغییر، لیست بلافاصله دوباره خوانده می‌شود.
      */
+    public function updatedType(): void
+    {
+        $this->page = 1;
+        $this->loadMarket();
+    }
+
     public function updatedSearch(): void
     {
         $this->page = 1;
-        $this->loadPackages();
+        $this->loadMarket();
     }
 
     public function updatedCategory(): void
@@ -220,6 +266,128 @@ class PackageIndex extends Component
     private function tripApiFuse(string $message): void
     {
         Cache::put($this->apiFuseKey(), $message, now()->addSeconds(self::API_FUSE_TTL_SECONDS));
+    }
+
+    /**
+     * فاز ۴۴ — دیسپچر بازار: پکیج‌ها یا قالب‌ها بر اساس تب فعال.
+     * (همه‌ی نقاطی که قبلاً loadPackages صدا می‌زدند به این متد منتقل شدند)
+     */
+    public function loadMarket(): void
+    {
+        if ($this->type === 'template') {
+            $this->loadTemplates();
+
+            return;
+        }
+
+        $this->loadPackages();
+    }
+
+    /**
+     * فاز ۴۴ — لیست قالب‌ها از API (قرارداد §5.2) با همان فیوز/کش پکیج‌ها.
+     */
+    public function loadTemplates(): void
+    {
+        $this->templateError = null;
+
+        if ($fuseMessage = $this->apiFuseError()) {
+            $this->templates = [];
+            $this->templateMeta = [];
+            $this->installedThemesMap = [];
+            $this->templateError = $fuseMessage;
+
+            return;
+        }
+
+        $query = array_filter([
+            'page' => $this->page,
+            'search' => $this->search,
+            'per_page' => 12,
+        ], fn ($v) => $v !== '' && $v !== null);
+
+        $cacheKey = 'templates.list.'.md5(json_encode($query));
+
+        try {
+            $data = Cache::remember($cacheKey, now()->addMinutes(config('packages.cache.list_ttl')), function () use ($query) {
+                return $this->api()->listTemplates($query);
+            });
+
+            $this->templates = $data['data'] ?? $data['templates'] ?? [];
+            $this->templateMeta = $data['meta'] ?? $data['pagination'] ?? [];
+
+            $this->syncTemplateState();
+        } catch (RuntimeException $e) {
+            $this->tripApiFuse($e->getMessage());
+            $this->templates = [];
+            $this->templateMeta = [];
+            $this->installedThemesMap = [];
+            $this->templateError = $e->getMessage();
+        }
+    }
+
+    /** وضعیت نصب/فعال/درحال‌نصب قالب‌ها */
+    protected function syncTemplateState(): void
+    {
+        $this->installedThemesMap = InstalledTheme::query()
+            ->get()
+            ->mapWithKeys(fn (InstalledTheme $t) => [$t->slug => [
+                'name'      => $t->name,
+                'version'   => $t->version,
+                'status'    => $t->status,
+                'is_active' => $t->isActive(),
+            ]])
+            ->all();
+
+        $pending = [];
+        $updating = InstalledTheme::where('status', InstalledTheme::STATUS_UPDATING)
+            ->where('updated_at', '>', now()->subMinutes(10))
+            ->get();
+
+        foreach ($updating as $t) {
+            $pending[$t->slug] = 'running';
+        }
+
+        $this->templatePendingSlugs = $pending;
+    }
+
+    /**
+     * فاز ۴۴ — polling وضعیت نصب قالب‌ها (wire:pool.4s وقتی نوار پیشرفت باز است).
+     */
+    public function refreshPendingTemplates(): void
+    {
+        if (empty($this->templatePendingSlugs)) {
+            return;
+        }
+
+        $watched = array_keys($this->templatePendingSlugs);
+        $this->loadTemplates();
+
+        foreach ($watched as $slug) {
+            if (isset($this->templatePendingSlugs[$slug])) {
+                continue; // هنوز در جریان است
+            }
+
+            $theme = InstalledTheme::where('slug', $slug)->first();
+
+            if ($theme && $theme->status === InstalledTheme::STATUS_INSTALLED) {
+                $this->dispatch('toast', message: 'نصب قالب «'.($theme->name ?: $slug).'» با موفقیت کامل شد.', type: 'success');
+                $this->js('setTimeout(() => window.location.reload(), 1500)');
+            } else {
+                $this->dispatch('toast', message: 'نصب قالب «'.$slug.'» ناموفق بود.'.($theme?->last_error ? ' ('.Str::limit($theme->last_error, 120).')' : ''), type: 'error');
+            }
+        }
+    }
+
+    /** برچسب قیمت قالب برای کارت‌ها */
+    public static function templatePriceLabel(array $tpl): string
+    {
+        $price = (int) ($tpl['discount_price'] ?? $tpl['price'] ?? 0);
+
+        if ($price === 0) {
+            return 'رایگان';
+        }
+
+        return number_format($price).' تومان';
     }
 
     public function loadPackages(): void
@@ -531,25 +699,25 @@ class PackageIndex extends Component
     public function gotoPage(int $page): void
     {
         $this->page = max(1, $page);
-        $this->loadPackages();
+        $this->loadMarket();
     }
 
     public function nextPage(): void
     {
         $this->page++;
-        $this->loadPackages();
+        $this->loadMarket();
     }
 
     public function previousPage(): void
     {
         $this->page = max(1, $this->page - 1);
-        $this->loadPackages();
+        $this->loadMarket();
     }
 
     public function applyFilters(): void
     {
         $this->page = 1;
-        $this->loadPackages();
+        $this->loadMarket();
     }
 
     /** تغییر سریع فیلتر قیمت از کارت‌های آماری/بخش فیلتر */
@@ -1085,7 +1253,7 @@ class PackageIndex extends Component
                         [
                             'name' => $pkg['name'] ?? $pkg['slug'],
                             'description' => $pkg['description'] ?? null,
-                            'latest_version' => $pkg['latest_version'] ? $pkg['latest_version']['version'] : ($pkg['version'] ?? ''),
+                            'latest_version' => ($pkg['latest_version']['version'] ?? $pkg['version'] ?? ''),
                             'author' => $pkg['author'] ?? null,
                             'category' => $pkg['category'] ?? null,
                             'thumbnail' => $pkg['thumbnail'] ?? null,

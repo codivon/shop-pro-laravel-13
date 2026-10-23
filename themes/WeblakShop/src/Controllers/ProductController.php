@@ -401,6 +401,9 @@ class ProductController extends Controller
 
     public function comments(Product $product, Request $request)
     {
+        // فاز ۴۴ — حفاظت ربات‌گیر/کپچا/قفل تلاش برای دیدگاه‌ها (قابل مدیریت از تنظیمات امنیتی)
+        \App\Services\CommentProtection::validateSubmission($request, 'product:'.$product->id);
+
         $this->validate($request, [
             'body' => 'required|string|max:1000',
             'comment_id' => [

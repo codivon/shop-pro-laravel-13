@@ -50,9 +50,11 @@
                                 <input type="password" name="password_confirmation" class="input-ui pr-2" placeholder="تکرار رمز عبور خود را وارد نمایید">
                             </div>
 
+                            @if(\App\Services\SecuritySettings::captchaEnabled('register'))
                             <div class="row pr-4">
                                 <x-captcha />
                             </div>
+                            @endif
 
                             <div class="form-row mt-3">
                                 <button class="btn-primary-cm btn-with-icon mx-auto w-100">

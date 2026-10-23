@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\System;
 
+use App\Services\SecuritySettings;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
@@ -71,6 +72,44 @@ class Developer extends Component
 
     public bool $checking = false;
 
+    /* ---------------- امنیت (فاز ۴۴) ---------------- */
+
+    public bool $securityCaptchaEnabled = true;
+
+    public bool $securityCaptchaAdminLogin = true;
+
+    public bool $securityCaptchaRegister = true;
+
+    public bool $securityCaptchaCustomerLogin = false;
+
+    public bool $securityCaptchaComments = false;
+
+    public int $securityTimeTrapSeconds = 3;
+
+    public bool $securityHoneypotEnabled = true;
+
+    public bool $securityLockoutEnabled = true;
+
+    public int $securityLockoutAdminMax = 5;
+
+    public int $securityLockoutAdminMinutes = 15;
+
+    public int $securityLockoutCustomerMax = 5;
+
+    public int $securityLockoutCustomerMinutes = 1;
+
+    public int $securityLockoutCommentsMax = 5;
+
+    public int $securityLockoutCommentsMinutes = 10;
+
+    public bool $securityHeadersEnabled = true;
+
+    public bool $securityHstsEnabled = false;
+
+    public bool $adminTwoFactorEnabled = false;
+
+    public string $adminTwoFactorChannel = 'email';
+
     public function mount(): void
     {
         $this->ensureCreator();
@@ -106,6 +145,26 @@ class Developer extends Component
         $this->versionAvailable = $this->versionInstalled;
         $this->isNewVersionAvailable = false;
         $this->updateErrors = null;
+
+        // امنیت (فاز ۴۴)
+        $this->securityCaptchaEnabled        = SecuritySettings::captchaMasterEnabled();
+        $this->securityCaptchaAdminLogin     = SecuritySettings::captchaEnabled('admin_login');
+        $this->securityCaptchaRegister       = SecuritySettings::captchaEnabled('register');
+        $this->securityCaptchaCustomerLogin  = SecuritySettings::captchaEnabled('customer_login');
+        $this->securityCaptchaComments       = SecuritySettings::captchaEnabled('comments');
+        $this->securityTimeTrapSeconds       = SecuritySettings::timeTrapSeconds();
+        $this->securityHoneypotEnabled       = SecuritySettings::honeypotEnabled();
+        $this->securityLockoutEnabled        = SecuritySettings::lockoutEnabled();
+        $this->securityLockoutAdminMax       = SecuritySettings::lockoutMax('admin');
+        $this->securityLockoutAdminMinutes   = SecuritySettings::lockoutMinutes('admin');
+        $this->securityLockoutCustomerMax    = SecuritySettings::lockoutMax('customer');
+        $this->securityLockoutCustomerMinutes = SecuritySettings::lockoutMinutes('customer');
+        $this->securityLockoutCommentsMax    = SecuritySettings::lockoutMax('comments');
+        $this->securityLockoutCommentsMinutes = SecuritySettings::lockoutMinutes('comments');
+        $this->securityHeadersEnabled        = SecuritySettings::headersEnabled();
+        $this->securityHstsEnabled           = SecuritySettings::hstsEnabled();
+        $this->adminTwoFactorEnabled         = SecuritySettings::twoFactorEnabled();
+        $this->adminTwoFactorChannel         = SecuritySettings::twoFactorChannel();
     }
 
     /* ================= گیت ================= */
@@ -156,6 +215,63 @@ class Developer extends Component
         Artisan::call('config:clear');
 
         $this->dispatch('toast', message: 'تنظیمات توسعه‌دهنده ذخیره شد.', type: 'success');
+    }
+
+    /* ================= امنیت (فاز ۴۴) ================= */
+
+    public function saveSecurity(): void
+    {
+        $this->ensureCreator();
+
+        $this->validate([
+            'securityTimeTrapSeconds'        => ['required', 'integer', 'between:0,300'],
+            'securityLockoutAdminMax'        => ['required', 'integer', 'between:1,100'],
+            'securityLockoutAdminMinutes'    => ['required', 'integer', 'between:1,1440'],
+            'securityLockoutCustomerMax'     => ['required', 'integer', 'between:1,100'],
+            'securityLockoutCustomerMinutes' => ['required', 'integer', 'between:1,1440'],
+            'securityLockoutCommentsMax'     => ['required', 'integer', 'between:1,100'],
+            'securityLockoutCommentsMinutes' => ['required', 'integer', 'between:1,1440'],
+            'adminTwoFactorChannel'          => ['required', 'in:email,sms,both'],
+        ], [
+            'securityTimeTrapSeconds.between'              => 'تلهٔ زمان باید بین ۰ تا ۳۰۰ ثانیه باشد.',
+            'securityLockoutAdminMax.between'              => 'سقف تلاش مدیر باید بین ۱ تا ۱۰۰ باشد.',
+            'securityLockoutAdminMinutes.between'          => 'پنجرهٔ قفل مدیر باید بین ۱ تا ۱۴۴۰ دقیقه باشد.',
+            'securityLockoutCustomerMax.between'           => 'سقف تلاش مشتری باید بین ۱ تا ۱۰۰ باشد.',
+            'securityLockoutCustomerMinutes.between'       => 'پنجرهٔ قفل مشتری باید بین ۱ تا ۱۴۴۰ دقیقه باشد.',
+            'securityLockoutCommentsMax.between'           => 'سقف تلاش دیدگاه‌ها باید بین ۱ تا ۱۰۰ باشد.',
+            'securityLockoutCommentsMinutes.between'       => 'پنجرهٔ قفل دیدگاه‌ها باید بین ۱ تا ۱۴۴۰ دقیقه باشد.',
+            'adminTwoFactorChannel.in'                     => 'کانال ارسال کد نامعتبر است.',
+        ]);
+
+        // کپچا
+        option_update('security_captcha_enabled',        $this->securityCaptchaEnabled ? 'on' : 'off');
+        option_update('security_captcha_admin_login',    $this->securityCaptchaAdminLogin ? 'on' : 'off');
+        option_update('security_captcha_register',       $this->securityCaptchaRegister ? 'on' : 'off');
+        option_update('security_captcha_customer_login', $this->securityCaptchaCustomerLogin ? 'on' : 'off');
+        option_update('security_captcha_comments',       $this->securityCaptchaComments ? 'on' : 'off');
+        option_update('security_time_trap_seconds',      (string) $this->securityTimeTrapSeconds);
+
+        // هانی‌پات
+        option_update('security_honeypot_enabled',       $this->securityHoneypotEnabled ? 'on' : 'off');
+
+        // قفل تلاش‌ها
+        option_update('security_lockout_enabled',         $this->securityLockoutEnabled ? 'on' : 'off');
+        option_update('security_lockout_admin_max',       (string) $this->securityLockoutAdminMax);
+        option_update('security_lockout_admin_minutes',   (string) $this->securityLockoutAdminMinutes);
+        option_update('security_lockout_customer_max',    (string) $this->securityLockoutCustomerMax);
+        option_update('security_lockout_customer_minutes', (string) $this->securityLockoutCustomerMinutes);
+        option_update('security_lockout_comments_max',    (string) $this->securityLockoutCommentsMax);
+        option_update('security_lockout_comments_minutes', (string) $this->securityLockoutCommentsMinutes);
+
+        // هدرهای امنیتی
+        option_update('security_headers_enabled', $this->securityHeadersEnabled ? 'on' : 'off');
+        option_update('security_hsts_enabled',    $this->securityHstsEnabled ? 'on' : 'off');
+
+        // ورود دومرحله‌ای مدیر
+        option_update('admin_2fa_enabled', $this->adminTwoFactorEnabled ? 'on' : 'off');
+        option_update('admin_2fa_channel', $this->adminTwoFactorChannel);
+
+        $this->dispatch('toast', message: 'تنظیمات امنیتی ذخیره شد.', type: 'success');
     }
 
     /* ================= حالت بروزرسانی (پورت downApplication/upApplication) ================= */
