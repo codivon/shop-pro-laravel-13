@@ -1442,3 +1442,29 @@ Livewire در wire:navigate استایل‌های `<head>` را **هرگز حذ�
   3. **ThemeServiceProvider::boot** — همان گارد console → همان رفع.
 
 **کامیت:** میزبان → docs/project-analysis
+
+---
+
+## Phase 43 — تست‌های مقیاس و ضد-هک (ادامه تسک ارتقای تست)
+
+**تاریخ:** 2026-10-23 | **کامیت:** 349e8174
+
+### وضعیت نهایی تست‌ها
+```
+Tests: 194 passed / 3 skipped / 0 failed (531 assertions) — ~6.5 دقیقه
+```
+
+### افزودنی‌های این فاز (۴۳ تست جدید + ۲ فیکس تست)
+- **Scale/MillionScaleTest (۹):** میلیون محصول/کاربر — درج انبوه ۳۰هزار ردیف + آستانه‌های زمان + اثبات ایندکس
+- **Scale/ConcurrentUsersTest (۲):** ۱۰۰۰ درخواست موازی واقعی (curl_multi + سرور چندورکره) + ۵۰ ورود همزمان
+- **Security/PenetrationTest (۲۰):** ضد-هک کامل — تله ربات، هانی‌پات، session fixation، mass assignment، OTP قفل، IDOR
+- **Extra/PlatformHealthTest (۱۲):** robots/manifest/404/تماس/خبرنامه/captcha
+- **tests/Load:** k6 + ab برای بار واقعی ۱۰۰۰ تا ۵۰هزار کاربر
+
+### باگ‌های امنیتی رفع‌شده (IDOR)
+1. `GET /profile/addresses/{id}` — نمایش آدرس هر کاربری بدون چک مالکیت → اکنون 404
+2. `GET /newsletter/unsubscribe/{id}` — لغو اشتراک قربانی → کنترل مالکیت با email/mobile
+
+### تنظیمات مقیاس (env)
+`SCALE_PRODUCTS=30000` `SCALE_USERS=20000` `SCALE_CONCURRENT=1000`
+
