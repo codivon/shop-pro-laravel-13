@@ -343,6 +343,130 @@ class ThemeMarketTest extends TestCase
     }
 
     /* =====================================================================
+     *  فاز ۵۸ — بنر اشتراک بازار (رفع «اشتراکم فعال است ولی می‌گوید فعالی ندارید»)
+     *  ریشه‌یابی: شرط قبلی بنر $type === 'package' بود → در تب پیش‌فرض «همه»
+     *  حتی با اشتراک فعال همیشه بنر خاکستری رندر می‌شد.
+     * ===================================================================== */
+
+    /** پاسخ استاندارد لیست پکیج‌ها با خلاصه‌ی اشتراک داده‌شده */
+    private function packagesListResponse(array $subscriptionSummary): array
+    {
+        return [
+            'data' => [
+                ['slug' => 'pkg-a', 'name' => 'پکیج الف', 'is_free' => true],
+            ],
+            'meta' => ['current_page' => 1, 'last_page' => 1, 'total' => 1],
+            'subscription_summary' => $subscriptionSummary,
+        ];
+    }
+
+    #[Test]
+    public function bazaar_all_tab_shows_active_subscription_banner(): void
+    {
+        $this->actingCreator();
+
+        $this->fakeHttp([
+            '*/api/v1/packages*' => Http::response($this->packagesListResponse([
+                'has_active_subscription' => true,
+                'plan_name'               => 'طرح طلایی',
+                'expires_at'              => now()->addDays(2)->format('Y-m-d H:i:s'),
+            ])),
+        ]);
+
+        // تب پیش‌فرض «همه» ($type='') — دقیقاً سناریوی باگ کاربر
+        Livewire::withQueryParams(['type' => ''])
+            ->test(PackageIndex::class)
+            ->assertOk()
+            ->assertSee('اشتراک فعال:', false)
+            ->assertSee('طرح طلایی', false)
+            ->assertDontSee('اشتراک فعالی ندارید', false);
+    }
+
+    #[Test]
+    public function bazaar_packages_tab_shows_active_subscription_banner(): void
+    {
+        $this->actingCreator();
+
+        $this->fakeHttp([
+            '*/api/v1/packages*' => Http::response($this->packagesListResponse([
+                'has_active_subscription' => true,
+                'plan_name'               => 'طرح طلایی',
+                'expires_at'              => now()->addDays(2)->format('Y-m-d H:i:s'),
+            ])),
+        ]);
+
+        Livewire::withQueryParams(['type' => 'package'])
+            ->test(PackageIndex::class)
+            ->assertOk()
+            ->assertSee('اشتراک فعال:', false)
+            ->assertSee('طرح طلایی', false)
+            ->assertDontSee('اشتراک فعالی ندارید', false);
+    }
+
+    #[Test]
+    public function bazaar_templates_tab_hides_subscription_banner(): void
+    {
+        $this->actingCreator();
+
+        // اشتراک فقط پکیج‌ها را پوشش می‌دهد (گلاساری API) → در تب قالب‌ها بنر معنا ندارد
+        $this->fakeHttp([
+            '*/api/v1/templates*' => Http::response([
+                'data' => [
+                    ['slug' => 'moonlight', 'name' => 'قالب ماه‌تاب', 'purchases_count' => 3],
+                ],
+                'meta' => ['current_page' => 1, 'last_page' => 1, 'total' => 1],
+            ]),
+        ]);
+
+        Livewire::withQueryParams(['type' => 'template'])
+            ->test(PackageIndex::class)
+            ->assertOk()
+            ->assertSee('قالب ماه‌تاب', false)
+            ->assertDontSee('اشتراک فعال:', false)
+            ->assertDontSee('اشتراک فعالی ندارید', false);
+    }
+
+    #[Test]
+    public function bazaar_without_subscription_shows_cta_banner(): void
+    {
+        $this->actingCreator();
+
+        $this->fakeHttp([
+            '*/api/v1/packages*' => Http::response($this->packagesListResponse([
+                'has_active_subscription' => false,
+                'plan_name'               => null,
+                'expires_at'              => null,
+            ])),
+        ]);
+
+        Livewire::withQueryParams(['type' => 'package'])
+            ->test(PackageIndex::class)
+            ->assertOk()
+            ->assertSee('اشتراک فعالی ندارید', false)
+            ->assertDontSee('اشتراک فعال:', false);
+    }
+
+    #[Test]
+    public function subscription_summary_without_flag_is_derived_from_expiry(): void
+    {
+        $this->actingCreator();
+
+        // API پرچم has_active_subscription را نفرستاده ولی انقضا آینده است → باید فعال استنتاج شود
+        $this->fakeHttp([
+            '*/api/v1/packages*' => Http::response($this->packagesListResponse([
+                'plan_name'  => 'طرح طلایی',
+                'expires_at' => now()->addDays(2)->format('Y-m-d H:i:s'),
+            ])),
+        ]);
+
+        Livewire::withQueryParams(['type' => ''])
+            ->test(PackageIndex::class)
+            ->assertOk()
+            ->assertSee('اشتراک فعال:', false)
+            ->assertDontSee('اشتراک فعالی ندارید', false);
+    }
+
+    /* =====================================================================
      *  جریان خرید
      * ===================================================================== */
 

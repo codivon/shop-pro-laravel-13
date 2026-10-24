@@ -1973,6 +1973,31 @@ A=۴۹ اسکلت ✓ | B=۵۰ تکمیل ویجت‌های خانه ✓ | C=۵�
 
 **کامیت:** تم → theme-saniar (897e6670) | میزبان (فقط این فایل) → docs/project-analysis | **فاز بعدی: G (۵۷) — نمای فروشنده سانیار (seller/seller-table + روت‌های seller.*) و سپس صفحات محتوایی (بلاگ/تماس/درباره/FAQ/404) + آماده‌سازی مارکت قالب‌ها**
 
+## Phase 58 — بازار: بنر اشتراک در تب «همه» همیشه «اشتراک فعالی ندارید» می‌گفت (با وجود اشتراک فعال)
+
+### درخواست کاربر
+«در بازار پکیج‌ها و قالب‌ها، من اشتراکم ۲ روز باقی‌مانده ولی گفته اشتراک فعالی ندارید» — در صفحهٔ بازار کارت‌ها/مودال نصب «رایگان با اشتراک — ۲ روز باقی‌مانده» نشان می‌داد ولی بنر بالای صفحه می‌گفت «اشتراک فعالی ندارید» (تناقض دو پیام از یک دیتای واحد).
+
+### ریشه‌یابی
+- بنر اشتراک (`packages/index.blade.php` خط ۶۵) شرطش `$type === 'package' && … has_active_subscription` بود؛ اما تب پیش‌فرضِ بازار «همه» است (`$type=''` از فاز ۴۵) → در تب «همه» (و هر تب غیر از «پکیج‌ها») **حتی با اشتراک فعال** همیشه شاخهٔ خاکستریِ «اشتراک فعالی ندارید» رندر می‌شد.
+- تناقض ظاهری: کارت‌ها و مودال نصب از دیتای **per-package** (`pkg.subscription` — مستقل از تب) تغذیه می‌شوند و درست «۲ روز باقی‌مانده» را نشان می‌دادند؛ فقط بنر به تب حساس بود.
+- گلاساری API (`API-AGENT-SPEC.md`): اشتراک فقط **پکیج‌ها** را پوشش می‌دهد (Subscription Plan → "its included packages become free while active") → بنر در تب «قالب‌ها» اصلاً معنا ندارد.
+
+### رفع
+1. `index.blade.php` — شرط سبز: `@if ($this->showsPackages() && !empty($subscriptionSummary) && ($subscriptionSummary['has_active_subscription'] ?? false))` (نمایش در «همه» + «پکیج‌ها») و شاخهٔ CTA خاکستری به `@elseif ($this->showsPackages())` تبدیل شد → در تب «قالب‌ها» بنر کلاً حذف می‌شود.
+2. `PackageIndex::normalizeSubscriptionSummary()` — مقاوم‌سازی: اگر API پرچم `has_active_subscription` را نفرستاده باشد ولی `expires_at` آینده (یا `days_remaining>0` بدون تاریخ) داشته باشد، اشتراک «فعال» استنتاج می‌شود؛ اگر API پرچم را صریحاً فرستاده باشد همان مقدار (با اعتبارسنجی `isFuture`) معیار است. (بررسی جانبی: محاسبهٔ محلی `days_remaining` با `now()->diffInDays()` در Carbon 3.14 برای تاریخ آینده مثبت است — مشکلی ندارد.)
+
+### تست‌ها (۵ رگرسیون جدید در ThemeMarketTest)
+- `bazaar_all_tab_shows_active_subscription_banner` — تب «همه» + اشتراک فعال → بنر سبز «اشتراک فعال: طرح طلایی» (بازتولید دقیق باگ کاربر)
+- `bazaar_packages_tab_shows_active_subscription_banner` — همان در تب «پکیج‌ها»
+- `bazaar_templates_tab_hides_subscription_banner` — تب «قالب‌ها» بدون هیچ بنری
+- `bazaar_without_subscription_shows_cta_banner` — بدون اشتراک → CTA خاکستری
+- `subscription_summary_without_flag_is_derived_from_expiry` — حذف پرچم → استنتاج از انقضا
+- **تست جهش**: شرط قدیمی `$type === 'package'` موقتاً برگردانده شد → هر دو تست تبه شدند (۲ failed) → فیکس دوباره اعمال شد → همهٔ ۲۰ تست ThemeMarketTest سبز.
+- فاز A (Smoke/Auth/Cart/Catalog/Checkout/Extra): **۱۲۴ passed / ۳۴۴ assertion** | فاز B (Order/Payment/Performance/Scale/Security + Unit): **۱۳۸ passed / 3 skipped** (جمعاً ۲۶۲ سبز؛ ۳ skip همان ConcurrentUsers سندباکس)
+
+**کامیت:** docs/project-analysis → `fix(market): فاز ۵۸ — بنر اشتراک بازار در تب «همه» درست نشان داده شود + استنتاج پرچم اشتراک`
+
 ## Phase 57 — قالب سانیار فاز G: فروشندگان بخش ۱ (لندینگ + احراز هویت کامل + فروشگاه عمومی + اسکلت پنل و داشبورد)
 
 **تاریخ:** 2026-10-24 | **برنچ میزبان:** docs/project-analysis (کد میزبان دست‌نخورده — ۱۰۰٪ در ریپوی تم) | **تم:** themes/Saniar کامیت 77408a02 → پوش به برنچ theme-saniar | **تست:** فاز ۱ (AdminPanelSmoke+Auth+Cart+Catalog+Checkout+Extra+Unit): **126 ✓ / 3 skipped** (346 assertions) | فاز ۲ (Security+Order+Payment+Performance): **102 ✓** (337 assertions) — اعداد دقیقاً برابر فاز F
