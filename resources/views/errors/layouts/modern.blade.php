@@ -11,8 +11,10 @@
 ====================================================================== --}}
 @php
     $isDark = $dark ?? request()->cookie('admin-theme') === 'dark';
+    // فاز ۷۱ — رفع کوئری غلط (جدول options ستون‌های option_name/option_value دارد نه key/value)
     try {
-        $siteName = trim((string) \Illuminate\Support\Facades\DB::table('options')->where('key', 'info_site_title')->value('value') ?: '') ?: config('app.name', 'Shop Pro');
+        $siteName = trim((string) (function_exists('option') ? option('info_site_title', '') : ''))
+            ?: config('app.name', 'Shop Pro');
     } catch (\Throwable $e) {
         $siteName = config('app.name', 'Shop Pro');
     }
@@ -259,6 +261,7 @@
 
         <div class="error-meta">
             <span class="code-chip">{{ $code }}</span>
+            @yield('meta')
             <span>{{ $siteName }}</span>
         </div>
     </main>

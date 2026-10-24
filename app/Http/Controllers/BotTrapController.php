@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\BotTrap;
+use App\Services\BlockPage;
+use App\Services\SecuritySettings;
 use Illuminate\Http\Request;
 
 /*
@@ -20,6 +22,12 @@ class BotTrapController extends Controller
             (string) $request->path()
         );
 
-        return response()->make('Forbidden', 403);
+        // فاز ۷۱ — صفحهٔ زیبا به‌جای متن خام Forbidden
+        // اگر تله فعال است، IP تازه مسدود شده ⇒ پیام «مسدود»؛ با کلید خاموش فقط «این مسیر ممنوع»
+        return BlockPage::respond(
+            $request,
+            SecuritySettings::botTrapEnabled() ? 'blocked' : 'trap',
+            (string) $request->ip()
+        );
     }
 }

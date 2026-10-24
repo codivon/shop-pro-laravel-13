@@ -27,12 +27,95 @@ trait ScaleTestSetup
 
     protected function setUpScale(): void
     {
+        self::guardDatabaseMemory(); // فاز ۷۱ — قبل از هر کار سنگینی، حافظهٔ دیتابیس امن شود
         $this->cleanupScaleData(); // پاکسازی بقایای اجرای قبلی (اگر تست وسط راه خورده باشد)
     }
 
     protected function tearDownScale(): void
     {
         $this->cleanupScaleData();
+    }
+
+    /* =====================================================================
+     *  فاز ۷۱ — محافظت از دیتابیس در محیط کم‌حافظه (گزارش کاربر:
+     *  «لودتست ConcurrentUsersTest در این سندباکس ماریا‌دی‌بی را می‌کُشد»)
+     *
+     *  ریشهٔ مشکل: وقتی mariadbd با buffer pool بزرگ (پیش‌فرض برخی کانفیگ‌ها
+     *  تا ~۲GB) بالا بیاید، در طول فاز Performance/Scale حافظه‌اش بالا می‌رود و
+     *  دقیقاً در پیک بار (سرور واقعی php -S + موج‌های درخواست همزمان + phpunit)
+     *  OOM-کرنل خودِ دیتابیس را انتخاب و می‌کشد → صدها شکست کاذب «Connection
+     *  refused» در ادامهٔ فاز.
+     *
+     *  راه‌حل: MariaDB 10.11 «تغییر اندازهٔ آنلاین» buffer pool را پشتیبانی
+     *  می‌کند (SET GLOBAL innodb_buffer_pool_size). اگر روی ماشین کوچک،
+     *  buffer pool پیکربندی‌شده از سقف امن بزرگ‌تر بود، همان ابتدای ست مقیاس
+     *  آن را به سقف امن می‌رسانیم تا دیتابیس هرگز بزرگ‌ترین مصرف‌کنندهٔ رم نباشد.
+     *
+     *  ملاحظات ایمنی:
+     *   - فقط وقتی اجرا می‌شود که phpunit در حال اجراست (این تریت) — پروداکشن هرگز
+     *   - روی ماشین پرحافظه (≥ ۸GB) هیچ دخالتی نمی‌کند
+     *   - فقط «کوچک‌کردن» دارد، هرگز بزرگ‌کردن
+     *   - کاملاً fail-safe: هر خطایی ⇒ بدون دخالت ادامه (تست نباید به‌خاطر
+     *     این محافظت بشکند)
+     * ===================================================================== */
+
+    /** سقف امن buffer pool در محیط کم‌حافظه (۲۵۶MB) */
+    public const SAFE_BUFFER_POOL_BYTES = 268435456;
+
+    /** ماشین‌های ≥ این حجم «پرحافظه» تلقی می‌شوند و هیچ دخالتی نمی‌شوند (۸GB) */
+    public const HIGH_MEMORY_THRESHOLD_BYTES = 8589934592;
+
+    /**
+     * محدودکردن buffer pool روی ماشین کم‌حافظه (فقط اگر بزرگ‌تر از سقف امن باشد).
+     */
+    public static function guardDatabaseMemory(): void
+    {
+        try {
+            $memTotal = self::memInfoBytes('MemTotal');
+
+            if ($memTotal === 0 || $memTotal >= self::HIGH_MEMORY_THRESHOLD_BYTES) {
+                return; // لینوکس نیست یا ماشین پرحافظه — هیچ دخالتی
+            }
+
+            $current = (int) (DB::selectOne('select @@innodb_buffer_pool_size as size')->size ?? 0);
+
+            if ($current <= self::SAFE_BUFFER_POOL_BYTES) {
+                return; // از قبل امن است (مثلاً سندباکس با ۹۶M)
+            }
+
+            // تغییر اندازهٔ آنلاین — MariaDB به‌صورت پس‌زمینه‌ای جمع می‌کند
+            DB::statement('SET GLOBAL innodb_buffer_pool_size = ' . self::SAFE_BUFFER_POOL_BYTES);
+
+            fwrite(STDERR, sprintf(
+                "\n[ScaleTestSetup] حافظهٔ ماشین %dMB است و innodb_buffer_pool_size=%dMB — به %dMB محدود شد تا OOM-killer در پیک بار (ConcurrentUsersTest) دیتابیس را نکشد.\n",
+                (int) round($memTotal / 1048576),
+                (int) round($current / 1048576),
+                (int) round(self::SAFE_BUFFER_POOL_BYTES / 1048576)
+            ));
+        } catch (\Throwable) {
+            // محافظت اختیاری است — هر خطایی نادیده گرفته می‌شود
+        }
+    }
+
+    /**
+     * خواندن یک فیلد از /proc/meminfo (بر حسب بایت) — خارج از لینوکس: ۰.
+     */
+    public static function memInfoBytes(string $field): int
+    {
+        try {
+            if (! is_file('/proc/meminfo')) {
+                return 0;
+            }
+
+            foreach (file('/proc/meminfo') as $line) {
+                if (str_starts_with($line, $field . ':')) {
+                    return (int) filter_var($line, FILTER_SANITIZE_NUMBER_INT) * 1024;
+                }
+            }
+        } catch (\Throwable) {
+        }
+
+        return 0;
     }
 
     protected function cleanupScaleData(): void
@@ -60,6 +143,28 @@ trait ScaleTestSetup
         DB::table('users')->where('email', 'like', '%@scale.test')->delete();
 
         $this->scaleRanges = [];
+
+        // فاز ۷۱ — بازسازی ایندکس FULLTEXT پس از حذف انبوه (ریشهٔ واقعی «OOM ConcurrentUsersTest»)
+        //
+        // درج و حذف ۳۰هزار محصول مقیاس، سطل wordهای ایندکس FULLTEXT products را می‌بالد
+        // (حذف در InnoDB فقط نشانه‌گذاری است؛ پاک‌سازی فقط با OPTIMIZE/recreate) — تا ~۸۸MB
+        // دادهٔ آشغال در FTS_INDEX. اولین کوئری MATCH در یک پروسهٔ تازه (سرور تست بار در
+        // محیط production) این ساختار بادکرده را لود می‌کند و حافظهٔ ماریا‌دی‌بی به‌طور
+        // گذرا تا ~۵۰۰MB بالا می‌رود (سقف کش FT: innodb_ft_result_cache_limit=2GB) →
+        // در موج‌های همزمان، OOM-killer خود دیتابیس را می‌کشد (گزارش کاربر).
+        // OPTIMIZE جدولِ سبزِ پس‌ازپاک‌سازی چند میلی‌ثانیه است و ایندکس را بازسازی می‌کند.
+        try {
+            $hasFulltext = (int) (DB::selectOne(
+                "select count(*) c from information_schema.statistics
+                 where table_schema = database() and table_name = 'products' and index_type = 'FULLTEXT'"
+            )->c ?? 0) > 0;
+
+            if ($hasFulltext) {
+                DB::statement('OPTIMIZE TABLE products');
+            }
+        } catch (\Throwable) {
+            // پاک‌سازی اصلی انجام شده؛ اگر بازسازی ممکن نبود تست را نباید شکست
+        }
     }
 
     /**

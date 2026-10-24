@@ -45,6 +45,11 @@ class BotTrap extends Model
      */
     public static function catch(string $ip, ?string $userAgent, string $trapPath): void
     {
+        // فاز ۷۱ — کلید اصلی تلهٔ ربات (تنظیمات برنامه‌نویس): خاموش ⇒ هیچ IPای ثبت نمی‌شود
+        if (! \App\Services\SecuritySettings::botTrapEnabled()) {
+            return;
+        }
+
         try {
             $existing = static::where('ip_address', $ip)->first();
 

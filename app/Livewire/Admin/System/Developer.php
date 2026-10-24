@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\System;
 
+use App\Models\BotTrap;
 use App\Services\SecuritySettings;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
@@ -106,6 +107,8 @@ class Developer extends Component
 
     public bool $securityHstsEnabled = false;
 
+    public bool $securityBotTrapEnabled = true;
+
     public bool $adminTwoFactorEnabled = false;
 
     public string $adminTwoFactorChannel = 'email';
@@ -163,6 +166,7 @@ class Developer extends Component
         $this->securityLockoutCommentsMinutes = SecuritySettings::lockoutMinutes('comments');
         $this->securityHeadersEnabled        = SecuritySettings::headersEnabled();
         $this->securityHstsEnabled           = SecuritySettings::hstsEnabled();
+        $this->securityBotTrapEnabled        = SecuritySettings::botTrapEnabled();
         $this->adminTwoFactorEnabled         = SecuritySettings::twoFactorEnabled();
         $this->adminTwoFactorChannel         = SecuritySettings::twoFactorChannel();
     }
@@ -267,11 +271,62 @@ class Developer extends Component
         option_update('security_headers_enabled', $this->securityHeadersEnabled ? 'on' : 'off');
         option_update('security_hsts_enabled',    $this->securityHstsEnabled ? 'on' : 'off');
 
+        // تلهٔ ربات (فاز ۷۱) — کلید اصلی مسدودسازی آی‌پی
+        option_update('security_bot_trap_enabled', $this->securityBotTrapEnabled ? 'on' : 'off');
+
         // ورود دومرحله‌ای مدیر
         option_update('admin_2fa_enabled', $this->adminTwoFactorEnabled ? 'on' : 'off');
         option_update('admin_2fa_channel', $this->adminTwoFactorChannel);
 
         $this->dispatch('toast', message: 'تنظیمات امنیتی ذخیره شد.', type: 'success');
+    }
+
+    /* ================= تلهٔ ربات (فاز ۷۱) ================= */
+
+    /**
+     * لیست تله‌های فعال (۲۴ ساعت اخیر) برای نمایش در تنظیمات برنامه‌نویس.
+     * حذف دستی رکورد از دیتابیس تا ۱۰ دقیقه اثر ندارد (کش)؛ رفع مسدودی از همین‌جا کش را هم پاک می‌کند.
+     */
+    public function getActiveTrapsProperty(): array
+    {
+        try {
+            return BotTrap::query()
+                ->where('last_hit_at', '>=', now()->subHours(BotTrap::BLOCK_TTL_HOURS))
+                ->orderByDesc('last_hit_at')
+                ->limit(50)
+                ->get(['id', 'ip_address', 'trap_path', 'hit_count', 'last_hit_at'])
+                ->toArray();
+        } catch (\Throwable) {
+            return []; // قبل از نصب یا هر خطای دیتابیس — صفحه نباید بشکند
+        }
+    }
+
+    /** رفع مسدودی یک آی‌پی — حذف رکورد + پاک‌کردن کش (فوراً اثر می‌کند) */
+    public function unblockIp(int $trapId): void
+    {
+        $this->ensureCreator();
+
+        $trap = BotTrap::query()->find($trapId);
+
+        if ($trap) {
+            $ip = $trap->ip_address;
+            $trap->delete();
+            BotTrap::flushCache();
+
+            $this->dispatch('toast', message: 'مسدودی آی‌پی '.$ip.' برداشته شد (کش هم پاک شد) — فوراً اثر می‌کند.', type: 'success');
+        }
+    }
+
+    /** رفع مسدودی همهٔ آی‌پی‌ها — پاک‌سازی کامل تله‌ها + کش */
+    public function unblockAllIps(): void
+    {
+        $this->ensureCreator();
+
+        $count = BotTrap::query()->count();
+        BotTrap::query()->delete();
+        BotTrap::flushCache();
+
+        $this->dispatch('toast', message: 'همهٔ مسدودی‌ها برداشته شد ('.$count.' رکورد) — کش هم پاک شد.', type: 'success');
     }
 
     /* ================= حالت بروزرسانی (پورت downApplication/upApplication) ================= */

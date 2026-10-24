@@ -2489,3 +2489,44 @@ A=۴۹ اسکلت ✓ | B=۵۰ تکمیل ویجت‌های خانه ✓ | C=۵�
 - ⚠️ نکتهٔ محیطی جدید: در فاز Performance/Scale با buffer pool پیش‌فرض، mariadbd حدود ۲.۲GB مصرف می‌کند و OOM-killer آن را می‌کشد (۹۵ شکست کاذب با `Connection refused`) → اجرای درست: `--innodb-buffer-pool-size=256M --performance-schema=OFF` + تقسیم فاز ۲ به سه دسته. این خط در سندباکس‌های کم‌حافظه الزامی است.
 
 **کامیت:** helpers + BlockBots/BotTrap/BotDetector + SecurityUnblock + bootstrap 4.6.2 + bladeهای فایل‌منیجر + blade مودال (90vh) + CSS کامپایل admin (rebuild) + ۱۱ تست + این فایل → docs/project-analysis
+
+---
+
+## Phase 71 — کلید اصلی تلهٔ ربات در تنظیمات برنامه‌نویس + صفحهٔ زیبای مسدودسازی + ریشه‌یابی قطعی و رفع «کشته‌شدن ماریا‌دی‌بی توسط ConcurrentUsersTest»
+
+### گزارش کاربر (۲ محور)
+1. «رکورد bot_traps را از دیتابیس حذف کردم ولی Forbidden ادامه داشت» + «اگر Forbidden به‌خاطر bot_traps است صفحه باید ظاهر زیبا داشته باشد و بگوید بلاک شده‌ای» + «آیا می‌شود در تنظیمات برنامه‌نویس غیرفعالش کرد؟ اگر نمی‌شود اضافه‌اش کن»
+2. «لودتست ConcurrentUsersTest در این سندباکس ماریا‌دی‌بی را می‌کُشد — اگر درست نشده، درستش کن و پوش کن»
+
+### ۱) تلهٔ ربات — کلید اصلی + صفحهٔ مسدودسازی
+- **ریشهٔ سردرگمی حذف رکورد:** `BotTrap::isBlocked` لیست آی‌پی‌های مسدود را **۱۰ دقیقه در کش** نگه می‌دارد؛ حذف دستی رکورد از دیتابیس تا انقضای کش اثر نمی‌کرد.
+- **کلید اصلی (تنظیمات برنامه‌نویس → تب امنیت):** `SecuritySettings::botTrapEnabled()` (option `security_bot_trap_enabled`، پیش‌فرض روشن). خاموش ⇒ (الف) `BlockBots` هیچ IPای را مسدود نمی‌کند — حتی مسدودی‌های موجود فوراً بی‌اثر (راه‌قطع اضطراری)، (ب) `BotTrap::catch` هیچ تلهٔ جدیدی ثبت نمی‌کند (مسیرهای طعمه همچنان ۴۰۳ می‌مانند)، (ج) در لیست optionهای سفیدليست config/general ثبت شد.
+- **صفحهٔ زیبای مسدودسازی:** سرویس `BlockPage` + ویو `errors/bot-blocked.blade.php` (مبتنی بر `errors.layouts.modern` — خودکفا بدون asset خارجی، چون کاربر مسدود به هیچ asset همین سایت هم دسترسی ندارد). دو حالت: `blocked` (مسدودی سراسری + نمایش آی‌پی + توضیح انقضای خودکار ۲۴ ساعته) و `trap` (فقط این مسیر ممنوع). هدرهای `no-store` تا پس از رفع مسدودی از کش CDN نیاید. JSON مشتری‌ها ۴۰۳ ساختاریافته می‌گیرند.
+- **رفع مسدودی از UI تنظیمات برنامه‌نویس:** جدول تله‌های فعال ۲۴ ساعت اخیر (`activeTraps`) + `unblockIp` (حذف رکورد + `flushCache` — فوراً اثر می‌کند) + `unblockAllIps` + نکتهٔ کهربایی دربارهٔ کش ۱۰ دقیقه‌ای (پاسخ به سردرگمی کاربر).
+- **رفع باگ جانبی:** کوئری سایت‌تیتر در `errors/layouts/modern` روی جدول options با ستون‌های اشتباه (`key/value` به‌جای `option_name/option_value`) بود → جایگزینی با helper امن `option()`.
+- **۹ تست جدید** (`BotTrapSettingsTest`): کلید خاموش ⇒ مسدودی موجود بی‌اثر / ثبت تلهٔ جدید متوقف (طعمه‌ها ۴۰۳ می‌مانند) / کلید روشن ⇒ چرخهٔ کامل تله و مسدودی / صفحهٔ فارسی زیبا (عنوان + انقضا + آی‌پی) / JSON ۴۰۳ / ذخیرهٔ کلید از تنظیمات / رفع مسدودی تک‌IP و همه با پاک‌کردن کش / فیلتر ۲۴ ساعتهٔ لیست تله‌ها.
+
+### ۲) ConcurrentUsersTest و کشته‌شدن ماریا‌دی‌بی — ریشه‌یابی قطعی
+علامت: mariadbd وسط لودتست SIGKILL می‌شد؛ `dmesg` نشان داد OOM-killer با `anon-rss: ~2.3-2.4GB` آن را انتخاب می‌کند — **با وجود buffer pool ۹۶MB!** یعنی مقصر buffer pool نبود.
+
+مسیر ریشه‌یابی (با general_log و pmap و بازپخش تک‌تک کوئری‌ها روی نمونهٔ تازهٔ ماریا‌دی‌بی):
+- سرور تست بار (`php -S`) در محیط production اجرا می‌شود ⇒ `front_search_match` مسیر **FULLTEXT MATCH** را برمی‌دارد (در env testing مسیر LIKE است).
+- بازپخش کوئری‌ها روی نمونهٔ تازه: کوئری جستجو (`MATCH … AGAINST` روی products) **به‌تنهایی ~۵۰۰-۵۱۱MB حافظهٔ گذرا** در ماریا‌دی‌بی می‌گرفت — کوئری‌های دیگر جمعاً < ۵MB.
+- علت واقعی: **بادکردن ایندکس FULLTEXT** — تست مقیاس ۳۰هزار محصول را درج و حذف می‌کند؛ حذف در InnoDB فقط نشانه‌گذاری است و سطل wordها فقط با OPTIMIZE/recreate پاک می‌شود → فایل `FTS_..._INDEX_1.ibd` تا **۸۸MB دادهٔ آشغال** رفته بود. اولین MATCH در هر پروسهٔ تازه، این ساختار بادکرده را لود می‌کرد (سقف‌ها: `innodb_ft_result_cache_limit=2GB` و `innodb_ft_total_cache_size=640MB`) و glibc حافظهٔ آزادشده را پس نمی‌داد → در موج‌های همزمانِ ۴ ورکره، RSS ماریا‌دی‌بی از ~۲.۴GB گذشت و OOM-killer دیتابیس را کشت.
+- **اثبات:** پس از `OPTIMIZE TABLE products`، همان کوئری MATCH روی نمونهٔ تازه فقط **+۲MB** گرفت (قبلاً +۵۱۱MB).
+
+رفع چهارلایه:
+- **رفع ریشه (کد):** `ScaleTestSetup::cleanupScaleData` پس از حذف دادهٔ مقیاس، ایندکس FULLTEXT را بازسازی می‌کند (`OPTIMIZE TABLE products` — روی جدول سبز چند میلی‌ثانیه؛ فقط در محیط تست).
+- **گارد حافظهٔ دیتابیس:** `ScaleTestSetup::guardDatabaseMemory()` — روی ماشین < ۸GB اگر `innodb_buffer_pool_size` پیکربندی‌شده از ۲۵۶MB بزرگ‌تر باشد، با تغییر اندازهٔ آنلاین (`SET GLOBAL`) به همان سقف می‌رسد تا دیتابیس هرگز بزرگ‌ترین مصرف‌کنندهٔ رم نباشد (فقط کوچک‌سازی؛ fail-safe؛ در PerformanceTest هم ص زده می‌شود). در سناریوی آزمایشی «شروع با pool=2G» اثرش تأیید شد (۲۰۴۸→۲۵۶MB و بقای دیتابیس).
+- **ورکر هم‌مقیاس حافظه:** `ConcurrentUsersTest::workerCount()` — تعداد ورکرهای `php -S` بر اساس `MemAvailable` (≥۳GB: ۶، <۳GB: ۴، <۲GB: ۲) + لاگ تصمیم در STDERR.
+- **اتصال ماندگار فقط برای سرور تست بار:** option جدید `PDO::ATTR_PERSISTENT` در `config/database.php` که فقط با env `DB_PERSISTENT=true` فعال می‌شود (پیش‌فرض: غیرفعال) — ۴ ورکر به‌جای ۱۰۰۰ چرخهٔ create/destroy اتصال، ۴ اتصال همیشگی دارند (سریع‌تر: rps=4 و wall=264s در برابر rps=3 و 385s).
+
+### نتیجهٔ کامل (MariaDB sandbox — همهٔ دسته‌ها پس از رفع)
+- فاز ۱ `(AdminPanelSmoke|Auth|Cart|Catalog|Checkout|Extra)`: **۱۵۵ ✓ / ۱ skip (۴۶۹ اظهار)**
+- `(Order|Payment|Performance|Security)`: **۱۱۵ ✓ (۳۸۹ اظهار)**
+- `(ScaleReadiness|Unit)`: **۳۳ ✓ / ۳ skip (۸۹ اظهار)**
+- `MillionScaleTest` → `ConcurrentUsersTest` (سناریوی بازتولید کامل: ۳۰هزار درج/حذف سپس لودتست): **۱۱ ✓** — ماریا‌دی‌بی زنده با **حداکثر RSS = ۲۷۵MB** (قبلاً مرگ در ~۲.۴GB)
+- جمع: **۳۱۴ تست سبز / ۴ skip** — BotTrapSettingsTest ۹ ✓، PenetrationTest ۲۵ ✓
+- سناریوی «کُشنده» اثبات‌شده: شروع ماریا‌دی‌بی با `--innodb-buffer-pool-size=2G` + اجرای ConcurrentUsersTest → گارد pool را به ۲۵۶MB می‌رساند، ۲ تست سبز، دیتابیس زنده.
+
+**کامیت:** BlockPage + bot-blocked.blade + modern layout fix + BlockBots/BotTrap/BotTrapController (کلید اصلی) + SecuritySettings + Developer (toggle + جدول مسدودی‌ها + unblock) + config/general + ScaleTestSetup (گارد + OPTIMIZE) + ConcurrentUsersTest (ورکر هم‌مقیاس) + PerformanceTest + config/database (DB_PERSISTENT) + ۹ تست + این فایل → docs/project-analysis

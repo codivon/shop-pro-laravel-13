@@ -495,6 +495,7 @@ return [
         'security_lockout_comments_minutes',
         'security_headers_enabled',
         'security_hsts_enabled',
+        'security_bot_trap_enabled', // فاز ۷۱ — کلید اصلی تلهٔ ربات
         'admin_2fa_enabled',
         'admin_2fa_channel',
     ]

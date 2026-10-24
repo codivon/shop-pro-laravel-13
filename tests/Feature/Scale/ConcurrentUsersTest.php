@@ -41,6 +41,31 @@ class ConcurrentUsersTest extends TestCase
     private int $currentPort = 0;
     private int $restarts = 0;
 
+    /**
+     * فاز ۷۱ — تعداد ورکر بر اساس حافظهٔ در دسترس ماشین.
+     *
+     * گزارش کاربر: «لودتست ConcurrentUsersTest در این سندباکس ماریا‌دی‌بی را می‌کُشد».
+     * هر ورکر php -S در پیک (بوت کامل Laravel در هر ریکوئست) تا ~۱۵۰MB مصرف
+     * می‌کند؛ روی ماشین کم‌حافظه که همزمان phpunit و ماریا‌دی‌بی هم اجرا هستند،
+     * ورکر زیاد یعنی فشار OOM روی دیتابیس. محافظت اصلی (کوچک‌سازی buffer pool)
+     * در ScaleTestSetup::guardDatabaseMemory است؛ اینجا هم ورکرها را با حافظه
+     * هم‌مقیاس می‌کنیم. روی ماشین قوی همان ۶ ورکر کامل اجرا می‌شود.
+     */
+    private function workerCount(): int
+    {
+        $availMb = (int) round(ScaleTestSetup::memInfoBytes('MemAvailable') / 1048576);
+
+        if ($availMb > 0 && $availMb < 2048) {
+            return 2; // سندباکس خیلی تنگ — بقای دیتابیس اولویت است
+        }
+
+        if ($availMb > 0 && $availMb < 3072) {
+            return 4; // سندباکس ۴ گیگ که همزمان phpunit + ماریا‌دی‌بی هم اجرا هستند
+        }
+
+        return self::WORKERS; // ماشین قوی — رفتار کامل تست
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -63,6 +88,12 @@ class ConcurrentUsersTest extends TestCase
     private function startServer(): int
     {
         $env = $this->serverEnv();
+
+        fwrite(STDERR, sprintf(
+            "\n[ConcurrentUsers] ورکرهای سرور: %s (حافظهٔ در دسترس ماشین: %dMB)\n",
+            $env['PHP_CLI_SERVER_WORKERS'],
+            (int) round(ScaleTestSetup::memInfoBytes('MemAvailable') / 1048576)
+        ));
 
         foreach (range(self::FIRST_PORT, self::FIRST_PORT + 5) as $port) {
             $process = new Process(
@@ -91,7 +122,15 @@ class ConcurrentUsersTest extends TestCase
     private function serverEnv(): array
     {
         $env = $_ENV;
-        $env['PHP_CLI_SERVER_WORKERS'] = (string) self::WORKERS;
+        $env['PHP_CLI_SERVER_WORKERS'] = (string) $this->workerCount(); // فاز ۷۱ — هم‌مقیاس با حافظه
+
+        // فاز ۷۱ — اتصال ماندگار به دیتابیس «فقط برای سرور این تست»:
+        // بدون آن، ۱۰۰۰ ریکوئست یعنی ۱۰۰۰ بار create/destroy اتصال و thread در
+        // ماریا‌دی‌بی؛ glibc حافظهٔ آزادشده را پس نمی‌دهد و RSS دیتابیس در سندباکس
+        // تا ~۲.۴GB بالا می‌رود و OOM-killer آن را می‌کشد (report کاربر).
+        // با اتصال ماندگار، ۴ ورکر فقط ۴ اتصال همیشگی دارند و رشد حافظه منتفی است.
+        $env['DB_PERSISTENT'] = 'true';
+
         unset($env['DATABASE_URL']);
         return $env;
     }

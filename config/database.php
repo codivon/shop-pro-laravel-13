@@ -61,6 +61,12 @@ return [
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 // ✅ سازگار با PHP 8.5+ و نسخه‌های قبلی
                 (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+                // فاز ۷۱ — اتصال ماندگار (فقط با env: DB_PERSISTENT=true فعال می‌شود؛
+                // مصرف اصلی: سرور تست بار ConcurrentUsersTest — بدون آن ۱۰۰۰ اتصال
+                // پی‌درپی create/destroy می‌شود و heap ماریا‌دی‌بی (نگه‌داشتن حافظهٔ
+                // آزادشده توسط glibc) تا ~۲.۴GB رشد می‌کند و OOM-killer دیتابیس را می‌کشد.
+                // پیش‌فرض: null ⇒ از آرایه حذف می‌شود ⇒ رفتار عادی غیرماندگار.
+                \PDO::ATTR_PERSISTENT => env('DB_PERSISTENT') === 'true' ? true : null,
             ]) : [],
             'dump' => [
                 'dump_binary_path' => env('DB_DUMP_BINARY_PATH') ?: '/usr/bin/',

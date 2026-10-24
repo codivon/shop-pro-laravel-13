@@ -4,6 +4,7 @@ namespace Tests\Feature\Performance;
 
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Support\ScaleTestSetup;
 use Tests\Support\ShopTestSetup;
 use Tests\TestCase;
 
@@ -26,6 +27,7 @@ class PerformanceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        ScaleTestSetup::guardDatabaseMemory(); // فاز ۷۱ — محافظت از دیتابیس کم‌حافظه قبل از تست بار
         $this->setUpShop();
     }
 

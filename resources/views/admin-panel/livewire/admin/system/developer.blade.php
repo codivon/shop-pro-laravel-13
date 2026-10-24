@@ -427,6 +427,88 @@
                         </div>
                     </section>
 
+                    {{-- ───── تلهٔ ربات (فاز ۷۱ — کلید اصلی + لیست مسدودی‌ها) ───── --}}
+                    <section class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
+                        <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">
+                            <x-admin-panel::icon name="bot" class="size-4.5 text-brand-600 dark:text-brand-400" />
+                            <h3 class="text-[13px] font-bold">تلهٔ ربات و مسدودسازی</h3>
+                            <span class="ms-auto text-[10px] font-semibold text-ink-3 dark:text-night-ink-2">ضد اسکنر و ربات مخرب</span>
+                        </div>
+                        <div class="space-y-3 p-4">
+                            {{-- کلید اصلی --}}
+                            <div class="flex items-center justify-between gap-3 rounded-xl border border-brand-200 bg-gradient-to-l from-brand-50/90 via-brand-50/40 to-transparent p-3.5 dark:border-brand-500/20 dark:from-brand-500/10 dark:via-brand-500/5 dark:to-transparent">
+                                <span class="flex min-w-0 items-center gap-3">
+                                    <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-600/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
+                                        <x-admin-panel::icon name="key-round" class="size-4.5" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="flex flex-wrap items-center gap-1.5">
+                                            <span class="text-[13px] font-bold">کلید اصلی تلهٔ ربات</span>
+                                            <span class="rounded-md bg-brand-600/10 px-1.5 py-0.5 text-[10px] font-bold text-brand-700 dark:bg-brand-500/15 dark:text-brand-400">کلید اصلی</span>
+                                        </span>
+                                        <span class="block text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">با خاموش‌کردن آن، هیچ آی‌پی‌ای مسدود نمی‌شود و مسدودی‌های موجود هم فوراً بی‌اثر می‌شوند (توصیه: فقط برای رفع قفل موقت خاموش کنید)</span>
+                                    </span>
+                                </span>
+                                <x-admin-panel::toggle wire:model="securityBotTrapEnabled" aria-label="کلید اصلی تله ربات" />
+                            </div>
+
+                            {{-- نکتهٔ کش — ریشهٔ سردرگمی «حذف رکورد ولی Forbidden ادامه داشت» --}}
+                            <p class="flex items-start gap-2 rounded-xl bg-amber-500/10 p-3 text-[11px] leading-5 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                                <x-admin-panel::icon name="triangle-alert" class="mt-0.5 size-3.5 shrink-0" />
+                                <span>اگر رکورد را مستقیماً از دیتابیس حذف کنید، تا ۱۰ دقیقه مسدودی ممکن است باقی بماند (لیست در کش است). با دکمهٔ «رفع مسدودی» از همین‌جا، کش هم پاک می‌شود و آزادسازی فوراً اثر می‌کند. مسدودی‌ها هم به‌طور خودکار پس از ۲۴ ساعت می‌بَرند.</span>
+                            </p>
+
+                            {{-- لیست مسدودی‌های فعال --}}
+                            <div class="overflow-hidden rounded-xl border border-line dark:border-night-line">
+                                @if (empty($this->activeTraps))
+                                    <div class="flex items-center justify-center gap-2 p-6 text-[12px] font-medium text-ink-3 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="shield" class="size-4" />
+                                        هیچ آی‌پی مسدودشده‌ای وجود ندارد — همه‌چیز سالم است.
+                                    </div>
+                                @else
+                                    <div class="max-h-64 overflow-y-auto">
+                                        <table class="w-full text-[13px]">
+                                            <thead>
+                                                <tr class="bg-surface-2 text-start dark:bg-night-3/50">
+                                                    <th class="p-3 text-start font-bold">آی‌پی</th>
+                                                    <th class="p-3 text-start font-bold">تله</th>
+                                                    <th class="p-3 text-start font-bold">ضربه‌ها</th>
+                                                    <th class="p-3 text-start font-bold">آخرین ضربه</th>
+                                                    <th class="p-3 text-start font-bold"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-line dark:divide-night-line">
+                                                @foreach ($this->activeTraps as $trap)
+                                                    <tr wire:key="trap-{{ $trap['id'] }}">
+                                                        <td class="p-3 font-mono text-[12px]" dir="ltr">{{ $trap['ip_address'] }}</td>
+                                                        <td class="max-w-40 truncate p-3 text-[12px] text-ink-3 dark:text-night-ink-2" dir="ltr" title="{{ $trap['trap_path'] }}">{{ $trap['trap_path'] }}</td>
+                                                        <td class="p-3">
+                                                            <span class="rounded-md bg-red-500/10 px-2 py-0.5 text-[11px] font-bold text-red-600 dark:text-red-400">{{ $trap['hit_count'] }}</span>
+                                                        </td>
+                                                        <td class="p-3 text-[12px] text-ink-3 dark:text-night-ink-2">{{ \Carbon\Carbon::parse($trap['last_hit_at'])->format('Y-m-d H:i') }}</td>
+                                                        <td class="p-3 text-end">
+                                                            <button type="button" wire:click="unblockIp({{ $trap['id'] }})" class="inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-[11px] font-bold text-ink-2 transition hover:bg-emerald-500/10 hover:text-emerald-600 dark:border-night-line dark:text-night-ink-2 dark:hover:text-emerald-400">
+                                                                <x-admin-panel::icon name="rotate-ccw" class="size-3.5" />
+                                                                رفع مسدودی
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-3 border-t border-line p-3 dark:border-night-line">
+                                        <span class="text-[11px] text-ink-3 dark:text-night-ink-2">رفع مسدودی، رکورد را حذف و کش را فوراً پاک می‌کند.</span>
+                                        <button type="button" wire:click="unblockAllIps" wire:confirm="همهٔ آی‌پی‌های مسدودشده آزاد شوند؟ (تعداد: {{ count($this->activeTraps) }})" class="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-500/5 px-3 py-1.5 text-[11px] font-bold text-red-600 transition hover:bg-red-500/10 dark:border-red-500/30 dark:text-red-400">
+                                            <x-admin-panel::icon name="trash-2" class="size-3.5" />
+                                            رفع مسدودی همه
+                                        </button>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </section>
+
                     {{-- ───── قفل تلاش‌ها ───── --}}
                     <section x-data="{ main: @js((bool) $securityLockoutEnabled) }" class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
                         <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">

@@ -3,6 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Models\BotTrap;
+use App\Services\BlockPage;
+use App\Services\SecuritySettings;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -20,6 +22,12 @@ class BlockBots
             return $next($request);
         }
 
+        // فاز ۷۱ — کلید اصلی تلهٔ ربات (تنظیمات برنامه‌نویس): خاموش ⇒ هیچ IPای مسدود نمی‌شود
+        // حتی مسدودی‌های قبلی هم بی‌اثر می‌شوند — راه‌قطعِ نجات اضطراری مدیر
+        if (! SecuritySettings::botTrapEnabled()) {
+            return $next($request);
+        }
+
         $ip = $request->ip();
 
         if ($ip && BotTrap::isBlocked($ip)) {
@@ -30,8 +38,8 @@ class BlockBots
                 return $next($request);
             }
 
-            // پاسخ استاندارد 403 — هیچ اطلاعاتی فاش نمی‌شود
-            return response()->make('Forbidden', 403);
+            // فاز ۷۱ — صفحهٔ زیبای مسدودسازی به‌جای متن خام Forbidden
+            return BlockPage::respond($request, 'blocked', $ip);
         }
 
         return $next($request);
