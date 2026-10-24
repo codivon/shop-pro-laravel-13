@@ -377,10 +377,13 @@
                 @foreach ($tplList as $tpl)
                     @php
                         $tSlug      = $tpl['slug'] ?? '';
-                        $tName      = $tpl['name'] ?? $tSlug;
+                        // فاز ۶۹ — گاردهای اسکالر: فیلد آبجکتی نباید رندر را بترکاند
+                        $tNameRaw   = $tpl['name'] ?? $tSlug;
+                        $tName      = is_scalar($tNameRaw) && trim((string) $tNameRaw) !== '' ? (string) $tNameRaw : $tSlug;
                         $tVersion   = $tpl['latest_version']['version'] ?? ($tpl['version'] ?? null);
                         // فاز ۶۷ — فیلد واقعی API: thumbnail_url (با fallbackهای قبلی)
-                        $tThumb     = $tpl['thumbnail_url'] ?? $tpl['thumbnail'] ?? $tpl['cover'] ?? $tpl['preview_image'] ?? $tpl['image'] ?? null;
+                        $tThumbRaw  = $tpl['thumbnail_url'] ?? $tpl['thumbnail'] ?? $tpl['cover'] ?? $tpl['preview_image'] ?? $tpl['image'] ?? null;
+                        $tThumb     = is_string($tThumbRaw) && trim($tThumbRaw) !== '' ? $tThumbRaw : null;
                         $tPurchased = (bool) ($tpl['is_purchased'] ?? false);
                         $tSales     = $tpl['purchases_count'] ?? null;
                         $tState     = $installedThemesMap[$tSlug] ?? null;
@@ -388,8 +391,21 @@
                     @endphp
 
                     <article wire:key="tpl-{{ $tSlug }}"
-                             class="group ap-card overflow-hidden p-0 transition-all hover:shadow-card hover:shadow-brand-500/5 hover:ring-1 hover:ring-brand-500/25"
+                             class="group ap-card relative cursor-pointer overflow-hidden p-0 transition-all hover:shadow-card hover:shadow-brand-500/5 hover:ring-1 hover:ring-brand-500/25"
                              wire:click="openTemplateDetail('{{ $tSlug }}')">
+                        {{-- فاز ۶۹ — لودینگ روی خود کارت تا کامل شدن مودال جزئیات --}}
+                        <div wire:loading.flex wire:target="openTemplateDetail('{{ $tSlug }}')"
+                             class="pointer-events-none absolute inset-0 z-20 items-center justify-center bg-white/60 backdrop-blur-[2px] dark:bg-night-1/60"
+                             aria-hidden="true">
+                            <span class="flex flex-col items-center gap-2">
+                                <span class="flex size-12 items-center justify-center rounded-2xl bg-white/95 shadow-lg dark:bg-night-2/95">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true" class="size-6 animate-spin text-brand-600 dark:text-brand-400">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"></path>
+                                    </svg>
+                                </span>
+                                <span class="text-[11px] font-bold text-ink-2 dark:text-night-ink-2">در حال باز کردن جزئیات…</span>
+                            </span>
+                        </div>
                         {{-- کاور --}}
                         <div class="relative aspect-video overflow-hidden bg-gradient-to-br from-brand-100 via-teal-50 to-amber-50 dark:from-night-3 dark:via-night-2 dark:to-night-3">
                             @if ($tThumb)
@@ -547,8 +563,21 @@
                     $hasActiveSub = ($pkg['subscription']['is_free_with_subscription'] ?? false);
                 @endphp
                 {{-- فاز ۲۸: مثل پنل قدیمی — کلیک روی هر جای کارت (خارج از دکمه/لینک) مودال جزئیات را باز می‌کند --}}
-                <div class="ap-card group flex cursor-pointer flex-col overflow-hidden" wire:key="pkg-{{ $slug }}" x-bind:data-slug="{{ \Illuminate\Support\Js::from($slug) }}"
+                <div class="ap-card group relative flex cursor-pointer flex-col overflow-hidden" wire:key="pkg-{{ $slug }}" x-bind:data-slug="{{ \Illuminate\Support\Js::from($slug) }}"
                      @click="if (!$event.target.closest('button, a, [wire\\:click], input, label')) $wire.openDetail('{{ $slug }}')">
+                    {{-- فاز ۶۹ — لودینگ روی خود کارت تا کامل شدن مودال جزئیات --}}
+                    <div wire:loading.flex wire:target="openDetail('{{ $slug }}')"
+                         class="pointer-events-none absolute inset-0 z-20 items-center justify-center bg-white/60 backdrop-blur-[2px] dark:bg-night-1/60"
+                         aria-hidden="true">
+                        <span class="flex flex-col items-center gap-2">
+                            <span class="flex size-12 items-center justify-center rounded-2xl bg-white/95 shadow-lg dark:bg-night-2/95">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true" class="size-6 animate-spin text-brand-600 dark:text-brand-400">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"></path>
+                                </svg>
+                            </span>
+                            <span class="text-[11px] font-bold text-ink-2 dark:text-night-ink-2">در حال باز کردن جزئیات…</span>
+                        </span>
+                    </div>
                     {{-- رسانه کارت --}}
                     <div class="relative h-40 w-full overflow-hidden bg-surface-2 dark:bg-night-3">
                         @if ($thumbnail)
@@ -1726,10 +1755,19 @@
                     // فاز ۶۶/۶۷ — تشخیص رایگان + جزئیات HTML + تصویر شاخص thumbnail_url
                     $tIsFree   = ! empty($tDetail['is_free']) || $tPrice === 0;
                     $tLongDesc = $tDetail['long_description'] ?? $tDetail['description'] ?? $tDetail['content'] ?? null;
-                    $tCover    = $tDetail['thumbnail_url'] ?? $tDetail['thumbnail'] ?? $tDetail['cover'] ?? $tDetail['preview_image'] ?? $tDetail['image'] ?? null;
+                    // فاز ۶۹ — گاردهای اسکالر (لایهٔ دوم دفاع؛ نرمال‌سازی اصلی در openTemplateDetail است):
+                    // API واقعی برخی فیلدها را آبجکت می‌دهد → htmlspecialchars crash
+                    $tLongDesc = is_string($tLongDesc) && trim($tLongDesc) !== '' ? $tLongDesc : null;
+                    $tShortRaw = $tDetail['short_description'] ?? null;
+                    $tShortDesc = is_string($tShortRaw) && trim($tShortRaw) !== '' ? $tShortRaw : null;
+                    $tCoverRaw = $tDetail['thumbnail_url'] ?? $tDetail['thumbnail'] ?? $tDetail['cover'] ?? $tDetail['preview_image'] ?? $tDetail['image'] ?? null;
+                    $tCover    = is_scalar($tCoverRaw) && trim((string) $tCoverRaw) !== '' ? (string) $tCoverRaw : null;
+                    $tName     = is_scalar($tDetail['name'] ?? null) && trim((string) $tDetail['name']) !== '' ? (string) $tDetail['name'] : '';
+                    $tAuthor   = is_scalar($tDetail['author'] ?? null) ? (string) $tDetail['author'] : '';
+                    $tCategory = is_scalar($tDetail['category'] ?? null) ? (string) $tDetail['category'] : '';
                     $tVersions = $tDetail['active_versions'] ?? [];
                     $tInstalled= $tDetail['installed'] ?? null;
-                    // فاز ۶۷ — گالری: هر فیلدی که API بدهد (رشته یا آرایه با url/path)
+                    // فاز ۶۷ — گالری: نرمال‌شده در trait (لیست URL) + fallback نگاشت داخل ویو
                     $tGallery  = [];
                     foreach (['gallery', 'images', 'screenshots', 'preview_images'] as $tGalleryKey) {
                         if (! empty($tDetail[$tGalleryKey]) && is_array($tDetail[$tGalleryKey])) {
@@ -1743,10 +1781,10 @@
                 {{-- ---- هیروی تصویری ---- --}}
                 <div class="relative h-44 shrink-0 overflow-hidden sm:h-52" wire:key="tpl-hero">
                     @if ($tCover)
-                        <img src="{{ $tCover }}" alt="پیش‌نمایش {{ $tDetail['name'] ?? '' }}" class="size-full object-cover">
+                        <img src="{{ $tCover }}" alt="پیش‌نمایش {{ $tName }}" class="size-full object-cover">
                     @else
                         <div class="flex size-full items-center justify-center bg-gradient-to-br from-brand-100 via-teal-50 to-amber-50 dark:from-night-3 dark:via-night-2 dark:to-night-3" aria-hidden="true">
-                            <span class="text-5xl font-black text-brand-600/70 dark:text-brand-400/70">{{ mb_substr($tDetail['name'] ?? 'ق', 0, 1) }}</span>
+                            <span class="text-5xl font-black text-brand-600/70 dark:text-brand-400/70">{{ mb_substr($tName !== '' ? $tName : 'ق', 0, 1) }}</span>
                         </div>
                     @endif
                     <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-slate-950/5" aria-hidden="true"></div>
@@ -1772,16 +1810,16 @@
 
                     {{-- نام + مشخصات --}}
                     <div class="absolute inset-x-0 bottom-0 p-4 sm:p-5">
-                        <h3 class="truncate text-lg font-black text-white drop-shadow sm:text-xl">{{ $tDetail['name'] ?? '' }}</h3>
+                        <h3 class="truncate text-lg font-black text-white drop-shadow sm:text-xl">{{ $tName }}</h3>
                         <div class="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-white/90">
                             @if ($tDetail['latestVersion'] ?? null)
                                 <span class="rounded-md bg-white/15 px-1.5 py-0.5 font-mono font-bold backdrop-blur" dir="ltr">v{{ $tDetail['latestVersion'] }}</span>
                             @endif
-                            @if (!empty($tDetail['author']))
-                                <span class="flex items-center gap-1"><x-admin-panel::icon name="user" class="size-3" /> {{ $tDetail['author'] }}</span>
+                            @if ($tAuthor !== '')
+                                <span class="flex items-center gap-1"><x-admin-panel::icon name="user" class="size-3" /> {{ $tAuthor }}</span>
                             @endif
-                            @if (!empty($tDetail['category']))
-                                <span class="flex items-center gap-1"><x-admin-panel::icon name="tag" class="size-3" /> {{ $tDetail['category'] }}</span>
+                            @if ($tCategory !== '')
+                                <span class="flex items-center gap-1"><x-admin-panel::icon name="tag" class="size-3" /> {{ $tCategory }}</span>
                             @endif
                             @if (!empty($tDetail['downloads']) && is_numeric($tDetail['downloads']))
                                 <span class="flex items-center gap-1"><x-admin-panel::icon name="download" class="size-3" /> <span class="fa-digits">{{ number_format((int) $tDetail['downloads']) }}</span> دانلود</span>
@@ -1796,9 +1834,9 @@
                 {{-- ---- بدنه ---- --}}
                 <div class="flex-1 space-y-5 overflow-y-auto p-5">
                     {{-- معرفی کوتاه (HTML پاک‌سازی‌شده) --}}
-                    @if (!empty($tDetail['short_description']))
+                    @if ($tShortDesc !== null)
                         <div class="ap-rich text-[13px] leading-6 text-ink-2 dark:text-night-ink-2">
-                            {!! sanitize_package_html($tDetail['short_description']) !!}
+                            {!! sanitize_package_html($tShortDesc) !!}
                         </div>
                     @endif
 
@@ -1946,7 +1984,7 @@
                             <div class="space-y-1.5">
                                 @foreach (array_slice($tVersions, 0, 5) as $tVer)
                                     <div class="flex items-center justify-between gap-2 rounded-lg border border-line bg-surface-2 px-3 py-2 text-[11px] dark:border-night-line dark:bg-night-3/60">
-                                        <span class="font-mono font-bold" dir="ltr">v{{ $tVer['version'] ?? '?' }}</span>
+                                        <span class="font-mono font-bold" dir="ltr">v{{ is_scalar($tVer['version'] ?? null) ? $tVer['version'] : '?' }}</span>
                                         @if (!empty($tVer['file_size']) && is_numeric($tVer['file_size']))
                                             <span class="text-ink-3 dark:text-night-ink-2">{{ number_format((int) $tVer['file_size'] / 1048576, 1) }} مگابایت</span>
                                         @endif

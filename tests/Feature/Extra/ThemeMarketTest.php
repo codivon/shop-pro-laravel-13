@@ -843,6 +843,112 @@ class ThemeMarketTest extends TestCase
     }
 
     /* =====================================================================
+     *  فاز ۶۹ — نرمال‌سازی فیلدهای آبجکتی API + cursor-pointer + لودینگ کارت
+     *  ===================================================================== */
+
+    #[Test]
+    public function template_detail_modal_coerces_object_fields_to_strings(): void
+    {
+        $this->actingCreator();
+
+        // خطای لایو کاربر: «htmlspecialchars(): Argument #1 ($string) must be of
+        // type string, array given» — فیلدهایی مثل author/category/تصویر آبجکت‌اند
+        $this->fakeHttp([
+            '*/api/v1/templates/moonlight' => Http::response([
+                'data' => [
+                    'slug'          => 'moonlight',
+                    'name'          => 'قالب ماه‌تاب',
+                    'price'         => 980000,
+                    'author'        => ['id' => 3, 'name' => 'استودیو قالب'],
+                    'category'      => ['id' => 7, 'title' => 'فروشگاهی'],
+                    'thumbnail_url' => ['url' => 'https://cdn.example/cover.png'],
+                    'description'   => ['html' => '<h2>ویژگی‌های قالب</h2>'],
+                ],
+            ]),
+        ]);
+
+        Livewire::test(PackageIndex::class)
+            ->call('openTemplateDetail', 'moonlight')
+            // author: {name} → «استودیو قالب» + category: {title} → «فروشگاهی»
+            ->assertSee('استودیو قالب', false)
+            ->assertSee('فروشگاهی', false)
+            // description: {html} → رندر خام HTML
+            ->assertSee('<h2>ویژگی‌های قالب</h2>', false)
+            // thumbnail_url: {url} → src تصویر شاخص
+            ->assertSee('src="https://cdn.example/cover.png"', false);
+    }
+
+    #[Test]
+    public function template_detail_modal_normalizes_paragraph_arrays_and_object_gallery(): void
+    {
+        $this->actingCreator();
+
+        $this->fakeHttp([
+            '*/api/v1/templates/moonlight' => Http::response([
+                'data' => [
+                    'slug'              => 'moonlight',
+                    'name'              => 'قالب ماه‌تاب',
+                    'price'             => 980000,
+                    'short_description' => ['<p>معرفی کوتاه</p>'],
+                    'description'       => ['<p>پاراگراف اول</p>', '<p>پاراگراف دوم</p>'],
+                    'gallery'           => [
+                        ['url' => 'https://cdn.example/shot-1.png'],
+                        ['path' => 'https://cdn.example/shot-2.png'],
+                        'https://cdn.example/shot-3.png',
+                    ],
+                ],
+            ]),
+        ]);
+
+        Livewire::test(PackageIndex::class)
+            ->call('openTemplateDetail', 'moonlight')
+            ->assertSee('معرفی کوتاه', false)
+            // آرایهٔ پاراگراف‌ها → پیوست و رندر HTML خام
+            ->assertSee('<p>پاراگراف اول</p>', false)
+            ->assertSee('<p>پاراگراف دوم</p>', false)
+            // گالری از سه شکل آیتم (آبجکت url / آبجکت path / رشته)
+            ->assertSee('گالری پیش‌نمایش')
+            ->assertSee('https://cdn.example/shot-1.png', false)
+            ->assertSee('https://cdn.example/shot-2.png', false)
+            ->assertSee('https://cdn.example/shot-3.png', false);
+    }
+
+    #[Test]
+    public function bazaar_cards_show_pointer_and_per_card_loading_spinner(): void
+    {
+        $this->actingCreator();
+
+        $this->fakeHttp([
+            '*/api/v1/templates*' => Http::response([
+                'data' => [
+                    ['id' => 5, 'name' => 'قالب ماه‌تاب', 'slug' => 'moonlight', 'thumbnail_url' => 'https://cdn.example/card.png'],
+                ],
+                'meta' => ['current_page' => 1, 'last_page' => 1, 'total' => 1],
+            ]),
+            '*/api/v1/packages*' => Http::response([
+                'data' => [
+                    ['slug' => 'pkg-a', 'name' => 'پکیج الف', 'is_free' => true],
+                ],
+                'meta' => ['current_page' => 1, 'last_page' => 1, 'total' => 1],
+            ]),
+        ]);
+
+        // کارت قالب: cursor-pointer + اسپینر لودینگ روی خود کارت تا کامل شدن مودال
+        Livewire::withQueryParams(['type' => 'template'])
+            ->test(PackageIndex::class)
+            ->assertOk()
+            ->assertSee('cursor-pointer', false)
+            ->assertSee('wire:target="openTemplateDetail(\'moonlight\')"', false);
+
+        // کارت پکیج: همان اسپینر برای openDetail
+        Livewire::withQueryParams(['type' => 'package'])
+            ->test(PackageIndex::class)
+            ->assertOk()
+            ->assertSee('cursor-pointer', false)
+            ->assertSee('wire:target="openDetail(\'pkg-a\')"', false);
+    }
+
+    /* =====================================================================
      *  فعال‌سازی و حذف
      * ===================================================================== */
 

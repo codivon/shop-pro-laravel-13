@@ -2402,3 +2402,41 @@ A=۴۹ اسکلت ✓ | B=۵۰ تکمیل ویجت‌های خانه ✓ | C=۵�
 - **برگشت به WeblakShop** (جایی که کاربر خطای children می‌گرفت): بدون هیچ خطا → ۲۰۰ + دارایی‌ها ✓. پاکسازی کامل (پوشه دمو، ادمین تست، captcha→on، CURRENT_THEME→WeblakShop، ۱۷ ردیف ویجت قدیمی Saniar حذف).
 
 **کامیت:** تم → master/theme-saniar (تغییرنام + ویجت‌ها + seed + helpers guards) | میزبان (سرویس گارد + ۳ ادغام + loadTheme warning + ۲ تست + مقاوم‌سازی تست کپچا + CheckoutTest + classmap + این فایل) → docs/project-analysis | **گام بعدی پیشنهادی: استقرار روی هاست واقعی کاربر (پول + حذف پوشه دستیِ تغییرنام‌یافته + کپی themes/SaniarTheme از ریپوی تم + فعال‌سازی از پنل) و تأیید توست‌ها؛ اگر خطای children دوباره دید، لاگ laravel.log حالا هشدار گارد را با جزئیات ثبت می‌کند**
+## Phase 69 — کرش «htmlspecialchars: array given» در مودال قالب: نرمال‌سازی فیلدهای آبجکتی API + cursor-pointer + لودینگ روی کارت‌ها
+
+**تاریخ:** 2026-10-27 | **گزارش کاربر:** کلیک روی قالب در بازار → خطای `htmlspecialchars(): Argument #1 ($string) must be of type string, array given` (View: packages/index.blade.php)؛ درخواست: cursor-pointer روی کارت‌های قالب و پکیج + لودینگ روی خود کارت تا کامل شدن مودال (با همان اسپینر `ap-nav-spinner`).
+
+### ریشه‌یابی
+- پیام خطا دقیقاً `htmlspecialchars(...)` است نه `sanitize_package_html(): Argument #1 ($html)` → آرایه مستقیم به Blade `{{ }}` (یعنی `e()` → `htmlspecialchars`) رسیده؛ کاندیدها فیلدهایی هستند که مودال به‌صورت رشته echo می‌کند: **`author`/`category`** (در APIهای بازار معمولاً آبجکت: `{name}` / `{title}`)، `thumbnail_url` (`{url}`) و `name`.
+- اثبات با تست جهش: حذف نرمال‌سازی → همان خانوادهٔ خطا (`sanitize_package_html(): Argument #1 ($html) must be of type ?string, array given` برای description آرایه‌ای) بازتولید شد.
+
+### رفع‌ها
+**۱) `InteractsWithTemplates` — لایهٔ نرمال‌سازی (`normalizeTemplateDetail()` پس از `resolveTemplatePayload`):**
+- `name/slug/author/category/version` → `templateScalar()` (آبجکت با کلید name/title/label → رشته؛ وگرنه اولین رشته؛ وگرنه null).
+- `thumbnail_url/thumbnail/cover/preview_image/image` → `templateScalar()` با کلیدهای url/src/path/large/original.
+- `short_description/long_description/description/content` → `templateRichText()` (رشته | `{'html': …}` | آرایهٔ پاراگراف‌ها → پیوست با خط جدید).
+- فیلدهای عددی/بولی (`price/discount_price/exclusive_price/min_price/downloads/purchases_count/is_free/is_purchased/is_sold_exclusively`) → مقدار غیراسکالر → null (fallback ویو فعال می‌شود).
+- گالری: `templateGalleryUrls()` — ۶ فیلد ممکن (gallery/images/screenshots/preview_images/previews/media) × هر شکل آیتم (رشته | آبجکت با url/src/path/full/large/original/image) → لیست URL یکتا.
+
+**۲) blade — لایهٔ دوم دفاع (گاردهای اسکالر در `@php` مودال و کارت گرید):** `$tName/$tAuthor/$tCategory/$tCover/$tLongDesc/$tShortDesc` همه با `is_scalar/is_string` امن شدند؛ بلاک `short_description` که مستقیم `sanitize_package_html($tDetail['short_description'])` می‌خواند (حفرهٔ لاتنت جهش) حالا از متغیر گاردشده می‌خواند؛ ردیف نسخه‌ها (`v{{$tVer['version']}}`) هم گارد اسکالر گرفت.
+
+**۳) UX کارت‌ها (درخواست کاربر):**
+- کارت قالب: `relative cursor-pointer` + **اورلی لودینگ روی خود کارت** (`wire:loading.flex` + `wire:target="openTemplateDetail('slug')"` — دقیقاً همان کلیک) با اسپینر SVG الگوی `ap-nav-spinner` + متن «در حال باز کردن جزئیات…»؛ `pointer-events-none` تا فقط نمایشی باشد.
+- کارت پکیج: `relative` + همان اورلی برای `wire:target="openDetail('slug')"` (cursor-pointer از قبل داشت).
+- مزیت `wire:target` پارامتری: فقط کارتی که روی آن کلیک شده لودینگ می‌گیرد، نه کل گرید.
+
+### تست‌ها — `ThemeMarketTest.php` (۳ تست جدید؛ جمع ۳۵)
+- `template_detail_modal_coerces_object_fields_to_strings` — پاسخ API با author/category/تصویر/description آبجکتی → رندر بدون کرش + رشته‌های استخراج‌شده + HTML خام + src تصویر (کِشندهٔ خطای کاربر).
+- `template_detail_modal_normalizes_paragraph_arrays_and_object_gallery` — آرایهٔ پاراگراف‌ها (پیوست) + گالری از سه شکل آیتم (آبجکت url / آبجکت path / رشته).
+- `bazaar_cards_show_pointer_and_per_card_loading_spinner` — cursor-pointer + `wire:target` اسپینر روی کارت قالب (`openTemplateDetail('moonlight')`) و کارت پکیج (`openDetail('pkg-a')`).
+
+### تست جهش (دوجهته)
+(۱) فراخوانی `normalizeTemplateDetail` باطل → هر دو تست نرمال‌سازی قرمز (بازتولید خطای کاربر)؛ (۲) `wire:target` اورلی کارت قالب مخدوش → تست سوم قرمز. بازگردانی با replace معکوس → همه سبز.
+
+### نتیجهٔ کامل (MariaDB sandbox، دو فاز در یک دستور با start/wait DB)
+- فاز ۱ `(AdminPanelSmoke|Auth|Cart|Catalog|Checkout|Extra)`: **۱۴۷ ✓ (۴۲۶ اظهار)**
+- فاز ۲ `(Order|Payment|Performance|Scale|Security)|Unit`: **۱۵۸ ✓ / ۳ skipped (۴۹۰ اظهار)**
+- جمع: **۳۰۵ تست سبز** — ThemeMarketTest ۳۵ ✓
+- نکتهٔ محیطی: اجرای دوم با دو نمونهٔ mariadbd روی یک datadir تداخل کرد (۹۱ شکست کاذب) → pkill + راه‌اندازی تمیز → دقیقاً همان اعداد انتظار. تست دو فازی فقط با «pkill قبلی + start/wait + هر دو فاز در یک دستور» معتبر است.
+
+**کامیت:** میزبان (تریت + blade + ۳ تست + این فایل) → docs/project-analysis | **گام بعدی پیشنهادی: اگر روی لایو باز فیلدی به شکل غیرمنتظره آمد، یک نمونهٔ پاسخ واقعی از `laravel.log` («Template detail payload unusable») یا لاگ شبکه مرورگر بفرستید تا نگاشت دقیقِ همان فیلد اضافه شود.**

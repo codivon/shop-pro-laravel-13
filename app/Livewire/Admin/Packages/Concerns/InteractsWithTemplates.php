@@ -186,6 +186,137 @@ trait InteractsWithTemplates
         return null;
     }
 
+    /* ---------------- نرمال‌سازی فیلدها (فاز ۶۹) ---------------- */
+
+    /**
+     * فاز ۶۹ — خطای لایو کاربر: «htmlspecialchars(): Argument #1 ($string) must
+     * be of type string, array given». API واقعی برخی فیلدها را آبجکت/آرایه می‌دهد
+     * (مثلاً author: {name}, category: {title}, thumbnail_url: {url} یا description
+     * به شکل آرایهٔ پاراگراف‌ها) در حالی که ویو آن‌ها را رشته رندر می‌کند.
+     * همهٔ فیلدهای مصرفی مودال اینجا به شکل امن نرمال می‌شوند تا رندر هرگز نترکد.
+     */
+    protected function normalizeTemplateDetail(array $template): array
+    {
+        // متن‌های سادهٔ نمایشی — آبجکت‌ها با کلید نام/عنوان به رشته تبدیل می‌شوند
+        foreach (['name', 'slug', 'author', 'category', 'version'] as $key) {
+            if (array_key_exists($key, $template)) {
+                $template[$key] = $this->templateScalar($template[$key], ['name', 'title', 'label']);
+            }
+        }
+
+        // تصویر شاخص و فیلدهای تصویری — رشته | {url|src|path|...}
+        foreach (['thumbnail_url', 'thumbnail', 'cover', 'preview_image', 'image'] as $key) {
+            if (array_key_exists($key, $template)) {
+                $template[$key] = $this->templateScalar($template[$key], ['url', 'src', 'path', 'large', 'original']);
+            }
+        }
+
+        // متن‌های HTML — رشته | {'html': ...} | آرایهٔ پاراگراف‌ها
+        foreach (['short_description', 'long_description', 'description', 'content'] as $key) {
+            if (array_key_exists($key, $template)) {
+                $template[$key] = $this->templateRichText($template[$key]);
+            }
+        }
+
+        // فیلدهای عددی/بولی — مقدار غیراسکالر → null تا ویو fallback خودش را بگیرد
+        foreach (['price', 'discount_price', 'exclusive_price', 'min_price', 'downloads', 'purchases_count', 'is_free', 'is_purchased', 'is_sold_exclusively'] as $key) {
+            if (array_key_exists($key, $template) && ! is_scalar($template[$key])) {
+                $template[$key] = null;
+            }
+        }
+
+        // گالری — هر فیلد ممکن + هر شکل آیتم → لیست URL رشته‌ای
+        $template['gallery'] = $this->templateGalleryUrls($template);
+
+        return $template;
+    }
+
+    /** تبدیل امن هر مقدار به رشتهٔ نمایشی (آبجکت با کلید شناخته‌شده یا اولین رشته) */
+    protected function templateScalar(mixed $value, array $keys = ['name', 'title', 'label']): ?string
+    {
+        if ($value === null || (is_array($value) && $value === [])) {
+            return null;
+        }
+
+        if (is_scalar($value)) {
+            $v = trim((string) $value);
+
+            return $v === '' ? null : $v;
+        }
+
+        if (is_array($value)) {
+            foreach ($keys as $key) {
+                if (isset($value[$key]) && is_string($value[$key]) && trim($value[$key]) !== '') {
+                    return trim($value[$key]);
+                }
+            }
+
+            foreach ($value as $item) {
+                if (is_string($item) && trim($item) !== '') {
+                    return trim($item);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /** تبدیل امن متن HTML — رشته | {'html': ...} | آرایهٔ پاراگراف‌ها */
+    protected function templateRichText(mixed $value): ?string
+    {
+        if (is_string($value)) {
+            return $value !== '' ? $value : null;
+        }
+
+        if (is_array($value)) {
+            foreach (['html', 'content', 'body', 'text', 'description', 'long_description', 'short_description'] as $key) {
+                if (isset($value[$key]) && is_string($value[$key]) && trim($value[$key]) !== '') {
+                    return $value[$key];
+                }
+            }
+
+            $strings = array_values(array_filter($value, 'is_string'));
+
+            if ($strings !== []) {
+                return implode("\n", $strings);
+            }
+        }
+
+        return null;
+    }
+
+    /** گالری — هر فیلد ممکن + هر شکل آیتم (رشته | {url|src|path|...}) → لیست URL */
+    protected function templateGalleryUrls(array $template): array
+    {
+        $urls = [];
+
+        foreach (['gallery', 'images', 'screenshots', 'preview_images', 'previews', 'media'] as $key) {
+            $value = $template[$key] ?? null;
+
+            if (empty($value)) {
+                continue;
+            }
+
+            foreach ((array) $value as $item) {
+                if (is_string($item) && trim($item) !== '') {
+                    $urls[] = trim($item);
+                } elseif (is_array($item)) {
+                    $found = $this->templateScalar($item, ['url', 'src', 'path', 'full', 'large', 'original', 'image']);
+
+                    if ($found !== null) {
+                        $urls[] = $found;
+                    }
+                }
+            }
+
+            if ($urls !== []) {
+                break;
+            }
+        }
+
+        return array_values(array_unique($urls));
+    }
+
     public function openTemplateDetail(string $slug): void
     {
         auth('adminPanel')->user()?->can('packages.index') ?: abort(403);
@@ -224,6 +355,9 @@ trait InteractsWithTemplates
 
                 return;
             }
+
+            // فاز ۶۹ — نرمال‌سازی فیلدها (author/category/تصاویر/متن‌ها ممکن است آبجکت باشند)
+            $template = $this->normalizeTemplateDetail($template);
 
             // وضعیت نصب محلی (فقط روی آرایهٔ معتبر — بدون auto-vivification)
             $installed = InstalledTheme::where('slug', $slug)->first();
