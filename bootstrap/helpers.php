@@ -1555,8 +1555,14 @@ function saveFieldValues(array $filds, string $belongsTo, int $relatedId)
 
 function uploadOptimizedImage($file, $storagePath, $postId = null, $options = [])
 {
-    // مقداردهی اولیه ImageManager
-    $manager = new ImageManager(Driver::class);
+    // فاز ۷۰ — مقداردهی اولیهٔ ImageManager
+    // نسخهٔ نهایی v3: سازنده، درایورِ آبجکت می‌گیرد (هرگز Driver::class به‌صورت رشته نفرست — TypeError می‌دهد).
+    // روی هاست‌هایی که vendor قدیمی‌تر است (v3 آلفا با سازندهٔ آرایه‌ای)، به‌صورت امن fallback می‌کنیم.
+    try {
+        $manager = new ImageManager(new Driver());
+    } catch (\Throwable) {
+        $manager = new ImageManager(['driver' => new Driver()]);
+    }
 
     // مقداردهی تنظیمات پیش‌فرض (اگر مقدار دستی ارسال نشد)
     $defaultOptions = [

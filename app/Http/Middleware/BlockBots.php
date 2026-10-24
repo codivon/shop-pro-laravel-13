@@ -23,6 +23,13 @@ class BlockBots
         $ip = $request->ip();
 
         if ($ip && BotTrap::isBlocked($ip)) {
+            // فاز ۷۰ — مدیرِ واردشدهٔ پنل هرگز قفل نمی‌شود
+            // (سناریوی قفل‌شدن: IP اشتراکی CGNAT یا پرشدن تله توسط خودِ مرورگر مدیر)
+            // امنیت: مهاجمِ بیرون‌ایستاده نه سشن ادمین دارد نه با این bypass می‌تواند وارد شود.
+            if (auth('adminPanel')->check()) {
+                return $next($request);
+            }
+
             // پاسخ استاندارد 403 — هیچ اطلاعاتی فاش نمی‌شود
             return response()->make('Forbidden', 403);
         }

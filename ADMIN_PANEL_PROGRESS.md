@@ -2440,3 +2440,52 @@ A=۴۹ اسکلت ✓ | B=۵۰ تکمیل ویجت‌های خانه ✓ | C=۵�
 - نکتهٔ محیطی: اجرای دوم با دو نمونهٔ mariadbd روی یک datadir تداخل کرد (۹۱ شکست کاذب) → pkill + راه‌اندازی تمیز → دقیقاً همان اعداد انتظار. تست دو فازی فقط با «pkill قبلی + start/wait + هر دو فاز در یک دستور» معتبر است.
 
 **کامیت:** میزبان (تریت + blade + ۳ تست + این فایل) → docs/project-analysis | **گام بعدی پیشنهادی: اگر روی لایو باز فیلدی به شکل غیرمنتظره آمد، یک نمونهٔ پاسخ واقعی از `laravel.log` («Template detail payload unusable») یا لاگ شبکه مرورگر بفرستید تا نگاشت دقیقِ همان فیلد اضافه شود.**
+
+---
+
+## Phase 70 — قفل‌شدن Forbidden سراسری (تلهٔ ربات) + کرش Intervention هنگام ذخیرهٔ محصول + مودال قالب زده‌بیرون از صفحه + به‌هم‌ریختگی فایل‌منیجر
+
+### گزارش کاربر (۴ مشکل هم‌زمان)
+1. «کل سایت Forbidden می‌دهد — هر آدرسی» (هم‌زمان با کار سشن موازی روی themes)
+2. افزودن محصول (درون‌ریزی دیجی‌کالا) هنگام ذخیره: `Intervention\Image\ImageManager::__construct(): Argument #1 ($config) must be of type array, string given — bootstrap/helpers.php on line 1559`
+3. مودال جزئیات قالب بازار «بهم‌ریخته و از بالا/پایین صفحه زده بیرون»
+4. admin/file-manager: پیش‌نمایش تصاویر نمی‌آید + مودال/گزینه‌های آپلود کاملاً به‌هم‌ریخته (اسکرین‌شات)
+
+### ۱) Forbidden سراسری — ریشه: تلهٔ ربات (BotTrap) و قفل‌شدن خودی
+مسیر واقعی رویداد: `BlockBots` (میان‌افزار سراسری) هر IPِ ثبت‌شده در `bot_traps` را از **کل سایت** با متن سادهٔ `Forbidden` و 403 جواب می‌دهد — دقیقاً همان چیزی که کاربر می‌دید. IP مدیر (بدون هیچ تخلفی) به یکی از سه شکل گرفتار شده بود: IP اشتراکی CGNAT اپراتور (ربات دیگرِ همان IP به تله مثل `/wp-admin` خورده)، پرشدن هانی‌پات فرم توسط autofill مرورگر خودِ کاربر، یا ضربهٔ اسکنر از یک IP مشترک. مشکل مهندسی: مسدودی **همیشگی** بود و هیچ راه‌فرار ادمینی نداشت (حتی `/admin` هم 403 می‌داد).
+
+رفع چهارلایه:
+- **انقضای خودکار ۲۴ ساعته** — `BotTrap::isBlocked` فقط IPهایی را می‌بندد که در ۲۴ ساعت گذشته تله خورده‌اند (`BLOCK_TTL_HOURS=24`)؛ ربات واقعی دوباره تله می‌خورد و شمارنده تازه می‌شود — امنیت حفظ، قفل ابدی منتفی.
+- **بای‌پَس مدیر واردشده** — `BlockBots` برای `auth('adminPanel')->check()` همیشه پاس می‌دهد (مهاجم بیرونی نه سشن دارد نه با این bypass چیزی می‌گیرد).
+- **عدم تله‌گذاری خودی** — `BotDetector::trap` برای کاربر/مدیرِ واردشده هیچ‌وقت رکورد نمی‌سازد (autofill دیگر نمی‌تواند مدیر را قفل کند).
+- **فرمان اضطراری SSH** — `php artisan security:unblock` با `--list` / `ip` / `--all` + پاک‌سازی فوری کش (بدون انتظار ۱۰ دقیقه‌ای TTL کش)؛ رفع قفل از phpMyAdmin هم ممکن است (`TRUNCATE bot_traps;`) — برای سرور لایو کاربر این راه فرار فوری است.
+
+### ۲) کرش ذخیرهٔ محصول (درون‌ریزی دیجی‌کالا) — ریشه: `new ImageManager(Driver::class)`
+`uploadOptimizedImage` نام کلاس درایور را به‌صورت «رشته» به سازنده می‌داد. روی vendor سالم v3.11 سازنده `string|DriverInterface` می‌پذیرد، ولی روی هاست کاربر vendor قدیمی‌تر است (سازندهٔ `array $config` — همان پیام خطا) و TypeError می‌دهد. رفع: `new ImageManager(new Driver())` + fallback امن `new ImageManager(['driver' => new Driver()])` برای سازنده‌های آرایه‌ایِ قدیمی‌تر.
+⚠️ **اقدام لازم روی سرور لایو:** vendor با `composer.lock` ناهم‌خوان است — بعد از `git pull` یک‌بار `composer install` (یا `composer update intervention/image`) اجرا شود؛ همین ناهم‌خوانی ریشهٔ «پیش‌نمایش فایل‌منیجر» هم بود (endpointهای `thumbnails/preview` آن با `Intervention\Image\Laravel\Facades\Image::read()` کار می‌کنند و با vendor قدیمی 500 می‌دهند).
+
+### ۳) مودال جزئیات قالب زده‌بیرون از صفحه — ریشه: CSS کامپایلِ کهنه
+ساختار مودال از فاز ۶۷ درست بود (`fixed inset-0` + `max-h-[93vh]` + بدنهٔ `overflow-y-auto`) ولی آخرین build یعنی `admin-DcHdNrUP.css` کلاس‌های جدید (`max-h-[93vh]`، `min-h-[320px]`، `h-44`، …) را نداشت → پنل بدون سقف ارتفاع، از بالا و پایین بیرون می‌زد. رفع: `npm run build:admin` دوباره اجرا شد → `admin-CluSKFvB.css` با همهٔ کلاس‌ها + سقف مودال برای هم‌خوانی با بقیه به `max-h-[90vh]` تغییر کرد و در CSS جدید تضمین‌شده (تست `compiled_admin_css_contains_template_modal_constraints`).
+
+### ۴) فایل‌منیجر (admin/file-manager) — دو ریشه
+- **به‌هم‌ریختگی آپلود/گزینه‌ها:** UI فایل‌منیجر alexusmai با **Bootstrap 4** نوشته شده ولی `vendor/file-manager/css/bootstrap.min.css` به v5.3.2 رفته بود (کلاس‌های `custom-file`، مودال v4 و… در v5 حذف شده‌اند) → مودال آپلود به‌صورت بلاک بازِ بی‌استایل رندر می‌شد (دقیقاً اسکرین‌شات کاربر). رفع: bootstrap به **v4.6.2** برگشت (bootstrap-rtl.css هم که از قبل مخصوص v4 بود حالا سازگار است).
+- **پیش‌نمایش تصاویر:** همان مشکل vendor (بند ۲) — endpoint `thumbnails`/`preview` با Intervention v3 کار می‌کند؛ `composer install` روی سرور حلش می‌کند.
+- **CDNهای فیلترشده:** `<link>`های `use.fontawesome.com` و `stackpath.bootstrapcdn.com` (در ایران فیلتر/کند) در `file-manager-iframe` و `ckeditor` به نسخهٔ لوکال `fontawesome.min.css` + `bootstrap.min.css` منتقل شدند (الگوی فاز ۱۶ در fmButton).
+
+### تست‌ها (+۱۱: ۲۸۹ → ۳۰۰ + ۵ assets/UI = جمع ران ۳۰۵)
+- `UploadOptimizedImageTest` (+۲): ذخیرهٔ موفق webp/png از فایل آپلودی و از مسیر (مسیر دیجی‌کالا) با کدِ رفع‌شده.
+- `FileManagerViewTest` (+۵): دارایی‌های صرفاً لوکال iframe/ckeditor، سازگاری Bootstrap 4.6.2 (کلاس‌های `custom-file`/`input-group-prepend`)، فونت‌های FA لوکال، و وجود کلاس‌های قید مودال در CSS کامپایل admin.
+- `PenetrationTest` (+۴): انقضای ۲۴ ساعته مسدودی (۲۳ ساعت هنوز مسدود/۲۵ ساعت آزاد)، بای‌پَس مدیر واردشده، فرمان `security:unblock` (لیست/IP/همه)، عدم تله‌گذاری کاربرِ واردشده.
+
+### تست جهش (دوجهته، هر دو قرمز شدند و بازگردانی شدند)
+- حذف بای‌پَس BlockBots → `logged_in_admin_never_gets_blocked` قرمز (بازتولید Forbidden کاربر) ✓
+- حذف شرط TTL از `BotTrap::isBlocked` → `bot_trap_block_auto_expires` قرمز ✓
+- (کرش Intervention روی vendor سالم سندباکس قابل بازتولید نبود — سازندهٔ v3.11 رشته را می‌پذیرد؛ همان ناهم‌خوانی vendor سرور کاربر؛ تست‌های آپلودکلِ مسیر را پوشش می‌دهند.)
+
+### نتیجهٔ کامل (MariaDB sandbox)
+- فاز ۱ `(AdminPanelSmoke|Auth|Cart|Catalog|Checkout|Extra)`: **۱۵۵ ✓ / ۱ skip (۴۶۹ اظهار)**
+- فاز ۲ `(Order|Payment|Performance|Scale|Security)`: **۱۳۵ ✓** + `Unit`: **۱۵ ✓ / ۳ skip**
+- جمع: **۳۰۵ تست سبز** — PenetrationTest ۲۴ ✓، ThemeMarketTest ۳۲ ✓
+- ⚠️ نکتهٔ محیطی جدید: در فاز Performance/Scale با buffer pool پیش‌فرض، mariadbd حدود ۲.۲GB مصرف می‌کند و OOM-killer آن را می‌کشد (۹۵ شکست کاذب با `Connection refused`) → اجرای درست: `--innodb-buffer-pool-size=256M --performance-schema=OFF` + تقسیم فاز ۲ به سه دسته. این خط در سندباکس‌های کم‌حافظه الزامی است.
+
+**کامیت:** helpers + BlockBots/BotTrap/BotDetector + SecurityUnblock + bootstrap 4.6.2 + bladeهای فایل‌منیجر + blade مودال (90vh) + CSS کامپایل admin (rebuild) + ۱۱ تست + این فایل → docs/project-analysis

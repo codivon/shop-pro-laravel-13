@@ -9,9 +9,9 @@
 
     <title>{{ config('app.name', 'File Manager') }}</title>
 
-    <!-- Styles -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.1/css/all.css">
+    <!-- Styles — فاز ۷۰: دارایی‌ها لوکال (CDN در ایران فیلتر است) -->
+    <link rel="stylesheet" href="{{ asset('vendor/file-manager/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/file-manager/css/fontawesome.min.css') }}">
     <link href="{{ asset('vendor/file-manager/css/file-manager.css') }}" rel="stylesheet">
 </head>
 <body>

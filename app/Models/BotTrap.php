@@ -25,6 +25,14 @@ class BotTrap extends Model
     /** کلید کش لیست IP های مسدودشده */
     public const CACHE_KEY = 'security:blocked_bot_ips';
 
+    /**
+     * فاز ۷۰ — سقف مسدودی خودکار (ساعت‌ها)
+     * مسدودی پس از این مدت خودش می‌بَرد تا مدیرِ فروشگاه هرگز برای همیشه قفل نشود
+     * (سناریوی واقعی: IP اشتراکی CGNAT isp یا پرشدن هانی‌پات توسط مرورگر خود کاربر).
+     * ربات واقعی دوباره به تله می‌خورد و شمارنده تازه می‌شود — امنیت حفظ می‌شود.
+     */
+    public const BLOCK_TTL_HOURS = 24;
+
     /** حذف کش لیست IP ها (بعد از هر تغییر) */
     public static function flushCache(): void
     {
@@ -64,12 +72,15 @@ class BotTrap extends Model
         }
     }
 
-    /** آیا این IP مسدود است؟ (با کش — بدون کوئری اضافه در هر درخواست) */
+    /** آیا این IP مسدود است؟ (با کش — بدون کوئری اضافه در هر درخواست؛ سقف ۲۴ ساعت — فاز ۷۰) */
     public static function isBlocked(string $ip): bool
     {
         $blocked = cache()->remember(self::CACHE_KEY, now()->addMinutes(10), function () {
             try {
-                return static::query()->pluck('ip_address')->all();
+                return static::query()
+                    ->where('last_hit_at', '>=', now()->subHours(static::BLOCK_TTL_HOURS))
+                    ->pluck('ip_address')
+                    ->all();
             } catch (\Throwable $e) {
                 return [];
             }

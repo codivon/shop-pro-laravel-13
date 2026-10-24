@@ -81,6 +81,100 @@ class PenetrationTest extends TestCase
     }
 
     // =====================================================================
+    //  ۱-ب) فاز ۷۰ — جلوگیری از قفل‌شدن خودی (گزارش کاربر: کل سایت Forbidden شد)
+    // =====================================================================
+
+    #[Test]
+    public function bot_trap_block_auto_expires_after_24_hours(): void
+    {
+        BotTrap::catch('127.0.0.1', 'Scanner/1.0', '/wp-admin');
+        $this->assertTrue(BotTrap::isBlocked('127.0.0.1'), 'ضربهٔ تازه باید مسدود باشد');
+
+        // ضربهٔ ۲۳ ساعت قبل هنوز مسدود است
+        BotTrap::query()->where('ip_address', '127.0.0.1')->update(['last_hit_at' => now()->subHours(23)]);
+        BotTrap::flushCache();
+        $this->assertTrue(BotTrap::isBlocked('127.0.0.1'), 'تا ۲۴ ساعت مسدودی باید برقرار بماند');
+
+        // ضربهٔ ۲۵ ساعت قبل = مسدودی خودکار می‌بَرد (هیچ IPای برای همیشه قفل نمی‌شود)
+        BotTrap::query()->where('ip_address', '127.0.0.1')->update(['last_hit_at' => now()->subHours(25)]);
+        BotTrap::flushCache();
+        $this->assertFalse(BotTrap::isBlocked('127.0.0.1'), 'بعد از سقف ۲۴ ساعت، IP باید خودکار آزاد شود');
+
+        $this->assertNotSame(403, $this->get('/')->status(), 'پس از انقضای مسدودی، دسترسی باید برگردد');
+    }
+
+    #[Test]
+    public function logged_in_admin_never_gets_blocked_by_bot_trap(): void
+    {
+        BotTrap::catch('127.0.0.1', 'Scanner/1.0', '/wp-admin');
+
+        // مهمانِ IPِ مسدود → Forbidden
+        $this->assertSame(403, $this->get('/')->status());
+
+        // همان IP با سشنِ مدیرِ واردشده → پنل در دسترس است (بای‌پَس عمدی — فاز ۷۰)
+        $admin = \App\Models\Admin::create([
+            'first_name' => 'تست',
+            'last_name'  => 'ربات‌گیر',
+            'username'   => 'botadmin-'.random_int(10000, 99999),
+            'email'      => 'botadmin-'.random_int(10000, 99999).'@test.ir',
+            'password'   => Hash::make('secret1234'),
+            'level'      => 'admin',
+            'status'     => 'ACTIVE',
+        ]);
+        $this->actingAs($admin, 'adminPanel');
+
+        $this->assertNotSame(403, $this->get('/')->status(), 'مدیرِ واردشده هرگز Forbidden نمی‌گیرد');
+    }
+
+    #[Test]
+    public function security_unblock_command_frees_trapped_ips(): void
+    {
+        BotTrap::catch('198.51.100.7', 'Bot/1.0', '/.env');
+        BotTrap::catch('127.0.0.1', 'Scanner/1.0', '/wp-admin');
+        $this->assertTrue(BotTrap::isBlocked('198.51.100.7'));
+        $this->assertTrue(BotTrap::isBlocked('127.0.0.1'));
+
+        // لیست
+        $this->artisan('security:unblock')->assertSuccessful();
+
+        // آزادسازی یک IP مشخص
+        $this->artisan('security:unblock', ['ip' => '198.51.100.7'])->assertSuccessful();
+        $this->assertFalse(BotTrap::isBlocked('198.51.100.7'), 'IP مشخص باید آزاد شود');
+        $this->assertTrue(BotTrap::isBlocked('127.0.0.1'), 'بقیهٔ IPها باید مسدود بمانند');
+
+        // آزادسازی همه
+        $this->artisan('security:unblock', ['--all' => true])->assertSuccessful();
+        $this->assertFalse(BotTrap::isBlocked('127.0.0.1'), 'با --all همهٔ تله‌ها پاک می‌شوند');
+        $this->assertSame(0, BotTrap::query()->count());
+    }
+
+    #[Test]
+    public function logged_in_users_are_never_trapped_by_honeypot(): void
+    {
+        // فاز ۷۰ — افزونه‌های autofill گاهی فیلد مخفی را پر می‌کنند؛ کاربر واردشده هرگز تله نمی‌شود
+        $detector = app(BotDetector::class);
+        $request = \Illuminate\Http\Request::create('/login', 'POST', [
+            'username'      => 'someone',
+            'confirm_email' => 'bot@example.com',
+        ]);
+
+        $admin = \App\Models\Admin::create([
+            'first_name' => 'تست',
+            'last_name'  => 'هانی‌پات',
+            'username'   => 'trapadmin-'.random_int(10000, 99999),
+            'email'      => 'trapadmin-'.random_int(10000, 99999).'@test.ir',
+            'password'   => Hash::make('secret1234'),
+            'level'      => 'admin',
+            'status'     => 'ACTIVE',
+        ]);
+        $this->actingAs($admin, 'adminPanel');
+
+        $detector->trap($request);
+
+        $this->assertSame(0, BotTrap::query()->where('ip_address', '127.0.0.1')->count(), 'کاربر واردشده نباید در تله بیفتد');
+    }
+
+    // =====================================================================
     //  ۲) هانی‌پات فرم‌ها
     // =====================================================================
 

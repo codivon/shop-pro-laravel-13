@@ -46,9 +46,16 @@ class BotDetector
      * ثبت ربات در تله (مسدودسازی سراسری IP)
      * فقط در موارد قطعی (فیلد تله‌ی مخفی) استفاده می‌شود؛
      * time-trap ممکن است با اینترنت کندِ کاربر واقعی اتفاق بیفتد، پس فقط رد می‌کنیم نه مسدود.
+     *
+     * فاز ۷۰ — کاربر/مدیرِ واردشده هرگز تله نمی‌شود (پیشگیری از قفل‌شدن خودی؛
+     * مرورگرها و افزونه‌های autofill گاهی فیلدهای مخفی را خودشان پر می‌کنند).
      */
     public function trap(Request $request): void
     {
+        if (auth('adminPanel')->check() || auth('web')->check()) {
+            return;
+        }
+
         BotTrap::catch(
             (string) $request->ip(),
             (string) $request->userAgent(),

@@ -10,10 +10,10 @@
 
     <title>{{ config('app.name', 'File Manager') }}</title>
 
-    <!-- Styles -->
+    <!-- Styles — فاز ۷۰: همهٔ دارایی‌ها لوکال (CDN در ایران فیلتر/کند است) + Bootstrap 4.6.2 (UI فایل‌منیجر با v5 می‌شکست) -->
     <link rel="stylesheet" href="{{ asset('vendor/file-manager/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/file-manager/css/bootstrap-rtl.css') }}">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.1/css/all.css">
+    <link rel="stylesheet" href="{{ asset('vendor/file-manager/css/fontawesome.min.css') }}">
     <link href="{{ asset('vendor/file-manager/css/file-manager.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('vendor/file-manager/css/styles.css') }}">
 </head>

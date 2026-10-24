@@ -1705,7 +1705,7 @@
          x-on:keydown.escape.window="$wire.closeTemplateDetail()" role="dialog" aria-modal="true" aria-label="جزئیات قالب">
         <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" wire:click="closeTemplateDetail" aria-hidden="true"></div>
 
-        <div class="relative flex max-h-[93vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-pop dark:border-night-line dark:bg-night-2">
+        <div class="relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-pop dark:border-night-line dark:bg-night-2">
 
             {{-- دکمهٔ بستن شناور --}}
             <button type="button" wire:click="closeTemplateDetail"
