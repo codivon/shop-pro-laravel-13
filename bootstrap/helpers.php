@@ -1550,6 +1550,327 @@ function saveFieldValues(array $filds, string $belongsTo, int $relatedId)
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+ * فاز ۷۵ — گارد یکپارچگی vendor Intervention Image
+ *
+ * خطای جدید سرور لایو هنگام ذخیرهٔ محصول:
+ *   Class Intervention\Image\EncodedImage contains 5 abstract methods and
+ *   must therefore be declared abstract or implement the remaining methods
+ *   (Intervention\Image\Interfaces\FileInterface::save, toFilePointer, size, ...)
+ *   at vendor/intervention/image/src/EncodedImage.php:9
+ *
+ * ریشه: فایل‌های vendor روی هاست از دو نسخهٔ مختلف v3 مخلوط شده‌اند —
+ * «FileInterface» جدید است و «File/EncodedImage» قدیمی؛ این خطا E_ERROR /
+ * E_COMPILE_ERROR است و با try/catch قابل شکار نیست (در لاگ، مسیر
+ * handleShutdown دیده می‌شود). یعنی هیچ try/catchی دور encode نجات نمی‌دهد.
+ *
+ * راه‌حل: پیش از بارگذاری «هر» کلاسی از Intervention، یکپارچگی فایل‌ها با
+ * تحلیل متنی (بدون autoload — چون خود autoload نقطهٔ انفجار است) بررسی
+ * می‌شود؛ اگر vendor مخلوط/معیوب بود، کل خط تصویر به پیاده‌سازی «GD خالص»
+ * می‌رود که به هیچ کلاسی از Intervention وابسته نیست — آپلود محصول روی
+ * بدترین سرور ممکن هم کار می‌کند.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+if (! function_exists('shop_vendor_php_methods')) {
+    /** استخراج نام متدهای یک فایل PHP (بدون بارگذاری کلاس) — کامنت‌ها حذف می‌شوند */
+    function shop_vendor_php_methods(string $code): array
+    {
+        $code = (string) preg_replace('/\/\*.*?\*\//s', '', $code);
+        $code = (string) preg_replace('/\/\/[^\n]*/', '', $code);
+        $code = (string) preg_replace('/(?<![:"\'])#[^\n]*/', '', $code);
+
+        if (! preg_match_all('/function\s+&?\s*(\w+)\s*\(/', $code, $m)) {
+            return [];
+        }
+
+        return $m[1];
+    }
+}
+
+if (! function_exists('shop_vendor_php_uses')) {
+    /** نقشهٔ alias های use در سربرگ فایل — برای حل نام کوتاه به FQN */
+    function shop_vendor_php_uses(string $code): array
+    {
+        $map = [];
+
+        if (preg_match_all('/^\s*use\s+([\w\\\\]+)(?:\s+as\s+(\w+))?\s*;/m', $code, $m, PREG_SET_ORDER)) {
+            foreach ($m as $hit) {
+                $fqn = trim($hit[1], '\\');
+                $pos = strrpos($fqn, '\\');
+                $alias = $hit[2] ?? ($pos === false ? $fqn : substr($fqn, $pos + 1));
+                $map[strtolower($alias)] = $fqn;
+            }
+        }
+
+        return $map;
+    }
+}
+
+if (! function_exists('shop_vendor_resolve_file')) {
+    /**
+     * فایل کلاس/ترِیت/اینترفیس را از روی نام پیدا می‌کند.
+     * ریشهٔ namespace پکیج (Intervention\Image\) همان پوشهٔ src است؛ نام‌های
+     * کوتاهِ هم-namespace هم با کاندیدهای استاندارد پکیج حل می‌شوند.
+     * خروجی null یعنی در این پکیج قابل حل نیست (مثل Stringable سراسری).
+     */
+    function shop_vendor_resolve_file(string $srcDir, string $name): ?string
+    {
+        $name = trim($name, '\\');
+
+        if ($name === '') {
+            return null;
+        }
+
+        $candidates = [];
+
+        if (str_contains($name, '\\')) {
+            $candidates[] = $name; // FQN کامل
+        } else {
+            // نام کوتاه — کاندیدهای استاندارد پکیج Intervention Image
+            $candidates[] = 'Intervention\\Image\\'.$name;
+            $candidates[] = 'Intervention\\Image\\Interfaces\\'.$name;
+            $candidates[] = 'Intervention\\Image\\Traits\\'.$name;
+            $candidates[] = 'Intervention\\Image\\Drivers\\Gd\\'.$name;
+            $candidates[] = 'Intervention\\Image\\Drivers\\Gd\\Encoders\\'.$name;
+            $candidates[] = 'Intervention\\Image\\Encoders\\'.$name;
+        }
+
+        foreach ($candidates as $candidate) {
+            $relative = (string) preg_replace('/^Intervention\\\\Image\\\\/', '', $candidate);
+            $file = $srcDir.'/'.str_replace('\\', '/', $relative).'.php';
+
+            if (is_file($file)) {
+                return $file;
+            }
+        }
+
+        return null;
+    }
+}
+
+if (! function_exists('shop_vendor_class_actual_methods')) {
+    /**
+     * جمع همهٔ متدهای «قابل ارائه» یک کلاس فقط از روی فایل‌ها:
+     * خود کلاس + بدنهٔ آن (traitها) + والد(ها) به‌صورت بازگشتی
+     */
+    function shop_vendor_class_actual_methods(string $srcDir, string $classFqn, array &$seen, int $depth = 0): array
+    {
+        $methods = [];
+
+        if ($depth > 8) {
+            return $methods;
+        }
+
+        $key = strtolower(trim($classFqn, '\\'));
+
+        if (isset($seen[$key])) {
+            return $methods;
+        }
+
+        $seen[$key] = true;
+
+        $file = shop_vendor_resolve_file($srcDir, $classFqn);
+
+        if ($file === null) {
+            return $methods; // والد/trait خارج از این پکیج (مثل Stringable) — نادیده
+        }
+
+        $code = (string) file_get_contents($file);
+        $uses = shop_vendor_php_uses($code);
+        $methods = array_merge($methods, shop_vendor_php_methods($code));
+
+        // فقط بدنهٔ کلاس/ترِیت — تا use های سربرگ فایل با trait اشتباه نشوند
+        if (preg_match('/\b(?:class|trait|interface)\s+\w+[^\{]*\{/', $code, $cm, PREG_OFFSET_CAPTURE)) {
+            $body = (string) substr($code, (int) $cm[0][1]);
+
+            if (preg_match_all('/^\s*use\s+([\w\\\\,\s]+);/m', $body, $traitHits, PREG_SET_ORDER)) {
+                foreach ($traitHits as $hit) {
+                    foreach (explode(',', $hit[1]) as $trait) {
+                        $trait = trim($trait);
+
+                        if ($trait === '' || ! preg_match('/^[\w\\\\]+$/', $trait)) {
+                            continue; // شکل‌های پیچیده (adaptation) پشتیبانی نمی‌شوند — کافی است
+                        }
+
+                        $traitFqn = trim($uses[strtolower($trait)] ?? $trait, '\\');
+                        $methods = array_merge(
+                            $methods,
+                            shop_vendor_class_actual_methods($srcDir, $traitFqn, $seen, $depth + 1)
+                        );
+                    }
+                }
+            }
+
+            if (preg_match('/\bextends\s+([\w\\\\]+)/', $cm[0][0], $pm)) {
+                $parent = trim($uses[strtolower($pm[1])] ?? $pm[1], '\\');
+                $methods = array_merge(
+                    $methods,
+                    shop_vendor_class_actual_methods($srcDir, $parent, $seen, $depth + 1)
+                );
+            }
+        }
+
+        return $methods;
+    }
+}
+
+if (! function_exists('shop_vendor_interface_required_methods')) {
+    /**
+     * جمع متدهای لازم از زنجیرهٔ اینترفیس‌ها.
+     * خروجی null یعنی اینترفیسِ Intervention قابل حل نبود → vendor معیوب است.
+     */
+    function shop_vendor_interface_required_methods(string $srcDir, string $ifaceFqn, array &$seen, int $depth = 0): ?array
+    {
+        if ($depth > 8) {
+            return [];
+        }
+
+        $key = strtolower(trim($ifaceFqn, '\\'));
+
+        if (isset($seen[$key])) {
+            return [];
+        }
+
+        $seen[$key] = true;
+
+        $file = shop_vendor_resolve_file($srcDir, $ifaceFqn);
+
+        if ($file === null) {
+            // اینترفیس بیرونی (مثل Stringable) نادیده گرفته می‌شود؛
+            // اینترفیسِ خود Intervention که پیدا نشد یعنی فایل‌ها ناقص‌اند
+            $isPackageOwned = str_starts_with(trim($ifaceFqn, '\\'), 'Intervention\\Image\\');
+
+            return $isPackageOwned ? null : [];
+        }
+
+        $code = (string) file_get_contents($file);
+        $uses = shop_vendor_php_uses($code);
+        $methods = shop_vendor_php_methods($code);
+
+        if (preg_match('/interface\s+\w+[^\{]*extends\s+([^\{]+?)\s*\{/', $code, $m)) {
+            foreach (explode(',', $m[1]) as $parent) {
+                $parent = trim($parent);
+
+                if ($parent === '') {
+                    continue;
+                }
+
+                $parentFqn = trim($uses[strtolower($parent)] ?? $parent, '\\');
+                $sub = shop_vendor_interface_required_methods($srcDir, $parentFqn, $seen, $depth + 1);
+
+                if ($sub === null) {
+                    return null;
+                }
+
+                $methods = array_merge($methods, $sub);
+            }
+        }
+
+        return $methods;
+    }
+}
+
+if (! function_exists('shop_intervention_vendor_ok')) {
+    /**
+     * فاز ۷۵ — vendor Intervention سالم است؟ (تحلیل متنی، بدون بارگذاری کلاس)
+     *
+     * نتیجه در همان درخواست کش می‌شود؛ پارامتر اختیاری برای تست‌هاست
+     * (مسیر src یک کپی دیگر — مثل vendor داخلی ماژول‌ها).
+     */
+    function shop_intervention_vendor_ok(?string $interventionSrcDir = null): bool
+    {
+        static $cached = null;
+
+        if ($cached !== null && $interventionSrcDir === null) {
+            return $cached;
+        }
+
+        $verdict = true;
+
+        try {
+            $src = $interventionSrcDir ?? base_path('vendor/intervention/image/src');
+
+            if (! is_dir($src)) {
+                $verdict = false; // پوشهٔ src اصلاً نیست — Intervention قابل اتکا نیست
+            } elseif (is_file($src.'/EncodedImage.php')) {
+                // v3 — زنجیرهٔ EncodedImage باید همهٔ متدهای اینترفیس‌ها را بدهد
+                $seenI = [];
+                $seenC = [];
+
+                $required = shop_vendor_interface_required_methods(
+                    $src,
+                    'Intervention\\Image\\Interfaces\\EncodedImageInterface',
+                    $seenI
+                );
+                $actual = shop_vendor_class_actual_methods(
+                    $src,
+                    'Intervention\\Image\\EncodedImage',
+                    $seenC
+                );
+
+                $verdict = $required !== null
+                    && $required !== []
+                    && empty(array_diff(array_unique($required), array_unique($actual)));
+            }
+            // بدون EncodedImage.php → v2 است → لایهٔ سازگار فاز ۷۳ خودش هندل می‌کند
+        } catch (Throwable) {
+            $verdict = false;
+        }
+
+        if ($interventionSrcDir === null) {
+            $cached = $verdict;
+        }
+
+        return $verdict;
+    }
+}
+
+if (! function_exists('shop_register_intervention_trap')) {
+    /**
+     * فاز ۷۵ — تلهٔ تشخیصی برای کرش Fatal مربوط به Intervention
+     *
+     * چون خطای «abstract methods» غیرقابل شکار است، در shutdown آخرین خطا
+     * بررسی می‌شود؛ اگر از Intervention بود، لاگِ شفاف با راهنمای درمان
+     * نوشته می‌شود تا دفعهٔ بعد ریشه در چند ثانیه پیدا شود.
+     */
+    function shop_register_intervention_trap(): void
+    {
+        static $registered = false;
+
+        if ($registered) {
+            return;
+        }
+
+        $registered = true;
+
+        register_shutdown_function(static function (): void {
+            $last = error_get_last();
+
+            if (! $last || ! in_array((int) $last['type'], [E_ERROR, E_COMPILE_ERROR, E_PARSE, E_CORE_ERROR], true)) {
+                return;
+            }
+
+            $message = (string) ($last['message'] ?? '');
+            $file = (string) ($last['file'] ?? '');
+
+            if (! str_contains($message, 'Intervention') && ! str_contains($file, 'intervention')) {
+                return;
+            }
+
+            try {
+                Log::error(
+                    'فاز ۷۵ — کرش Fatal در Intervention Image: «'.$message.'» @ '.$file
+                    .' — به احتمال زیاد vendor روی هاست مخلوط/معیوب است. درمان: '
+                    .'php artisan ops:intervention-doctor (خروجی --json را برای بررسی بفرستید) '
+                    .'سپس composer install + optimize:clear + ریست OPcache از پنل هاست.'
+                );
+            } catch (Throwable) {
+                // لاگ در دسترس نیست — کاری نمی‌توان کرد
+            }
+        });
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
  * فاز ۷۳ — لایهٔ سازگاری Intervention Image
  *
  * مشکل واقعی کاربر (سرور لایو): با vendor قدیمی (v3 آلفا فاقد read() و
@@ -1596,11 +1917,11 @@ if (! function_exists('shop_image_manager')) {
 
         if (class_exists(Driver::class)) {
             // v3 نهایی — سازندهٔ (string|DriverInterface)
-            $candidates[] = static fn (): object => new ImageManager(new Driver());
+            $candidates[] = static fn (): object => new ImageManager(new Driver);
 
             // v3 آلفا — سازندهٔ آرایه‌ای؛ توجه: v2 هم آرایه را می‌پذیرد ولی در
             // createDriver هنگام make() منفجر می‌شود — پروب واقعی آن را می‌گیرد
-            $candidates[] = static fn (): object => new ImageManager(['driver' => new Driver()]);
+            $candidates[] = static fn (): object => new ImageManager(['driver' => new Driver]);
         }
 
         // v2 — درایور رشته‌ای ('gd' یا 'imagick')
@@ -1613,7 +1934,7 @@ if (! function_exists('shop_image_manager')) {
         foreach ($candidates as $build) {
             try {
                 $candidate = $build();
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 continue; // این شکل سازنده با کلاسِ لودشده نمی‌سازد
             }
 
@@ -1621,7 +1942,7 @@ if (! function_exists('shop_image_manager')) {
                 shop_image_open($candidate, $probePng);
 
                 return $manager = $candidate; // پروب سبز — همین نسخه درست است
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 $constructed ??= $candidate; // ساخته می‌شود ولی decode نمی‌کند — پشتیبان بدترین حالت
             }
         }
@@ -1674,7 +1995,7 @@ if (! function_exists('shop_image_scale')) {
                     }
                 });
             }
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // تغییر اندازه اختیاری است — تصویر اصلی ذخیره می‌شود
         }
     }
@@ -1696,7 +2017,7 @@ if (! function_exists('shop_image_watermark')) {
             if (method_exists($image, 'insert')) {
                 $image->insert($watermark, $position, $offset, $offset);
             }
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // واترمارک اختیاری است — نباید آپلود را خراب کند
         }
     }
@@ -1715,8 +2036,8 @@ if (! function_exists('shop_image_encode')) {
         // انکودرهای آبجکتی — دو namespace برای پوشش v3 آلفا و نهایی
         $encoderCandidates = [
             'webp' => ['Intervention\\Image\\Encoders\\WebpEncoder', 'Intervention\\Image\\Drivers\\Gd\\Encoders\\WebpEncoder'],
-            'jpg'  => ['Intervention\\Image\\Encoders\\JpegEncoder', 'Intervention\\Image\\Drivers\\Gd\\Encoders\\JpegEncoder'],
-            'png'  => ['Intervention\\Image\\Encoders\\PngEncoder', 'Intervention\\Image\\Drivers\\Gd\\Encoders\\PngEncoder'],
+            'jpg' => ['Intervention\\Image\\Encoders\\JpegEncoder', 'Intervention\\Image\\Drivers\\Gd\\Encoders\\JpegEncoder'],
+            'png' => ['Intervention\\Image\\Encoders\\PngEncoder', 'Intervention\\Image\\Drivers\\Gd\\Encoders\\PngEncoder'],
         ];
 
         foreach ($encoderCandidates[$format] ?? [] as $encoderClass) {
@@ -1729,7 +2050,7 @@ if (! function_exists('shop_image_encode')) {
                 $encoded = $image->encode($encoder);
 
                 return [is_object($encoded) ? (string) $encoded : $encoded, $format];
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // سقوط به مسیر بعدی
             }
         }
@@ -1742,7 +2063,7 @@ if (! function_exists('shop_image_encode')) {
                 $encoded = $image->encode($try, $quality);
 
                 return [is_object($encoded) ? (string) $encoded : $encoded, $try];
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // فرمت بعدی
             }
         }
@@ -1754,11 +2075,11 @@ if (! function_exists('shop_image_encode')) {
         if (is_object($encoded) && method_exists($encoded, 'mimeType')) {
             $ext = match ($encoded->mimeType()) {
                 'image/jpeg' => 'jpg',
-                'image/png'  => 'png',
+                'image/png' => 'png',
                 'image/webp' => 'webp',
-                'image/gif'  => 'gif',
+                'image/gif' => 'gif',
                 'image/avif' => 'avif',
-                default      => $format,
+                default => $format,
             };
 
             return [$bytes, $ext];
@@ -1768,28 +2089,34 @@ if (! function_exists('shop_image_encode')) {
     }
 }
 
-function uploadOptimizedImage($file, $storagePath, $postId = null, $options = [])
-{
-    // فاز ۷۳ — ImageManager سازگار با v2 / v3 آلفا / v3 نهایی
-    $manager = shop_image_manager();
+if (! function_exists('shop_upload_image_options')) {
+    /**
+     * فاز ۷۵ — ساخت تنظیمات پیش‌فرض آپلود (مشترک بین مسیر Intervention و GD خالص)
+     */
+    function shop_upload_image_options(string $storagePath, array $options = []): array
+    {
+        return array_merge([
+            'optimize' => option('optimizeImage', true),
+            'quality' => option('optimizeImage', 80),
+            'format' => option('changePhotoFormat', 'webp'), // فرمت: webp, jpg, png
+            'watermark' => option('watermarkStatus', false),
+            'watermarkPath' => option('watermarkImage'),
+            'watermarkImagePosition' => option('watermarkImagePosition', 'bottom-right'),
+            'size' => null, // در صورت نیاز، محدودیت اندازه
+            'path' => "uploads/$storagePath/", // مسیر پیش‌فرض ذخیره
+            'field' => 'image', // نام فیلد پیش‌فرض
+        ], $options);
+    }
+}
 
-    // مقداردهی تنظیمات پیش‌فرض (اگر مقدار دستی ارسال نشد)
-    $defaultOptions = [
-        'optimize' => option('optimizeImage', true),
-        'quality' => option('optimizeImage', 80),
-        'format' => option('changePhotoFormat', 'webp'), // فرمت: webp, jpg, png
-        'watermark' => option('watermarkStatus', false),
-        'watermarkPath' => option('watermarkImage'),
-        'watermarkImagePosition' => option('watermarkImagePosition', 'bottom-right'),
-        'size' => null, // در صورت نیاز، محدودیت اندازه
-        'path' => "uploads/$storagePath/", // مسیر پیش‌فرض ذخیره
-        'field' => 'image', // نام فیلد پیش‌فرض
-    ];
+if (! function_exists('shop_delete_previous_upload')) {
+    /** فاز ۷۵ — حذف تصویر قبلی مدل (مشترک بین دو مسیر آپلود) */
+    function shop_delete_previous_upload(string $storagePath, $postId, array $options): void
+    {
+        if (! $postId) {
+            return;
+        }
 
-    // ترکیب مقدارهای پیش‌فرض با مقدارهای ورودی
-    $options = array_merge($defaultOptions, $options);
-    // بررسی و حذف تصویر قبلی (اگر `postId` مشخص شده باشد)
-    if ($postId) {
         $model = null;
         switch ($storagePath) {
             case 'posts': $model = Post::find($postId);
@@ -1821,6 +2148,7 @@ function uploadOptimizedImage($file, $storagePath, $postId = null, $options = []
             case 'options': $model = Option::where('option_name', $postId)->first();
                 break;
         }
+
         // حذف تصویر قبلی در صورتی که مدل موجود باشد و تصویر داشته باشد
         if ($model && $model->{$options['field']}) {
             $oldImagePath = str_replace('/uploads/', '', $model->{$options['field']});
@@ -1829,6 +2157,26 @@ function uploadOptimizedImage($file, $storagePath, $postId = null, $options = []
             }
         }
     }
+}
+
+function uploadOptimizedImage($file, $storagePath, $postId = null, $options = [])
+{
+    // فاز ۷۵ — تلهٔ تشخیصی برای کرش‌های Fatal مربوط به Intervention (لاگ درمان‌محور)
+    shop_register_intervention_trap();
+
+    $options = shop_upload_image_options($storagePath, $options);
+
+    // فاز ۷۵ — اگر vendor مخلوط/معیوب باشد، حتی یک کلاس هم از Intervention
+    // نباید autoload شود (خطای «abstract methods» غیرقابل شکار است) → مسیر GD خالص
+    if (! shop_intervention_vendor_ok()) {
+        return upload_optimized_image_via_gd($file, $storagePath, $postId, $options);
+    }
+
+    // حذف تصویر قبلی (اگر postId مشخص شده باشد)
+    shop_delete_previous_upload($storagePath, $postId, $options);
+
+    // فاز ۷۳ — ImageManager سازگار با v2 / v3 آلفا / v3 نهایی
+    $manager = shop_image_manager();
 
     // خواندن تصویر — فاز ۷۳: read() در v3 نهایی، make() در v3 آلفا و v2
     // فاز ۷۴ — فرمت‌هایی که درایورِ فعلی سرور باز نمی‌کند (مثل webp روی GD قدیمی،
@@ -1836,7 +2184,7 @@ function uploadOptimizedImage($file, $storagePath, $postId = null, $options = []
     // هرگز ۵۰۰ ندهد؛ نمایش تصویر مهم‌تر از بهینه‌سازی است.
     try {
         $image = shop_image_open($manager, $file->getContent());
-    } catch (\Throwable) {
+    } catch (Throwable) {
         $rawExtension = strtolower($file->getClientOriginalExtension() ?: 'bin');
         $rawPath = $options['path'].str_replace('/', '-', $storagePath).'-'.uniqid().'.'.$rawExtension;
 
@@ -1897,6 +2245,223 @@ function uploadOptimizedImageFromPath($imagePath, $storagePath, $postId = null, 
 
     // فراخوانی تابع اصلی
     return uploadOptimizedImage($tempFile, $storagePath, $postId, $options);
+}
+
+if (! function_exists('shop_gd_fallback_encode')) {
+    /**
+     * فاز ۷۵ — پردازش/انکود تصویر با GD خالص — بدون بارگذاری هیچ کلاسی از Intervention
+     *
+     * چرا: خطای «EncodedImage contains 5 abstract methods...» سرور لایو یک
+     * E_ERROR غیرقابل شکار است و در لحظهٔ autoload رخ می‌دهد؛ تنها راه نجات،
+     * نرسیدن به آن کلاس‌هاست.
+     *
+     * خروجی: [باینری, پسوند واقعی] — یا [null, پسوند اصلی] یعنی decode نشد
+     * (تماس‌گیرنده باید فایل خام را ذخیره کند — همان fail-safe فاز ۷۴)
+     */
+    function shop_gd_fallback_encode(string $binary, string $format, int $quality, ?int $maxWidth = null, ?int $maxHeight = null): array
+    {
+        $format = strtolower($format) === 'jpeg' ? 'jpg' : strtolower($format);
+
+        if (! function_exists('imagecreatefromstring')) {
+            return [null, $format]; // اصلاً GD نیست — خام ذخیره شود
+        }
+
+        $src = @imagecreatefromstring($binary);
+
+        if ($src === false) {
+            return [null, $format];
+        }
+
+        // چرخش بر اساس EXIF (بهترین تلاش — برای عکس‌های موبایلِ چرخیده)
+        try {
+            if (function_exists('exif_read_data') && function_exists('imagerotate')) {
+                $tmp = @tempnam(sys_get_temp_dir(), 'apori');
+
+                if ($tmp !== false) {
+                    @file_put_contents($tmp, $binary);
+                    $exif = @exif_read_data($tmp);
+                    @unlink($tmp);
+
+                    $orientation = (int) ($exif['Orientation'] ?? 1);
+                    $angle = match ($orientation) {
+                        3 => 180,
+                        6 => -90,
+                        8 => 90,
+                        default => 0,
+                    };
+
+                    if ($angle !== 0) {
+                        $rotated = @imagerotate($src, $angle, 0);
+
+                        if ($rotated !== false) {
+                            imagedestroy($src);
+                            $src = $rotated;
+                        }
+                    }
+                }
+            }
+        } catch (Throwable) {
+            // چرخش اختیاری است
+        }
+
+        // آلفای سالم برای png/webp
+        if (function_exists('imagepalettetotruecolor')) {
+            @imagepalettetotruecolor($src);
+        }
+
+        if (function_exists('imagealphablending') && function_exists('imagesavealpha')) {
+            @imagealphablending($src, false);
+            @imagesavealpha($src, true);
+        }
+
+        // مقیاس با حفظ نسبت — فقط کوچک‌کردن (هرگز بزرگ‌نمایی نمی‌کنیم)
+        if ($maxWidth || $maxHeight) {
+            try {
+                $w = (int) imagesx($src);
+                $h = (int) imagesy($src);
+                $scaleW = $maxWidth ? $maxWidth / max(1, $w) : PHP_FLOAT_MAX;
+                $scaleH = $maxHeight ? $maxHeight / max(1, $h) : PHP_FLOAT_MAX;
+                $scale = min($scaleW, $scaleH, 1.0);
+
+                if ($scale < 1.0) {
+                    $nw = max(1, (int) round($w * $scale));
+                    $nh = max(1, (int) round($h * $scale));
+                    $dst = false;
+
+                    if (function_exists('imagescale')) {
+                        $dst = @imagescale($src, $nw, $nh);
+                    }
+
+                    if ($dst === false && function_exists('imagecreatetruecolor') && function_exists('imagecopyresampled')) {
+                        $dst = @imagecreatetruecolor($nw, $nh);
+
+                        if ($dst !== false) {
+                            @imagealphablending($dst, false);
+                            @imagesavealpha($dst, true);
+                            @imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+                        }
+                    }
+
+                    if ($dst !== false) {
+                        imagedestroy($src);
+                        $src = $dst;
+
+                        if (function_exists('imagealphablending') && function_exists('imagesavealpha')) {
+                            @imagealphablending($src, false);
+                            @imagesavealpha($src, true);
+                        }
+                    }
+                }
+            } catch (Throwable) {
+                // مقیاس اختیاری است — ابعاد اصلی ذخیره می‌شود
+            }
+        }
+
+        // انکود — فقط با توابعی که واقعاً در بیلد GD سرور وجود دارند؛
+        // فرمت درخواستی → جایگزین‌های بعدی (webp → jpg → png)
+        $encoders = [
+            'webp' => ['imagewebp' => 'webp', 'imagejpeg' => 'jpg', 'imagepng' => 'png'],
+            'jpg' => ['imagejpeg' => 'jpg', 'imagepng' => 'png'],
+            'png' => ['imagepng' => 'png'],
+        ];
+
+        foreach ($encoders[$format] ?? ['imagepng' => 'png'] as $function => $ext) {
+            if (! function_exists($function)) {
+                continue;
+            }
+
+            $out = '';
+
+            try {
+                ob_start();
+                $ok = $function === 'imagepng'
+                    ? $function($src, null, min(9, max(0, (int) round((100 - max(1, min(100, $quality))) / 11))))
+                    : $function($src, null, max(1, min(100, $quality)));
+                $out = (string) ob_get_clean();
+
+                if (! $ok) {
+                    $out = '';
+                }
+            } catch (Throwable) {
+                @ob_end_clean();
+                $out = '';
+            }
+
+            if ($out !== '') {
+                imagedestroy($src);
+
+                return [$out, $ext];
+            }
+        }
+
+        imagedestroy($src);
+
+        return [null, $format];
+    }
+}
+
+if (! function_exists('upload_optimized_image_via_gd')) {
+    /**
+     * فاز ۷۵ — کل مسیر آپلود با GD خالص (بدون هیچ کلاسی از Intervention)
+     *
+     * رفتار و خروجی دقیقاً مثل uploadOptimizedImage است:
+     * حذف تصویر قبلی → decode (خطا = ذخیرهٔ خام) → مقیاس → انکود با سقوط فرمت
+     * → ذخیره با پسوند واقعی → بهینه‌ساز اختیاری
+     */
+    function upload_optimized_image_via_gd($file, string $storagePath, $postId = null, $options = [])
+    {
+        $options = shop_upload_image_options($storagePath, $options);
+        shop_delete_previous_upload($storagePath, $postId, $options);
+
+        $binary = (string) $file->getContent();
+        $originalExt = strtolower($file->getClientOriginalExtension() ?: 'bin');
+
+        // اندازهٔ هدف — همان قرارداد options['size'] مسیر اصلی
+        $maxWidth = $maxHeight = null;
+
+        if (! empty($options['size'])) {
+            if (is_array($options['size']) && count($options['size']) === 2) {
+                $maxWidth = (int) $options['size'][0];
+                $maxHeight = (int) $options['size'][1];
+            } elseif (is_numeric($options['size'])) {
+                $maxWidth = (int) $options['size'];
+                $maxHeight = (int) $options['size'];
+            }
+        }
+
+        [$encoded, $ext] = shop_gd_fallback_encode(
+            $binary,
+            (string) $options['format'],
+            (int) $options['quality'],
+            $maxWidth,
+            $maxHeight
+        );
+
+        $modified_storagePath = str_replace('/', '-', $storagePath);
+
+        if ($encoded === null) {
+            // decode نشد — فایل خام با پسوند اصلی ذخیره می‌شود؛ آپلود هرگز ۵۰۰ نمی‌دهد
+            $rawPath = $options['path'].$modified_storagePath.'-'.uniqid().'.'.$originalExt;
+            Storage::disk('public')->put($rawPath, $binary);
+
+            return $rawPath;
+        }
+
+        $fileName = $modified_storagePath.'-'.uniqid().'.'.$ext;
+        $filePath = $options['path'].$fileName;
+
+        Storage::disk('public')->put($filePath, $encoded);
+
+        if ($options['optimize']) {
+            try {
+                OptimizerChainFactory::create()->optimize(public_path($filePath));
+            } catch (Throwable) {
+                // بهینه‌ساز اختیاری است — نباید آپلود را بشکند
+            }
+        }
+
+        return $filePath;
+    }
 }
 
 if (! function_exists('parse_shortcodes')) {

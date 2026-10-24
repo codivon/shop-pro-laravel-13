@@ -27,9 +27,15 @@ class CompatFileManager extends FileManager
     public function thumbnails($disk, $path): mixed
     {
         $binary = Storage::disk($disk)->get($path);
-        $mime   = Storage::disk($disk)->mimeType($path);
+        $mime = Storage::disk($disk)->mimeType($path);
 
-        if (preg_match(self::RASTER_PATTERN, $path) && function_exists('shop_image_manager')) {
+        // فاز ۷۵ — اگر vendor مخلوط/معیوب باشد، هیچ کلاسی از Intervention نباید
+        // autoload شود (خطای «abstract methods» غیرقابل شکار است) → فایل خام برمی‌گردد
+        if (
+            preg_match(self::RASTER_PATTERN, $path)
+            && (! function_exists('shop_intervention_vendor_ok') || shop_intervention_vendor_ok())
+            && function_exists('shop_image_manager')
+        ) {
             try {
                 $image = shop_image_open(shop_image_manager(), $binary);
 

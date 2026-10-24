@@ -2661,3 +2661,63 @@ A=۴۹ اسکلت ✓ | B=۵۰ تکمیل ویجت‌های خانه ✓ | C=۵�
 
 **کامیت:** bootstrap/helpers.php (پروب نسخه + fail-safe آپلود خام) + SessionIndex (استثنای سازنده) +
 admins.blade.php (مودال سقف‌دار) + ۴ تست + این فایل → docs/project-analysis
+
+## فاز ۷۵ — گارد یکپارچگی vendor Intervention Image (رفع کرش جدید لایو «EncodedImage contains 5 abstract methods») + مسیر GD خالص + فرمان تشخیص ops:intervention-doctor (۹ تست جدید — ۳۵۶ سبز)
+
+### ۱) کرش جدید لایو پس از فاز ۷۴ (لاگ کامل کاربر)
+- خطای دقیق: `Class Intervention\Image\EncodedImage contains 5 abstract methods and must therefore be
+  declared abstract or implement the remaining methods (Intervention\Image\Interfaces\FileInterface::save,
+  toFilePointer, size, ...)` در `vendor/intervention/image/src/EncodedImage.php:9` + در رندر صفحهٔ خطا:
+  `Call to undefined function highlight_file()` (به‌دلیل disable_functions هاست — بی‌ربط به ریشه است).
+- **ریشه:** فایل‌های vendor روی هاست از دو نسخهٔ مختلف v3 مخلوط شده‌اند — «FileInterface» جدید است و
+  «File/EncodedImage» قدیمی؛ این خطا E_ERROR/E_COMPILE_ERROR است و در لاگ مسیر `handleShutdown` دیده می‌شود
+  ⇒ **با try/catch قابل شکار نیست**؛ یعنی هیچ دور-andازانی دور encode نجات نمی‌دهد و تنها راه نجات این است
+  که هیچ کلاسی از Intervention در چنین وضعیتی autoload نشود.
+- vendor داخل ریپو (3.11.8) با بازتاب کامل سالم است ⇒ مشکل فقط وضعیت هاست است؛ پس دفاع در لایهٔ کد ساخته شد.
+
+### ۲) پروب متنی یکپارچگی — `shop_intervention_vendor_ok()` (بدون بارگذاری هیچ کلاسی)
+- زنجیرهٔ «لازم»: `EncodedImageInterface → FileInterface` (متدهای interfaceها با تحلیل متنی فایل‌ها).
+- زنجیرهٔ «دارا»: `EncodedImage → File` + traitهای بدنه (`CanBuildFilePointer` و…).
+- حل نام: نقشهٔ alias های `use` سربرگ + نام‌های هم-namespace با کاندیدهای استاندارد پکیج
+  (`shop_vendor_resolve_file` — ریشهٔ namespace پکیج همان پوشهٔ src است)؛ نام‌های بیرونی مثل Stringable نادیده.
+- حکم: هر متدِ لازم بدون «دارا» ⇒ معیوب (fail-closed). v2 (نبودن EncodedImage.php) سالم تلقی می‌شود
+  (لایهٔ سازگار فاز ۷۳ هندلش می‌کند). چهار سناریو تست شد: سالم ✓ / مخلوط ✓ / v2 ✓ / پوشهٔ ناموجود ✓.
+- در `uploadOptimizedImage` **قبل از هر کار** صدا زده می‌شود؛ اگر معیوب بود ⇒ کل مسیر به GD خالص می‌رود.
+
+### ۳) مسیر GD خالص — بدون حتی یک کلاس از Intervention
+- `shop_gd_fallback_encode()`: decode با `imagecreatefromstring` (هر فرمتی که GD فعلی باز کند) →
+  چرخش EXIF بهترین‌تلاش → آلفای سالم → مقیاس فقط-کوچک‌کردن با حفظ نسبت (`imagescale` با پشتیبان
+  `imagecopyresampled`) → انکود فقط با توابعی که واقعاً در بیلد GD سرور هستند (webp → jpg → png) و
+  **پسوند واقعی خروجی** برمی‌گردد؛ بازنشدن decode ⇒ [null, پسوند اصلی] یعنی «خام ذخیره کن».
+- `upload_optimized_image_via_gd()`: رفتار و خروجی دقیقاً مثل `uploadOptimizedImage` — حذف تصویر قبلی
+  (توابع مشترک جدید `shop_upload_image_options` / `shop_delete_previous_upload`)، ذخیره با پسوند واقعی،
+  بهینه‌ساز اختیاری با گارد. آپلود محصول روی بدترین سرور ممکن (vendor مخلوط + GD فقیر) هم کار می‌کند.
+- `CompatFileManager::thumbnails` هم گارد پروب گرفت: vendor معیوب ⇒ فایل خام (رفتار fail-safe فاز ۷۳ حفظ می‌شود).
+
+### ۴) تلهٔ تشخیصی + فرمان پزشک
+- `shop_register_intervention_trap()`: در shutdown، اگر آخرین خطای fatal از Intervention بود، لاگِ شفاف
+  با راهنمای درمان نوشته می‌شود تا ریشه در چند ثانیه پیدا شود (کرش‌های غیرقابل شکار دیگر خام نمی‌مانند).
+- `php artisan ops:intervention-doctor` (بدون بارگذاری کلاس‌ها): نسخهٔ نصب‌شده و composer.lock،
+  **اسکن همهٔ کپی‌های intervention/image** زیر پروژه (vendor اصلی + vendorهای داخلی ماژول/قالب/پکیج —
+  مثل vendor معیوب SeoAudit روی هاست) با یکپارچگی هر کدام، قابلیت‌های GD (توابع غایب + probe واقعی decode)،
+  وضعیت OPcache (خطر کلاس‌های کهنه با validate_timestamps=0)، حکم نهایی + درمان گام‌به‌گام فارسی؛
+  `--json` برای پیوست‌کردن در گزارش. کد خروج ۰ سالم / ۱ معیوب.
+
+### ۵) درمان سمت هاست (برای کاربر — بعد از pull)
+```
+composer install            # یا: composer update intervention/image --with-all-dependencies
+php artisan optimize:clear
+php artisan ops:intervention-doctor    # بررسی — خروجی باید ✔ سالم باشد
+```
++ ریست OPcache از پنل هاست (اگر validate_timestamps=0 باشد، بدون ریست، کلاس‌های قدیمی در حافظه می‌مانند).
+تا قبل از اصلاح vendor، آپلود تصویر و فایل‌منیجر خودکار از مسیر GD خالص/خام عبور می‌کنند و سایت از کار نمی‌افتد.
+
+### ۶) تست‌ها (۹ تست جدید — `InterventionVendorGuardTest`)
+پروب: سالم ✓ / مخلوط مثل سرور لایو ✓ / v2 ✓ / پوشهٔ ناموجود ✓ — GD خالص: انکود+مقیاس+نسبت (۱۰۰×۷۵) ✓ /
+باینری بازنشدنی ⇒ null ✓ — آپلود GD کامل روی Storage جعلی ✓ / فایل خام بایت‌به‌بایت ✓ — فرمان پزشک (کد خروج + JSON) ✓
+
+### نتیجهٔ کامل (MariaDB sandbox — الگوی فاز ۷۱)
+- **۳۵۶ تست / ۱۱۰۷ اظهار / ۰ خطا / ۴ skip** — شامل ConcurrentUsers (۱۰۰۰ کاربر همزمان، rps=4، restarts=0)
+
+**کامیت:** bootstrap/helpers.php (پروب + GD خالص + تله + بازآرایی مشترک آپلود) + CompatFileManager (گارد پروب)
++ InterventionDoctor.php (فرمان پزشک) + ۹ تست + این فایل → docs/project-analysis
