@@ -531,4 +531,138 @@ class AccountBanSessionTrustTest extends TestCase
             ->call('openBlock', $ownSession->id)
             ->assertDontSee('بن اکانت');
     }
+
+    /* =====================================================================
+     *  ۷) فاز ۷۳ — مدت بلاک: پیش‌فرض ۱۲ ساعت و مدت سفارشی (مقدار + واحد)
+     * ===================================================================== */
+
+    #[Test]
+    public function block_supports_twelve_hours_preset(): void
+    {
+        $this->allowAdminGates();
+
+        $blocker = $this->newAdmin();
+        $target = $this->newAdmin();
+        $session = $this->sessionRow($target);
+
+        $this->actingAs($blocker, 'adminPanel');
+
+        Livewire::test(SessionIndex::class)
+            ->call('openBlock', $session->id)
+            ->set('blockType', 'ip')
+            ->set('blockDuration', '12hours')
+            ->call('blockSession')
+            ->assertHasNoErrors();
+
+        $record = BlockedDevice::where('block_type', 'ip')->latest('id')->first();
+
+        $this->assertNotNull($record);
+        $this->assertFalse((bool) $record->is_permanent);
+        $this->assertNotNull($record->blocked_until);
+        $this->assertTrue(
+            $record->blocked_until->between(now()->addHours(12)->subMinutes(5), now()->addHours(12)->addMinutes(5)),
+            'انقضا باید ۱۲ ساعت بعد باشد'
+        );
+    }
+
+    #[Test]
+    public function block_supports_custom_duration_with_amount_and_unit(): void
+    {
+        $this->allowAdminGates();
+
+        $blocker = $this->newAdmin();
+        $target = $this->newAdmin();
+        $session = $this->sessionRow($target);
+
+        $this->actingAs($blocker, 'adminPanel');
+
+        Livewire::test(SessionIndex::class)
+            ->call('openBlock', $session->id)
+            ->set('blockType', 'ip')
+            ->set('blockDuration', 'custom')
+            ->set('blockCustomAmount', '3')
+            ->set('blockCustomUnit', 'days')
+            ->call('blockSession')
+            ->assertHasNoErrors();
+
+        $record = BlockedDevice::where('block_type', 'ip')->latest('id')->first();
+
+        $this->assertNotNull($record);
+        $this->assertFalse((bool) $record->is_permanent);
+        $this->assertNotNull($record->blocked_until);
+        $this->assertTrue(
+            $record->blocked_until->between(now()->addDays(3)->subMinutes(5), now()->addDays(3)->addMinutes(5)),
+            'انقضای سفارشی باید ۳ روز بعد باشد'
+        );
+
+        // واحد ساعت هم باید درست محاسبه شود
+        $secondSession = $this->sessionRow($target);
+
+        Livewire::test(SessionIndex::class)
+            ->call('openBlock', $secondSession->id)
+            ->set('blockType', 'ip')
+            ->set('blockDuration', 'custom')
+            ->set('blockCustomAmount', '6')
+            ->set('blockCustomUnit', 'hours')
+            ->call('blockSession')
+            ->assertHasNoErrors();
+
+        $hoursRecord = BlockedDevice::where('block_type', 'ip')->latest('id')->first();
+
+        $this->assertTrue(
+            $hoursRecord->blocked_until->between(now()->addHours(6)->subMinutes(5), now()->addHours(6)->addMinutes(5)),
+            'انقضای سفارشی باید ۶ ساعت بعد باشد'
+        );
+    }
+
+    #[Test]
+    public function custom_duration_requires_amount_and_valid_unit(): void
+    {
+        $this->allowAdminGates();
+
+        $blocker = $this->newAdmin();
+        $target = $this->newAdmin();
+        $session = $this->sessionRow($target);
+
+        $this->actingAs($blocker, 'adminPanel');
+
+        // بدون مقدار → خطای اعتبارسنجی و بدون رکورد
+        Livewire::test(SessionIndex::class)
+            ->call('openBlock', $session->id)
+            ->set('blockType', 'ip')
+            ->set('blockDuration', 'custom')
+            ->set('blockCustomAmount', '')
+            ->call('blockSession')
+            ->assertHasErrors(['blockCustomAmount']);
+
+        $this->assertSame(0, BlockedDevice::where('block_type', 'ip')->count());
+
+        // مقدار صفر → خطا
+        Livewire::test(SessionIndex::class)
+            ->call('openBlock', $session->id)
+            ->set('blockType', 'ip')
+            ->set('blockDuration', 'custom')
+            ->set('blockCustomAmount', '0')
+            ->call('blockSession')
+            ->assertHasErrors(['blockCustomAmount']);
+
+        $this->assertSame(0, BlockedDevice::where('block_type', 'ip')->count());
+    }
+
+    #[Test]
+    public function block_modal_shows_new_duration_tiles(): void
+    {
+        $this->allowAdminGates();
+
+        $blocker = $this->newAdmin();
+        $target = $this->newAdmin();
+        $session = $this->sessionRow($target);
+
+        $this->actingAs($blocker, 'adminPanel');
+
+        Livewire::test(SessionIndex::class)
+            ->call('openBlock', $session->id)
+            ->assertSee('۱۲ ساعت')
+            ->assertSee('سفارشی');
+    }
 }

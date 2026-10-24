@@ -2575,3 +2575,41 @@ A=۴۹ اسکلت ✓ | B=۵۰ تکمیل ویجت‌های خانه ✓ | C=۵�
 - جمع: **۳۴۲ تست سبز / ۴ skip** — ماریا‌دی‌بی پس از ConcurrentUsersTest زنده (Threads_connected=1)
 
 **کامیت:** Migration (admins.mobile/two_factor_disabled + admin_sessions.is_primary/primary_until + blocked_devices enum account) + DeviceFingerprint + CheckBlockedDevice (بازنویسی + activeBlockFor/blockMessage) + RecordAdminSession (نشست اصلی) + SessionIndex (بن اکانت + گاردهای ۴۸ ساعته) + Login/AdminLoginController (چک مسدودی قبل از ورود + خاموشی فردی 2FA) + AdminTwoFactorService (موبایل فردی + پیام‌های دقیق) + AdminAuthResolver (ورود با موبایل) + Profile/AdminIndex + ویوهای sessions/profile/admins + icons-map + ۱۶ تست + این فایل → docs/project-analysis
+
+---
+
+## فاز ۷۳ — لایهٔ سازگاری Intervention (رفع کرش ذخیرهٔ محصول از دیجی‌کالا) + نمایش تصاویر فایل‌منیجر و پیش‌نمایش + بازطراحی انتخاب «مدت بلاک» (۹ تست جدید — ۳۳۹ سبز)
+
+### ۱) ریشه‌یابی قطعی کرش «Call to undefined method Intervention\Image\ImageManager::read()»
+- **vendor سرور لایو قدیمی است** (نسخهٔ آلفای v3 با سازندهٔ آرایه‌ای که `read()` ندارد) و کاربر نمی‌تواند composer اجرا کند؛ کدِ مخزن API نسخهٔ نهایی v3 را صدا می‌زند. زنجیرهٔ فاز ۷۰ (`new ImageManager(new Driver())` → fallback آرایه‌ای) روی آلفا مدیر را می‌سازد ولی در `$manager->read(...)` (helpers:1630) می‌مُرد — دقیقاً همان پیام کاربر.
+- **راه‌حل: لایهٔ سازگاری «تشخیص قابلیت»** در helpers.php با ۵ هلپر جدید (`shop_image_manager` / `shop_image_open` / `shop_image_scale` / `shop_image_watermark` / `shop_image_encode`) — روی هر سه نسل کار می‌کند:
+  - v2 → `make()` / `resize()`+constraint / `insert()` / `encode(فرمت, کیفیت)`
+  - v3 آلفا → `make()` با سازندهٔ آرایه‌ای / انکودر آبجکتی در صورت وجود
+  - v3 نهایی → `read()` / `scale()` / `place()` / انکودر آبجکتی (رفتار قبلی — تست‌ها دست‌نخورده سبز)
+- **انکود هرگز آپلود را نمی‌شکند:** اگر فرمت هدف (مثل webp) پشتیبانی نشود → jpg → png → انکود پیش‌فرض؛ و نام فایل اکنون **بعد از** انکود با «فرمت واقعیِ خروجی» ساخته می‌شود (دیگر پسوند و محتوا هم‌خوان می‌مانند).
+- scale/واترمارک هم best-effort شدند (خطا ⇒ ذخیرهٔ تصویر اصلی؛ آپلود شکست نمی‌خورد). `uploadOptimizedImage` و `uploadOptimizedImageFromPath` و مسیر MediaController/ذخیرهٔ محصول (افزودن + ویرایش) اکنون روی هر vendor کار می‌کنند.
+
+### ۲) نمایش تصاویر فایل‌منیجر + پیش‌نمایش (ریشهٔ مشترک با بند ۱)
+- endpointهای `thumbnails`/`preview` پکیج alexusmai با `Intervention\Image\Laravel\Facades\Image::read()` (v3 انحصاری) نوشته شده‌اند و روی vendor قدیمی 500 می‌دهند → در گرید فقط آیکون عکس شکسته و پیش‌نمایش خالی بود.
+- **`App\Services\CompatFileManager`** (زیرکلاس پکیج) در AppServiceProvider به‌جای کلاس پکیج بایند شد:
+  - `preview`: **فایل خام با mime درست** — بدون پردازش تصویر؛ همیشه کار می‌کند و سریع‌تر است.
+  - `thumbnails`: رسترها با لایهٔ سازگار `shop_image_*` کوچک می‌شوند (v3: `coverDown` / v2: `fit`)؛ **SVG/بقیهٔ فرمت‌ها و هر خطا ⇒ خود فایل خام (fail-safe)** — تصویر همیشه نمایش داده می‌شود حتی برای فایل خراب.
+
+### ۳) بازطراحی «مدت زمان بلاک» در مودال مسدودسازی (صفحهٔ نشست‌های فعال)
+- **کاشی‌های آیکون‌دار ۳×۲** به‌جای پیل‌های فشردهٔ ۴تایی: دائمی (∞) / ۱۲ ساعت (تایمر — پیش‌فرض جدید) / ۱ روز / ۱ هفته / ۱ ماه / **سفارشی** — هر کاشی: آیکون + برچسب + زیرنویس (نیم‌روز، ۲۴ ساعت، ۷ روز، ۳۰ روز) + حالت انتخاب‌شدهٔ قرمز.
+- **پنل مدت سفارشی:** انتخاب کاشی «سفارشی» ⇒ ورودی عدد + انتخابگر واحد چهاربخشی (ساعت/روز/هفته/ماه) با اعتبارسنجی سرور (`blockCustomAmount` 1..999 + `blockCustomUnit`) و محاسبهٔ دقیق `blocked_until`.
+- **خط وضعیت زنده** (Alpine): دائمی ⇒ «تا رفع دستی» / غیر آن ⇒ «خودکار برداشته می‌شود».
+- آیکون‌های جدید در icons-map: `infinity`، `timer`. پشتیبانی سرور از `12hours` هم اضافه شد (راستی‌آزمایی: BlockedDevice با انقضای +۱۲ ساعت).
+
+### ۴) تست‌ها (۹ تست جدید — `FileManagerImagesTest` ۵ + `AccountBanSessionTrustTest` ۴+)
+بایند CompatFileManager ✓ / thumbnails رستر کوچک‌شده ✓ / SVG خام ✓ / پیش‌نمایش = بایت‌به‌بایت خود فایل ✓ / fail-safe فایل خراب ✓ / پیش‌فرض ۱۲ ساعت ✓ / مدت سفارشی ۳ روز و ۶ ساعت ✓ / اعتبارسنجی مقدار خالی و صفر ✓ / کاشی‌های جدید در مودال ✓
+
+### نتیجهٔ کامل (MariaDB sandbox — سه دستهٔ B طبق الگوی فاز ۷۱)
+- فاز ۱ `(AdminPanelSmoke|Auth|Cart|Catalog|Checkout|Extra)`: **۱۶۰ ✓ / ۱ skip (۴۸۱ اظهار)**
+- `(Order|Payment|Performance|Security)`: **۱۳۵ ✓ (۴۶۶ اظهار)**
+- `(ScaleReadiness|Unit)`: **۳۳ ✓ / ۳ skip** — `MillionScale→ConcurrentUsers`: **۱۱ ✓** (ماریا‌دی‌بی زنده)
+- جمع: **۳۳۹ تست سبز / ۴ skip**
+
+**یادداشت لایو:** نیازی به composer نیست — پس از `git pull` کرش ذخیرهٔ محصول (افزودن از دیجی‌کالا و ویرایش) و تصاویر/پیش‌نمایش فایل‌منیجر روی vendor قدیمی هم رفع است. اگر بعداً composer اجرا شد، همه‌چیز روی v3 نهایی هم بی‌تغییر کار می‌کند.
+
+**کامیت:** helpers.php (لایهٔ سازگاری ۵ هلپری + بازنویسی uploadOptimizedImage) + CompatFileManager + AppServiceProvider (بایند) + SessionIndex (12hours + custom) + sessions.blade (کاشی‌های جدید + پنل سفارشی) + icons-map (infinity/timer) + ۹ تست + این فایل → docs/project-analysis

@@ -43,6 +43,10 @@ class SessionIndex extends Component
 
     public string $blockDuration = 'permanent';
 
+    /** فاز ۷۳ — مدت سفارشی بلاک (مقدار + واحد) */
+    public string $blockCustomAmount = '';
+    public string $blockCustomUnit = 'days';
+
     public string $blockReason = '';
 
     /* ---------------- تاییدهای حذف ---------------- */
@@ -389,6 +393,8 @@ class SessionIndex extends Component
         $this->blockingSession = $id;
         $this->blockType = 'session';
         $this->blockDuration = 'permanent';
+        $this->blockCustomAmount = '';
+        $this->blockCustomUnit = 'days';
         $this->blockReason = '';
         $this->showBlockModal = true;
     }
@@ -446,11 +452,16 @@ class SessionIndex extends Component
 
         $this->validate([
             'blockType' => 'required|in:session,ip,device,browser,all,account',
-            'blockDuration' => 'nullable|in:permanent,1day,1week,1month',
+            // فاز ۷۳ — پیش‌فرض ۱۲ ساعت + مدت سفارشی اضافه شد
+            'blockDuration' => 'nullable|in:permanent,12hours,1day,1week,1month,custom',
+            'blockCustomAmount' => 'nullable|required_if:blockDuration,custom|integer|min:1|max:999',
+            'blockCustomUnit' => 'nullable|required_if:blockDuration,custom|in:hours,days,weeks,months',
             'blockReason' => 'nullable|string|max:500',
         ], [], [
             'blockType' => 'نوع بلاک',
             'blockDuration' => 'مدت زمان بلاک',
+            'blockCustomAmount' => 'مقدار مدت سفارشی',
+            'blockCustomUnit' => 'واحد مدت سفارشی',
             'blockReason' => 'دلیل بلاک',
         ]);
 
@@ -467,6 +478,10 @@ class SessionIndex extends Component
         if ($duration === 'permanent') {
             $isPermanent = true;
             $durationText = 'دائمی';
+        } elseif ($duration === '12hours') {
+            // فاز ۷۳ — پیش‌فرض جدید
+            $blockedUntil = now()->addHours(12);
+            $durationText = '12 ساعت';
         } elseif ($duration === '1day') {
             $blockedUntil = now()->addDay();
             $durationText = '1 روز';
@@ -476,6 +491,25 @@ class SessionIndex extends Component
         } elseif ($duration === '1month') {
             $blockedUntil = now()->addMonth();
             $durationText = '1 ماه';
+        } elseif ($duration === 'custom') {
+            // فاز ۷۳ — مدت سفارشی: مقدار + واحد (ساعت/روز/هفته/ماه)
+            $amount = max(1, (int) $this->blockCustomAmount);
+            $unit = $this->blockCustomUnit ?: 'days';
+
+            $blockedUntil = match ($unit) {
+                'hours'  => now()->addHours($amount),
+                'days'   => now()->addDays($amount),
+                'weeks'  => now()->addWeeks($amount),
+                'months' => now()->addMonths($amount),
+                default  => now()->addDays($amount),
+            };
+
+            $durationText = $amount.' '.match ($unit) {
+                'hours'  => 'ساعت',
+                'weeks'  => 'هفته',
+                'months' => 'ماه',
+                default  => 'روز',
+            };
         } else {
             $durationText = 'نامشخص';
         }

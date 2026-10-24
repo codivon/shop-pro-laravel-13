@@ -463,23 +463,64 @@
                         </div>
                     @endif
 
-                    {{-- مدت زمان — دکمه‌های انتخابی --}}
+                    {{-- مدت زمان — فاز ۷۳: بازطراحی کاشی‌های آیکون‌دار + مدت سفارشی --}}
                     <div>
                         <p class="mb-2 text-xs font-bold">مدت زمان بلاک <span class="text-red-500">*</span></p>
-                        <div class="grid grid-cols-4 gap-2 rounded-2xl border border-line bg-surface-2 p-1.5 dark:border-night-line dark:bg-night-3">
+
+                        <div class="grid grid-cols-3 gap-2">
                             @foreach ([
-                                ['value' => 'permanent', 'label' => 'دائمی'],
-                                ['value' => '1day',      'label' => '۱ روز'],
-                                ['value' => '1week',     'label' => '۱ هفته'],
-                                ['value' => '1month',    'label' => '۱ ماه'],
+                                ['value' => 'permanent', 'label' => 'دائمی',   'sub' => 'تا رفع دستی', 'icon' => 'infinity'],
+                                ['value' => '12hours',   'label' => '۱۲ ساعت', 'sub' => 'نیم‌روز',     'icon' => 'timer'],
+                                ['value' => '1day',      'label' => '۱ روز',   'sub' => '۲۴ ساعت',     'icon' => 'clock'],
+                                ['value' => '1week',     'label' => '۱ هفته',  'sub' => '۷ روز',       'icon' => 'calendar-days'],
+                                ['value' => '1month',    'label' => '۱ ماه',   'sub' => '۳۰ روز',      'icon' => 'calendar'],
+                                ['value' => 'custom',    'label' => 'سفارشی',  'sub' => 'دلخواه',      'icon' => 'sliders-horizontal'],
                             ] as $d)
                                 <label class="relative cursor-pointer">
                                     <input type="radio" name="blockDuration" value="{{ $d['value'] }}" wire:model="blockDuration"
                                            class="peer sr-only" x-on:change="duration = '{{ $d['value'] }}'">
-                                    <span class="fa-digits block rounded-xl px-2 py-2 text-center text-[12px] font-bold transition-all duration-200 text-ink-2 dark:text-night-ink-2 hover:bg-surface peer-checked:bg-red-600 peer-checked:text-white peer-checked:shadow-md peer-checked:shadow-red-600/25 dark:hover:bg-night-2">{{ $d['label'] }}</span>
+                                    <div class="flex flex-col items-center gap-1 rounded-2xl border p-2.5 text-center text-ink-2 transition-all duration-200 border-line bg-surface-2 hover:border-red-300/60 dark:border-night-line dark:bg-night-3 dark:text-night-ink-2 dark:hover:border-red-500/30 peer-checked:border-red-500 peer-checked:bg-red-50/70 peer-checked:text-red-700 peer-checked:shadow-sm peer-checked:shadow-red-600/10 dark:peer-checked:border-red-500/60 dark:peer-checked:bg-red-500/10 dark:peer-checked:text-red-300">
+                                        <span class="shrink-0">
+                                            <x-admin-panel::icon name="{{ $d['icon'] }}" class="size-4" />
+                                        </span>
+                                        <span class="fa-digits text-[12px] font-extrabold leading-none">{{ $d['label'] }}</span>
+                                        <span class="text-[9.5px] leading-3 opacity-60">{{ $d['sub'] }}</span>
+                                    </div>
                                 </label>
                             @endforeach
                         </div>
+
+                        {{-- مدت سفارشی — مقدار + واحد --}}
+                        <div x-show="duration === 'custom'" x-cloak
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
+                             class="mt-2.5">
+                            <div class="flex items-center gap-2 rounded-2xl border border-line bg-surface-2 p-2 dark:border-night-line dark:bg-night-3">
+                                <input type="number" min="1" max="999" inputmode="numeric" wire:model="blockCustomAmount"
+                                       class="ap-input fa-digits !w-24 text-center" placeholder="۱۰"
+                                       aria-label="مقدار مدت سفارشی">
+                                <div class="grid flex-1 grid-cols-4 gap-1 rounded-xl bg-surface p-1 dark:bg-night-2" role="group" aria-label="واحد مدت">
+                                    @foreach ([['v' => 'hours', 'l' => 'ساعت'], ['v' => 'days', 'l' => 'روز'], ['v' => 'weeks', 'l' => 'هفته'], ['v' => 'months', 'l' => 'ماه']] as $u)
+                                        <label class="relative cursor-pointer">
+                                            <input type="radio" name="blockCustomUnit" value="{{ $u['v'] }}" wire:model="blockCustomUnit"
+                                                   class="peer sr-only">
+                                            <span class="block rounded-lg py-1.5 text-center text-[11.5px] font-bold text-ink-3 transition-all duration-200 hover:text-ink-2 peer-checked:bg-red-600 peer-checked:text-white peer-checked:shadow-md peer-checked:shadow-red-600/25 dark:text-night-ink-2 dark:hover:text-white">{{ $u['l'] }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @error('blockCustomAmount') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                            @error('blockCustomUnit') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                        </div>
+
+                        {{-- توضیح وضعیت انتخاب فعلی --}}
+                        <p class="mt-2 flex items-center gap-1.5 text-[11px] text-ink-3 dark:text-night-ink-2">
+                            <x-admin-panel::icon name="info" class="size-3.5 shrink-0" />
+                            <span x-show="duration === 'permanent'">دسترسی تا زمانی که خودتان رفعش نکنید مسدود می‌ماند</span>
+                            <span x-show="duration === 'custom'" x-cloak>مسدودی پس از پایان مدت واردشده، خودکار برداشته می‌شود</span>
+                            <span x-show="duration !== 'permanent' && duration !== 'custom'">پس از پایان این مدت، مسدودی خودکار برداشته می‌شود</span>
+                        </p>
+
                         @error('blockDuration') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                     </div>
 

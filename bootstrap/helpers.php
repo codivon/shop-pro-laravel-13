@@ -43,10 +43,6 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Drivers\Gd\Driver;
-use Intervention\Image\Drivers\Gd\Encoders\JpegEncoder;
-use Intervention\Image\Drivers\Gd\Encoders\PngEncoder;
-use Intervention\Image\Encoders\AutoEncoder;
-use Intervention\Image\Encoders\WebpEncoder;
 use Intervention\Image\ImageManager;
 use Milon\Barcode\DNS1D;
 use Spatie\ImageOptimizer\OptimizerChainFactory;
@@ -1553,16 +1549,188 @@ function saveFieldValues(array $filds, string $belongsTo, int $relatedId)
     }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+ * فاز ۷۳ — لایهٔ سازگاری Intervention Image
+ *
+ * مشکل واقعی کاربر (سرور لایو): با vendor قدیمی (v3 آلفا فاقد read() و
+ * انکودرهای نهایی) هنگام ذخیرهٔ محصول (افزودن از دیجی‌کالا و ویرایش) این خطا
+ * می‌آمد: Call to undefined method Intervention\Image\ImageManager::read()
+ *
+ * این لایه با «تشخیص قابلیت» روی هر سه نسل کار می‌کند:
+ *   v2        → make() / resize()+constraint / insert() / encode(فرمت, کیفیت)
+ *   v3 آلفا   → make() با سازندهٔ آرایه‌ای / انکودر آبجکتی در صورت وجود
+ *   v3 نهایی  → read() / scale() / place() / انکودر آبجکتی
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+if (! function_exists('shop_image_manager')) {
+    /** ImageManager سازگار با هر نسخهٔ Intervention — یک‌بار ساخته و کش می‌شود */
+    function shop_image_manager(): object
+    {
+        static $manager = null;
+
+        if ($manager !== null) {
+            return $manager;
+        }
+
+        // v3 نهایی/آلفا — کلاس Driver موجود است
+        if (class_exists(Driver::class)) {
+            try {
+                $manager = new ImageManager(new Driver()); // v3 نهایی
+
+                return $manager;
+            } catch (\Throwable) {
+                try {
+                    $manager = new ImageManager(['driver' => new Driver()]); // v3 آلفا
+
+                    return $manager;
+                } catch (\Throwable) {
+                }
+            }
+        }
+
+        // v2 — درایور رشته‌ای ('gd' یا 'imagick')
+        $manager = new ImageManager(['driver' => extension_loaded('imagick') ? 'imagick' : 'gd']);
+
+        return $manager;
+    }
+}
+
+if (! function_exists('shop_image_open')) {
+    /** بازکردن تصویر از باینری/مسیر/فایل — v3 نهایی: read() | آلفا و v2: make() */
+    function shop_image_open(object $manager, mixed $input): object
+    {
+        if (method_exists($manager, 'read')) {
+            return $manager->read($input);
+        }
+
+        return $manager->make($input);
+    }
+}
+
+if (! function_exists('shop_image_scale')) {
+    /** تغییر اندازه با حفظ نسبت — best-effort؛ خطا آپلود را نمی‌شکند */
+    function shop_image_scale(object $image, ?int $width, ?int $height): void
+    {
+        if (! $width && ! $height) {
+            return;
+        }
+
+        try {
+            if (method_exists($image, 'scale')) {
+                $image->scale($width, $height); // v3 (آلفا و نهایی)
+
+                return;
+            }
+
+            if (method_exists($image, 'resize')) {
+                // v2 — قید حفظ نسبت + عدم بزرگ‌نمایی
+                $image->resize($width, $height, function ($constraint) {
+                    if (method_exists($constraint, 'aspectRatio')) {
+                        $constraint->aspectRatio();
+                    }
+                    if (method_exists($constraint, 'upsize')) {
+                        $constraint->upsize();
+                    }
+                });
+            }
+        } catch (\Throwable) {
+            // تغییر اندازه اختیاری است — تصویر اصلی ذخیره می‌شود
+        }
+    }
+}
+
+if (! function_exists('shop_image_watermark')) {
+    /** واترمارک — v3: place() | v2: insert() — خطا بی‌صدا نادیده گرفته می‌شود */
+    function shop_image_watermark(object $image, object $manager, string $watermarkPath, string $position = 'bottom-right', int $offset = 25): void
+    {
+        try {
+            $watermark = shop_image_open($manager, $watermarkPath);
+
+            if (method_exists($image, 'place')) {
+                $image->place($watermark, $position, $offset, $offset, 100);
+
+                return;
+            }
+
+            if (method_exists($image, 'insert')) {
+                $image->insert($watermark, $position, $offset, $offset);
+            }
+        } catch (\Throwable) {
+            // واترمارک اختیاری است — نباید آپلود را خراب کند
+        }
+    }
+}
+
+if (! function_exists('shop_image_encode')) {
+    /**
+     * انکود به فرمت/کیفیت — خروجی: [باینری, فرمت واقعی]
+     * v3: انکودر آبجکتی | v2: encode(فرمت, کیفیت)
+     * اگر فرمت هدف (مثل webp) پشتیبانی نشود → jpg → png → پیش‌فرض؛ آپلود هرگز نمی‌شکند
+     */
+    function shop_image_encode(object $image, string $format, int $quality): array
+    {
+        $format = strtolower($format) === 'jpeg' ? 'jpg' : strtolower($format);
+
+        // انکودرهای آبجکتی — دو namespace برای پوشش v3 آلفا و نهایی
+        $encoderCandidates = [
+            'webp' => ['Intervention\\Image\\Encoders\\WebpEncoder', 'Intervention\\Image\\Drivers\\Gd\\Encoders\\WebpEncoder'],
+            'jpg'  => ['Intervention\\Image\\Encoders\\JpegEncoder', 'Intervention\\Image\\Drivers\\Gd\\Encoders\\JpegEncoder'],
+            'png'  => ['Intervention\\Image\\Encoders\\PngEncoder', 'Intervention\\Image\\Drivers\\Gd\\Encoders\\PngEncoder'],
+        ];
+
+        foreach ($encoderCandidates[$format] ?? [] as $encoderClass) {
+            if (! class_exists($encoderClass)) {
+                continue;
+            }
+
+            try {
+                $encoder = $format === 'png' ? new $encoderClass : new $encoderClass($quality);
+                $encoded = $image->encode($encoder);
+
+                return [is_object($encoded) ? (string) $encoded : $encoded, $format];
+            } catch (\Throwable) {
+                // سقوط به مسیر بعدی
+            }
+        }
+
+        // مسیر رشته‌ای — v2 (و بعضی آلفاها)
+        $tryFormats = $format === 'webp' ? ['webp', 'jpg', 'png'] : [$format, 'png'];
+
+        foreach ($tryFormats as $try) {
+            try {
+                $encoded = $image->encode($try, $quality);
+
+                return [is_object($encoded) ? (string) $encoded : $encoded, $try];
+            } catch (\Throwable) {
+                // فرمت بعدی
+            }
+        }
+
+        // آخرین پناه — انکود پیش‌فرض (فرمت ورودی حفظ می‌شود)؛ فرمت واقعی از mime خوانده می‌شود
+        $encoded = $image->encode();
+        $bytes = is_object($encoded) ? (string) $encoded : $encoded;
+
+        if (is_object($encoded) && method_exists($encoded, 'mimeType')) {
+            $ext = match ($encoded->mimeType()) {
+                'image/jpeg' => 'jpg',
+                'image/png'  => 'png',
+                'image/webp' => 'webp',
+                'image/gif'  => 'gif',
+                'image/avif' => 'avif',
+                default      => $format,
+            };
+
+            return [$bytes, $ext];
+        }
+
+        return [$bytes, $format];
+    }
+}
+
 function uploadOptimizedImage($file, $storagePath, $postId = null, $options = [])
 {
-    // فاز ۷۰ — مقداردهی اولیهٔ ImageManager
-    // نسخهٔ نهایی v3: سازنده، درایورِ آبجکت می‌گیرد (هرگز Driver::class به‌صورت رشته نفرست — TypeError می‌دهد).
-    // روی هاست‌هایی که vendor قدیمی‌تر است (v3 آلفا با سازندهٔ آرایه‌ای)، به‌صورت امن fallback می‌کنیم.
-    try {
-        $manager = new ImageManager(new Driver());
-    } catch (\Throwable) {
-        $manager = new ImageManager(['driver' => new Driver()]);
-    }
+    // فاز ۷۳ — ImageManager سازگار با v2 / v3 آلفا / v3 نهایی
+    $manager = shop_image_manager();
 
     // مقداردهی تنظیمات پیش‌فرض (اگر مقدار دستی ارسال نشد)
     $defaultOptions = [
@@ -1621,45 +1789,35 @@ function uploadOptimizedImage($file, $storagePath, $postId = null, $options = []
         }
     }
 
-    // ایجاد نام منحصربه‌فرد برای فایل
-    $modified_storagePath = str_replace('/', '-', $storagePath);
-    $fileName = $modified_storagePath.'-'.uniqid().'.'.$options['format'];
-    $filePath = $options['path'].$fileName; // مسیر ذخیره در `public`
-
-    // خواندن تصویر
-    $image = $manager->read($file->getContent());
+    // خواندن تصویر — فاز ۷۳: read() در v3 نهایی، make() در v3 آلفا و v2
+    $image = shop_image_open($manager, $file->getContent());
 
     if (! empty($options['size'])) {
         if (is_array($options['size']) && count($options['size']) === 2) {
             // اگر مقدار size آرایه‌ای باشد [عرض, ارتفاع]
-            $image->scale(width: $options['size'][0], height: $options['size'][1]);
+            shop_image_scale($image, (int) $options['size'][0], (int) $options['size'][1]);
         } elseif (is_numeric($options['size'])) {
             // اگر مقدار size فقط یک عدد باشد (مثلاً 100)
-            $image->scale(width: $options['size'], height: $options['size']);
+            shop_image_scale($image, (int) $options['size'], (int) $options['size']);
         }
     }
 
-    if ($options['watermark'] and file_exists(public_path($options['watermarkPath'])) and $options['watermarkPath']) {
-        // خواندن تصویر واترمارک
-        $watermark = $manager->read(public_path($options['watermarkPath']));
-        // اعمال واترمارک در پایین سمت راست با 10 پیکسل فاصله و شفافیت 50%
-        $image->place($watermark, $options['watermarkImagePosition'], 25, 25, 100);
+    if ($options['watermark'] and $options['watermarkPath'] and file_exists(public_path($options['watermarkPath']))) {
+        // اعمال واترمارک (فاز ۷۳ — سازگار با v2 و v3)
+        shop_image_watermark($image, $manager, public_path($options['watermarkPath']), $options['watermarkImagePosition'], 25);
     }
 
-    // **انتخاب Encoder بر اساس فرمت انتخابی**
-    switch ($options['format']) {
-        case 'webp':  $encodedImage = $image->encode(new WebpEncoder(quality: $options['quality']));
-            break;
-        case 'jpg':
-        case 'jpeg':  $encodedImage = $image->encode(new JpegEncoder(quality: $options['quality']));
-            break;
-        case 'png':   $encodedImage = $image->encode(new PngEncoder);
-            break;
-        default:      $encodedImage = $image->encode(new AutoEncoder(quality: $options['quality']));
-    }
+    // **انکود به فرمت هدف — فاز ۷۳: اگر فرمت (مثل webp) پشتیبانی نشود خودکار
+    // به jpg و سپس png سقوط می‌کند تا آپلود محصول هرگز شکست نخورد**
+    [$encodedImage, $actualFormat] = shop_image_encode($image, $options['format'], (int) $options['quality']);
+
+    // ایجاد نام منحصربه‌فرد برای فایل — با فرمت واقعیِ خروجی (سازگار با fallback انکودر)
+    $modified_storagePath = str_replace('/', '-', $storagePath);
+    $fileName = $modified_storagePath.'-'.uniqid().'.'.$actualFormat;
+    $filePath = $options['path'].$fileName; // مسیر ذخیره در `public`
 
     // ذخیره تصویر در مسیر تعیین‌شده
-    Storage::disk('public')->put($filePath, (string) $encodedImage);
+    Storage::disk('public')->put($filePath, $encodedImage);
 
     // بهینه‌سازی تصویر
     if ($options['optimize']) {

@@ -60,6 +60,14 @@ class AppServiceProvider extends ServiceProvider
         // نما (views) پنل مدیریت جدید — admin-panel::*
         $this->loadViewsFrom(resource_path('views/admin-panel'), 'admin-panel');
 
+        // فاز ۷۳ — فایل‌منیجر: endpointهای thumbnails/preview پکیج با API انحصاری
+        // Intervention v3 نوشته شده‌اند و روی vendor قدیمی 500 می‌دهند (تصاویر و
+        // پیش‌نمایش نمایش داده نمی‌شد) → نسخهٔ سازگار + fail-safe جایگزین می‌شود
+        $this->app->bind(
+            \Alexusmai\LaravelFileManager\FileManager::class,
+            \App\Services\CompatFileManager::class
+        );
+
         // کامپوننت‌های کلاسی و anonymous پنل جدید
         $this->callAfterResolving('blade.compiler', function ($blade) {
             $blade->componentNamespace('App\\View\\Components\\AdminPanel', 'admin-panel');
