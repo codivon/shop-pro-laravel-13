@@ -1810,3 +1810,40 @@ A=۴۹ اسکلت ✓ | B=۵۰ تکمیل ویجت‌های خانه ✓ | C=۵�
 - ورود کامل: phone → صفحه رمز سانیار → خانه. بدون هیچ خطای کنسول در همه صفحات. موبایل: scrollWidth=390 بدون overflow افقی (محصول + دسته). تأیید بصری VLM: دراپ‌داون جستجو، گالری با thumb هایلایت‌شده، صفحه علاقه‌مندی‌ها.
 
 **کامیت:** میزبان (فقط این فایل) → docs/project-analysis | **فاز بعدی: D (۵۳) سبد + چک‌اوت + پرداخت + فاکتور**
+
+## Phase 53 — قالب سانیار فاز D: سبد خرید + چک‌اوت + پرداخت + فاکتور
+
+**تاریخ:** 2026-10-24 | **برنچ میزبان:** docs/project-analysis (کد میزبان دست‌نخورده — این فاز ۱۰۰٪ در ریپوی تم + گزارش) | **تم:** themes/Saniar کامیت 19fac805 → پوش به برنچ theme-saniar | **تست:** فاز ۱ (Smoke/Auth/Cart/Catalog/Checkout/Extra): **119 ✓ / 326 assertions** | فاز ۲ (Security/Order/Payment/Unit): **104 ✓ / 3 skipped** | Scale: Readiness 18 ✓ + MillionScale 9 ✓ (SCALE_PRODUCTS=2000) + Performance 8 ✓ | ConcurrentUsers: ۲ تست همان مشکل مستند زیرساختی فاز ۵۱ (دیمن MariaDB می‌میرد؛ در نشست سبز قبلی معتبر).
+
+### تحویل‌شده‌های فاز D
+1. **صفحه سبد خرید** (carts/index + cart.css + carts/cart.js): نوار ۳-مرحله‌ای (سبد/جزییات پرداخت/تکمیل)، کارت آیتم سانیار (تصویر/بج درصد تخفیف/فروشنده/واریانت‌ها/بج دانلودی)، استپر تعداد اختصاصی با min=cart_min و max=cart_max (نام input قرارداد product-{pivot_id}؛ TouchSpin سراسری قالب روی name=count بایند می‌شود و تداخل ندارد)، آپدیت AJAX سبد (PUT با خطاهای 406 → جعبه #cart-errors)، حذف با مودال تأیید، سایدبار factor چسبان، حالت خالی (empty-cart.svg + CTA)، noindex.
+2. **چک‌اوت کامل** (carts/checkout + partials): آدرس‌ها به‌صورت کارت addresses-item (radio name=address + data-city + ویرایش/پیش‌فرض)، مودال افزودن/ویرایش آدرس **بدون نقشه** مطابق مرجع سانیار (checkout.html نقشه ندارد؛ validation سرور lat/lng اختیاری) + لود شهرهای هر استان از روت میزبان /province/get-cities؛ مرسولات per فروشنده با حامل‌ها (کارت shipping-item + radio مخفی carrier_id_{group}) و بخش تاریخ تحویل (send-item + radio carrier_date_{group})؛ درگاه‌ها/کیف پول (bank-item + wallet-balance با چک موجودی)؛ مودال کد تخفیف + حذف کوپن؛ یادداشت سفارش (description)؛ ولیدیشن کلاینت + سرور.
+3. **محاسبه زنده قیمت** بر قرارداد exact سرور: GET front.checkout.prices با پارامترهای city_id/carriers[carrier_id_x]/idGroupSelect/is_first_load → سه HTML (checkout_sidebar جایگزین #checkout-sidebar، carriers_container جایگزین #checkout-carrier-container، deliveryDateForOne تزریق در #send-period-container-{group})؛ در بار اول حامل پیش‌فرض سرور چک می‌شود و برای حامل‌های user_select درخواست دوم تاریخ‌ها را می‌گیرد (زنجیره‌ای)؛ نکته PHP: پارامتر carriers باید همیشه ارسال شود وگرنه foreach(null) ترک می‌کند (کلید ساختگی __none).
+4. **نتیجه پرداخت** (carts/orderResultInfo): سه حالت (paid → آیکون سبز + جدول مشخصات پرداختی/وضعیت سفارش + دکمه‌های پیگیری/چاپ فاکتور/بازگشت؛ transaction-error|unpaid → fail-pay + «پرداخت مجدد» فقط برای unpaid (سفارش canceled → «ثبت سفارش مجدد»)؛ error → حالت لغو). تاریخ جلالی با Morilog.
+5. **پیگیری سفارش** (user/orders/show روی user.layouts.master): هدر وضعیت (بج پرداخت/تعداد/تخفیف/ارسال + تاریخ جلالی)، کارت پرداخت سفارش unpaid (انتخاب درگاه → GET orders.pay?gateway=)، اقلام با حامل/تاریخ تحویل، جدول جمع‌ها، اطلاعات ارسال، بنر transaction-error.
+6. **فاکتور چاپی** (user/orders/print): صفحه مستقل مطابق factor.html مرجع — صورتحساب رسمی (مشخصات فروشنده از optionها / خریدار / اقلام با کد کالا / جمع‌ها / امضاها)، تاریخ+شماره تراکنش موفق آخر، دکمه پرینت، استایل print جدا (factor.css — بدون inline CSS طبق قاعده).
+7. **زیرساخت مشترک**: css/components.css در master (toast سبک سانیار + overlay لودینگ + اسپینر)، دکمه سایدبار با routeIs بین سبد/چک‌اوت متن عوض می‌کند، steps.blade مشترک.
+8. **JS بدون پلاگین جدید** (carts/cart.js، carts/checkout.js، carts/order-show.js، carts/factor.js): همگام‌سازی delegated برای shipping/bank/send-item ها (چون jquery-app بایند direct دارد و عناصر AJAX‌جایگزین را از دست می‌دهد)، toast الگوی فاز C، CSRF از meta، مدیریت 406/419/422.
+
+### باگ‌های کشف‌شده و رفع‌شده (در تم سانیار — کد میزبان دست‌نخورده)
+1. **تخفیف منفی میزبان با داده real**: در prices ستون regular_price برابر NULL است (فاز ۳۰)؛ Cart::totalDiscount می‌شود Σ(0 − discountPrice) → **منفی**؛ نتیجه: finalPrice سایدبار ≈ دوبرابر (178M → 347.1M دیده شد) و در ثبت سفارق discount_amount منفی → MySQL 1264 رد می‌کرد. رفع در تم: helperهای saniar_cart_price_without_discount/saniar_cart_discount/saniar_cart_final_price + اصلاح getPrices و store (قیمت نهایی = Σ discount_price + ارسال − فقط کوپن، چون physicalTotal از قبل تخفیف کالایی دارد — دوبارکسر هم رفع شد). **لاتنت میزبان/WeblakShop ثبت شد.**
+2. **paid_at وجود ندارد**: OrderController::orderPaid هر دو تم 'paid_at' => now() می‌نویسد ولی ستونش در orders نیست → هر پرداخت واقعی → Unknown column → rollback → لغو سفارش! در سانیار حذف شد؛ تاریخ پرداخت در فاکتور از آخرین transaction موفق خوانده می‌شود. **لاتنت WeblakShop باقی است.**
+3. **nested form**: فرم حذف کوپن داخل #checkout-form بود → HTML parser فرم را می‌شکست → POST سفارش 405 Method Not Allowed. فرم با form-attribute بیرون منتقل شد.
+4. **dataType json روی پاسخ متنی**: PUT /cart متن 'success' برمی‌گرداند؛ dataType:'json' → parseError → همیشه fail. به text + پارس دستی 406 اصلاح شد.
+5. **scopeActive حامل‌ها**: فقط حامل‌های با carrige_forward یا tariff فعال‌اند — نکته دیتایی (نه باگ)؛ در seed/دمو باید carrige_forward=1 باشد.
+6. **پرداخت کیف پول بدون reserve**: payUsingWallet → مستقیم orderPaid → confirmReservation بدون reserve قبلی → reserved_stock منفی شد (−۲ در دمو). در دمو دستی صفر شد. **رفتار میزبان؛ ثبت شد.**
+7. ریز: aria-label لینک لوگو (accessibility «NULL»)، radio حامل پیش‌فرض از selected_carrier سرور، ولیدیشن gateway وقتی هیچ درگاهی تعریف نشده.
+
+### نکات محیطی این فاز (برای نشست‌های بعدی)
+- قبل از phpunit: داده‌های دمو (کاربر 09120000001/آدرس‌ها/کیف پول از histories/حامل‌های «پست پیشتاز» و «تیپاکس»/کوپن SANIARTEST/سفارش‌های دمو) باید حذف شوند — تست‌های Checkout با assertDatabaseCount حساس‌اند (این بار ۷ شکست صرفاً از این بود). حامل‌ها/کوپن softDelete هستند (withTrashed→restore).
+- کیف پول کاربر از WalletHistory با status=success محاسبه می‌شود (Wallet::balance())؛ ستون balance فقط cache است (refereshBalance).
+- DatabaseReady: بعد از OOM دیمن (اجرای Scale) → bash /home/z/db-start.sh + ~۸ ثانیه صبر؛ ConcurrentUsers همچنان قابل تأیید در این سندباکس نیست (فاز ۵۱).
+- جدول wallet تستی: شارژ ۲۰۰M با histories; wallet منفی شد برای تست ناکافی → دوباره deposit جبرانی.
+
+### E2E مرورگر (تم فعال موقت، دسکتاپ 1280 + موبایل 390)
+- **مسیر موفق کامل**: ورود (phone+password) → محصول iPhone → خرید ۲ عدد → سبد (استپر ۲ + بروزرسانی PUT سبز + ادامه → checkout) → آدرس فعال تهران → getPrices اولیه (حامل‌ها + هزینه) → انتخاب تیپاکس → ۷ تاریخ جلالی آبان ۱۴۰۵ → تاریخ انتخاب → کوپن SANIARTEST (رفع تاریخ اعتبار → تخفیف ۸,۹۵۰,۰۰۰) → ثبت → **پرداخت کیف پول موفق → orderResultInfo/361 «پرداخت شما با موفقیت انجام شد» + مبلغ ۱۶۹,۱۲۸,۸۰۰ (exact با سایدبار)** → پیگیری سفارش (اقلام/حامل/تاریخ/جمع‌ها) → فاکتور چاپی کامل.
+- **مسیر ناموفق**: کیف پول ناکافی + درگاه zarinpal ساختگی → Shetabit fail (شبکه سندباکس) → cancelOrderAndRefund → orderResultInfo/362 صفحه fail-pay درست (دکمه «ثبت سفارش مجدد» چون canceled).
+- آدرس جدید از مودال (استان → ۴۲ شهر AJAX → ثبت → reload → کارت جدید دیده شد)؛ ولیدیشن خالی مودال؛ حذف آیتم سبد → صفحه «سبد خرید شما خالی است».
+- موبایل 390px: cart/checkout/orders بدون overflow افقی (390=390)؛ سایدبار در موبایل استاتیک؛ **صفر خطای کنسول در کل جریان**؛ تأیید بصری VLM (چک‌اوت دسکتاپ + سبد + نتیجه): «no overlapping elements or broken styles».
+
+**فاز بعدی: E (۵۴) احراز هویت کامل (ورود/ثبت‌نام OTP/رمز/فراموشی/ورود فروشنده) — نمای‌های حداقلی auth فاز C کامل می‌شوند.**
