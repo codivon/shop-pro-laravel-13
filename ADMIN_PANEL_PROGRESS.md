@@ -1847,3 +1847,37 @@ A=۴۹ اسکلت ✓ | B=۵۰ تکمیل ویجت‌های خانه ✓ | C=۵�
 - موبایل 390px: cart/checkout/orders بدون overflow افقی (390=390)؛ سایدبار در موبایل استاتیک؛ **صفر خطای کنسول در کل جریان**؛ تأیید بصری VLM (چک‌اوت دسکتاپ + سبد + نتیجه): «no overlapping elements or broken styles».
 
 **فاز بعدی: E (۵۴) احراز هویت کامل (ورود/ثبت‌نام OTP/رمز/فراموشی/ورود فروشنده) — نمای‌های حداقلی auth فاز C کامل می‌شوند.**
+
+## Phase 54 — قالب سانیار فاز E: احراز هویت کامل (ورود/ثبت‌نام OTP/فراموشی رمز/ورود پیامکی/verify)
+
+**تاریخ:** 2026-10-24 | **برنچ میزبان:** docs/project-analysis (کد میزبان دست‌نخورده — ۱۰۰٪ در ریپوی تم) | **تم:** themes/Saniar کامیت 6960b458 → پوش به برنچ theme-saniar | **تست:** فاز ۱ (Smoke/Auth/Cart/Catalog/Checkout/Extra): **119 ✓** | فاز ۲ (Security/Order/Payment/Unit): **104 ✓ / 3 skipped** | ScaleReadiness **18 ✓** + MillionScale **9 ✓** (SCALE_PRODUCTS=2000) + Performance **8 ✓** | ConcurrentUsers: همان محدودیت مستند زیرساختی فاز ۵۱ (دیمن MariaDB وسط اجرا می‌میرد؛ نشست سبز قبلی معتبر)
+
+### معماری کشف‌شده در این فاز (نقشه کامل auth میزبان)
+- میزبان `routes/auth.php` GET صفحات را از `config('front.pages.*')` تم رندر می‌کند (login/register/forgot-password/login-with-code/one-time-login) اما POST /login را روت تم (UserController) می‌بَرد (تم بعد از میزبان register می‌شود → برنده). GET /register همیشه ۳۰۳ به /login (ویوی register مرده).
+- فلوها: موبایل → POST /login → /login/password → کاربر موجود=رمز، ناموجود=OTP (UserMobileVerify) → تعیین رمز (SettFirstOnePassword) → /welcome. فراموشی: forgot-password (کپچای اجباری) → one-time-login?mobile → سشن forget_password_link → ویو change-password (OTP+رمز جدید، native POST) → toast. ورود پیامکی: login-with-code → one-time-login?type=login → AJAX confirm. one-time-login بدون سشن فراموشی → force_to_password_change=1 → میدلور CheckPasswordChange → /profile/force-change-password (فقط روت‌های force مجاز). verify: میدلور verified (وقتی sms_to_verify_user=on) → /verify + تغییر شماره (فقط ستون username عوض می‌شود، ورود با ستون mobile — رفتار میزبان).
+- همه OTPهای سیستم ۵ رقمی‌اند (random_int(10000,99999)) — بج‌های ۶ رقمی WeblakShop اشتباه است؛ سانیار ۵ خانه ساخت. NewUserCodeSent در constructor کد را دوباره تولید می‌کند → کد نهایی همیشه از DB خوانده شود.
+
+### تحویل‌شده‌های فاز E (همه در ریپوی تم)
+1. **۱۰ نمای Blade** با طراحی سانیار (کارت auth مرجع + bg-auth): password-register-verify، welcome، forgot-password، login-with-code، one-time-login، change-password، verify، change-username، passwords/force-change، passwords/reset + پارشال مشترک OTP (۵ خانه + countdown-bar + resend).
+2. **auth.js** (pages/): پرش خودکار/پِیست/جمع در hidden، جایگزینی رقم در خانه پر، ارسال خودکار با data-otp-autosubmit، شمارش معکوس زنده (نوار+متن) و لینک «ارسال مجدد» در پایان، فرم‌های AJAX (data-ajax/data-redirect/data-append-mobile/data-stay) با خطای 422/429، نمایش رمز، پاک‌سازی جعبه خطا/موفقیت در سابمیت.
+3. **auth.css فاز E**: اعلان‌های کارت، جعبه خطا/موفقیت، استایل OTP و countdown با پالت تم (روی کلاس‌های style.css مرجع سوار شد)، کپچای میزبان بدون فونت mdi (refresh با ⟳)، کارت خوش‌آمد، توست سشن انیمیت CSS (بدون JS).
+4. **UserController تم**: welcome() حالا compact('user') می‌فرستد (سشن UserWelcome قبل از رندر فراموش می‌شد → شماره خالی).
+5. **دو باگ falsy جکویی**: data-otp-autosubmit و data-append-mobile بدون مقدار → .data() رشته خالی falsy → با attr() چک شد (ارتباط مستقیم با دو شکست E2E).
+
+### E2E مرورگر (تم فعال موقت 1280+390)
+- **ثبت‌نام:** موبایل جدید → صفحه OTP سانیار → توزیع خودکار ارقام → ارسال خودکار → تعیین رمز → /welcome (شماره واقعی + CTAها). **ورود:** رمز غلط=خطای قرمز، رمز درست=خانه با شمارنده سبد. **خروج** از دراپ‌داون هدر.
+- **ورود با پیامک:** گزینه on → صفحه + کپچا (حل با VLM) → AJAX → one-time-login?type=login&mobile → OTP → لاگین خودکار.
+- **فراموشی:** forgot-password + کپچا → change-password (OTP+رمز جدید در یک فرم) → POST native → /login + توست سبز «رمز تغییر کرد» → ورود با رمز جدید ✓.
+- **تغییر اجباری:** ورود one-time → force=1 → مسیر محافظت‌شده → bounce به force-change → رمز →AJAX→ بازگشت intended، force=0.
+- **verify:** bounce به /verify → OTP → verified_at + بازگشت intended؛ تغییر شماره → AJAX → /verify با کد جدید؛ شمارش معکوس زنده (93%→00:00 → لینک resend ظاهر، نوار مخفی — تأیید VLM)؛ کد غلط = «کد تایید وارد شده صحیح نمی باشد».
+- **پنل:** /profile/change-password → data-stay + جعبه سبز (تا فاز F مسیر پروفایل ساخته شود — TODO در ویو)؛ رمز قبلی غلط = خطای قرمز. تغییر رمز واقعاً در DB اعمال شد (Hash::check).
+- موبایل 390: پنج صفحه auth بدون overflow (390=390)؛ VLM: کارت کامل، بدون همپوشانی. **صفر خطای کنسول** در کل نشست. رنگ دکمه‌ها #275fe0 = پالت رسمی خود قالب سانیار (فولوفالو مرجع).
+
+### نکات دیتایی/محیطی (برای نشست‌های بعد)
+- گزینه‌های forgot_password_link/login_with_code/sms_to_verify_user برای E2E موقتاً on و بعد به off بازیابی شدند (مقادیر اصلی DB).
+- **پاکسازی ناتمام فاز D:** حامل‌های دموی 109/110 (پست پیشتاز/تیپاکس) فعال مانده بودند در حالی که همه tariffs حذف شده بودند → Carrier::active()->first() در تست‌ها حاملِ بدون تعرفه برمی‌داد → ۳ شکست Checkout (shipping 0). با soft-delete آنها ۵۲/۵۲ سبز شد — درسی برای پایان هر فاز: دموی E2E کامل پاک شود.
+- کاربر تست E2E (09350001111/09350002222) با همه رکوردهایش حذف شد؛ users_count=7.
+- دیمن MariaDB دوباره وسط Scale مرد (رفتار مستند) → db-start.sh + بازیابی؛ Readiness/Million/Performance پس از restart سبز.
+- کپچای میزبان فقط هش در سشن دارد (CaptchaService) — حل خودکار در E2E فقط با خواندن تصویر (canvas→VLM) ممکن است.
+
+**کامیت:** تم → theme-saniar (6960b458) | میزبان (فقط این فایل) → docs/project-analysis | **فاز بعدی: F (۵۵) پنل کاربر — پروفایل/ویرایش/سفارش‌ها/آدرس‌ها/کیف پول/تیکت/پیام‌ها/اعلان‌ها/معرفی‌ها (+ وصل‌کردن redirect صفحه reset به پروفایل)**
