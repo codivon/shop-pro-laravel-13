@@ -292,6 +292,205 @@
     </div>
     @endif
 
+    {{-- ============ فاز ۴۴ — بازار قالب‌ها (Templates) — فاز ۴۵: بخش اولِ تب «همه» ============ --}}
+    @if ($this->showsTemplates())
+        @php
+            // فاز ۴۵ — در تب «همه» فقط ۶ قالب اول نمایش داده می‌شود (قالب‌ها اول دیده می‌شوند)
+            $tplList = $this->showsAll() ? array_slice($templates, 0, 6) : $templates;
+        @endphp
+
+        {{-- فاز ۴۵ — سربرگ بخش قالب‌ها در تب «همه» --}}
+        @if ($this->showsAll())
+            @php
+                $tplTotalForHeader = (int) ($templateMeta['total'] ?? count($templates));
+            @endphp
+            <div class="flex flex-wrap items-center justify-between gap-3" wire:key="market-tpl-header">
+                <div class="flex items-center gap-2.5">
+                    <span class="flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
+                        <x-admin-panel::icon name="layout-template" class="size-5" />
+                    </span>
+                    <div>
+                        <h2 class="flex items-center gap-2 text-sm font-extrabold">
+                            قالب‌ها
+                            @if ($tplTotalForHeader)
+                                <span class="fa-digits rounded-md bg-surface-2 px-1.5 py-0.5 text-[10px] font-bold text-ink-2 dark:bg-night-3 dark:text-night-ink-2">{{ number_format($tplTotalForHeader) }}</span>
+                            @endif
+                        </h2>
+                        <p class="text-[11px] text-ink-3 dark:text-night-ink-2">پوسته‌های آماده برای چهره‌ی فروشگاه — خرید و نصب یک‌کلیکی</p>
+                    </div>
+                </div>
+                <button type="button" wire:click="$set('type', 'template')" class="ap-btn-outline !py-2 !text-xs">
+                    مشاهده همه قالب‌ها
+                    <x-admin-panel::icon name="chevron-left" class="size-3.5" />
+                </button>
+            </div>
+        @endif
+
+        {{-- خطای API قالب‌ها --}}
+        @if ($templateError)
+            <div class="ap-card flex flex-col items-center justify-center gap-2 p-10 text-center">
+                <span class="flex size-12 items-center justify-center rounded-2xl bg-red-50 text-red-500 dark:bg-red-500/12">
+                    <x-admin-panel::icon name="triangle-alert" class="size-6" />
+                </span>
+                <p class="text-sm font-bold">خطا در ارتباط با سرور قالب‌ها</p>
+                <p class="text-xs text-ink-3 dark:text-night-ink-2">{{ $templateError }}</p>
+            </div>
+        @endif
+
+        {{-- نوار پیشرفت نصب قالب‌ها --}}
+        @if (count($templatePendingSlugs))
+            <div wire:poll.4s="refreshPendingTemplates" wire:key="tpl-pending"
+                 class="ap-card flex items-center gap-3 border-brand-200 p-4 dark:border-brand-500/25">
+                <svg class="size-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
+                </svg>
+                <div>
+                    <p class="text-[13px] font-bold">نصب قالب در جریان است</p>
+                    <p class="text-xs text-ink-3 dark:text-night-ink-2">پس از اتمام، قالب به‌صورت خودکار در لیست نمایش داده می‌شود.</p>
+                </div>
+            </div>
+        @endif
+
+        @if ($type === 'template')
+        {{-- جستجوی قالب‌ها — فقط تب اختصاصی قالب‌ها (در تب «همه» جستجوی واحد بالا هست) --}}
+        <div class="ap-card p-4">
+            <form wire:submit="applyFilters" class="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                <div class="sm:col-span-2">
+                    <label class="mb-1.5 block text-xs font-semibold" for="tpl-search">جستجو در قالب‌ها</label>
+                    <div class="relative">
+                        <x-admin-panel::icon name="search" class="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
+                        <input id="tpl-search" type="text" wire:model.live.debounce.400ms="search" class="ap-input !pe-9 !py-2" placeholder="نام قالب…">
+                    </div>
+                </div>
+            </form>
+        </div>
+        @endif
+
+        {{-- شبکه قالب‌ها --}}
+        @if (count($tplList))
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3" wire:key="market-tpl-grid">
+                @foreach ($tplList as $tpl)
+                    @php
+                        $tSlug      = $tpl['slug'] ?? '';
+                        $tName      = $tpl['name'] ?? $tSlug;
+                        $tVersion   = $tpl['latest_version']['version'] ?? ($tpl['version'] ?? null);
+                        $tThumb     = $tpl['thumbnail'] ?? $tpl['cover'] ?? $tpl['preview_image'] ?? $tpl['image'] ?? null;
+                        $tPurchased = (bool) ($tpl['is_purchased'] ?? false);
+                        $tSales     = $tpl['purchases_count'] ?? null;
+                        $tState     = $installedThemesMap[$tSlug] ?? null;
+                        $tPending   = $templatePendingSlugs[$tSlug] ?? null;
+                    @endphp
+
+                    <article wire:key="tpl-{{ $tSlug }}"
+                             class="group ap-card overflow-hidden p-0 transition-all hover:shadow-card hover:shadow-brand-500/5 hover:ring-1 hover:ring-brand-500/25"
+                             wire:click="openTemplateDetail('{{ $tSlug }}')">
+                        {{-- کاور --}}
+                        <div class="relative aspect-video overflow-hidden bg-gradient-to-br from-brand-100 via-teal-50 to-amber-50 dark:from-night-3 dark:via-night-2 dark:to-night-3">
+                            @if ($tThumb)
+                                <img src="{{ $tThumb }}" alt="پیش‌نمایش قالب {{ $tName }}" loading="lazy"
+                                     class="size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]">
+                            @else
+                                <div class="flex size-full items-center justify-center" aria-hidden="true">
+                                    <span class="flex size-16 items-center justify-center rounded-2xl bg-white/70 text-2xl font-black text-brand-600 shadow-sm backdrop-blur dark:bg-night-1/70 dark:text-brand-400">{{ mb_substr($tName, 0, 1) }}</span>
+                                </div>
+                            @endif
+
+                            {{-- نشان‌ها --}}
+                            <div class="absolute start-3 top-3 flex flex-wrap gap-1.5">
+                                @if ($tState && $tState['is_active'])
+                                    <span class="ap-badge bg-emerald-600 text-white shadow">قالب فعال</span>
+                                @elseif ($tState && $tState['status'] === 'installed')
+                                    <span class="ap-badge bg-surface text-emerald-700 shadow dark:bg-night-2 dark:text-emerald-400">نصب‌شده</span>
+                                @endif
+                                @if ($tPurchased && ! $tState)
+                                    <span class="ap-badge bg-brand-600 text-white shadow">خریداری‌شده</span>
+                                @endif
+                            </div>
+
+                            @if ($tPending)
+                                <div class="absolute inset-0 flex items-center justify-center bg-slate-950/45 backdrop-blur-[2px]">
+                                    <span class="flex items-center gap-2 rounded-xl bg-white/95 px-3.5 py-2 text-xs font-bold text-slate-800 shadow-lg">
+                                        <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                            <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
+                                        </svg>
+                                        در حال نصب…
+                                    </span>
+                                </div>
+                            @endif
+
+                            {{-- اورلی مشاهده جزئیات --}}
+                            <div class="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                                <span class="rounded-xl bg-white/95 px-4 py-2 text-xs font-bold text-slate-900 shadow-lg">مشاهده جزئیات و خرید</span>
+                            </div>
+                        </div>
+
+                        {{-- بدنه --}}
+                        <div class="space-y-2.5 p-4">
+                            <div class="flex items-start justify-between gap-2">
+                                <h3 class="text-sm font-extrabold leading-6">{{ $tName }}</h3>
+                                @if ($tVersion)
+                                    <span class="ap-badge bg-surface-2 font-mono text-[10px] text-ink-2 dark:bg-night-3 dark:text-night-ink-2" dir="ltr">v{{ $tVersion }}</span>
+                                @endif
+                            </div>
+
+                            <div class="flex items-center justify-between gap-2 text-[11px] text-ink-3 dark:text-night-ink-2">
+                                @if ($tSales !== null)
+                                    <span class="flex items-center gap-1">
+                                        <x-admin-panel::icon name="shopping-bag" class="size-3.5" />
+                                        {{ number_format((int) $tSales) }} فروش
+                                    </span>
+                                @endif
+                                @if ($tState && $tState['version'])
+                                    <span class="font-mono" dir="ltr">نصب‌شده: v{{ $tState['version'] }}</span>
+                                @endif
+                            </div>
+                        </div>
+                    </article>
+                @endforeach
+            </div>
+
+            @if ($type === 'template')
+            {{-- صفحه‌بندی قالب‌ها — فقط تب اختصاصی قالب‌ها --}}
+            @php
+                $tLastPage = (int) ($templateMeta['last_page'] ?? 1);
+                $tCurrent  = (int) ($templateMeta['current_page'] ?? $page);
+            @endphp
+            @if ($tLastPage > 1)
+                <div class="flex items-center justify-center gap-1.5">
+                    <nav class="flex items-center gap-1" aria-label="صفحه‌بندی قالب‌ها">
+                        <button type="button" wire:click="previousPage" @disabled($tCurrent <= 1)
+                                class="ap-btn-outline !px-3 !py-2 disabled:opacity-40" aria-label="صفحه قبل">
+                            <x-admin-panel::icon name="chevron-right" class="size-4" />
+                        </button>
+                        @for ($i = 1; $i <= $tLastPage; $i++)
+                            @if (max(1, $tCurrent - 2) <= $i && $i <= min($tLastPage, $tCurrent + 2))
+                                @if ($i === $tCurrent)
+                                    <span class="flex size-9 items-center justify-center rounded-xl bg-brand-600 text-[13px] font-bold text-white">{{ $i }}</span>
+                                @else
+                                    <button type="button" wire:click="gotoPage({{ $i }})"
+                                            class="flex size-9 items-center justify-center rounded-xl border border-line bg-surface text-[13px] font-bold text-ink-2 transition-colors hover:bg-surface-3 dark:border-night-line dark:bg-night-2 dark:text-night-ink-2">{{ $i }}</button>
+                                @endif
+                            @endif
+                        @endfor
+                        <button type="button" wire:click="nextPage" @disabled($tCurrent >= $tLastPage)
+                                class="ap-btn-outline !px-3 !py-2 disabled:opacity-40" aria-label="صفحه بعد">
+                            <x-admin-panel::icon name="chevron-left" class="size-4" />
+                        </button>
+                    </nav>
+                </div>
+            @endif
+            @endif
+        @elseif (! $templateError)
+            <div class="ap-card flex flex-col items-center justify-center gap-2 p-10 text-center">
+                <span class="flex size-12 items-center justify-center rounded-2xl bg-surface-2 text-ink-3 dark:bg-night-3">
+                    <x-admin-panel::icon name="layout-template" class="size-6" />
+                </span>
+                <p class="text-sm font-bold">قالبی برای نمایش وجود ندارد</p>
+                <p class="text-xs text-ink-3 dark:text-night-ink-2">فیلتر جستجو را تغییر دهید یا بعداً دوباره بررسی کنید.</p>
+            </div>
+        @endif
+    @endif
+
     {{-- ============ شبکه پکیج‌ها (پورت pkg-grid / pkg-card) ============ --}}
     @if ($this->showsPackages())
         {{-- فاز ۴۵ — سربرگ بخش پکیج‌ها در تب «همه» --}}
@@ -555,7 +754,9 @@
                 </nav>
             </div>
         @endif
-    @elseif (! $apiError)
+    @elseif (! $apiError && ! count($packages))
+        {{-- فاز ۵۲: کارت خالی پکیج‌ها فقط وقتی واقعاً پکیجی نیست — در تب «همه» با رندر شدن
+             گرید پکیج‌ها، این کارت نباید زیر پکیج‌ها دیده شود (باگ گزارش‌شده توسط کاربر) --}}
         <div class="ap-card flex flex-col items-center justify-center gap-2 p-10 text-center">
             <span class="flex size-12 items-center justify-center rounded-2xl bg-surface-2 text-ink-3 dark:bg-night-3">
                 <x-admin-panel::icon name="package" class="size-6" />
@@ -579,206 +780,6 @@
         </div>
         @endif
     @endif
-
-    {{-- ============ فاز ۴۴ — بازار قالب‌ها (Templates) — فاز ۴۵: بخش اولِ تب «همه» ============ --}}
-    @if ($this->showsTemplates())
-        @php
-            // فاز ۴۵ — در تب «همه» فقط ۶ قالب اول نمایش داده می‌شود (قالب‌ها اول دیده می‌شوند)
-            $tplList = $this->showsAll() ? array_slice($templates, 0, 6) : $templates;
-        @endphp
-
-        {{-- فاز ۴۵ — سربرگ بخش قالب‌ها در تب «همه» --}}
-        @if ($this->showsAll())
-            @php
-                $tplTotalForHeader = (int) ($templateMeta['total'] ?? count($templates));
-            @endphp
-            <div class="flex flex-wrap items-center justify-between gap-3" wire:key="market-tpl-header">
-                <div class="flex items-center gap-2.5">
-                    <span class="flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
-                        <x-admin-panel::icon name="layout-template" class="size-5" />
-                    </span>
-                    <div>
-                        <h2 class="flex items-center gap-2 text-sm font-extrabold">
-                            قالب‌ها
-                            @if ($tplTotalForHeader)
-                                <span class="fa-digits rounded-md bg-surface-2 px-1.5 py-0.5 text-[10px] font-bold text-ink-2 dark:bg-night-3 dark:text-night-ink-2">{{ number_format($tplTotalForHeader) }}</span>
-                            @endif
-                        </h2>
-                        <p class="text-[11px] text-ink-3 dark:text-night-ink-2">پوسته‌های آماده برای چهره‌ی فروشگاه — خرید و نصب یک‌کلیکی</p>
-                    </div>
-                </div>
-                <button type="button" wire:click="$set('type', 'template')" class="ap-btn-outline !py-2 !text-xs">
-                    مشاهده همه قالب‌ها
-                    <x-admin-panel::icon name="chevron-left" class="size-3.5" />
-                </button>
-            </div>
-        @endif
-
-        {{-- خطای API قالب‌ها --}}
-        @if ($templateError)
-            <div class="ap-card flex flex-col items-center justify-center gap-2 p-10 text-center">
-                <span class="flex size-12 items-center justify-center rounded-2xl bg-red-50 text-red-500 dark:bg-red-500/12">
-                    <x-admin-panel::icon name="triangle-alert" class="size-6" />
-                </span>
-                <p class="text-sm font-bold">خطا در ارتباط با سرور قالب‌ها</p>
-                <p class="text-xs text-ink-3 dark:text-night-ink-2">{{ $templateError }}</p>
-            </div>
-        @endif
-
-        {{-- نوار پیشرفت نصب قالب‌ها --}}
-        @if (count($templatePendingSlugs))
-            <div wire:poll.4s="refreshPendingTemplates" wire:key="tpl-pending"
-                 class="ap-card flex items-center gap-3 border-brand-200 p-4 dark:border-brand-500/25">
-                <svg class="size-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
-                </svg>
-                <div>
-                    <p class="text-[13px] font-bold">نصب قالب در جریان است</p>
-                    <p class="text-xs text-ink-3 dark:text-night-ink-2">پس از اتمام، قالب به‌صورت خودکار در لیست نمایش داده می‌شود.</p>
-                </div>
-            </div>
-        @endif
-
-        @if ($type === 'template')
-        {{-- جستجوی قالب‌ها — فقط تب اختصاصی قالب‌ها (در تب «همه» جستجوی واحد بالا هست) --}}
-        <div class="ap-card p-4">
-            <form wire:submit="applyFilters" class="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-                <div class="sm:col-span-2">
-                    <label class="mb-1.5 block text-xs font-semibold" for="tpl-search">جستجو در قالب‌ها</label>
-                    <div class="relative">
-                        <x-admin-panel::icon name="search" class="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
-                        <input id="tpl-search" type="text" wire:model.live.debounce.400ms="search" class="ap-input !pe-9 !py-2" placeholder="نام قالب…">
-                    </div>
-                </div>
-            </form>
-        </div>
-        @endif
-
-        {{-- شبکه قالب‌ها --}}
-        @if (count($tplList))
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3" wire:key="market-tpl-grid">
-                @foreach ($tplList as $tpl)
-                    @php
-                        $tSlug      = $tpl['slug'] ?? '';
-                        $tName      = $tpl['name'] ?? $tSlug;
-                        $tVersion   = $tpl['latest_version']['version'] ?? ($tpl['version'] ?? null);
-                        $tThumb     = $tpl['thumbnail'] ?? $tpl['cover'] ?? $tpl['preview_image'] ?? $tpl['image'] ?? null;
-                        $tPurchased = (bool) ($tpl['is_purchased'] ?? false);
-                        $tSales     = $tpl['purchases_count'] ?? null;
-                        $tState     = $installedThemesMap[$tSlug] ?? null;
-                        $tPending   = $templatePendingSlugs[$tSlug] ?? null;
-                    @endphp
-
-                    <article wire:key="tpl-{{ $tSlug }}"
-                             class="group ap-card overflow-hidden p-0 transition-all hover:shadow-card hover:shadow-brand-500/5 hover:ring-1 hover:ring-brand-500/25"
-                             wire:click="openTemplateDetail('{{ $tSlug }}')">
-                        {{-- کاور --}}
-                        <div class="relative aspect-video overflow-hidden bg-gradient-to-br from-brand-100 via-teal-50 to-amber-50 dark:from-night-3 dark:via-night-2 dark:to-night-3">
-                            @if ($tThumb)
-                                <img src="{{ $tThumb }}" alt="پیش‌نمایش قالب {{ $tName }}" loading="lazy"
-                                     class="size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]">
-                            @else
-                                <div class="flex size-full items-center justify-center" aria-hidden="true">
-                                    <span class="flex size-16 items-center justify-center rounded-2xl bg-white/70 text-2xl font-black text-brand-600 shadow-sm backdrop-blur dark:bg-night-1/70 dark:text-brand-400">{{ mb_substr($tName, 0, 1) }}</span>
-                                </div>
-                            @endif
-
-                            {{-- نشان‌ها --}}
-                            <div class="absolute start-3 top-3 flex flex-wrap gap-1.5">
-                                @if ($tState && $tState['is_active'])
-                                    <span class="ap-badge bg-emerald-600 text-white shadow">قالب فعال</span>
-                                @elseif ($tState && $tState['status'] === 'installed')
-                                    <span class="ap-badge bg-surface text-emerald-700 shadow dark:bg-night-2 dark:text-emerald-400">نصب‌شده</span>
-                                @endif
-                                @if ($tPurchased && ! $tState)
-                                    <span class="ap-badge bg-brand-600 text-white shadow">خریداری‌شده</span>
-                                @endif
-                            </div>
-
-                            @if ($tPending)
-                                <div class="absolute inset-0 flex items-center justify-center bg-slate-950/45 backdrop-blur-[2px]">
-                                    <span class="flex items-center gap-2 rounded-xl bg-white/95 px-3.5 py-2 text-xs font-bold text-slate-800 shadow-lg">
-                                        <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                                            <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
-                                        </svg>
-                                        در حال نصب…
-                                    </span>
-                                </div>
-                            @endif
-
-                            {{-- اورلی مشاهده جزئیات --}}
-                            <div class="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                                <span class="rounded-xl bg-white/95 px-4 py-2 text-xs font-bold text-slate-900 shadow-lg">مشاهده جزئیات و خرید</span>
-                            </div>
-                        </div>
-
-                        {{-- بدنه --}}
-                        <div class="space-y-2.5 p-4">
-                            <div class="flex items-start justify-between gap-2">
-                                <h3 class="text-sm font-extrabold leading-6">{{ $tName }}</h3>
-                                @if ($tVersion)
-                                    <span class="ap-badge bg-surface-2 font-mono text-[10px] text-ink-2 dark:bg-night-3 dark:text-night-ink-2" dir="ltr">v{{ $tVersion }}</span>
-                                @endif
-                            </div>
-
-                            <div class="flex items-center justify-between gap-2 text-[11px] text-ink-3 dark:text-night-ink-2">
-                                @if ($tSales !== null)
-                                    <span class="flex items-center gap-1">
-                                        <x-admin-panel::icon name="shopping-bag" class="size-3.5" />
-                                        {{ number_format((int) $tSales) }} فروش
-                                    </span>
-                                @endif
-                                @if ($tState && $tState['version'])
-                                    <span class="font-mono" dir="ltr">نصب‌شده: v{{ $tState['version'] }}</span>
-                                @endif
-                            </div>
-                        </div>
-                    </article>
-                @endforeach
-            </div>
-
-            @if ($type === 'template')
-            {{-- صفحه‌بندی قالب‌ها — فقط تب اختصاصی قالب‌ها --}}
-            @php
-                $tLastPage = (int) ($templateMeta['last_page'] ?? 1);
-                $tCurrent  = (int) ($templateMeta['current_page'] ?? $page);
-            @endphp
-            @if ($tLastPage > 1)
-                <div class="flex items-center justify-center gap-1.5">
-                    <nav class="flex items-center gap-1" aria-label="صفحه‌بندی قالب‌ها">
-                        <button type="button" wire:click="previousPage" @disabled($tCurrent <= 1)
-                                class="ap-btn-outline !px-3 !py-2 disabled:opacity-40" aria-label="صفحه قبل">
-                            <x-admin-panel::icon name="chevron-right" class="size-4" />
-                        </button>
-                        @for ($i = 1; $i <= $tLastPage; $i++)
-                            @if (max(1, $tCurrent - 2) <= $i && $i <= min($tLastPage, $tCurrent + 2))
-                                @if ($i === $tCurrent)
-                                    <span class="flex size-9 items-center justify-center rounded-xl bg-brand-600 text-[13px] font-bold text-white">{{ $i }}</span>
-                                @else
-                                    <button type="button" wire:click="gotoPage({{ $i }})"
-                                            class="flex size-9 items-center justify-center rounded-xl border border-line bg-surface text-[13px] font-bold text-ink-2 transition-colors hover:bg-surface-3 dark:border-night-line dark:bg-night-2 dark:text-night-ink-2">{{ $i }}</button>
-                                @endif
-                            @endif
-                        @endfor
-                        <button type="button" wire:click="nextPage" @disabled($tCurrent >= $tLastPage)
-                                class="ap-btn-outline !px-3 !py-2 disabled:opacity-40" aria-label="صفحه بعد">
-                            <x-admin-panel::icon name="chevron-left" class="size-4" />
-                        </button>
-                    </nav>
-                </div>
-            @endif
-            @endif
-        @elseif (! $templateError)
-            <div class="ap-card flex flex-col items-center justify-center gap-2 p-10 text-center">
-                <span class="flex size-12 items-center justify-center rounded-2xl bg-surface-2 text-ink-3 dark:bg-night-3">
-                    <x-admin-panel::icon name="layout-template" class="size-6" />
-                </span>
-                <p class="text-sm font-bold">قالبی برای نمایش وجود ندارد</p>
-                <p class="text-xs text-ink-3 dark:text-night-ink-2">فیلتر جستجو را تغییر دهید یا بعداً دوباره بررسی کنید.</p>
-            </div>
-        @endif
-    @endif
-
     {{-- ============ مودال تأیید نصب (پورت install-confirm-modal — انتخاب پلن/لایسنس/اشتراک) ============ --}}
     <div x-show="modalOpen" x-cloak
          class="fixed inset-0 z-[90] flex items-center justify-center p-4"

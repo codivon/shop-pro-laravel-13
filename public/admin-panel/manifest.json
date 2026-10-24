@@ -1,6 +1,6 @@
 {
   "node_modules/ckeditor5/dist/ckeditor5.js": {
-    "file": "assets/ckeditor5-BGZg8Use.js",
+    "file": "assets/ckeditor5-DkUJi3PP.js",
     "name": "ckeditor5",
     "src": "node_modules/ckeditor5/dist/ckeditor5.js",
     "isDynamicEntry": true
@@ -12,7 +12,7 @@
     "isDynamicEntry": true
   },
   "resources/admin-panel/css/admin.css": {
-    "file": "assets/admin-CwPuLzRL.css",
+    "file": "assets/admin-DcHdNrUP.css",
     "src": "resources/admin-panel/css/admin.css",
     "isEntry": true
   },
@@ -37,7 +37,7 @@
     "src": "resources/admin-panel/fonts/Vazirmatn-SemiBold.woff2"
   },
   "resources/admin-panel/js/admin.js": {
-    "file": "assets/admin-CJdTPHNw.js",
+    "file": "assets/admin-CjflNnFy.js",
     "name": "admin",
     "src": "resources/admin-panel/js/admin.js",
     "isEntry": true,
