@@ -209,13 +209,16 @@ class ProductController extends Controller
         }
 
         // جستجوی محصولات با اولویت
-        // FIX مقیاس: WHERE با ایندکس FULLTEXT — فقط ردیف‌های منطبق CASE و مرتب‌سازی می‌شوند
-        $products = DB::table('products')
-            ->select('id', 'title', 'slug', 'image', 'sell')
+        // فاز C سانیار: به‌جای DB::table (stdClass بدون قیمت) از مدل با eager-load قیمت استفاده می‌شود
+        // تا دراپ‌داون زنده بتواند قیمت/تخفیف هر محصول را هم نشان دهد.
+        // همان ایندکس FULLTEXT (front_search_match) + همان مرتب‌سازی اولویت LIKE + sell.
+        $products = Product::query()
+            ->select('id', 'title', 'title_en', 'slug', 'image', 'sell')
             ->where('published', 1)
             ->where(function ($q) use ($searchTerm) {
                 front_search_match($q, $searchTerm);
             })
+            ->with(['lowestPrice'])
             ->orderByRaw("CASE
             WHEN title LIKE ? THEN 1
             WHEN title LIKE ? THEN 2
@@ -226,8 +229,10 @@ class ProductController extends Controller
             ->get();
 
         // دسته‌بندی‌ها
+        // فاز C سانیار: ستون image هم انتخاب می‌شود — پارشال search-result تصویر دسته را نشان می‌دهد
+        // (قبلاً فقط id/title/slug بود و stdClass->image در ViewException می‌ترکید)
         $categories = DB::table('categories')
-            ->select('id', 'title', 'slug')
+            ->select('id', 'title', 'slug', 'image')
             ->where('published', 1)
             ->where('title', 'like', '%' . $searchTerm . '%')
             ->limit(7)
@@ -245,8 +250,9 @@ class ProductController extends Controller
         // دسته‌بندی‌های برند
         $brand_categories = [];
         if ($brand) {
+            // فاز C سانیار: categories.image برای تصویر ردیف‌های «برند — دسته» در search-result
             $brand_categories = DB::table('categories')
-                ->select('categories.id', 'categories.title', 'categories.slug')
+                ->select('categories.id', 'categories.title', 'categories.slug', 'categories.image')
                 ->join('category_product', 'categories.id', '=', 'category_product.category_id')
                 ->join('products', 'category_product.product_id', '=', 'products.id')
                 ->where('products.brand_id', $brand->id)

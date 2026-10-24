@@ -42,6 +42,9 @@
     {{-- Dynamic Meta Tags from Pages --}}
     @stack('meta')
 
+    {{-- سانیار فاز C: اندپوینت جستجوی زنده برای JS هدر --}}
+    <meta name="saniar-ajax-search" content="{{ route('front.products.ajax_search') }}">
+
     {{-- Title --}}
     <title>{{ isset($title) ? $title . ' | ' : '' }}{{ option('info_site_title', config('front.demo.name')) }}</title>
 
@@ -58,6 +61,8 @@
     <link rel="stylesheet" href="{{ theme_asset('css/responsive.css') }}">
     {{-- سانیار — فاز B: استایل‌های ویجت‌های صفحه اصلی (تمام‌صفحه/رنگی/شگفت‌انگیز) --}}
     <link rel="stylesheet" href="{{ theme_asset('css/widgets.css') }}">
+    {{-- سانیار فاز C: استایل‌های جستجو (دراپ‌داون زنده + صفحه نتایج) --}}
+    <link rel="stylesheet" href="{{ theme_asset('css/search.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('plugin/go-to-top/style.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('plugin/rasta-contact/style.css') }}">
 
@@ -362,6 +367,8 @@
     <script src="{{ theme_asset('plugin/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js') }}"></script>
     <script src="{{ theme_asset('js/app.js') }}"></script>
     <script src="{{ theme_asset('js/jquery-app.js') }}"></script>
+    {{-- سانیار فاز C: جستجوی زنده هدر --}}
+    <script src="{{ theme_asset('js/live-search.js') }}"></script>
     <script src="{{ theme_asset('plugin/go-to-top/script.js') }}"></script>
     <script src="{{ theme_asset('plugin/rasta-contact/script.js') }}"></script>
 

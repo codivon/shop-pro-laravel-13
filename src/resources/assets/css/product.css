@@ -1,0 +1,294 @@
+/* ==========================================================================
+   سانیار فاز C — استایل‌های صفحه محصول
+   ========================================================================== */
+
+/* ---------- گالری محصول ---------- */
+.pro_gallery .swiper.product-gallery {
+    border: 1px solid #f0f0f0;
+    border-radius: 14px;
+    overflow: hidden;
+    background-color: #fff;
+}
+
+.pro_gallery .swiper.product-gallery .swiper-slide {
+    height: 340px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pro_gallery .swiper.product-gallery .swiper-slide img {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.pro_gallery .swiper.product-gallery-thumb {
+    margin-top: 10px;
+    padding: 4px;
+    border: 1px solid #f0f0f0;
+    border-radius: 12px;
+    background-color: #fff;
+}
+
+.pro_gallery .swiper.product-gallery-thumb .swiper-slide {
+    width: 76px !important;
+    height: 76px;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    opacity: .55;
+    transition: all .2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pro_gallery .swiper.product-gallery-thumb .swiper-slide img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.pro_gallery .swiper.product-gallery-thumb .swiper-slide-thumb-active {
+    border-color: var(--main-color-one, #ef394e);
+    opacity: 1;
+}
+
+/* آیکون‌های کنار گالری */
+.icon-product-box {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.icon-product-box-item {
+    width: 40px;
+    height: 40px;
+    background-color: #fff;
+    border: 1px solid #eee;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #666;
+    box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, .06));
+    transition: all .2s ease;
+}
+
+.icon-product-box-item:hover {
+    color: var(--main-color-one, #ef394e);
+    border-color: var(--main-color-one, #ef394e);
+}
+
+/* ---------- توضیح کوتاه با ماسک ---------- */
+.product-additional-item {
+    position: relative;
+}
+
+.product-additional-item.is-masked .saniar-mask-inner,
+.product-additional-item.is-masked > p {
+    max-height: 92px;
+    overflow: hidden;
+}
+
+.product-additional-item:not(.is-masked) .mask-handler {
+    display: none;
+}
+
+/* ---------- تب‌های محصول (سبک مرجع product-desc-tab) ---------- */
+.product-descs .product-desc-tab {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 10px;
+    margin-bottom: 16px;
+}
+
+.product-desc-tab .nav-item button {
+    border: 1px solid #eee;
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 8px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #777;
+    transition: all .2s ease;
+}
+
+.product-desc-tab .nav-item button:hover {
+    color: var(--main-color-one, #ef394e);
+}
+
+.product-desc-tab .nav-item button.active {
+    background-color: var(--main-color-one, #ef394e);
+    border-color: var(--main-color-one, #ef394e);
+    color: #fff;
+}
+
+/* ادامه مطلب (read-more) */
+.read-more-wrap {
+    transition: max-height .3s ease;
+    max-height: 420px;
+    overflow: hidden;
+    position: relative;
+}
+
+.read-more-state:checked ~ .read-more-wrap {
+    max-height: none;
+    overflow: visible;
+}
+
+.read-more-state:not(:checked) ~ .read-more-wrap::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 90px;
+    background: linear-gradient(to top, #fff, rgba(255, 255, 255, 0));
+}
+
+.read-more-trigger {
+    cursor: pointer;
+    display: inline-block;
+    margin-top: 8px;
+}
+
+.read-more-state:not(:checked) ~ .read-more-trigger::after {
+    content: "مشاهده بیشتر";
+}
+
+.read-more-state:checked ~ .read-more-trigger::after {
+    content: "بستن";
+}
+
+/* ---------- امتیاز دیدگاه‌ها ---------- */
+.saniar-rating-big {
+    background-color: #fafafa;
+    border: 1px solid #f0f0f0;
+    border-radius: 14px;
+    padding: 16px 10px;
+}
+
+/* ---------- لیبل‌های داینامیک نقاط قوت/ضعف ---------- */
+.ui-dynamic-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    padding: 4px 10px;
+    border-radius: 10px;
+}
+
+.ui-dynamic-label--positive {
+    background-color: #eaf9ef;
+    color: #0a6b2d;
+}
+
+.ui-dynamic-label--negative {
+    background-color: #fdeeee;
+    color: #b02a2a;
+}
+
+.ui-dynamic-label-remove {
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.ui-dynamic-label-remove::after {
+    content: "×";
+}
+
+/* ---------- ستاره‌های امتیاز فرم نظر ---------- */
+.saniar-star-btn {
+    color: #ddd;
+    cursor: pointer;
+    transition: color .1s ease, transform .1s ease;
+    padding: 2px;
+}
+
+.saniar-star-btn:hover,
+.saniar-star-btn:hover ~ .saniar-star-btn,
+.btn-check:checked + .saniar-star-btn,
+.btn-check:checked ~ .saniar-star-btn {
+    color: #f5a623;
+}
+
+.btn-check:checked + .saniar-star-btn {
+    transform: scale(1.1);
+}
+
+/* ---------- جدول فروشندگان ---------- */
+.saniar-stores-table th {
+    background-color: #fafafa;
+    font-weight: 700;
+}
+
+.saniar-stores-table td {
+    vertical-align: middle;
+}
+
+.success-label,
+.warning-label {
+    font-size: 11px;
+    padding: 2px 8px !important;
+}
+
+.success-label {
+    background-color: #eaf9ef;
+    color: #0a6b2d;
+}
+
+.warning-label {
+    background-color: #fff7e6;
+    color: #a06a00;
+}
+
+/* ---------- مینی‌کارت چسبان ---------- */
+.product-float {
+    border-radius: 14px;
+}
+
+/* ---------- اسلایدر محصولات مرتبط ---------- */
+.product-slider-swiper .swiper-slide {
+    height: auto;
+}
+
+.product-slider-swiper .product-box {
+    height: 100%;
+}
+
+/* ---------- ریسپانسیو ---------- */
+@media (max-width: 991.98px) {
+    .pro_gallery .swiper.product-gallery .swiper-slide {
+        height: 280px;
+    }
+
+    .icon-product-box {
+        flex-direction: row;
+        top: 10px;
+        left: 10px;
+        right: auto;
+    }
+
+    .pro_gallery .swiper.product-gallery-thumb .swiper-slide {
+        width: 64px !important;
+        height: 64px;
+    }
+
+    .w-100-in-400 {
+        width: 100% !important;
+    }
+}

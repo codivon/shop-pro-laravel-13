@@ -1,5 +1,7 @@
 @php
-    $cart = $cart ?? get_cart();
+    // فاز C سانیار: کنترلر سبد، پارشال را با render_cart رندر می‌کند
+    // (کوکی سبد در همان پاسخ ست می‌شود؛ get_cart() در این لحظه هنوز آن را نمی‌بیند)
+    $cart = isset($render_cart) ? $render_cart : get_cart();
     $cart_total = 0;
 @endphp
 <div class="offcanvas cart-canvas offcanvas-end" tabindex="-1" id="offcanvasCart" aria-labelledby="offcanvasCartLabel">

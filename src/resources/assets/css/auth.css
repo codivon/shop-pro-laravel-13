@@ -1,0 +1,101 @@
+/* ==========================================================================
+   سانیار فاز C — استایل فرم‌های احراز هویت (کارت auth مرجع)
+   ========================================================================== */
+
+.auth-form {
+    padding: 30px 26px;
+}
+
+.auth-form-title {
+    padding-bottom: 14px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.auth-form-title h2 {
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.auth-form-title img {
+    max-width: 140px;
+}
+
+/* ---------- لیبل شناور ---------- */
+.auth-form .comment-item {
+    position: relative;
+}
+
+.auth-form .comment-item input.form-control {
+    height: 56px;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    background-color: #fafafa;
+    padding: 24px 14px 8px;
+    font-size: 14px;
+}
+
+.auth-form .comment-item input.form-control:focus {
+    background-color: #fff;
+    border-color: var(--main-color-one, #ef394e);
+    box-shadow: 0 0 0 3px rgba(239, 57, 78, .08);
+}
+
+.auth-form .comment-item .form-label.label-float {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    transform: translateY(-50%);
+    color: #999;
+    font-size: 14px;
+    pointer-events: none;
+    transition: all .18s ease;
+    margin: 0;
+}
+
+.auth-form .comment-item input.form-control:focus + .form-label.label-float,
+.auth-form .comment-item input.form-control:not(:placeholder-shown) + .form-label.label-float {
+    top: 15px;
+    transform: translateY(0);
+    font-size: 11.5px;
+    color: var(--main-color-one, #ef394e);
+}
+
+/* ---------- دکمه اصلی ---------- */
+.auth-form .btn-main-auth {
+    background-color: var(--main-color-one, #ef394e);
+    color: #fff;
+    border: none;
+    font-weight: 700;
+    border-radius: 12px;
+}
+
+.auth-form .btn-main-auth:hover {
+    filter: brightness(1.05);
+    color: #fff;
+}
+
+/* متن قوانین زیر کارت */
+.loginTermsDesc {
+    font-size: 12.5px;
+    color: #999;
+    text-align: center;
+}
+
+/* ---------- دکمه شناور کنار رمز ---------- */
+.inline-btn-text {
+    position: absolute;
+    top: 10px;
+    left: 8px;
+}
+
+.inline-btn-text .btn {
+    font-size: 11.5px;
+    padding: 4px 12px;
+    border-radius: 8px;
+}
+
+/* ---------- خطاها ---------- */
+.auth-form .invalid-feedback {
+    display: block;
+    font-size: 12.5px;
+}

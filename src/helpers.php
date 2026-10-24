@@ -778,6 +778,39 @@ function front_search_match($query, string $term): void
     });
 }
 
+/**
+ * سانیار فاز C — برندهای دارای محصول در زیردرخت یک دسته (برای نوار برندهای صفحه دسته).
+ * کش ۱۰ دقیقه‌ای مثل بقیه ویترین؛ ورودی ریشه‌ی درخت و خروجی کالکشن برندها (id, name, slug, image).
+ */
+function saniar_category_brands(Category $category, int $limit = 20)
+{
+    $treeIds = front_category_subtree_ids($category);
+
+    if ($treeIds === []) {
+        return collect();
+    }
+
+    $version = Cache::get('front.categories.version', 0);
+    $cacheKey = 'saniar.category.brands.' . md5(json_encode($treeIds)) . '.' . $version . '.' . $limit;
+
+    return Cache::remember($cacheKey, 600, function () use ($treeIds, $limit) {
+        return Brand::select('brands.id', 'brands.name', 'brands.slug', 'brands.image')
+            ->join('products', function ($join) use ($treeIds) {
+                $join->on('products.brand_id', '=', 'brands.id')
+                    ->where('products.published', 1)
+                    ->whereIn('products.id', function ($q) use ($treeIds) {
+                        $q->select('category_product.product_id')
+                            ->from('category_product')
+                            ->whereIn('category_product.category_id', $treeIds);
+                    });
+            })
+            ->groupBy('brands.id', 'brands.name', 'brands.slug', 'brands.image')
+            ->orderBy('brands.name')
+            ->limit($limit)
+            ->get();
+    });
+}
+
 function highest_banner()
 {
     return Banner::whereJsonContains('groups', 'index_highest_banner')

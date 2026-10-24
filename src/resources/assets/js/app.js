@@ -1,22 +1,26 @@
 //========= start home slider =========///
-var swiper = new Swiper("#homeSlider", {
-  spaceBetween: 30,
-  centeredSlides: true,
-  loop: true,
-  autoplay: {
-    delay: 3000,
-    disableOnInteraction: false,
-  },
-  effect: "fade",
-  pagination: {
-    el: ".swiper-pagination",
-    clickable: true,
-  },
-  navigation: {
-    nextEl: ".swiper-button-next",
-    prevEl: ".swiper-button-prev",
-  },
-});
+// سانیار — فاز C: فقط اگر اسلایدر خانه در صفحه باشد (در صفحات دیگر el=null سوایپر خراب می‌ساخت)
+var homeSliderEl = document.querySelector("#homeSlider");
+if (homeSliderEl) {
+  var swiper = new Swiper(homeSliderEl, {
+    spaceBetween: 30,
+    centeredSlides: true,
+    loop: true,
+    autoplay: {
+      delay: 3000,
+      disableOnInteraction: false,
+    },
+    effect: "fade",
+    pagination: {
+      el: homeSliderEl.querySelector(".swiper-pagination"),
+      clickable: true,
+    },
+    navigation: {
+      nextEl: homeSliderEl.querySelector(".swiper-button-next"),
+      prevEl: homeSliderEl.querySelector(".swiper-button-prev"),
+    },
+  });
+}
 
 
 ///=============end home slider ============/
@@ -54,8 +58,10 @@ document.querySelectorAll(".fullscreen-slider-swiper").forEach(function (el) {
 //========= end fullscreen slider ============/
 
 //============= sugget moment =============//
-
-var swiperSugget = new Swiper("#suggetMoment", {
+// سانیار — فاز C: گارد وجود المنت (مثل homeSlider)
+var suggetMomentEl = document.querySelector("#suggetMoment");
+if (suggetMomentEl) {
+  var swiperSugget = new Swiper(suggetMomentEl, {
   slidesPerView: 1,
   spaceBetween: 30,
   loop: true,
@@ -80,7 +86,8 @@ var swiperSugget = new Swiper("#suggetMoment", {
       $(".swiper-progress-bar").eq(0).addClass("animate");
     }
   }
-});
+  });
+}
 
 //============= end sugget moment =============//
 
@@ -180,43 +187,74 @@ document.querySelectorAll(".product-slider-swiper").forEach(function (el) {
 
 
 //=========== product gallery ===================//
+// سانیار — فاز C: مقداردهی فقط اگر گالری وجود داشته باشد + پیوند thumbs فقط با بیش از ۱ اسلاید
+// (قبلاً با سلکتور سراسری حتی در صفحات بدون گالری مقداردهی می‌شد و با show.js تداخل می‌افتاد)
+var proGalleryEl = document.querySelector(".product-gallery");
+var proThumbEl = document.querySelector(".product-gallery-thumb");
 
-var proSwiper = new Swiper(".product-gallery-thumb", {
-  spaceBetween: 10,
-  slidesPerView: 4,
-  freeMode: true,
-  watchSlidesProgress: true,
-  breakpoints: {
-    // when window width is >= 320px
-    320: {
-      slidesPerView: 3,
-      spaceBetween: 10
+if (proGalleryEl) {
+  var proSwiper = null;
+
+  if (proThumbEl && proThumbEl.querySelectorAll(".swiper-slide").length > 1) {
+    proSwiper = new Swiper(proThumbEl, {
+      spaceBetween: 10,
+      slidesPerView: "auto",
+      freeMode: true,
+      watchSlidesProgress: true,
+      breakpoints: {
+        320: { slidesPerView: 3, spaceBetween: 10 },
+        400: { slidesPerView: 4, spaceBetween: 10 },
+        992: { slidesPerView: 6, spaceBetween: 8 },
+      },
+    });
+  } else if (proThumbEl) {
+    proThumbEl.classList.add("d-none");
+  }
+
+  // ساخت پیکربندی به‌صورت شرطی (پاس در constructor — نه init دستی ماژول‌ها)
+  var proConfig = {
+    spaceBetween: 10,
+    zoom: {
+      maxRatio: 3,
+      minRation: 1
     },
-    // when window width is >= 480px
-    400: {
-      slidesPerView: 4,
-      spaceBetween: 10
-    },
-  },
-});
-var proThumbswiper = new Swiper(".product-gallery", {
-  spaceBetween: 10,
-  navigation: {
-    nextEl: ".swiper-button-next",
-    prevEl: ".swiper-button-prev",
-  },
-  pagination: {
-    el: ".swiper-pagination",
-    clickable: true,
-  },
-  zoom: {
-    maxRatio: 3,
-    minRation: 1
-  },
-  thumbs: {
-    swiper: proSwiper,
-  },
-});
+  };
+
+  var proPaginationEl = proGalleryEl.querySelector(".swiper-pagination");
+  var proNavNext = proGalleryEl.querySelector(".swiper-button-next");
+  var proNavPrev = proGalleryEl.querySelector(".swiper-button-prev");
+
+  if (proPaginationEl) {
+    proConfig.pagination = { el: proPaginationEl, clickable: true };
+  }
+  if (proNavNext && proNavPrev) {
+    proConfig.navigation = { nextEl: proNavNext, prevEl: proNavPrev };
+  }
+  if (proSwiper) {
+    proConfig.thumbs = { swiper: proSwiper };
+  }
+
+  var proThumbswiper = new Swiper(proGalleryEl, proConfig);
+
+  // سانیار — فاز C: باندل Swiper این قالب ماژول Thumbs را ندارد (کلیک روی thumb و
+  // هایلایت thumb فعال بی‌اثر بود — حتی در دموی اصلی قالب). ناوبری دستی با
+  // رویداد بومی click (سیستم رویداد Swiper در این باندل click را emit نمی‌کند):
+  if (proSwiper) {
+    var syncProThumbs = function () {
+      proSwiper.slides.forEach(function (sl, i) {
+        sl.classList.toggle("swiper-slide-thumb-active", i === proThumbswiper.activeIndex);
+      });
+    };
+    proThumbEl.addEventListener("click", function (e) {
+      var clicked = e.target.closest(".swiper-slide");
+      var slides = Array.prototype.slice.call(proSwiper.slides);
+      var idx = clicked ? slides.indexOf(clicked) : -1;
+      if (idx > -1) proThumbswiper.slideTo(idx);
+    });
+    proThumbswiper.on("slideChange", syncProThumbs);
+    syncProThumbs();
+  }
+}
 
 //=========== end product gallery ===================//
 
