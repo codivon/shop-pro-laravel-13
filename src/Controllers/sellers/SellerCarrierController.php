@@ -13,7 +13,9 @@ class SellerCarrierController extends Controller
 
     public function index()
     {
-        $carriers = Carrier::detectLang()->forCurrentSeller()->latest()->paginate(20);
+        $carriers = Carrier::detectLang()->forCurrentSeller()
+            ->with('province:id,name', 'city:id,name')
+            ->latest()->paginate(20);
 
         return view('front::sellers.panel.carriers.index', compact('carriers'));
     }
@@ -55,6 +57,8 @@ class SellerCarrierController extends Controller
 
     public function edit(Carrier $carrier)
     {
+        $this->assertSellerCarrier($carrier);
+
         $provinces = Province::with('cities:id,province_id,name')->select('id', 'name')->get();
 
         return view('front::sellers.panel.carriers.edit', compact('provinces', 'carrier'));
@@ -62,6 +66,8 @@ class SellerCarrierController extends Controller
 
     public function update(Carrier $carrier, UpdateCarrierRequest $request)
     {
+        $this->assertSellerCarrier($carrier);
+
         $data = $request->validated();
 
         if ($request->hasFile('image')) {
@@ -88,6 +94,7 @@ class SellerCarrierController extends Controller
 
     public function destroy(Carrier $carrier)
     {
+        $this->assertSellerCarrier($carrier);
 
         $carrier->cities()->detach();
         $carrier->delete();
@@ -98,6 +105,21 @@ class SellerCarrierController extends Controller
 
     public function cities(Carrier $carrier)
     {
-        return view('back.carriers.cities', compact('carrier'));
+        $this->assertSellerCarrier($carrier);
+
+        // سانیار فاز J: در WeblakShop این متد نمای back-office را برمی‌گرداند که از روت
+        // ادمین (پشت گارد Admin) فراخوانی می‌شد و برای فروشنده 500/403 می‌داد؛
+        // سانیار روت seller-friendly مخصوص خود + پارشال پنل فروشنده دارد.
+        $carrier->load('cities.province:id,name');
+
+        return view('front::sellers.panel.carriers.partials.cities', compact('carrier'));
+    }
+
+    /**
+     * امنیت IDOR: حامل باید متعلق به فروشنده جاری باشد (حامل‌های عمومی/سایر فروشندگان → 404)
+     */
+    private function assertSellerCarrier(Carrier $carrier)
+    {
+        abort_unless($carrier->seller_id === seller()->id, 404);
     }
 }

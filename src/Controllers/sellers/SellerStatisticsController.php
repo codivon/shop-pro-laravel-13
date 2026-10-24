@@ -19,22 +19,22 @@ class SellerStatisticsController extends Controller
 
     /**
      * ساخت کوئری پایه برای فروشگاه فروشنده (بررسی هر سه فیلد)
+     * سانیار فاز J: دو بند آخر WeblakShop («%/store/%» و «%/shop%») فروشگاهِ «هر» فروشنده‌ای را
+     * match می‌کرد و با چند فروشنده آمار را متورم می‌کرد؛ هر سه بند به slug همین فروشنده قید شد.
      */
     private function baseSellerQuery($sellerSlug)
     {
-        return Viewer::where(function($query) use ($sellerSlug) {
-            // 1. فیلد path: /store/aopy
+        return Viewer::where(function ($query) use ($sellerSlug) {
             $query->where('path', 'like', '/store/' . $sellerSlug . '%')
-                // 2. فیلد product_path: aopy?s=...
                 ->orWhere('product_path', 'like', $sellerSlug . '%')
-                // 3. فیلد page_path: store یا shop
-                ->orWhere('page_path', 'like', '%/store/%')
-                ->orWhere('page_path', 'like', '%/shop%');
+                ->orWhere('page_path', 'like', '%' . $sellerSlug . '%');
         });
     }
 
     /**
      * صفحه اصلی آمار فروشنده
+     * سانیار فاز J: نما به فضای‌نام front:: منتقل شد (نمای seller.statistics در تم سانیار وجود ندارد
+     * و باعث خطای ۵۰۰ می‌شد). متدهای مرده latestVisitors()/breakdown() حذف شدند (روتی به آن‌ها نیست).
      */
     public function index()
     {
@@ -97,7 +97,7 @@ class SellerStatisticsController extends Controller
             ->whereNotNull('page_path')
             ->count();
 
-        return view('seller.statistics.index', compact(
+        return view('front::sellers.panel.statistics.index', compact(
             'totalVisits',
             'uniqueVisitors',
             'todayVisits',
@@ -125,61 +125,5 @@ class SellerStatisticsController extends Controller
     public function viewerCounts(Request $request)
     {
         return $this->sellerViewerCounts($request);
-    }
-
-    /**
-     * لیست آخرین بازدیدکنندگان
-     */
-    public function latestVisitors()
-    {
-        $sellerSlug = seller()->slug;
-
-        $visitors = $this->baseSellerQuery($sellerSlug)
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
-
-        return view('seller.statistics.visitors', compact('visitors'));
-    }
-
-    /**
-     * آمار تفکیکی بر اساس نوع بازدید
-     */
-    public function breakdown()
-    {
-        $sellerSlug = seller()->slug;
-
-        // بازدیدهای 7 روز اخیر بر اساس نوع
-        $dailyPathVisits = $this->baseSellerQuery($sellerSlug)
-            ->where('created_at', '>=', now()->subDays(7))
-            ->whereNotNull('path')
-            ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
-            ->groupBy('date')
-            ->orderBy('date', 'asc')
-            ->get();
-
-        $dailyProductVisits = $this->baseSellerQuery($sellerSlug)
-            ->where('created_at', '>=', now()->subDays(7))
-            ->whereNotNull('product_path')
-            ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
-            ->groupBy('date')
-            ->orderBy('date', 'asc')
-            ->get();
-
-        $dailyPageVisits = $this->baseSellerQuery($sellerSlug)
-            ->where('created_at', '>=', now()->subDays(7))
-            ->whereNotNull('page_path')
-            ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
-            ->groupBy('date')
-            ->orderBy('date', 'asc')
-            ->get();
-
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'path_visits' => $dailyPathVisits,
-                'product_visits' => $dailyProductVisits,
-                'page_visits' => $dailyPageVisits,
-            ]
-        ]);
     }
 }

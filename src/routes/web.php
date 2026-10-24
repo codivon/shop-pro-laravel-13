@@ -381,7 +381,7 @@ Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
         // ========== پروفایل فروشنده ==========
         Route::prefix('profile')->name('profile.')->group(function () {
             Route::get('/', [ProfileSellerController::class, 'index'])->name('index');
-            Route::post('/', [ProfileSellerController::class, 'store'])->name('store');
+            // سانیار فاز J: روت مردهٔ store حذف شد (متدی در کنترلر وجود ندارد — باگ لاتنت WeblakShop)
             Route::put('{seller}/update', [ProfileSellerController::class, 'update'])->name('update');
             Route::post('set-econtract', [ProfileSellerController::class, 'set_econtract'])->name('set_econtract');
         });
@@ -393,15 +393,10 @@ Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
         });
 
         // ========== پرسش و پاسخ ==========
-        Route::resource('questions', QuestionSellerController::class)->names([
-            'index' => 'questions.index',
-            'create' => 'questions.create',
-            'store' => 'questions.store',
-            'show' => 'questions.show',
-            'edit' => 'questions.edit',
-            'update' => 'questions.update',
-            'destroy' => 'questions.destroy',
-        ]);
+        // سانیار فاز J: روات مردهٔ resource (create/store/edit/destroy بدون متد) حذف شد
+        Route::get('questions', [QuestionSellerController::class, 'index'])->name('questions.index');
+        Route::get('questions/{question}', [QuestionSellerController::class, 'show'])->name('questions.show');
+        Route::put('questions/{question}', [QuestionSellerController::class, 'update'])->name('questions.update');
 
         // ========== مدیریت سفارشات ==========
         Route::prefix('orders')->name('orders.')->group(function () {
@@ -428,35 +423,29 @@ Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
         });
 
         // ========== روش‌های ارسال ==========
-        Route::resource('carriers', SellerCarrierController::class)->names([
-            'index' => 'carriers.index',
-            'create' => 'carriers.create',
-            'store' => 'carriers.store',
-            'show' => 'carriers.show',
-            'edit' => 'carriers.edit',
-            'update' => 'carriers.update',
-            'destroy' => 'carriers.destroy',
-        ]);
+        // سانیار فاز J: روت مردهٔ show حذف شد + روت seller-friendly لیست شهرهای حامل (معادل ادمین که پشت گارد Admin است)
+        Route::get('carriers', [SellerCarrierController::class, 'index'])->name('carriers.index');
+        Route::get('carriers/create', [SellerCarrierController::class, 'create'])->name('carriers.create');
+        Route::post('carriers', [SellerCarrierController::class, 'store'])->name('carriers.store');
+        Route::get('carriers/{carrier}/edit', [SellerCarrierController::class, 'edit'])->name('carriers.edit');
+        Route::put('carriers/{carrier}', [SellerCarrierController::class, 'update'])->name('carriers.update');
+        Route::delete('carriers/{carrier}', [SellerCarrierController::class, 'destroy'])->name('carriers.destroy');
+        Route::get('carriers/{carrier}/cities', [SellerCarrierController::class, 'cities'])->name('carriers.cities');
 
-        Route::resource('tariffs', SellerTariffController::class)->names([
-            'index' => 'tariffs.index',
-            'create' => 'tariffs.create',
-            'store' => 'tariffs.store',
-            'show' => 'tariffs.show',
-            'edit' => 'tariffs.edit',
-            'update' => 'tariffs.update',
-            'destroy' => 'tariffs.destroy',
-        ]);
+        Route::get('tariffs', [SellerTariffController::class, 'index'])->name('tariffs.index');
+        Route::get('tariffs/create', [SellerTariffController::class, 'create'])->name('tariffs.create');
+        Route::post('tariffs', [SellerTariffController::class, 'store'])->name('tariffs.store');
+        Route::get('tariffs/{tariff}/edit', [SellerTariffController::class, 'edit'])->name('tariffs.edit');
+        Route::put('tariffs/{tariff}', [SellerTariffController::class, 'update'])->name('tariffs.update');
+        Route::delete('tariffs/{tariff}', [SellerTariffController::class, 'destroy'])->name('tariffs.destroy');
 
         // ========== تیکت‌ها ==========
-        Route::resource('tickets', SellerTicketController::class)->except(['destroy'])->names([
-            'index' => 'tickets.index',
-            'create' => 'tickets.create',
-            'store' => 'tickets.store',
-            'show' => 'tickets.show',
-            'edit' => 'tickets.edit',
-            'update' => 'tickets.update',
-        ]);
+        // سانیار فاز J: روت مردهٔ edit حذف شد (متدی در کنترلر وجود ندارد)
+        Route::get('tickets', [SellerTicketController::class, 'index'])->name('tickets.index');
+        Route::get('tickets/create', [SellerTicketController::class, 'create'])->name('tickets.create');
+        Route::post('tickets', [SellerTicketController::class, 'store'])->name('tickets.store');
+        Route::get('tickets/{ticket}', [SellerTicketController::class, 'show'])->name('tickets.show');
+        Route::put('tickets/{ticket}', [SellerTicketController::class, 'update'])->name('tickets.update');
 
 
         Route::prefix('holidays')->name('holidays.')->group(function () {

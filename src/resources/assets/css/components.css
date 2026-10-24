@@ -34,6 +34,12 @@
     background: #d02304;
 }
 
+/* سانیار فاز J: توست هشداری (راهنماهای پنل فروشنده) */
+.saniar-toast.saniar-toast-warning {
+    background: #FFA41B;
+    color: #3d2b00;
+}
+
 @media (max-width: 576px) {
     .saniar-toast {
         left: 12px;

@@ -30,7 +30,9 @@ class ProfileSellerController extends Controller
     {
         $seller=Seller::find(Auth::guard('seller')->id());
         $seller_info=SellerInfo::where('seller_id',$seller->id)->first();
-        $categories=Category::where('category_id',null)->get();
+        // سانیار فاز J: دسته‌های ریشه + فرزندان برای گروه‌بندی optgroup در انتخاب «قصد فروش»
+        // (رابطه children در Category.php و ستون عنوان title است)
+        $categories=Category::where('category_id',null)->with('children')->get();
         $econtract=SellerEcontract::find(1);
         $provinces = Province::with('cities:id,province_id,name')->select('id', 'name')->get();
         return view('front::sellers.panel.profile.index',compact('seller','seller_info','categories','provinces','econtract'));
@@ -41,6 +43,14 @@ class ProfileSellerController extends Controller
         if ($seller->id!=Auth::guard('seller')->id()){
             abort(404);
         }
+
+        // سانیار فاز J: آپلود مجدد هر مدرک، وضعیت مدارک را روی «هر دو» مدل به Waiting برمی‌گرداند؛
+        // قبلاً فقط seller_info تنظیم می‌شد ولی نما از $seller->status_documents می‌خواند => UI کهنه می‌ماند.
+        // چون $seller->save() قبل از نوشتن seller_info است، پرچم را همین‌جا قبل از save ست می‌کنیم.
+        $has_new_documents = $request->hasFile('card_image')
+            || $request->hasFile('card_image_back')
+            || $request->hasFile('vat_image');
+
         $seller->email=$request->email;
         if ($request->prev_password and $request->password){
             if (!Hash::check($request->prev_password, $seller->password)) {
@@ -51,6 +61,9 @@ class ProfileSellerController extends Controller
             }
         }
         $seller->status_work="EditProfile";
+        if ($has_new_documents) {
+            $seller->status_documents='Waiting';
+        }
         $seller->save();
 
         $seller_info=SellerInfo::where('seller_id',$seller->id)->first();
@@ -73,7 +86,8 @@ class ProfileSellerController extends Controller
         $seller_info->address=$request->address;
         $seller_info->phone=$request->phone;
         $seller_info->post_code=$request->post_code;
-        $seller_info->location=$request->lat_and_long;
+        // سانیار فاز J: فیلد فرم name=location است (باگ WeblakShop: lat_and_long خوانده می‌شد => هرگز ذخیره نمی‌شد)
+        $seller_info->location=$request->location;
 
         $seller_info->shaba_number=$request->shaba_number;
         $seller_info->main_supply_category_id=$request->main_supply_category_id;

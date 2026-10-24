@@ -14,7 +14,14 @@ class SellerTariffController extends Controller
 
     public function index(Request $request)
     {
-        $carrier = Carrier::findOrFail($request->carrier);
+        // سانیار فاز J: لینک منوی «تعرفه‌های ارسال» بدون پارامتر carrier است؛
+        // در WeblakShop این حالت 500 می‌داد → هدایت به فهرست حامل‌ها + توست راهنما
+        if (!$request->filled('carrier')) {
+            session()->put('toast-warning', 'ابتدا روش ارسال موردنظر را از فهرست حامل‌ها انتخاب کنید.');
+            return redirect()->route('seller.carriers.index');
+        }
+
+        $carrier = Carrier::where('seller_id', seller()->id)->findOrFail($request->carrier);
         $tariffs = $carrier->tariffs()->orderBy('type')->orderBy('max_weight')->paginate(20);
 
         return view('front::sellers.panel.tariffs.index', compact('carrier', 'tariffs'));
@@ -22,7 +29,7 @@ class SellerTariffController extends Controller
 
     public function create(Request $request)
     {
-        $carrier = Carrier::findOrFail($request->carrier);
+        $carrier = Carrier::where('seller_id', seller()->id)->findOrFail($request->carrier);
 
         return view('front::sellers.panel.tariffs.create', compact('carrier'));
     }
@@ -30,6 +37,9 @@ class SellerTariffController extends Controller
     public function store(StoreTariffRequest $request)
     {
         $data = $request->validated();
+
+        // امنیت IDOR: رول اعتبارسنجی فقط exists است؛ مالکیت حامل روی carrier_id بررسی می‌شود
+        $carrier = Carrier::where('seller_id', seller()->id)->findOrFail($data['carrier_id']);
 
         Tariff::create($data);
 
@@ -40,12 +50,19 @@ class SellerTariffController extends Controller
 
     public function edit(Tariff $tariff)
     {
+        $this->assertSellerTariff($tariff);
+
         return view('front::sellers.panel.tariffs.edit', compact('tariff'));
     }
 
     public function update(UpdateTariffRequest $request, Tariff $tariff)
     {
+        $this->assertSellerTariff($tariff);
+
         $data = $request->validated();
+
+        // امنیت IDOR: جابه‌جایی تعرفه به حامل دیگری (عمومی/سایر فروشندگان) مسدود می‌شود
+        $carrier = Carrier::where('seller_id', seller()->id)->findOrFail($data['carrier_id']);
 
         $tariff->update($data);
 
@@ -55,8 +72,19 @@ class SellerTariffController extends Controller
 
     public function destroy(Tariff $tariff)
     {
+        $this->assertSellerTariff($tariff);
+
         $tariff->delete();
 
+        session()->put('toast-success', 'تعرفه با موفقیت حذف شد.');
         return response('success');
+    }
+
+    /**
+     * امنیت IDOR: تعرفه باید از طریق حاملِ متعلق به فروشنده جاری باشد (وگرنه 404)
+     */
+    private function assertSellerTariff(Tariff $tariff)
+    {
+        abort_unless($tariff->carrier && $tariff->carrier->seller_id === seller()->id, 404);
     }
 }

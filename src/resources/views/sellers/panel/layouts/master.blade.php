@@ -21,11 +21,13 @@
         ['route' => 'seller.questions.index', 'active' => 'questions', 'icon' => 'bi-patch-question', 'label' => 'پرسش و پاسخ'],
         ['route' => 'seller.statistics.index', 'active' => 'statistics', 'icon' => 'bi-graph-up-arrow', 'label' => 'آمار و بازدید'],
         ['route' => 'seller.tickets.index', 'active' => 'tickets', 'icon' => 'bi-life-preserver', 'label' => 'درخواست پشتیبانی'],
-        ['route' => 'seller.notifications.index', 'active' => 'notifications', 'icon' => 'bi-bell', 'label' => 'پیام‌ها'],
+        ['route' => 'seller.notifications.index', 'active' => 'notifications', 'icon' => 'bi-bell', 'label' => 'پیام‌ها', 'badge' => 'unread-notifications'],
         ['header' => 'حساب'],
         ['route' => 'seller.profile.index', 'active' => 'profile', 'icon' => 'bi-person-gear', 'label' => 'پروفایل شما'],
     ];
     $panel_active = $active ?? null;
+    // سانیار فاز J: شمار اعلان‌های ناخواندهٔ فروشنده برای نشان «پیام‌ها» (با wherePivot — ستون read فقط روی پیوت است)
+    $unread_notifications = seller() ? seller()->unreadNotifications()->count() : 0;
 @endphp
 
 @section('content')
@@ -115,6 +117,9 @@
                                                                class="nav-link d-flex align-items-center py-2 px-2 rounded-3 {{ $is_active ? 'main-color-one-bg text-white' : 'text-dark' }}">
                                                                 <i class="bi {{ $item['icon'] }} me-2 {{ $is_active ? 'text-white' : 'main-color-one-color' }}"></i>
                                                                 <span class="font-14">{{ $item['label'] }}</span>
+                                                                @if(!empty($item['badge']) && $item['badge'] === 'unread-notifications')
+                                                                    <span class="badge rounded-pill bg-danger font-12 me-auto notifications-count-number {{ $unread_notifications > 0 ? '' : 'd-none' }}">{{ $unread_notifications }}</span>
+                                                                @endif
                                                             </a>
                                                         </li>
                                                     @endif

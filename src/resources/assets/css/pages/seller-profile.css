@@ -1,0 +1,87 @@
+/* ============================================================
+   پروفایل فروشنده — سانیار (فاز J)
+   مکمل css/pages/seller.css (بدون دست‌کاری آن):
+   چیپ‌های اطلاعاتی، پیش‌نمایش مدارک، ستون چسبان عملیات، متن قرارداد
+   ============================================================ */
+
+/* ---------- ستون چسبان ناوبری/عملیات ---------- */
+.sfe-side {
+    top: .75rem;
+    z-index: 10;
+}
+
+/* ---------- چیپ‌های فقط‌خواندنی (کد فروشنده/نوع/نام تجاری) ---------- */
+.sfe-info-chip {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    background: #fbfcff;
+    border: 1px solid #eef1f7;
+    border-radius: .8rem;
+    padding: .6rem .8rem;
+    height: 100%;
+}
+.sfe-info-chip .chip-label {
+    color: var(--main-color-one);
+    font-weight: 600;
+}
+.sfe-info-chip .chip-value {
+    color: #101828;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ---------- پیش‌نمایش مدارک هویتی ---------- */
+.sfe-doc-preview {
+    border: 1px solid #eef1f7;
+    background: #fbfcff;
+    border-radius: .8rem;
+    padding: .6rem;
+    text-align: center;
+    height: 100%;
+}
+.sfe-doc-preview img {
+    width: 120px;
+    height: 120px;
+    max-width: 100%;
+    object-fit: cover;
+    border-radius: .6rem;
+    display: inline-block;
+}
+.sfe-doc-preview .doc-caption {
+    display: block;
+    color: var(--main-color-one);
+    font-weight: 600;
+    margin-top: .5rem;
+}
+
+/* ---------- متن قرارداد داخل مودال ---------- */
+.sfe-econtract-body {
+    line-height: 2.2;
+    color: #475467;
+}
+.sfe-econtract-body + .sfe-econtract-body {
+    border-top: 1px dashed #e0e5f0;
+    margin-top: 1rem;
+    padding-top: 1rem;
+}
+.sfe-econtract-body img {
+    max-width: 100%;
+    height: auto;
+    border-radius: .6rem;
+}
+.sfe-econtract-body table {
+    width: 100%;
+}
+
+/* ---------- موبایل ---------- */
+@media (max-width: 767.98px) {
+    .sfe-side {
+        position: static !important; /* نوار تب افقی در موبایل نباید چسبان باشد */
+    }
+    .sfe-doc-preview img {
+        width: 96px;
+        height: 96px;
+    }
+}

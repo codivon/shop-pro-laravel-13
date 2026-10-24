@@ -390,7 +390,7 @@
     {!! option('info_scripts', '') !!}
 
     {{-- توست‌های فلش سشن (فاز F — کیف پول/برداشت و سایر جریان‌های سروری) --}}
-    @if(session('toast-success') || session('toast-error'))
+    @if(session('toast-success') || session('toast-error') || session('toast-warning'))
         <script>
             (function () {
                 function show(msg, type) {
@@ -399,8 +399,8 @@
                         $t = jQuery('<div id="saniar-toast" class="saniar-toast"></div>').appendTo('body');
                     }
                     $t.text(msg)
-                        .removeClass('saniar-toast-error saniar-toast-success')
-                        .addClass(type === 'error' ? 'saniar-toast-error' : 'saniar-toast-success')
+                        .removeClass('saniar-toast-error saniar-toast-success saniar-toast-warning')
+                        .addClass(type === 'error' ? 'saniar-toast-error' : (type === 'warning' ? 'saniar-toast-warning' : 'saniar-toast-success'))
                         .addClass('saniar-toast-show');
                     setTimeout(function () { $t.removeClass('saniar-toast-show'); }, 4000);
                 }
@@ -411,10 +411,13 @@
                     @if(session('toast-error'))
                         show(@json(session('toast-error')), 'error');
                     @endif
+                    @if(session('toast-warning'))
+                        show(@json(session('toast-warning')), 'warning');
+                    @endif
                 });
             })();
         </script>
-        @php session()->forget(['toast-success', 'toast-error']); @endphp
+        @php session()->forget(['toast-success', 'toast-error', 'toast-warning']); @endphp
     @endif
 
     @stack('scripts')
