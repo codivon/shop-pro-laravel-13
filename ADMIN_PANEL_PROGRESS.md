@@ -2156,3 +2156,46 @@ A=۴۹ اسکلت ✓ | B=۵۰ تکمیل ویجت‌های خانه ✓ | C=۵�
 فروشندهٔ تست + info + کیف پول + variant/قیمت + کامنت‌های ۲۴/۲۵/۲۶ + تیکت ۳ + پیام‌ها + فایل zip + حامل‌های ۳۰۷/۳۰۸ + تعرفه‌های ۳ گانه + اعلان‌ها + ردیف‌های پیوت + ادمین تست + ۱۲ بازدید — همه حذف شد؛ sellers=0, tickets=0, carriers=0, admins=0, کامنت‌های محصول فقط دموهای قبلی (۷/۸/۹)؛ public/uploads/tickets پاک؛ CURRENT_THEME → WeblakShop.
 
 **کامیت:** تم → theme-saniar (b8e6c660) | میزبان (فقط این فایل) → docs/project-analysis | **فاز بعدی: K (۶۲) — صفحات محتوایی (بلاگ/تماس/درباره/FAQ/404 اختصاصی‌تر) + تبدیل Livewire 4 SPA (wire:navigate) + سئو نهایی + تست‌های اختصاصی تم سانیار (فاز پایانی قالب)**
+
+## Phase 62 — قالب سانیار فاز K (پایانی): صفحات محتوایی + Livewire 4 SPA + سئوی نهایی + تست‌های اختصاصی تم
+
+**تاریخ:** 2026-10-24 | **برنچ میزبان:** docs/project-analysis (کد میزبان دست‌نخورده — ۱۰۰٪ در ریپوی تم) | **تم:** themes/Saniar کامیت eec5ac2d → پوش به برنچ theme-saniar | **تست:** فاز ۱ (Unit+AdminPanelSmoke+Auth+Cart+Catalog+Checkout+Extra): **134 ✓ / 3 skipped** (364 assertions) | فاز ۲ (Security+Order+Payment+Performance): **102 ✓** (337 assertions) | **تست اختصاصی تم (جدید):** `php vendor/bin/phpunit -c themes/Saniar/phpunit.xml` → **24 ✓** (95 assertions) — بدون تغییر میزبان (phpunit/TestCase/تست‌ها همه در ریپوی تم با بوت‌استراپ به vendor میزبان)
+
+### تحویل‌شده‌های فاز K (۱۳ نمای Blade + ۲ پارشال کامنت + ۳ ویجت وبلاگ + ۵ JS + ۲ CSS — همه در ریپوی تم)
+1. **وبلاگ (blogs/index)**: لندینگ ویجت‌محور (همان قرارداد WeblakShop — widgets صفحه posts) + سربرگ اختصاصی (جستجو → blog/search + دکمه آرشیو) + نوار دسته‌ها (navbar-blog مرجع با اسکرول افقی) + گرید سه‌کاره blog-news-item + اسلایدر blog-item؛ **fallback کاملاً داینامیک** برای نصب بدون ویجت (آخرین/پربازدید/دسته‌ها مستقیم از DB).
+2. **آرشیو مقالات (articles/index + ۲ پارشال)**: breadcrumb + pills مرتب‌سازی (۵ حاله) + جستجوی dبونس‌دار (q) + chips فیلترهای فعال با حذف تک‌تک + شمارندهٔ نتایج فارسی + کارت نویسنده (با فیلتر profile) + گرید کارت (ویدئو/پادکست/انتخاب سردبیر بج‌دار) + حالت خالی دوستانه + صفحه‌بندی/مرتب‌سازی AJAX (JSON: data/pagination/total — بدون ریلود).
+3. **صفحهٔ مقاله (articles/show + ۲ پارشال)**: عنوان/نویسنده/تاریخ/بازدید/زمان-مطالعه (محاسبه سروری) + تصویر شاخص + خلاصهٔ رنگی + محتوا + تگ‌ها + لایک AJAX (مهمان با IP) + اشتراک تلگرام/واتساپ/کپی-لینک + سایدبار sticky (آخرین مطالب + هشتگ‌های داغ + دسته‌بندی‌ها) + اسلایدر پیشنهادهای سردبیر + نظرات کامل (پندینگ‌های کاربر، لیست تاییدشده با پاسخ‌های تودرتو، لایک/دیسلایک کامنت با کوکی، پاسخ تاشو، صفحه‌بندی AJAX).
+4. **تماس با ما (contact)**: کارت‌های تلفن/ایمیل/آدرس/شبکه‌های اجتماعی همه از optionها (با لینک نقشهٔ بیرونی به‌جای پلاگین سنگین — الگوی فاز I) + فرم AJAX با کپچای x-captcha میزبان + رفرش خودکار کپچا بعد از خطا/موفقیت + توضیحات بالا/پایین از تنظیمات (dt_*).
+5. **صفحات داینامیک (pages/show)**: محتوای ادمین + شورت‌کدها + تایپوگرافی .dynamic-content (h2-h4/لیست/جدول/بلاک‌کوت/آکاردئون FAQ الگوی مرجع) + JSON-LD WebPage.
+6. **۴۰۴ ارتقایافته**: کد بزرگ فارسی ۴۰۴ + جستجوی نجات + ۴ دسترسی سریع + پیشنهاد محصولات ویژه (کش ۱۰ دقیقه) + robots تک‌متای noindex (باگ متای تعارض با master رفع شد).
+7. **SPA لایووایر ۴ (wire:navigate)**: @livewireStyles/Scripts در master؛ اسکریپت هسته با `data-navigate-once` (تزریق از ThemeServiceProvider→useScriptTagAttributes — جلوگیری از دوباره‌بوت Livewire/Alpine در ناوبری)؛ ۶ کتابخانهٔ vendor علامت navigate-once؛ اسکریپت‌های init (app.js/صفحه‌ای) مجدد اجرا می‌شوند؛ wire:navigate روی لینک‌های ساختاری (لوگو/فوتر/نوار موبایل/فیلترها) + **spa-navigate.js** سراسری برای همهٔ لینک‌های محتوایی با گاردها (target=_blank، خارجی، #، tel:/mailto:، مسیرهای ادمین/livewire، [data-no-spa])؛ رفع live-search.js برای SPA (الگوی readyState — DOMContentLoaded در ناوبری قبلاً رخ داده بود).
+8. **سئو**: description داینامیک هر صفحه (متغیر description در extends با فالبک) + og:image/og:type/article:published_time/article:tag + canonical تک‌صفحه + robots بازنویسی‌پذیر + JSON-LDهای فوتر (Organization+WebSite+SearchAction — همه از دیتابیس) و مقاله (Article+BreadcrumbList) و صفحه (WebPage) و تماس (ContactPage) + sitemap.articles/statics رفع‌شده.
+9. **تست اختصاصی تم**: `themes/Saniar/phpunit.xml` (env CURRENT_THEME=Saniar + بوت‌استراپ vendor میزبان) — ۲۴ تست: دودی همهٔ صفحات، قرارداد JSON-LD/OG/canonical، فلوی کامل لایک/دیدگاه/پاسخ/لایک-کامنت (UI→DB)، گارد «NULL»، ریدایرکت blog/search، حذف روت مرده، AJAX shapes، sitemap، SPA assets، کمکی saniar_seo_value.
+
+### باگ‌های لاتنت رفع‌شده نسبت به کپی WeblakShop/میزبان (۱۲ مورد — کد میزبان دست‌نخورده)
+1. **رابطهٔ categories روی Post اصلاً تعریف نشده** (پیوتcategory_post بدون استفاده؛ پست‌ها FK تکی category_id دارند): with/whereHas('categories') در کنترلر → RelationNotFound → **آرشیو و صفحهٔ مقالهٔ WeblakShop همیشه ۵۰۰**؛ سانیار: category تکی + فیلتر cat با type=postcat.
+2. **روت مردهٔ blog/search**: به BlogController::search ناموجود پوینت می‌کرد (BadMethodCall) — پیاده‌سازی شد (ریدایرکت به آرشیو با q؛ خود آرشیو فیلتر عنوان گرفت).
+3. **روت مردهٔ blogs/{post}/comments** (متد comments ناموجود) حذف شد؛ نظرات از مسیر articles.comments می‌آیند.
+4. **getComments با status='approved'** در حالی که واژگان سیستم 'accepted' است → لیست AJAX نظرات همیشه خالی + بدون eager پاسخ‌های تاییدشده — هر دو اصلاح شد (روت GET comments/{post} هم که اصلاً وجود نداشت اضافه شد: متد مرده→اندپوینت واقعی).
+5. **statics.xml همیشه ۵۰۰**: ۶ روت ناموجود (front.home/about/faq/blog/shop) → با ۵ روت واقعی (index/products/blog/articles/contact) جایگزین شد.
+6. **articles.xml همیشه ۵۰۰**: پارامتر ['post'=>…] به روت {slug} → Missing parameter slug.
+7. **og:image از ستون ناموجود pages.image** (asset(null)) + ۸. **canonical نادرست pages/show به روت front.articles.show** — هر دو اصلاح شدند.
+9. **پیش‌فرض رشتهٔ literal «NULL»** ستون‌های meta_title/meta_description (باگ مهاجرت میزبان؛ ردیف بدون ستون → عنوان/توضیح «NULL») → کمکی saniar_seo_value با گارد، در pages/show + articles/show.
+10. **کلیدهای '@context' در json_encode داخل Blade** به دایرکتیو Laravel 11+ @context تفسیر می‌شدند (schema مخدوش؛ در category-products فازهای قبلی هم لاتنت بود) → escape `@@` طبق سازوکار compileEscapes در ۵ فایل.
+11. **متای تعارضی robots در ۴۰۴** (master index,follow + push noindex) → robots متغیری از extends ($robots).
+12. **کامپوزر نشت‌آفرین @yield در twitter:image** که کل کامپایل master را تا انتهای فایل می‌شکست (پیدا شد در E2E: @stack('meta') خام!) → بازطراحی با متغیر $ogImage.
+
+### E2E مرورگر (تم فعال موقت در .env، دسکتاپ 1280 + موبایل 390 — دادهٔ دمو: ۶ پست/۴ تگ/۳ کامنت/۲ صفحه)
+- **SPA**: ناوبری دسته→آرشیو→مقاله با ماندگاری window marker (بدون ریلود کامل)؛ ری‌اینیت سوایپرها و **جستجوی زندهٔ هدر پس از ناوبری** (باگ readyState رفع‌شده؛ pre-fix FAILED، post-fix سبز)؛ wire:navigate ۴۴ لینک + data-navigate-once ۷ اسکریپت در خروجی.
+- **آرشیو**: sort=most_viewed (URL+کارت‌ها)، جستجوی «شیائومی» → ۱ نتیجهٔ دقیق، فیلتر ترکیبی cat+sort+q، chips حذف فیلتر، شمارنده فارسی.
+- **مقاله**: لایک ۰→۱ (active)؛ ثبت دیدگاه → prepend پندینگ + توست؛ پاسخ (collapse) → توست + بستن فرم؛ لایک کامنت ۱۲→۱۳؛ JSON-LD سه‌گانه در head (Article/BreadcrumbList/Organization-WebSite).
+- **تماس**: کپچای غلط → توست «کد امنیتی اشتباه است» + رفرش خودکار؛ **کپچای واقعی با VLM خوانده شد → ثبت موفق UI→DB (contacts=1)** + ریست فرم.
+- **صفحات**: آکاردئون FAQ (collapse show c2)؛ دربارهٔ ما + گارد «NULL» (عنوان NULL → عنوان واقعی پس از اصلاح)؛ JSON-LD WebPage در head.
+- **۴۰۴**: notfound-code + جستجو + ۴ لینک + محصولات ویژه + robots:noindex تک‌متا.
+- **sitemap**: ۱۳ فایل ۲۰۰ (articles/statics پس از رفع باگ)؛ home ۲۰۰ با WeblakShop پس از بازگردانی.
+- **موبایل 390px**: هر ۶ صفحه scrollWidth=390 (بدون overflow) | **VLM روی ۶ اسکرین‌شات**: همهٔ صفحات «سالم و حرفه‌ای»؛ دو فلگ VLM (FAB سبد روی محتوا/واتساپ پایین-چپ) همان مثبت کاذبِ مستندشدهٔ فاز H و طراحی اصل قالب‌اند؛ عنوان‌هایی که VLM خواند توهم متن ریز بود (DOM واقعی صحیح). **صفر خطای کنسول/صفحه** در کل نشست.
+
+### پاکسازی دمو
+۶ پست + ۴ تگ + پیوت‌ها + ۵ کامنت + لایک‌های پست + ۲ صفحهٔ داینامیک + پیام تماس + اطلاع‌رسانی‌های وابسته + ادمین تست + ۱۲ فایل sitemap تولیدی — همه حذف شد؛ posts=0, tags=0, pages=0, contacts=0, admins=0, comments=0, postLikes=0؛ products=5 (دموی اصلی), orders=0؛ CURRENT_THEME → WeblakShop؛ خانه ۲۰۰.
+
+**کامیت:** تم → theme-saniar (eec5ac2d) | میزبان (فقط این فایل) → docs/project-analysis | **پایان نقشهٔ راه قالب سانیار (فازهای A تا K کامل شد) — گام بعدی پیشنهادی: ادغام theme-saniar در شاخهٔ اصلی + فعال‌سازی تدریجی تم در محیط staging + تست رگرسیون کامل با CURRENT_THEME=Saniar روی مجموعهٔ ۲۳۶ تست**
