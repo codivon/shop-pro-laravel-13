@@ -216,7 +216,14 @@ class PackageApiService
 
             $json = $response->json();
             if ($json === null) {
+                /*
+                 * فاز ۶۷ — پاسخ 2xx با بدنهٔ غیرJSON هرگز به‌صورت null برنگردد؛
+                 * nullِ برگشتی قبلاً در Cache::remember کش می‌شد و مودال/لیست را
+                 * بی‌صدا خالی می‌کرد. خطای واضح → بدون کش‌شدن + قابل نمایش در UI.
+                 */
                 Log::warning('PKG-API-DEBUG null json', ['endpoint' => $endpoint, 'status' => $response->status(), 'body' => substr($response->body(), 0, 200)]);
+
+                throw new RuntimeException('پاسخ سرور پکیج‌ها معتبر نبود (JSON نامعتبر). لطفاً دوباره تلاش کنید.');
             }
 
             return $json;

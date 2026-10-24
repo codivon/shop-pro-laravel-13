@@ -156,6 +156,36 @@ trait InteractsWithTemplates
 
     /* ---------------- مودال جزئیات قالب ---------------- */
 
+    /**
+     * فاز ۶۷ — استخراج خودِ قالب از هر شکلِ پاسخِ ممکن:
+     * {data:{...}} | {template:{...}} | {result:{...}} | {...} | wrapper دوتایی
+     * بازگشت null = پاسخ قابل استفاده نیست (بدون slug/name).
+     */
+    protected function resolveTemplatePayload(mixed $data): ?array
+    {
+        $node = $data;
+
+        for ($depth = 0; $depth < 3; $depth++) {
+            if (! is_array($node)) {
+                return null;
+            }
+
+            if (array_key_exists('slug', $node) || array_key_exists('name', $node)) {
+                return $node;
+            }
+
+            $next = $node['data'] ?? $node['template'] ?? $node['result'] ?? null;
+
+            if (! is_array($next)) {
+                return null;
+            }
+
+            $node = $next;
+        }
+
+        return null;
+    }
+
     public function openTemplateDetail(string $slug): void
     {
         auth('adminPanel')->user()?->can('packages.index') ?: abort(403);
@@ -164,19 +194,38 @@ trait InteractsWithTemplates
         $this->tDetailLoading = true;
         $this->tDetailError = null;
         $this->tDetail = null;
+        $this->tDetailSlug = $slug;
         $this->tExclusiveConfirmed = false;
         $this->tDetailPurchaseType = 'normal';
 
+        $cacheKey = 'templates.detail.'.$slug;
+
         try {
             $data = \Illuminate\Support\Facades\Cache::remember(
-                'templates.detail.'.$slug,
+                $cacheKey,
                 now()->addMinutes(config('packages.cache.detail_ttl', 10)),
                 fn () => $this->api()->getTemplate($slug)
             );
 
-            $template = $data['data'] ?? $data;
+            $template = $this->resolveTemplatePayload($data);
 
-            // وضعیت نصب محلی
+            if ($template === null) {
+                /*
+                 * فاز ۶۷ — پاسخ بی‌داده هرگز کش نمی‌ماند (وگرنه تا انقضای TTL
+                 * همهٔ کلیک‌ها مودال خالی می‌دهند) + خطای واضح با دکمهٔ تلاش دوباره.
+                 */
+                \Illuminate\Support\Facades\Cache::forget($cacheKey);
+                \Illuminate\Support\Facades\Log::warning('Template detail payload unusable', [
+                    'slug' => $slug,
+                    'type' => gettype($data),
+                    'keys' => is_array($data) ? array_slice(array_keys($data), 0, 15) : null,
+                ]);
+                $this->tDetailError = 'پاسخ سرور قالب‌ها ناقص بود (دادهٔ قالب برگردانده نشد). دوباره تلاش کنید؛ اگر تکرار شد وضعیت اتصال به سرور بازار را بررسی کنید.';
+
+                return;
+            }
+
+            // وضعیت نصب محلی (فقط روی آرایهٔ معتبر — بدون auto-vivification)
             $installed = InstalledTheme::where('slug', $slug)->first();
             $template['installed'] = $installed ? [
                 'name'    => $installed->name,
@@ -195,8 +244,10 @@ trait InteractsWithTemplates
 
             $this->tDetail = $template;
         } catch (RuntimeException $e) {
+            \Illuminate\Support\Facades\Cache::forget($cacheKey);
             $this->tDetailError = $e->getMessage();
         } catch (Throwable $e) {
+            \Illuminate\Support\Facades\Cache::forget($cacheKey);
             report($e);
             $this->tDetailError = 'خطا در دریافت اطلاعات قالب.';
         } finally {

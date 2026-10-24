@@ -379,7 +379,8 @@
                         $tSlug      = $tpl['slug'] ?? '';
                         $tName      = $tpl['name'] ?? $tSlug;
                         $tVersion   = $tpl['latest_version']['version'] ?? ($tpl['version'] ?? null);
-                        $tThumb     = $tpl['thumbnail'] ?? $tpl['cover'] ?? $tpl['preview_image'] ?? $tpl['image'] ?? null;
+                        // فاز ۶۷ — فیلد واقعی API: thumbnail_url (با fallbackهای قبلی)
+                        $tThumb     = $tpl['thumbnail_url'] ?? $tpl['thumbnail'] ?? $tpl['cover'] ?? $tpl['preview_image'] ?? $tpl['image'] ?? null;
                         $tPurchased = (bool) ($tpl['is_purchased'] ?? false);
                         $tSales     = $tpl['purchases_count'] ?? null;
                         $tState     = $installedThemesMap[$tSlug] ?? null;
@@ -1668,96 +1669,149 @@
     {{-- ====================== --}}
     {{-- فاز ۴۴ — مودال جزئیات قالب (خرید normal/exclusive + وضعیت نصب) --}}
     {{-- ====================== --}}
+    {{-- فاز ۶۷ — مودال جزئیات قالب (بازطراحی مدرن: هیروی تصویری + فوتر چسبان + گالری +
+         خطای خودتشخیص‌دهنده با تلاش دوباره — بدنهٔ مودال دیگر هیچ‌وقت خالی نمی‌ماند) --}}
     @if ($tDetailOpen)
-    <div class="fixed inset-0 z-[90] flex items-center justify-center p-4"
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-3 sm:p-4"
          x-on:keydown.escape.window="$wire.closeTemplateDetail()" role="dialog" aria-modal="true" aria-label="جزئیات قالب">
-        <div class="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" wire:click="closeTemplateDetail" aria-hidden="true"></div>
+        <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" wire:click="closeTemplateDetail" aria-hidden="true"></div>
 
-            {{-- فاز ۶۶ — مودال بزرگ‌تر (4xl ≈ modal-lg/xl قدیمی) تا جزئیات HTML کامل جا شود --}}
-        <div class="relative flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-surface shadow-2xl dark:bg-night-2">
-            {{-- هدر --}}
-            <div class="flex items-center justify-between gap-3 border-b border-line p-4 dark:border-night-line">
-                <h2 class="flex items-center gap-2 text-sm font-extrabold">
-                    <span class="flex size-8 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
-                        <x-admin-panel::icon name="layout-template" class="size-4.5" />
+        <div class="relative flex max-h-[93vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-pop dark:border-night-line dark:bg-night-2">
+
+            {{-- دکمهٔ بستن شناور --}}
+            <button type="button" wire:click="closeTemplateDetail"
+                    class="absolute end-3.5 top-3.5 z-20 flex size-9 items-center justify-center rounded-full bg-slate-950/35 text-white shadow-lg backdrop-blur transition-all hover:scale-105 hover:bg-slate-950/55"
+                    aria-label="بستن" title="بستن (Esc)">
+                <x-admin-panel::icon name="x" class="size-4.5" />
+            </button>
+
+            {{-- ============ حالت بارگذاری ============ --}}
+            @if ($tDetailLoading)
+                <div class="flex min-h-[320px] flex-col items-center justify-center gap-4">
+                    <span class="relative flex size-16 items-center justify-center">
+                        <span class="absolute inset-0 animate-ping rounded-full bg-brand-500/20" aria-hidden="true"></span>
+                        <span class="flex size-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
+                            <x-admin-panel::icon name="layout-template" class="size-7" />
+                        </span>
                     </span>
-                    جزئیات قالب
-                </h2>
-                <button type="button" wire:click="closeTemplateDetail"
-                        class="rounded-xl p-2 text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink dark:text-night-ink-2 dark:hover:bg-night-3 dark:hover:text-night-ink"
-                        aria-label="بستن">
-                    <x-admin-panel::icon name="x" class="size-4.5" />
-                </button>
-            </div>
+                    <p class="text-[13px] font-bold text-ink-2 dark:text-night-ink-2">در حال دریافت اطلاعات قالب…</p>
+                </div>
 
-            {{-- بدنه --}}
-            <div class="flex-1 overflow-y-auto p-5" wire:loading.delay class:opacity-60>
-                @if ($tDetailLoading)
-                    <div class="flex flex-col items-center justify-center gap-3 py-12" wire:loading wire:target="openTemplateDetail">
-                        <svg class="size-8 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                            <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
-                        </svg>
-                        <p class="text-xs font-bold text-ink-3 dark:text-night-ink-2">در حال دریافت اطلاعات قالب…</p>
+            {{-- ============ حالت خطا + تلاش دوباره (فاز ۶۷) ============ --}}
+            @elseif ($tDetailError)
+                <div class="flex min-h-[320px] flex-col items-center justify-center gap-3 px-6 py-10 text-center">
+                    <span class="flex size-14 items-center justify-center rounded-2xl bg-red-50 text-red-500 dark:bg-red-500/10 dark:text-red-400">
+                        <x-admin-panel::icon name="triangle-alert" class="size-7" />
+                    </span>
+                    <p class="text-sm font-bold">دریافت جزئیات قالب ناموفق بود</p>
+                    <p class="max-w-md text-xs leading-6 text-ink-3 dark:text-night-ink-2">{{ $tDetailError }}</p>
+                    <div class="mt-1 flex items-center gap-2">
+                        <button type="button" wire:click="openTemplateDetail('{{ $tDetailSlug }}')" wire:loading.attr="disabled" wire:target="openTemplateDetail"
+                                class="ap-btn-primary !py-2.5">
+                            <x-admin-panel::icon name="refresh-cw" class="size-4" />
+                            تلاش دوباره
+                        </button>
+                        <button type="button" wire:click="closeTemplateDetail" class="ap-btn-outline !py-2.5">بستن</button>
                     </div>
-                @elseif ($tDetailError)
-                    <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-400">
-                        {{ $tDetailError }}
-                    </div>
-                @elseif ($tDetail)
-                    @php
-                        $tPrice    = (int) ($tDetail['discount_price'] ?? $tDetail['price'] ?? $tDetail['min_price'] ?? 0);
-                        $tOldPrice = ($tDetail['discount_price'] ?? null) ? (int) ($tDetail['price'] ?? 0) : 0;
-                        $tExPrice  = (int) ($tDetail['exclusive_price'] ?? 0);
-                        $tSold     = (bool) ($tDetail['is_sold_exclusively'] ?? false);
-                        // فاز ۶۶ — تشخیص قالب رایگان + جزئیات کامل HTML از سمت بازار
-                        $tIsFree   = ! empty($tDetail['is_free']) || $tPrice === 0;
-                        $tLongDesc = $tDetail['long_description'] ?? $tDetail['description'] ?? $tDetail['content'] ?? null;
-                        $tCover    = $tDetail['thumbnail'] ?? $tDetail['cover'] ?? $tDetail['preview_image'] ?? $tDetail['image'] ?? null;
-                        $tVersions = $tDetail['active_versions'] ?? [];
-                        $tInstalled= $tDetail['installed'] ?? null;
-                    @endphp
+                </div>
 
-                    {{-- کاور + نام --}}
-                    <div class="mb-4 flex flex-wrap items-center gap-4">
-                        <div class="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-brand-100 via-teal-50 to-amber-50 dark:from-night-3 dark:via-night-2 dark:to-night-3">
-                            @if ($tCover)
-                                <img src="{{ $tCover }}" alt="پیش‌نمایش {{ $tDetail['name'] ?? '' }}" class="size-full object-cover">
-                            @else
-                                <span class="text-3xl font-black text-brand-600 dark:text-brand-400">{{ mb_substr($tDetail['name'] ?? 'ق', 0, 1) }}</span>
+            {{-- ============ محتوای قالب ============ --}}
+            @elseif ($tDetail)
+                @php
+                    $tPrice    = (int) ($tDetail['discount_price'] ?? $tDetail['price'] ?? $tDetail['min_price'] ?? 0);
+                    $tOldPrice = ($tDetail['discount_price'] ?? null) ? (int) ($tDetail['price'] ?? 0) : 0;
+                    $tHasDiscount = $tOldPrice > 0 && $tPrice > 0 && $tPrice < $tOldPrice;
+                    $tExPrice  = (int) ($tDetail['exclusive_price'] ?? 0);
+                    $tSold     = (bool) ($tDetail['is_sold_exclusively'] ?? false);
+                    // فاز ۶۶/۶۷ — تشخیص رایگان + جزئیات HTML + تصویر شاخص thumbnail_url
+                    $tIsFree   = ! empty($tDetail['is_free']) || $tPrice === 0;
+                    $tLongDesc = $tDetail['long_description'] ?? $tDetail['description'] ?? $tDetail['content'] ?? null;
+                    $tCover    = $tDetail['thumbnail_url'] ?? $tDetail['thumbnail'] ?? $tDetail['cover'] ?? $tDetail['preview_image'] ?? $tDetail['image'] ?? null;
+                    $tVersions = $tDetail['active_versions'] ?? [];
+                    $tInstalled= $tDetail['installed'] ?? null;
+                    // فاز ۶۷ — گالری: هر فیلدی که API بدهد (رشته یا آرایه با url/path)
+                    $tGallery  = [];
+                    foreach (['gallery', 'images', 'screenshots', 'preview_images'] as $tGalleryKey) {
+                        if (! empty($tDetail[$tGalleryKey]) && is_array($tDetail[$tGalleryKey])) {
+                            $tGallery = $tDetail[$tGalleryKey];
+                            break;
+                        }
+                    }
+                    $tGallery  = array_values(array_filter(array_map(fn ($g) => is_string($g) ? $g : (is_array($g) ? ($g['url'] ?? $g['path'] ?? $g['thumbnail_url'] ?? $g['image_url'] ?? null) : null), $tGallery)));
+                @endphp
+
+                {{-- ---- هیروی تصویری ---- --}}
+                <div class="relative h-44 shrink-0 overflow-hidden sm:h-52" wire:key="tpl-hero">
+                    @if ($tCover)
+                        <img src="{{ $tCover }}" alt="پیش‌نمایش {{ $tDetail['name'] ?? '' }}" class="size-full object-cover">
+                    @else
+                        <div class="flex size-full items-center justify-center bg-gradient-to-br from-brand-100 via-teal-50 to-amber-50 dark:from-night-3 dark:via-night-2 dark:to-night-3" aria-hidden="true">
+                            <span class="text-5xl font-black text-brand-600/70 dark:text-brand-400/70">{{ mb_substr($tDetail['name'] ?? 'ق', 0, 1) }}</span>
+                        </div>
+                    @endif
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-slate-950/5" aria-hidden="true"></div>
+
+                    {{-- نشان‌ها --}}
+                    <div class="absolute start-4 top-4 flex flex-wrap gap-1.5">
+                        @if ($tSold)
+                            <span class="ap-badge bg-amber-500 text-white shadow">اختصاصی فروخته شد</span>
+                        @elseif ($tIsFree)
+                            <span class="ap-badge bg-emerald-500 text-white shadow">رایگان</span>
+                        @else
+                            <span class="ap-badge bg-amber-500 text-white shadow">پولی</span>
+                        @endif
+                        @if ($tInstalled && $tInstalled['is_active'])
+                            <span class="ap-badge bg-emerald-600 text-white shadow">قالب فعال فروشگاه</span>
+                        @elseif ($tInstalled && ($tInstalled['status'] ?? '') === 'installed')
+                            <span class="ap-badge bg-white/90 text-emerald-700 shadow">نصب‌شده</span>
+                        @endif
+                        @if ($tDetail['has_update'] ?? false)
+                            <span class="ap-badge bg-sky-500 text-white shadow">به‌روزرسانی موجود است</span>
+                        @endif
+                    </div>
+
+                    {{-- نام + مشخصات --}}
+                    <div class="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+                        <h3 class="truncate text-lg font-black text-white drop-shadow sm:text-xl">{{ $tDetail['name'] ?? '' }}</h3>
+                        <div class="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-white/90">
+                            @if ($tDetail['latestVersion'] ?? null)
+                                <span class="rounded-md bg-white/15 px-1.5 py-0.5 font-mono font-bold backdrop-blur" dir="ltr">v{{ $tDetail['latestVersion'] }}</span>
+                            @endif
+                            @if (!empty($tDetail['author']))
+                                <span class="flex items-center gap-1"><x-admin-panel::icon name="user" class="size-3" /> {{ $tDetail['author'] }}</span>
+                            @endif
+                            @if (!empty($tDetail['category']))
+                                <span class="flex items-center gap-1"><x-admin-panel::icon name="tag" class="size-3" /> {{ $tDetail['category'] }}</span>
+                            @endif
+                            @if (!empty($tDetail['downloads']) && is_numeric($tDetail['downloads']))
+                                <span class="flex items-center gap-1"><x-admin-panel::icon name="download" class="size-3" /> <span class="fa-digits">{{ number_format((int) $tDetail['downloads']) }}</span> دانلود</span>
+                            @endif
+                            @if (!empty($tDetail['purchases_count']) && is_numeric($tDetail['purchases_count']))
+                                <span class="flex items-center gap-1"><x-admin-panel::icon name="shopping-bag" class="size-3" /> <span class="fa-digits">{{ number_format((int) $tDetail['purchases_count']) }}</span> فروش</span>
                             @endif
                         </div>
-                        <div class="min-w-0 flex-1">
-                            <h3 class="text-base font-extrabold">{{ $tDetail['name'] ?? '' }}</h3>
-                            {{-- فاز ۶۶ — short_description هم HTML است؛ مثل مودال پکیج پاک‌سازی و خام رندر می‌شود --}}
-                            @if (!empty($tDetail['short_description'] ?? null))
-                                <div class="ap-rich mt-1 text-xs leading-6 text-ink-3 dark:text-night-ink-2">
-                                    {!! sanitize_package_html($tDetail['short_description']) !!}
-                                </div>
-                            @endif
-                            <div class="mt-2 flex flex-wrap items-center gap-2">
-                                @if ($tDetail['latestVersion'] ?? null)
-                                    <span class="ap-badge bg-surface-2 font-mono text-[10px] text-ink-2 dark:bg-night-3 dark:text-night-ink-2" dir="ltr">v{{ $tDetail['latestVersion'] ?? '' }}</span>
-                                @endif
-                                {{-- فاز ۶۶ — نشان رایگان/پولی مثل مودال پکیج --}}
-                                @if ($tIsFree)
-                                    <span class="ap-badge bg-emerald-500 text-white">رایگان</span>
-                                @endif
-                                @if ($tSold)
-                                    <span class="ap-badge bg-amber-50 text-amber-700 dark:bg-amber-500/12 dark:text-amber-400">اختصاصی فروخته شد</span>
-                                @elseif ($tInstalled && $tInstalled['is_active'])
-                                    <span class="ap-badge bg-emerald-600 text-white">قالب فعال فروشگاه</span>
-                                @elseif ($tInstalled && $tInstalled['status'] === 'installed')
-                                    <span class="ap-badge bg-emerald-50 text-emerald-700 dark:bg-emerald-500/12 dark:text-emerald-400">نصب‌شده در سیستم</span>
-                                @endif
-                            </div>
-                        </div>
                     </div>
+                </div>
+
+                {{-- ---- بدنه ---- --}}
+                <div class="flex-1 space-y-5 overflow-y-auto p-5">
+                    {{-- معرفی کوتاه (HTML پاک‌سازی‌شده) --}}
+                    @if (!empty($tDetail['short_description']))
+                        <div class="ap-rich text-[13px] leading-6 text-ink-2 dark:text-night-ink-2">
+                            {!! sanitize_package_html($tDetail['short_description']) !!}
+                        </div>
+                    @endif
 
                     {{-- وضعیت نصب محلی --}}
-                    @if ($tInstalled)
-                        <div class="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-surface-2 p-3.5 text-xs dark:border-night-line dark:bg-night-3/60">
+                    @if ($tInstalled && ($tInstalled['status'] ?? '') === 'updating')
+                        <div class="flex items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 p-4 text-xs font-bold text-brand-700 dark:border-brand-500/25 dark:bg-brand-500/10 dark:text-brand-400">
+                            <svg class="size-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" /></svg>
+                            نصب این قالب در جریان است — پس از اتمام، وضعیت خودکار به‌روز می‌شود.
+                        </div>
+                    @elseif ($tInstalled && ($tInstalled['status'] ?? '') === 'installed')
+                        <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface-2 p-4 text-xs dark:border-night-line dark:bg-night-3/60">
                             <span class="text-ink-2 dark:text-night-ink-2">
-                                وضعیت: <strong>{{ $tInstalled['status'] === 'installed' ? 'نصب‌شده' : 'در حال نصب' }}</strong>
+                                وضعیت: <strong>{{ $tInstalled['is_active'] ? 'نصب‌شده و فعال' : 'نصب‌شده' }}</strong>
                                 @if ($tInstalled['version']) — نسخه <span class="font-mono" dir="ltr">v{{ $tInstalled['version'] }}</span>@endif
                             </span>
                             <div class="flex flex-wrap items-center gap-2">
@@ -1768,7 +1822,7 @@
                                         به‌روزرسانی قالب
                                     </button>
                                 @endif
-                                @if (! $tInstalled['is_active'] && $tInstalled['status'] === 'installed')
+                                @if (! $tInstalled['is_active'])
                                     <button type="button" wire:click="activateTemplate('{{ $tDetail['slug'] ?? '' }}')"
                                             class="rounded-lg bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-emerald-700">
                                         <x-admin-panel::icon name="check" class="me-1 inline size-3.5" />
@@ -1784,51 +1838,32 @@
                         </div>
                     @endif
 
-                    {{-- انتخاب نوع خرید (فقط وقتی نصب نشده یا آپدیت) --}}
+                    {{-- انتخاب نوع خرید (قالب پولیِ نصب‌نشده یا نصب ناموفق — فاز ۶۷) --}}
                     @if ($tSold)
                         <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-6 text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
                             این قالب به‌صورت اختصاصی فروخته شده و از فروشگاه حذف شده است.
                         </div>
-                    @elseif ($tInstalled && ($tInstalled['status'] ?? '') === 'updating')
-                        <div class="rounded-xl border border-brand-200 bg-brand-50 p-4 text-xs font-bold text-brand-700 dark:border-brand-500/25 dark:bg-brand-500/10 dark:text-brand-400">
-                            نصب این قالب در جریان است — پس از اتمام وضعیت به‌روز می‌شود.
-                        </div>
-                    @elseif ($tInstalled && ($tInstalled['status'] ?? '') === 'installed')
-                        {{-- نصب‌شده: فقط اکشن‌های بالا --}}
                     @elseif ($tIsFree)
-                        {{-- فاز ۶۶ — قالب رایگان: بدون انتخاب نوع خرید؛ فقط پیام «رایگان» + دکمه نصب --}}
-                        <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/25 dark:bg-emerald-500/10">
-                            <div class="flex flex-wrap items-center justify-between gap-3">
-                                <div class="flex items-start gap-3">
-                                    <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white">
-                                        <x-admin-panel::icon name="gift" class="size-4.5" />
-                                    </span>
-                                    <div class="text-[13px]">
-                                        <p class="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400">
-                                            <x-admin-panel::icon name="check-circle" class="size-4" />
-                                            این قالب رایگان است
-                                        </p>
-                                        <p class="mt-1 text-emerald-700/80 dark:text-emerald-400/80">نیازی به خرید نیست — با یک کلیک نصب می‌شود؛ به‌روزرسانی‌های بعدی هم رایگان دریافت می‌شود.</p>
-                                    </div>
-                                </div>
-                                <button type="button" wire:click="startTemplatePurchase" wire:loading.attr="disabled" wire:target="startTemplatePurchase"
-                                        class="ap-btn-primary min-w-36">
-                                    <span wire:loading.remove wire:target="startTemplatePurchase" class="flex items-center justify-center gap-2">
-                                        <x-admin-panel::icon name="download" class="size-4.5" />
-                                        نصب قالب
-                                    </span>
-                                    <span wire:loading wire:target="startTemplatePurchase" class="flex items-center justify-center gap-2">
-                                        <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                                            <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
-                                        </svg>
-                                        در حال شروع نصب…
-                                    </span>
-                                </button>
+                        {{-- فاز ۶۶ — قالب رایگان: بدون انتخاب نوع خرید؛ پیام «رایگان» (نصب از فوتر) --}}
+                        <div class="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/25 dark:bg-emerald-500/10">
+                            <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white">
+                                <x-admin-panel::icon name="gift" class="size-4.5" />
+                            </span>
+                            <div class="text-[13px]">
+                                <p class="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400">
+                                    <x-admin-panel::icon name="check-circle" class="size-4" />
+                                    این قالب رایگان است
+                                </p>
+                                <p class="mt-1 text-emerald-700/80 dark:text-emerald-400/80">نیازی به خرید نیست — با دکمهٔ «نصب قالب» همین حالا نصب می‌شود؛ به‌روزرسانی‌های بعدی هم رایگان دریافت می‌شود.</p>
                             </div>
                         </div>
-                    @else
-                        <div class="rounded-xl border border-line p-4 dark:border-night-line">
-                            <p class="mb-3 text-xs font-bold">نوع خرید را انتخاب کنید</p>
+                    @elseif (! $tIsFree)
+                        {{-- انتخاب نوع خرید — قالب پولی (نصب‌نشده یا نصب ناموفق که تلاش مجدد آزاد است) --}}
+                        <div class="rounded-2xl border border-line p-4 dark:border-night-line">
+                            <p class="mb-3 flex items-center gap-1.5 text-xs font-bold">
+                                <x-admin-panel::icon name="shopping-cart" class="size-4 text-brand-600 dark:text-brand-400" />
+                                نوع خرید را انتخاب کنید
+                            </p>
                             <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                                 <button type="button" wire:click="setTemplatePurchaseType('normal')"
                                         class="rounded-xl border p-3.5 text-start transition-all {{ $tDetailPurchaseType === 'normal' ? 'border-brand-500 bg-brand-50/60 ring-2 ring-brand-500/25 dark:bg-brand-500/10' : 'border-line bg-surface-2 hover:border-brand-400/50 dark:border-night-line dark:bg-night-3' }}">
@@ -1839,7 +1874,7 @@
                                         </span>
                                     </span>
                                     <span class="mt-1 block text-[11px] text-ink-3 dark:text-night-ink-2">نصب روی این فروشگاه + دریافت آپدیت‌ها</span>
-                                    @if ($tOldPrice > 0)
+                                    @if ($tHasDiscount)
                                         <span class="mt-1 block text-[11px] text-ink-3 line-through dark:text-night-ink-2">{{ number_format($tOldPrice) }} تومان</span>
                                     @endif
                                 </button>
@@ -1862,37 +1897,18 @@
                                 </div>
                             @endif
 
-                            <button type="button" wire:click="startTemplatePurchase" wire:loading.attr="disabled" wire:target="startTemplatePurchase"
-                                    class="ap-btn-primary mt-4 w-full !py-3">
-                                <span wire:loading.remove wire:target="startTemplatePurchase" class="flex items-center justify-center gap-2">
-                                    <x-admin-panel::icon name="shopping-cart" class="size-4.5" />
-                                    @if ($tDetailPurchaseType === 'exclusive')
-                                        خرید اختصاصی و ادامه
-                                    @else
-                                        {{-- فاز ۶۶ — قالب رایگان دیگر وارد این شاخه نمی‌شود؛ فقط خرید پولی --}}
-                                        خرید و نصب
-                                    @endif
-                                </span>
-                                <span wire:loading wire:target="startTemplatePurchase" class="flex items-center justify-center gap-2">
-                                    <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
-                                    </svg>
-                                    در حال انتقال به پرداخت…
-                                </span>
-                            </button>
-
                             @if ($tDetailPurchaseType === 'exclusive' && $tExclusiveConfirmed)
                                 <div class="mt-3 rounded-lg border border-amber-300 bg-amber-100 p-3 text-[11px] font-bold text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-300">
-                                    برای تأیید نهایی، دوباره روی «خرید اختصاصی و ادامه» کلیک کنید.
+                                    برای تأیید نهایی، دوباره روی «خرید اختصاصی و ادامه» در پایین کلیک کنید.
                                 </div>
                             @endif
                         </div>
                     @endif
 
-                    {{-- فاز ۶۶ — جزئیات کامل قالب (HTML خام بازار — مثل «توضیحات کامل» مودال پکیج) --}}
+                    {{-- جزئیات کامل قالب (HTML خام بازار) --}}
                     @if (!empty($tLongDesc))
-                        <div class="mt-4">
-                            <p class="mb-2 flex items-center gap-1.5 text-xs font-bold">
+                        <div>
+                            <p class="mb-2 flex items-center gap-1.5 text-[13px] font-bold">
                                 <x-admin-panel::icon name="file-text" class="size-4 text-brand-600 dark:text-brand-400" />
                                 جزئیات قالب
                             </p>
@@ -1902,15 +1918,36 @@
                         </div>
                     @endif
 
+                    {{-- گالری تصاویر (فاز ۶۷ — اگر API بدهد) --}}
+                    @if (count($tGallery))
+                        <div>
+                            <p class="mb-2 flex items-center gap-1.5 text-[13px] font-bold">
+                                <x-admin-panel::icon name="images" class="size-4 text-brand-600 dark:text-brand-400" />
+                                گالری پیش‌نمایش <span class="fa-digits text-[11px] font-medium text-ink-3">({{ count($tGallery) }})</span>
+                            </p>
+                            <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                                @foreach ($tGallery as $tGalleryUrl)
+                                    <a href="{{ $tGalleryUrl }}" target="_blank" rel="noopener"
+                                       class="block aspect-video overflow-hidden rounded-xl border border-line bg-surface-2 transition-shadow hover:shadow-card dark:border-night-line dark:bg-night-3">
+                                        <img src="{{ $tGalleryUrl }}" alt="پیش‌نمایش گالری قالب" loading="lazy" class="size-full object-cover transition-transform duration-300 hover:scale-105">
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
                     {{-- نسخه‌ها --}}
                     @if (count($tVersions))
-                        <div class="mt-4">
-                            <p class="mb-2 text-xs font-bold">نسخه‌های موجود</p>
+                        <div>
+                            <p class="mb-2 flex items-center gap-1.5 text-[13px] font-bold">
+                                <x-admin-panel::icon name="history" class="size-4 text-brand-600 dark:text-brand-400" />
+                                نسخه‌های موجود
+                            </p>
                             <div class="space-y-1.5">
                                 @foreach (array_slice($tVersions, 0, 5) as $tVer)
                                     <div class="flex items-center justify-between gap-2 rounded-lg border border-line bg-surface-2 px-3 py-2 text-[11px] dark:border-night-line dark:bg-night-3/60">
                                         <span class="font-mono font-bold" dir="ltr">v{{ $tVer['version'] ?? '?' }}</span>
-                                        @if (!empty($tVer['file_size']))
+                                        @if (!empty($tVer['file_size']) && is_numeric($tVer['file_size']))
                                             <span class="text-ink-3 dark:text-night-ink-2">{{ number_format((int) $tVer['file_size'] / 1048576, 1) }} مگابایت</span>
                                         @endif
                                     </div>
@@ -1918,8 +1955,66 @@
                             </div>
                         </div>
                     @endif
-                @endif
-            </div>
+                </div>
+
+                {{-- ---- فوتر چسبان: قیمت + عمل اصلی (فاز ۶۷) ---- --}}
+                <div class="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-surface-2/60 px-5 py-3.5 dark:border-night-line dark:bg-night-3/50" wire:key="tpl-footer">
+                    {{-- قیمت/وضعیت --}}
+                    <div class="text-sm">
+                        @if ($tSold)
+                            <span class="text-xs font-bold text-amber-600 dark:text-amber-400">قالب اختصاصی فروخته شده</span>
+                        @elseif ($tInstalled && ($tInstalled['status'] ?? '') === 'updating')
+                            <span class="flex items-center gap-2 text-xs font-bold text-brand-600 dark:text-brand-400">
+                                <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" /></svg>
+                                در حال نصب…
+                            </span>
+                        @elseif ($tInstalled)
+                            <span class="flex items-center gap-1.5 font-extrabold text-emerald-600 dark:text-emerald-400">
+                                <x-admin-panel::icon name="check-circle" class="size-4.5" />
+                                نصب‌شده@if ($tInstalled['version']) — <span class="fa-digits">v{{ $tInstalled['version'] }}</span>@endif
+                            </span>
+                        @elseif ($tIsFree)
+                            <span class="font-extrabold text-emerald-600 dark:text-emerald-400">رایگان</span>
+                        @elseif ($tDetailPurchaseType === 'exclusive' && $tExPrice > 0)
+                            <span class="fa-digits font-extrabold">{{ number_format($tExPrice) }}</span>
+                            <span class="text-[11px] text-ink-3">تومان — خرید اختصاصی</span>
+                        @else
+                            @if ($tHasDiscount)
+                                <span class="fa-digits text-ink-3 line-through dark:text-night-ink-2">{{ number_format($tOldPrice) }}</span>
+                            @endif
+                            <span class="fa-digits font-extrabold">{{ number_format($tPrice) }}</span>
+                            <span class="text-[11px] text-ink-3">تومان</span>
+                        @endif
+                    </div>
+
+                    {{-- عمل اصلی — نصب ناموفق هم دوباره می‌تواند بخرد/نصب کند (فاز ۶۷) --}}
+                    <div class="flex items-center gap-2">
+                        @if ($tSold || ($tInstalled && ($tInstalled['status'] ?? '') === 'installed'))
+                            <button type="button" wire:click="closeTemplateDetail" class="ap-btn-outline !py-2.5">بستن</button>
+                        @elseif (! ($tInstalled && ($tInstalled['status'] ?? '') === 'updating'))
+                            <button type="button" wire:click="startTemplatePurchase" wire:loading.attr="disabled" wire:target="startTemplatePurchase"
+                                    class="ap-btn-primary min-w-40 !py-2.5">
+                                <span wire:loading.remove wire:target="startTemplatePurchase" class="flex items-center justify-center gap-2">
+                                    <x-admin-panel::icon name="{{ $tIsFree ? 'download' : 'credit-card' }}" class="size-4.5" />
+                                    @if ($tIsFree)
+                                        نصب قالب
+                                    @elseif ($tDetailPurchaseType === 'exclusive')
+                                        خرید اختصاصی و ادامه
+                                    @else
+                                        خرید و نصب
+                                    @endif
+                                </span>
+                                <span wire:loading wire:target="startTemplatePurchase" class="flex items-center justify-center gap-2">
+                                    <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
+                                    </svg>
+                                    {{ $tIsFree ? 'در حال شروع نصب…' : 'در حال انتقال به پرداخت…' }}
+                                </span>
+                            </button>
+                        @endif
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
     @endif

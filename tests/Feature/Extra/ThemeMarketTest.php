@@ -719,6 +719,130 @@ class ThemeMarketTest extends TestCase
     }
 
     /* =====================================================================
+     *  فاز ۶۷ — مودال خالی نمی‌ماند: استخراج هر شکل پاسخ + تصویر/گالری + خطای خودتشخیص
+     *  ===================================================================== */
+
+    #[Test]
+    public function template_detail_modal_shows_thumbnail_url_and_gallery(): void
+    {
+        $this->actingCreator();
+
+        Livewire::test(PackageIndex::class)
+            ->set('tDetail', [
+                'slug'          => 'moonlight',
+                'name'          => 'قالب ماه‌تاب',
+                'price'         => 980000,
+                'thumbnail_url' => 'https://cdn.example/cover.png',
+                'description'   => '<p>توضیحات</p>',
+                'gallery'       => [
+                    'https://cdn.example/shot-1.png',
+                    ['url' => 'https://cdn.example/shot-2.png'],
+                ],
+            ])
+            ->set('tDetailOpen', true)
+            // تصویر شاخص باید از thumbnail_url بیاید (درخواست کاربر فاز ۶۷)
+            ->assertSee('src="https://cdn.example/cover.png"', false)
+            // گالری: هر دو آیتم (رشته و آرایه با url)
+            ->assertSee('گالری پیش‌نمایش')
+            ->assertSee('https://cdn.example/shot-1.png', false)
+            ->assertSee('https://cdn.example/shot-2.png', false);
+    }
+
+    #[Test]
+    public function template_detail_modal_shows_error_with_retry_for_unusable_payload(): void
+    {
+        $this->actingCreator();
+
+        // پاسخ بدون هیچ قالبی (بدون slug/name و بدون wrapper شناخته‌شده)
+        $this->fakeHttp([
+            '*/api/v1/templates/moonlight' => Http::response(['status' => 'error']),
+        ]);
+
+        $match = fn ($req) => str_contains($req->url(), '/api/v1/templates/moonlight') && $req->method() === 'GET';
+
+        $component = Livewire::test(PackageIndex::class)
+            ->call('openTemplateDetail', 'moonlight')
+            ->assertSee('دریافت جزئیات قالب ناموفق بود')
+            ->assertSee('تلاش دوباره')
+            ->assertSee('پاسخ سرور قالب‌ها ناقص بود');
+
+        $this->assertNull($component->get('tDetail'));
+
+        // فاز ۶۷ — پاسخ بد کش نمی‌شود: کلیک دوم دوباره به API می‌زند (نه مودال خالیِ کش‌شده)
+        $component->call('openTemplateDetail', 'moonlight');
+
+        $detailCalls = collect(Http::recorded())->filter(fn ($pair) => $match($pair[0]))->count();
+        $this->assertSame(2, $detailCalls, 'کلیک دوم باید دوباره به API برود — پاسخ بی‌داده نباید کش شود');
+    }
+
+    #[Test]
+    public function template_detail_payload_extraction_supports_wrapped_responses(): void
+    {
+        $this->actingCreator();
+
+        $this->fakeHttp([
+            '*/api/v1/templates/moonlight' => Http::response([
+                'result' => [
+                    'template' => [
+                        'slug'  => 'moonlight',
+                        'name'  => 'قالب ماه‌تاب',
+                        'price' => 980000,
+                    ],
+                ],
+            ]),
+        ]);
+
+        Livewire::test(PackageIndex::class)
+            ->call('openTemplateDetail', 'moonlight')
+            ->assertSee('قالب ماه‌تاب', false)
+            ->assertSee('نوع خرید را انتخاب کنید')
+            ->assertSee('خرید اختصاصی');
+    }
+
+    #[Test]
+    public function template_detail_invalid_json_response_shows_clear_error(): void
+    {
+        $this->actingCreator();
+
+        // پاسخ 200 با بدنهٔ غیرJSON (مثلاً صفحهٔ خطای پروکسی) — نباید null کش شود
+        $this->fakeHttp([
+            '*/api/v1/templates/moonlight' => Http::response('<html>gateway error</html>', 200),
+        ]);
+
+        $component = Livewire::test(PackageIndex::class)
+            ->call('openTemplateDetail', 'moonlight')
+            ->assertSee('دریافت جزئیات قالب ناموفق بود')
+            ->assertSee('پاسخ سرور پکیج‌ها معتبر نبود');
+
+        $this->assertNull($component->get('tDetail'));
+    }
+
+    #[Test]
+    public function bazaar_template_cards_use_thumbnail_url(): void
+    {
+        $this->actingCreator();
+
+        $this->fakeHttp([
+            '*/api/v1/templates*' => Http::response([
+                'data' => [
+                    [
+                        'id'            => 5,
+                        'name'          => 'قالب ماه‌تاب',
+                        'slug'          => 'moonlight',
+                        'thumbnail_url' => 'https://cdn.example/card.png',
+                    ],
+                ],
+                'meta' => ['current_page' => 1, 'last_page' => 1, 'total' => 1],
+            ]),
+        ]);
+
+        Livewire::withQueryParams(['type' => 'template'])
+            ->test(PackageIndex::class)
+            ->assertOk()
+            ->assertSee('src="https://cdn.example/card.png"', false);
+    }
+
+    /* =====================================================================
      *  فعال‌سازی و حذف
      * ===================================================================== */
 

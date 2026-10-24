@@ -111,6 +111,9 @@ class PackageIndex extends Component
 
     public ?string $tDetailError = null;
 
+    /** فاز ۶۷ — اسلاگ قالبِ مودال باز (برای دکمهٔ «تلاش دوباره» در حالت خطا) */
+    public ?string $tDetailSlug = null;
+
     public ?array $tDetail = null;
 
     /** normal | exclusive */
