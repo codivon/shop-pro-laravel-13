@@ -71,7 +71,8 @@ class AdminTwoFactorService
             'expires_at' => now()->addSeconds(self::CODE_TTL)->getTimestamp(),
             'channel' => $channel,
             'email' => $admin->email,
-            'mobile' => SecuritySettings::twoFactorMobile(),
+            // فاز ۷۲ — شمارهٔ موبایل خودِ مدیر مقدم بر تنظیمات سراسری پیامک است
+            'mobile' => $this->targetMobile($admin),
             'sent_at' => now()->getTimestamp(),
         ]);
 
@@ -80,6 +81,14 @@ class AdminTwoFactorService
         RateLimiter::hit($this->resendKey(), self::RESEND_SECONDS);
 
         return $this->deliver($admin, $code, $channel);
+    }
+
+    /** فاز ۷۲ — مقصد پیامک 2FA: موبایل خودِ مدیر، سپس admin_mobile_number تنظیمات پیامک */
+    private function targetMobile(Admin $admin): ?string
+    {
+        $mobile = trim((string) ($admin->mobile ?: ''));
+
+        return $mobile !== '' ? $mobile : SecuritySettings::twoFactorMobile();
     }
 
     /** آیا سشن جاری در انتظار تأیید دومرحله‌ای است؟ */
@@ -272,15 +281,18 @@ class AdminTwoFactorService
             $sent['email'] = $this->sendByEmail($email, $code);
         }
 
-        if (in_array($channel, ['sms', 'both'], true) && $mobile = SecuritySettings::twoFactorMobile()) {
+        if (in_array($channel, ['sms', 'both'], true) && $mobile = $this->targetMobile($admin)) {
             $sent['sms'] = $this->sendBySms($mobile, $code);
         }
 
         if (! $sent['email'] && ! $sent['sms']) {
-            // کانال پیامک انتخاب شده اما شمارهٔ مدیر ثبت نشده؟ پیام راهنما
-            $hint = SecuritySettings::twoFactorMobile()
-                ? 'ارسال کد تأیید ناموفق بود. تنظیمات ایمیل/پیامک پنل را بررسی کنید.'
-                : 'شماره تلفن مدیر (admin_mobile_number) در تنظیمات پیامک ثبت نشده یا ایمیل مدیر خالی است.';
+            // فاز ۷۲ — پیام دقیق بر اساس کانال انتخاب‌شده (پیام قبلی همیشه از
+            // «شماره تلفن مدیر در تنظیمات پیامک» حرف می‌زد، حتی برای کانال ایمیل)
+            $hint = match ($channel) {
+                'email' => 'ارسال کد تأیید با ایمیل ممکن نشد — ایمیل مدیر در پروفایل ثبت نشده یا سرویس ایمیل با خطا مواجه شده است. ایمیل مدیر را در پروفایل تکمیل کنید یا کانال دیگری انتخاب کنید.',
+                'sms' => 'ارسال کد تأیید با پیامک ممکن نشد — شماره موبایل مدیر در پروفایل (یا admin_mobile_number در تنظیمات پیامک) ثبت نشده یا سرویس پیامک با خطا مواجه شده است.',
+                default => 'هیچ‌یک از کانال‌های ایمیل و پیامک موفق نشد — ایمیل و شماره موبایل مدیر در پروفایل را بررسی کنید و تنظیمات ایمیل/پیامک پنل را چک کنید.',
+            };
 
             throw new RuntimeException($hint);
         }

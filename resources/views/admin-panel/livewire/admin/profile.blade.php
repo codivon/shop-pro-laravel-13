@@ -91,12 +91,66 @@
                         <input type="email" wire:model="email" dir="ltr" class="ap-input text-start">
                         @error('email') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                     </div>
+                    <div>
+                        <label class="mb-1.5 block text-[13px] font-semibold">شماره همراه</label>
+                        <div class="relative">
+                            <span class="pointer-events-none absolute inset-y-0 start-3 flex items-center text-ink-3"><x-admin-panel::icon name="smartphone" class="size-4" /></span>
+                            <input type="tel" wire:model="mobile" dir="ltr" class="ap-input ps-10 text-start" placeholder="09123456789">
+                        </div>
+                        <p class="mt-1 text-[11px] text-ink-3 dark:text-night-ink-2">مستقل از نام کاربری — با این شماره هم می‌توانید وارد شوید و کد ورود دومرحله‌ای به آن ارسال می‌شود</p>
+                        @error('mobile') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                    </div>
                     <div class="sm:col-span-2">
                         <label class="mb-1.5 block text-[13px] font-semibold">بیوگرافی</label>
                         <textarea wire:model="bio" rows="3" class="ap-input" placeholder="معرفی کوتاه…"></textarea>
                         @error('bio') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                     </div>
                 </div>
+            </div>
+
+            {{-- فاز ۷۲ — ورود دومرحله‌ای برای خودِ مدیر --}}
+            <div class="ap-card p-5">
+                <h3 class="mb-4 flex items-center gap-2 text-sm font-bold">
+                    <span class="flex size-8 items-center justify-center rounded-lg bg-green-50 text-green-600 dark:bg-green-500/12 dark:text-green-400">
+                        <x-admin-panel::icon name="key-round" class="size-4" />
+                    </span>
+                    ورود دومرحله‌ای (2FA)
+                </h3>
+
+                @if (! \App\Services\SecuritySettings::twoFactorEnabled())
+                    <div class="flex items-start gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                        <x-admin-panel::icon name="info" class="mt-0.5 size-4 shrink-0 text-ink-3" />
+                        <p class="text-[13px] leading-6 text-ink-2 dark:text-night-ink-2">
+                            ورود دومرحله‌ای در تنظیمات برنامه‌نویس برای کل سایت خاموش است؛ این کلید سراسری را سازنده از بخش «تنظیمات برنامه‌نویس ← امنیت» می‌تواند فعال کند.
+                        </p>
+                    </div>
+                @else
+                    <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3.5 transition-colors {{ $twoFactorDisabled ? 'border-line bg-surface-2 dark:border-night-line dark:bg-night-3' : 'border-green-200 bg-gradient-to-l from-green-50/90 via-green-50/40 to-transparent dark:border-green-500/20 dark:from-green-500/10 dark:via-green-500/5 dark:to-transparent' }}">
+                        <span class="flex min-w-0 items-center gap-3">
+                            <span class="flex size-9 shrink-0 items-center justify-center rounded-xl {{ $twoFactorDisabled ? 'bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2' : 'bg-green-600/10 text-green-600 dark:bg-green-500/15 dark:text-green-400' }}">
+                                <x-admin-panel::icon name="shield-check" class="size-4.5" />
+                            </span>
+                            <span class="min-w-0">
+                                <span class="block text-[13px] font-bold">ورود دومرحله‌ای برای حساب من</span>
+                                <span class="block text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">
+                                    {{ $twoFactorDisabled ? 'برای حساب شما خاموش است — ورود فقط با رمز عبور انجام می‌شود.' : 'پس از ورود رمز، کد ۶ رقمی به ایمیل یا شماره همراه شما ارسال می‌شود.' }}
+                                </span>
+                            </span>
+                        </span>
+                        <button type="button"
+                                wire:click="toggleTwoFactor({{ $twoFactorDisabled ? 'false' : 'true' }})"
+                                wire:loading.attr="disabled" wire:target="toggleTwoFactor"
+                                class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-300 {{ $twoFactorDisabled ? 'bg-line dark:bg-night-line' : 'bg-green-600' }}"
+                                role="switch" aria-checked="{{ $twoFactorDisabled ? 'true' : 'false' }}"
+                                aria-label="ورود دومرحله ای برای حساب من">
+                            <span class="inline-block size-5 translate-x-0.5 rounded-full bg-white shadow transition-transform duration-300 rtl:translate-x-[-2px] {{ $twoFactorDisabled ? 'translate-x-0.5 rtl:-translate-x-0.5' : 'translate-x-[22px] rtl:-translate-x-[22px]' }}"></span>
+                        </button>
+                    </div>
+                    <p class="mt-3 flex items-start gap-1.5 text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">
+                        <x-admin-panel::icon name="info" class="mt-0.5 size-3.5 shrink-0" />
+                        <span>کلید فعال‌سازی سراسری در تنظیمات برنامه‌نویس است؛ با این کلید فقط برای حساب خودتان تصمیم می‌گیرید.</span>
+                    </p>
+                @endif
             </div>
 
             {{-- شبکه‌های اجتماعی --}}

@@ -17,13 +17,35 @@ class AdminSession extends Model
         'ip_address',
         'user_agent',
         'last_activity',
-        'is_active'
+        'is_active',
+        'is_primary',
+        'primary_until'
     ];
 
     protected $casts = [
         'last_activity' => 'datetime',
-        'is_active' => 'boolean'
+        'is_active' => 'boolean',
+        'is_primary' => 'boolean',
+        'primary_until' => 'datetime'
     ];
+
+    /** آیا این نشست هنوز در پنجرهٔ محافظت ۴۸ ساعتهٔ «سیستم اصلی» است؟ */
+    public function isPrimaryProtected(): bool
+    {
+        return $this->is_primary
+            && $this->primary_until !== null
+            && now()->lt($this->primary_until);
+    }
+
+    /** ثانیه‌های باقی‌ماندهٔ محافظت نشست اصلی */
+    public function primaryProtectionLeftInSeconds(): int
+    {
+        if (! $this->isPrimaryProtected()) {
+            return 0;
+        }
+
+        return max(0, now()->diffInSeconds($this->primary_until, false));
+    }
 
     public function admin(): BelongsTo
     {

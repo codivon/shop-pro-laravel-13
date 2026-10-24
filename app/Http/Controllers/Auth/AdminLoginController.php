@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\CheckBlockedDevice;
 use App\Models\Admin;
 use App\Services\AdminAuthResolver;
 use App\Services\AdminTwoFactorService;
@@ -100,8 +101,16 @@ class AdminLoginController extends Controller
         LoginThrottle::clear((string) $request->username, (string) $request->ip());
         app(CaptchaService::class)->flush();
 
-        // ─── ورود دومرحله‌ای (فاز ۴۴) ───
-        if (SecuritySettings::twoFactorEnabled()) {
+        // ─── فاز ۷۲ — مدیر مسدود (بن اکانت/دستگاه) در همین صفحهٔ ورود پیام می‌گیرد ───
+        if ($blocked = CheckBlockedDevice::activeBlockFor($admin, $request)) {
+            session()->put('admin_login_error', CheckBlockedDevice::blockMessage($blocked));
+
+            return redirect('/admin-old/'.admin_route_prefix().'/login')
+                ->withInput($request->only('username', 'remember'));
+        }
+
+        // ─── ورود دومرحله‌ای (فاز ۴۴) — خاموشی فردی مدیر هم رعایت می‌شود (فاز ۷۲) ───
+        if (SecuritySettings::twoFactorEnabled() && ! $admin->two_factor_disabled) {
             try {
                 app(AdminTwoFactorService::class)->startChallenge(
                     $admin,

@@ -27,6 +27,8 @@ class Admin extends Authenticatable
         'last_name',
         'username',
         'email',
+        'mobile',
+        'two_factor_disabled',
         'level',
         'password',
         'instagram',

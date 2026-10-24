@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Helpers\DeviceHelper;
 use App\Models\AdminSession;
+use App\Support\DeviceFingerprint;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -37,8 +38,8 @@ class RecordAdminSession
             $deviceInfo = DeviceHelper::detect($request);
             $adminId = Auth::guard('adminPanel')->id();
 
-            // تولید اثر انگشت یکتا بر اساس دستگاه + مرورگر + IP
-            $deviceFingerprint = $this->generateDeviceFingerprint($request);
+            // تولید اثر انگشت یکتا بر اساس دستگاه + مرورگر + IP (مرکزی — فاز ۷۲)
+            $deviceFingerprint = DeviceFingerprint::session($request);
 
             $payload = [
                 'session_id' => $sessionId,
@@ -51,6 +52,14 @@ class RecordAdminSession
                 'last_activity' => now(),
                 'is_active' => true,
             ];
+
+            // فاز ۷۲ — «سیستم اصلی»: اولین دستگاهی که برای یک مدیر نشست می‌سازد
+            // (وقتی هیچ نشست فعال دیگری ندارد) نشست اصلی محسوب می‌شود و تا ۴۸ ساعت
+            // از دستگاه دیگر (آیپی/مرورگر/سیستم متفاوت) قابل بن/خروج نیست.
+            $isNewDevice = ! AdminSession::query()
+                ->where('admin_id', $adminId)
+                ->where('device_fingerprint', $deviceFingerprint)
+                ->exists();
 
             // بروزرسانی یا ایجاد نشست — فاز ۳۴: «یک» دستور UPSERT اتمیک
             // قبلاً update-then-create بود؛ دو درخواستِ همزمان (مثلاً wire:poll و
@@ -82,83 +91,40 @@ class RecordAdminSession
                 // ردیابی نشست هیچ‌وقت نباید درخواست ادمین را بترکاند
                 report($e);
             }
+
+            // فاز ۷۲ — نگهداری وضعیت «سیستم اصلی»
+            try {
+                if ($isNewDevice) {
+                    // دستگاه جدید — فقط اگر مدیر هیچ نشست فعال دیگری نداشت، این نشست «اصلی» است
+                    $hasOtherActive = AdminSession::query()
+                        ->where('admin_id', $adminId)
+                        ->where('device_fingerprint', '!=', $deviceFingerprint)
+                        ->where('is_active', true)
+                        ->exists();
+
+                    if (! $hasOtherActive) {
+                        AdminSession::query()
+                            ->where('admin_id', $adminId)
+                            ->where('device_fingerprint', $deviceFingerprint)
+                            ->update([
+                                'is_primary' => true,
+                                'primary_until' => now()->addHours(48),
+                            ]);
+                    }
+                } else {
+                    // دستگاه اصلی همچنان در حال استفاده است ⇒ تمدید پنجرهٔ ۴۸ ساعته
+                    AdminSession::query()
+                        ->where('admin_id', $adminId)
+                        ->where('device_fingerprint', $deviceFingerprint)
+                        ->where('is_primary', true)
+                        ->update(['primary_until' => now()->addHours(48)]);
+                }
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
 
         return $next($request);
     }
 
-    /**
-     * تولید اثر انگشت یکتا بر اساس: مرورگر + سیستم عامل + نوع دستگاه + IP
-     * ترکیب این عوامل باعث می‌شود:
-     * - همان دستگاه با همان مرورگر و همان IP → بروزرسانی می‌شود (تکرار ثبت نمی‌شود)
-     * - دستگاه متفاوت یا مرورگر متفاوت یا IP متفاوت → رکورد جدید ساخته می‌شود
-     */
-    private function generateDeviceFingerprint(Request $request)
-    {
-        $userAgent = $request->userAgent();
-
-        $browser = $this->getBrowserName($userAgent);
-        $platform = $this->getPlatformName($userAgent);
-        $deviceType = $this->getDeviceType($userAgent);
-        $ip = $request->ip();
-
-        // ترکیب همه عوامل برای ایجاد اثر انگشت یکتا
-        $fingerprint = md5($browser.'|'.$platform.'|'.$deviceType.'|'.$ip);
-
-        return $fingerprint;
-    }
-
-    private function getBrowserName($userAgent)
-    {
-        if (strpos($userAgent, 'Chrome') !== false && strpos($userAgent, 'Edg') === false) {
-            return 'Chrome';
-        }
-        if (strpos($userAgent, 'Firefox') !== false) {
-            return 'Firefox';
-        }
-        if (strpos($userAgent, 'Safari') !== false && strpos($userAgent, 'Chrome') === false) {
-            return 'Safari';
-        }
-        if (strpos($userAgent, 'Edg') !== false) {
-            return 'Edge';
-        }
-        if (strpos($userAgent, 'Opera') !== false || strpos($userAgent, 'OPR') !== false) {
-            return 'Opera';
-        }
-
-        return 'Unknown';
-    }
-
-    private function getPlatformName($userAgent)
-    {
-        if (strpos($userAgent, 'Windows') !== false) {
-            return 'Windows';
-        }
-        if (strpos($userAgent, 'Mac') !== false) {
-            return 'macOS';
-        }
-        if (strpos($userAgent, 'Linux') !== false && strpos($userAgent, 'Android') === false) {
-            return 'Linux';
-        }
-        if (strpos($userAgent, 'Android') !== false) {
-            return 'Android';
-        }
-        if (strpos($userAgent, 'iPhone') !== false || strpos($userAgent, 'iPad') !== false) {
-            return 'iOS';
-        }
-
-        return 'Unknown';
-    }
-
-    private function getDeviceType($userAgent)
-    {
-        if (preg_match('/(mobile|android|iphone|ipod|blackberry|windows phone)/i', $userAgent)) {
-            return 'mobile';
-        }
-        if (preg_match('/(ipad|tablet)/i', $userAgent)) {
-            return 'tablet';
-        }
-
-        return 'desktop';
-    }
 }

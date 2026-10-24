@@ -3,12 +3,13 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\BlockedDevice;
+use App\Models\Admin;
 use App\Models\AdminSession;
+use App\Models\BlockedDevice;
+use App\Support\DeviceFingerprint;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 
 class CheckBlockedDevice
@@ -17,100 +18,83 @@ class CheckBlockedDevice
     {
         if (Auth::guard('adminPanel')->check()) {
             $admin = Auth::guard('adminPanel')->user();
-            $sessionId = Session::getId();
-            $ipAddress = $request->ip();
-            $userAgent = $request->userAgent();
 
-            // تولید اثر انگشت
-            $deviceFingerprint = $this->generateDeviceFingerprint($userAgent);
-            $browserFingerprint = $this->generateBrowserFingerprint($userAgent);
-
-            // بررسی بلاک شدن
-            $blocked = BlockedDevice::where('admin_id', $admin->id)
-                ->where(function($q) use ($sessionId, $ipAddress, $deviceFingerprint, $browserFingerprint) {
-                    $q->where('session_id', $sessionId)
-                        ->orWhere('ip_address', $ipAddress)
-                        ->orWhere('device_fingerprint', $deviceFingerprint)
-                        ->orWhere('browser_fingerprint', $browserFingerprint);
-                })
-                ->where(function($q) {
-                    $q->where('is_permanent', true)
-                        ->orWhere('blocked_until', '>', now());
-                })
-                ->first();
+            $blocked = self::activeBlockFor($admin, $request);
 
             if ($blocked) {
+                $sessionId = Session::getId();
+
                 // حذف نشست فعلی
                 AdminSession::where('session_id', $sessionId)->delete();
 
                 Auth::guard('adminPanel')->logout();
                 Session::flush();
 
-                $blockTypeText = $blocked->block_type_text;
-                $message = "دسترسی شما به دلیل {.$blocked->reason ?? 'بلاک شدن'} مسدود شده است. (نوع بلاک: {$blockTypeText})";
-
-                if (!$blocked->is_permanent && $blocked->blocked_until) {
-                    $message .= " تا تاریخ " . jdate($blocked->blocked_until)->format('d F Y H:i');
-                }
-
-                return redirect()->route('admin.login')->withErrors(['blocked' => $message]);
+                // فاز ۷۲ — پیام مسدودی در «همان صفحهٔ ورود پنل جدید» نمایش داده می‌شود
+                // (قبلاً به پنل قدیم هدایت می‌شد — اشتباه مسیر)
+                return redirect()
+                    ->route('np.login')
+                    ->withErrors(['username' => self::blockMessage($blocked)]);
             }
         }
 
         return $next($request);
     }
 
-    private function generateDeviceFingerprint($userAgent)
+    /**
+     * یافتن بلاک فعال این مدیر برای درخواست جاری — فاز ۷۲
+     *
+     * یک نقطهٔ مشترک برای میدل‌ور و هر دو صفحهٔ ورود (پنل جدید/قدیمی):
+     *  - نوع account (بن اکانت): بدون توجه به دستگاه/آیپی همیشه مسدود است
+     *  - انواع دیگر: فقط اگر نشست/آیپی/دستگاه/مرورگر جاری با رکورد بلاک بخواند
+     */
+    public static function activeBlockFor(Admin $admin, Request $request): ?BlockedDevice
     {
-        $browser = $this->getBrowserName($userAgent);
-        $platform = $this->getPlatformName($userAgent);
-        $deviceType = $this->getDeviceType($userAgent);
+        $sessionId = (string) Session::getId();
+        $ipAddress = (string) $request->ip();
+        $userAgent = (string) $request->userAgent();
 
-        return md5($browser . $platform . $deviceType);
+        $deviceFingerprint = DeviceFingerprint::device($userAgent);
+        $browserFingerprint = DeviceFingerprint::browser($userAgent);
+
+        return BlockedDevice::query()
+            ->where('admin_id', $admin->id)
+            ->where(function ($q) use ($sessionId, $ipAddress, $deviceFingerprint, $browserFingerprint) {
+                // بن اکانت — کل حساب قفل است
+                $q->where('block_type', 'account')
+                    // بلاک‌های دستگاهی — فقط وقتی با همین نشست/آیپی/دستگاه بخوانند
+                    ->orWhere(function ($q2) use ($sessionId, $ipAddress, $deviceFingerprint, $browserFingerprint) {
+                        $q2->where('block_type', '!=', 'account')
+                            ->where(function ($q3) use ($sessionId, $ipAddress, $deviceFingerprint, $browserFingerprint) {
+                                $q3->where('session_id', $sessionId)
+                                    ->orWhere('ip_address', $ipAddress)
+                                    ->orWhere('device_fingerprint', $deviceFingerprint)
+                                    ->orWhere('browser_fingerprint', $browserFingerprint);
+                            });
+                    });
+            })
+            ->where(function ($q) {
+                $q->where('is_permanent', true)
+                    ->orWhere('blocked_until', '>', now());
+            })
+            ->orderByRaw("FIELD(block_type, 'account', 'all', 'ip', 'device', 'browser', 'session')")
+            ->first();
     }
 
-    private function generateBrowserFingerprint($userAgent)
+    /** پیام فارسی مسدودی — برای نمایش در صفحهٔ ورود */
+    public static function blockMessage(BlockedDevice $blocked): string
     {
-        $browser = $this->getBrowserName($userAgent);
-        $browserVersion = $this->getBrowserVersion($userAgent);
+        if ($blocked->isAccountBan()) {
+            $message = 'حساب کاربری شما توسط سازندهٔ سایت مسدود شده است. برای رفع مسدودی با مدیر سایت در تماس باشید.';
+        } else {
+            $blockTypeText = $blocked->block_type_text;
+            $message = "دسترسی شما به دلیل «".($blocked->reason ?: 'بلاک شدن')."» مسدود شده است. (نوع بلاک: {$blockTypeText})";
+        }
 
-        return md5($browser . $browserVersion);
-    }
+        if (! $blocked->is_permanent && $blocked->blocked_until) {
+            $message .= ' تا تاریخ '.jdate($blocked->blocked_until)->format('d F Y H:i');
+        }
 
-    private function getBrowserName($userAgent)
-    {
-        if (strpos($userAgent, 'Chrome') !== false && strpos($userAgent, 'Edg') === false) return 'Chrome';
-        if (strpos($userAgent, 'Firefox') !== false) return 'Firefox';
-        if (strpos($userAgent, 'Safari') !== false && strpos($userAgent, 'Chrome') === false) return 'Safari';
-        if (strpos($userAgent, 'Edg') !== false) return 'Edge';
-        if (strpos($userAgent, 'Opera') !== false || strpos($userAgent, 'OPR') !== false) return 'Opera';
-        return 'Unknown';
-    }
-
-    private function getBrowserVersion($userAgent)
-    {
-        if (preg_match('/Chrome\/(\d+)/', $userAgent, $matches)) return $matches[1];
-        if (preg_match('/Firefox\/(\d+)/', $userAgent, $matches)) return $matches[1];
-        if (preg_match('/Edg\/(\d+)/', $userAgent, $matches)) return $matches[1];
-        if (preg_match('/Safari\/(\d+)/', $userAgent, $matches)) return $matches[1];
-        if (preg_match('/OPR\/(\d+)/', $userAgent, $matches)) return $matches[1];
-        return 'unknown';
-    }
-
-    private function getPlatformName($userAgent)
-    {
-        if (strpos($userAgent, 'Windows') !== false) return 'Windows';
-        if (strpos($userAgent, 'Mac') !== false) return 'macOS';
-        if (strpos($userAgent, 'Linux') !== false && strpos($userAgent, 'Android') === false) return 'Linux';
-        if (strpos($userAgent, 'Android') !== false) return 'Android';
-        if (strpos($userAgent, 'iPhone') !== false || strpos($userAgent, 'iPad') !== false) return 'iOS';
-        return 'Unknown';
-    }
-
-    private function getDeviceType($userAgent)
-    {
-        if (preg_match('/(mobile|android|iphone|ipod|blackberry|windows phone)/i', $userAgent)) return 'mobile';
-        if (preg_match('/(ipad|tablet)/i', $userAgent)) return 'tablet';
-        return 'desktop';
+        return $message;
     }
 }

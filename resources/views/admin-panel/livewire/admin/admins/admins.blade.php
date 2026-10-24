@@ -95,6 +95,7 @@
                         <th class="w-16 px-3 py-3 text-start font-bold">تصویر</th>
                         <th class="px-3 py-3 text-start font-bold">نام</th>
                         <th class="px-3 py-3 text-start font-bold">نام کاربری</th>
+                        <th class="px-3 py-3 text-start font-bold">شماره همراه</th>
                         <th class="px-3 py-3 text-start font-bold">نقش‌ها</th>
                         <th class="w-28 px-3 py-3 text-start font-bold">وضعیت</th>
                         <th class="w-32 px-3 py-3 text-start font-bold">آخرین ورود</th>
@@ -126,6 +127,13 @@
                             </td>
                             <td class="max-w-36 px-3 py-3">
                                 <code class="truncate text-[11px] text-ink-2 dark:text-night-ink-2" dir="ltr">{{ $admin->username }}</code>
+                            </td>
+                            <td class="max-w-36 px-3 py-3">
+                                @if ($admin->mobile)
+                                    <code class="text-[11px] text-ink-2 dark:text-night-ink-2" dir="ltr">{{ $admin->mobile }}</code>
+                                @else
+                                    <span class="text-ink-3 dark:text-night-ink-2">—</span>
+                                @endif
                             </td>
                             <td class="max-w-44 px-3 py-3">
                                 <div class="flex flex-wrap items-center gap-1">
@@ -267,9 +275,19 @@
                         @error('email') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="mb-1.5 block text-[13px] font-semibold" for="admin-username">شماره همراه <small>(نام کاربری)</small> <span class="text-red-500">*</span></label>
-                        <input id="admin-username" type="text" wire:model="username" dir="ltr" class="ap-input" placeholder="0912…">
+                        <label class="mb-1.5 block text-[13px] font-semibold" for="admin-username">نام کاربری <span class="text-red-500">*</span></label>
+                        <input id="admin-username" type="text" wire:model="username" dir="ltr" class="ap-input" placeholder="username">
+                        <p class="mt-1 text-[11px] text-ink-3 dark:text-night-ink-2">نام کاربری ورود — می‌تواند شماره هم باشد، اما فیلد شماره همراه جداست</p>
                         @error('username') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-[13px] font-semibold" for="admin-mobile">شماره همراه</label>
+                        <div class="relative">
+                            <span class="pointer-events-none absolute inset-y-0 start-3 flex items-center text-ink-3"><x-admin-panel::icon name="smartphone" class="size-4" /></span>
+                            <input id="admin-mobile" type="tel" wire:model="mobile" dir="ltr" class="ap-input ps-10" placeholder="0912…">
+                        </div>
+                        <p class="mt-1 text-[11px] text-ink-3 dark:text-night-ink-2">مستقل از نام کاربری — برای ورود با شماره و ارسال کد 2FA</p>
+                        @error('mobile') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                     </div>
                 </div>
 

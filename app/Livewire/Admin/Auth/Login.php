@@ -8,6 +8,7 @@ use App\Services\BotDetector;
 use App\Services\CaptchaService;
 use App\Services\LoginThrottle;
 use App\Services\SecuritySettings;
+use App\Http\Middleware\CheckBlockedDevice;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
@@ -148,8 +149,18 @@ class Login extends Component
         LoginThrottle::clear($username, $ip);
         app(CaptchaService::class)->flush();
 
-        // ─── ورود دومرحله‌ای (فاز ۴۴) ───
-        if (SecuritySettings::twoFactorEnabled()) {
+        // ─── فاز ۷۲ — مدیر مسدود (بن اکانت/دستگاه/آیپی/مرورگر) همان‌جا در همین صفحه پیام می‌گیرد ───
+        if ($blocked = CheckBlockedDevice::activeBlockFor($admin, request())) {
+            $this->reset('password', 'captcha');
+            $this->refreshCaptcha();
+
+            throw ValidationException::withMessages([
+                'username' => CheckBlockedDevice::blockMessage($blocked),
+            ]);
+        }
+
+        // ─── ورود دومرحله‌ای (فاز ۴۴) — مدیر می‌تواند برای خودش آن را خاموش کند (فاز ۷۲) ───
+        if (SecuritySettings::twoFactorEnabled() && ! $admin->two_factor_disabled) {
             try {
                 app(AdminTwoFactorService::class)->startChallenge(
                     $admin,

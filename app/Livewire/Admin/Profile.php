@@ -23,6 +23,13 @@ class Profile extends Component
     public string $last_name = '';
     public string $username = '';
     public string $email = '';
+
+    /** فاز ۷۲ — شماره همراه مستقل از نام کاربری */
+    public string $mobile = '';
+
+    /** فاز ۷۲ — خروج دومرحله‌ای (2FA) برای خودِ این مدیر خاموش شده است */
+    public bool $twoFactorDisabled = false;
+
     public string $bio = '';
 
     /** تصویر جدید پروفایل (TemporaryUploadedFile) */
@@ -49,6 +56,8 @@ class Profile extends Component
         $this->last_name = (string) $admin->last_name;
         $this->username = (string) $admin->username;
         $this->email = (string) $admin->email;
+        $this->mobile = (string) ($admin->mobile ?? '');
+        $this->twoFactorDisabled = (bool) $admin->two_factor_disabled;
         $this->bio = (string) $admin->bio;
 
         $this->instagram = (string) $admin->instagram;
@@ -70,6 +79,8 @@ class Profile extends Component
             'last_name' => 'required|string|max:191',
             'username' => 'required|string|max:191|unique:admins,username,' . $admin->id,
             'email' => 'nullable|email|max:191|unique:admins,email,' . $admin->id,
+            // فاز ۷۲ — فیلد مستقل شماره همراه (نام کاربری هم می‌تواند شماره باشد؛ این فیلد جداست)
+            'mobile' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+\-\s]{7,20}$/', 'unique:admins,mobile,'.$admin->id],
             'bio' => 'nullable|string|max:2000',
             'image' => 'nullable|image|max:2048',
             'password' => 'nullable|string|min:8|same:password_confirmation',
@@ -95,6 +106,8 @@ class Profile extends Component
             'username.unique' => 'این نام کاربری قبلاً ثبت شده است',
             'email.email' => 'ایمیل معتبر نیست',
             'email.unique' => 'این ایمیل قبلاً ثبت شده است',
+            'mobile.regex' => 'شماره همراه معتبر نیست (مثال: 09123456789)',
+            'mobile.unique' => 'این شماره همراه قبلاً ثبت شده است',
             'image.image' => 'فایل آپلود شده باید تصویر باشد',
             'image.max' => 'حجم تصویر حداکثر ۲ مگابایت است',
             'password.min' => 'رمز عبور حداقل ۸ کاراکتر است',
@@ -118,7 +131,7 @@ class Profile extends Component
 
         // تغییرات برای لاگ
         $changes = [];
-        foreach (['first_name', 'last_name', 'username', 'email'] as $field) {
+        foreach (['first_name', 'last_name', 'username', 'email', 'mobile'] as $field) {
             if ($admin->{$field} != $this->{$field}) {
                 $changes[$field] = [$admin->{$field}, $this->{$field}];
             }
@@ -129,6 +142,7 @@ class Profile extends Component
             'last_name' => $this->last_name,
             'username' => $this->username,
             'email' => $this->email ?: null,
+            'mobile' => $this->mobile ?: null,
             'bio' => $this->bio ?: null,
             'instagram' => $this->instagram ?: null,
             'whatsapp' => $this->whatsapp ?: null,
@@ -173,6 +187,30 @@ class Profile extends Component
         $this->reset('password', 'password_confirmation');
 
         $this->dispatch('toast', message: 'پروفایل با موفقیت ذخیره شد.', type: 'success');
+    }
+
+    /**
+     * فاز ۷۲ — خاموش/روشن کردن ورود دومرحله‌ای برای خودِ مدیر (ذخیرهٔ فوری)
+     * کلید اصلی 2FA در تنظیمات برنامه‌نویس سراسری است؛ این کلید فقط برای همین مدیر است.
+     */
+    public function toggleTwoFactor(bool $value): void
+    {
+        $admin = Auth::guard('adminPanel')->user();
+
+        $admin->two_factor_disabled = $value;
+        $admin->save();
+
+        $this->twoFactorDisabled = $value;
+
+        activity()
+            ->performedOn($admin)
+            ->causedBy($admin)
+            ->withProperties(['action' => 'toggle_own_2fa', 'disabled' => $value, 'ip' => request()->ip()])
+            ->log('مدیر «'.$admin->fullname.'» ورود دومرحله‌ای برای حساب خود را '.($value ? 'خاموش' : 'روشن').' کرد');
+
+        $this->dispatch('toast', message: $value
+            ? 'ورود دومرحله‌ای برای حساب شما غیرفعال شد.'
+            : 'ورود دومرحله‌ای برای حساب شما فعال شد.', type: 'success');
     }
 
     public function render()

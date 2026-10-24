@@ -67,6 +67,7 @@ class BlockedDevice extends Model
             'device' => 'دستگاه',
             'browser' => 'مرورگر',
             'all' => 'همه موارد',
+            'account' => 'بن اکانت',
             default => 'دستگاه'
         };
     }
@@ -79,7 +80,14 @@ class BlockedDevice extends Model
             'device' => 'fa-solid fa-laptop',
             'browser' => 'fa-brands fa-chrome',
             'all' => 'fa-solid fa-shield-haltered',
+            'account' => 'fa-solid fa-user-lock',
             default => 'fa-solid fa-laptop'
         };
+    }
+
+    /** آیا این بلاک از نوع «بن اکانت» است؟ (فقط سازنده می‌تواند ایجاد/رفع کند) */
+    public function isAccountBan(): bool
+    {
+        return $this->block_type === 'account';
     }
 }

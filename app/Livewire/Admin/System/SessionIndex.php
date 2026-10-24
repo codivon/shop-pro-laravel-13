@@ -6,7 +6,9 @@ namespace App\Livewire\Admin\System;
 use App\Models\Admin;
 use App\Models\AdminSession;
 use App\Models\BlockedDevice;
+use App\Support\DeviceFingerprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
@@ -96,9 +98,14 @@ class SessionIndex extends Component
     #[Computed]
     public function blockedDevices()
     {
-        return BlockedDevice::with('admin')
-            ->orderBy('created_at', 'desc')
-            ->paginate(20, ['*'], 'blockedPage');
+        $query = BlockedDevice::with('admin')->orderBy('created_at', 'desc');
+
+        // فاز ۷۲ — بن اکانت‌ها فقط برای سازنده قابل مشاهده‌اند
+        if (! auth('adminPanel')->user()->isCreator()) {
+            $query->where('block_type', '!=', 'account');
+        }
+
+        return $query->paginate(20, ['*'], 'blockedPage');
     }
 
     /* ---------------- داده مودال‌های تایید (برای نمایش نام ادمین/دستگاه) ---------------- */
@@ -125,6 +132,13 @@ class SessionIndex extends Component
     public function clearingBlocksAdmin(): ?Admin
     {
         return $this->confirmingClearBlocks ? Admin::find($this->confirmingClearBlocks) : null;
+    }
+
+    /** فاز ۷۲ — نشست هدف مودال بلاک (برای نمایش اطلاعات ادمین/دستگاه در مودال جدید) */
+    #[Computed]
+    public function blockingSessionModel(): ?AdminSession
+    {
+        return $this->blockingSession ? AdminSession::with('admin')->find($this->blockingSession) : null;
     }
 
     /* ---------------- حذف یک نشست (پورت destroy — gate sessions.exit) ---------------- */
@@ -156,6 +170,13 @@ class SessionIndex extends Component
         if ($session->session_id === Session::getId()) {
             $this->confirmingDelete = null;
             $this->dispatch('toast', message: 'نمی‌توانید نشست فعلی خود را حذف کنید', type: 'error');
+
+            return;
+        }
+
+        // فاز ۷۲ — نشست اصلی تا ۴۸ ساعت از دستگاه دیگر قابل خروج نیست
+        if ($this->guardPrimaryProtection($session)) {
+            $this->confirmingDelete = null;
 
             return;
         }
@@ -223,8 +244,16 @@ class SessionIndex extends Component
 
         $deletedCount = 0;
         $devicesList = [];
+        $skippedProtected = 0;
 
         foreach ($sessions as $session) {
+            // فاز ۷۲ — نشست اصلی تا ۴۸ ساعت از دستگاه دیگر حذف نمی‌شود
+            if ($this->isProtectedFromViewer($session)) {
+                $skippedProtected++;
+
+                continue;
+            }
+
             $devicesList[] = $session->device_name ?? 'دستگاه نامشخص';
             $session->delete();
             try {
@@ -249,7 +278,13 @@ class SessionIndex extends Component
         $this->confirmingDestroyAllAdmin = null;
         unset($this->sessions);
 
-        $this->dispatch('toast', message: "{$deletedCount} نشست با موفقیت حذف شد", type: 'success');
+        $message = "{$deletedCount} نشست با موفقیت حذف شد";
+
+        if ($skippedProtected > 0) {
+            $message .= " — {$skippedProtected} نشست اصلی تا ۴۸ ساعت محافظت می‌شود";
+        }
+
+        $this->dispatch('toast', message: $message, type: 'success');
     }
 
     /* ---------------- پاک‌سازی نشست‌های غیرفعال (پورت clearInactive) ---------------- */
@@ -292,8 +327,16 @@ class SessionIndex extends Component
             ->get();
 
         $deletedCount = 0;
+        $skippedProtected = 0;
 
         foreach ($sessions as $session) {
+            // فاز ۷۲ — نشست اصلی تا ۴۸ ساعت از دستگاه دیگر حذف نمی‌شود
+            if ($this->isProtectedFromViewer($session)) {
+                $skippedProtected++;
+
+                continue;
+            }
+
             $session->delete();
             try {
                 DB::table('sessions')->where('id', $session->session_id)->delete();
@@ -313,10 +356,16 @@ class SessionIndex extends Component
 
         unset($this->sessions);
 
-        $this->dispatch('toast', message: "{$deletedCount} دستگاه با موفقیت خارج شد", type: 'success');
+        $message = "{$deletedCount} دستگاه با موفقیت خارج شد";
+
+        if ($skippedProtected > 0) {
+            $message .= " — {$skippedProtected} نشست اصلی تا ۴۸ ساعت محافظت می‌شود";
+        }
+
+        $this->dispatch('toast', message: $message, type: 'success');
     }
 
-    /* ---------------- بلاک دستگاه (پورت blockSession) ---------------- */
+    /* ---------------- بلاک دستگاه + بن اکانت (پورت blockSession + فاز ۷۲) ---------------- */
 
     public function openBlock(int $id): void
     {
@@ -348,7 +397,7 @@ class SessionIndex extends Component
     {
         auth('adminPanel')->user()?->can('sessions.blocked') ?: abort(403);
 
-        $session = AdminSession::find($this->blockingSession);
+        $session = AdminSession::with('admin')->find($this->blockingSession);
 
         if (! $session) {
             $this->showBlockModal = false;
@@ -365,8 +414,38 @@ class SessionIndex extends Component
             return;
         }
 
+        // فاز ۷۲ — نشست اصلی تا ۴۸ ساعت از دستگاه دیگر قابل بلاک نیست
+        if ($this->guardPrimaryProtection($session)) {
+            $this->showBlockModal = false;
+
+            return;
+        }
+
+        $isAccountBan = $this->blockType === 'account';
+
+        // فاز ۷۲ — بن اکانت فقط ابزار سازنده است
+        if ($isAccountBan) {
+            auth('adminPanel')->user()->isCreator() ?: abort(403);
+
+            $targetAdmin = $session->admin;
+
+            if (! $targetAdmin || $targetAdmin->level === 'creator') {
+                $this->showBlockModal = false;
+                $this->dispatch('toast', message: 'بن اکانت فقط برای مدیران (غیر سازنده) امکان‌پذیر است', type: 'error');
+
+                return;
+            }
+
+            if ($targetAdmin->id === auth('adminPanel')->id()) {
+                $this->showBlockModal = false;
+                $this->dispatch('toast', message: 'نمی‌توانید حساب خودتان را مسدود کنید', type: 'error');
+
+                return;
+            }
+        }
+
         $this->validate([
-            'blockType' => 'required|in:session,ip,device,browser,all',
+            'blockType' => 'required|in:session,ip,device,browser,all,account',
             'blockDuration' => 'nullable|in:permanent,1day,1week,1month',
             'blockReason' => 'nullable|string|max:500',
         ], [], [
@@ -401,9 +480,50 @@ class SessionIndex extends Component
             $durationText = 'نامشخص';
         }
 
-        // تولید اثر انگشت
-        $deviceFingerprint = $this->generateDeviceFingerprint($session->user_agent);
-        $browserFingerprint = $this->generateBrowserFingerprint($session->user_agent);
+        if ($isAccountBan) {
+            // ─── بن اکانت: کل حساب قفل می‌شود و همهٔ نشست‌ها خروج می‌شوند ───
+            BlockedDevice::create([
+                'admin_id' => $session->admin_id,
+                'block_type' => 'account',
+                'reason' => $reason,
+                'blocked_until' => $blockedUntil,
+                'is_permanent' => $isPermanent,
+            ]);
+
+            $bannedSessions = AdminSession::where('admin_id', $session->admin_id)->get();
+
+            foreach ($bannedSessions as $banned) {
+                try {
+                    DB::table('sessions')->where('id', $banned->session_id)->delete();
+                } catch (\Exception $e) {
+                }
+                $banned->delete();
+            }
+
+            activity()
+                ->causedBy(auth('adminPanel')->user())
+                ->withProperties([
+                    'action' => 'ban_account',
+                    'target_admin' => $targetAdminName,
+                    'target_admin_id' => $session->admin_id,
+                    'duration' => $durationText,
+                    'reason' => $reason,
+                    'terminated_sessions' => $bannedSessions->count(),
+                ])
+                ->log("سازنده {$adminName} حساب {$targetAdminName} را به مدت {$durationText} بن کرد (بن اکانت)");
+
+            $this->showBlockModal = false;
+            $this->blockingSession = null;
+            unset($this->sessions, $this->blockedDevices);
+
+            $this->dispatch('toast', message: 'حساب مدیر با موفقیت مسدود شد و از همهٔ دستگاه‌ها خارج گردید', type: 'success');
+
+            return;
+        }
+
+        // تولید اثر انگشت (مرکزی — فاز ۷۲)
+        $deviceFingerprint = DeviceFingerprint::device((string) $session->user_agent);
+        $browserFingerprint = DeviceFingerprint::browser((string) $session->user_agent);
 
         $blockedItems = [];
 
@@ -516,6 +636,14 @@ class SessionIndex extends Component
             return;
         }
 
+        // فاز ۷۲ — رفع «بن اکانت» فقط توسط سازنده
+        if ($blocked->isAccountBan() && ! auth('adminPanel')->user()->isCreator()) {
+            $this->confirmingUnblock = null;
+            $this->dispatch('toast', message: 'رفع بن اکانت فقط توسط سازنده امکان‌پذیر است', type: 'error');
+
+            return;
+        }
+
         $adminName = auth('adminPanel')->user()->full_name;
         $blockType = $blocked->block_type;
         $targetAdminName = $blocked->admin->full_name ?? 'نامشخص';
@@ -537,7 +665,7 @@ class SessionIndex extends Component
         $this->confirmingUnblock = null;
         unset($this->blockedDevices);
 
-        $this->dispatch('toast', message: 'بلاک دستگاه با موفقیت حذف شد', type: 'success');
+        $this->dispatch('toast', message: $blocked->isAccountBan() ? 'بن اکانت با موفقیت رفع شد' : 'بلاک دستگاه با موفقیت حذف شد', type: 'success');
     }
 
     /* ---------------- پاک‌سازی بلاک‌های یک ادمین (پورت clearAdminBlocks) ---------------- */
@@ -558,6 +686,15 @@ class SessionIndex extends Component
         }
 
         $adminId = $this->confirmingClearBlocks;
+
+        // فاز ۷۲ — پاک‌سازی بن اکانت فقط توسط سازنده
+        if (! auth('adminPanel')->user()->isCreator()
+            && BlockedDevice::where('admin_id', $adminId)->where('block_type', 'account')->exists()) {
+            $this->confirmingClearBlocks = null;
+            $this->dispatch('toast', message: 'حذف بن اکانت فقط توسط سازنده امکان‌پذیر است', type: 'error');
+
+            return;
+        }
 
         $targetAdmin = Admin::find($adminId);
         $adminName = auth('adminPanel')->user()->full_name;
@@ -585,65 +722,50 @@ class SessionIndex extends Component
     }
 
     /* ------------------------------------------------------------------
-     | تولید اثر انگشت (پورت generateDeviceFingerprint / generateBrowserFingerprint)
+     | فاز ۷۲ — محافظت ۴۸ ساعتهٔ «سیستم اصلی»
+     |
+     | اولین دستگاهی که برای مدیر نشست می‌سازد «سیستم اصلی» است؛ اگر کسی با
+     | اطلاعات همان مدیر از دستگاه دیگر (آیپی/مرورگر/سیستم متفاوت) وارد شد،
+     | تا ۴۸ ساعت نمی‌تواند نشست اصلی را بن/خروج کند. از همان دستگاه اصلی
+     | همهٔ دکمه‌ها فعال می‌مانند.
      ------------------------------------------------------------------ */
 
-    private function generateDeviceFingerprint($userAgent): string
+    /** اثر انگشت نشستِ بینندهٔ فعلی (از ردیف admin_sessions خودش، وگرنه محاسبهٔ زنده) */
+    private function viewerSessionFingerprint(): string
     {
-        $browser = $this->getBrowserName($userAgent);
-        $platform = $this->getPlatformName($userAgent);
-        $deviceType = $this->getDeviceType($userAgent);
+        $row = AdminSession::query()
+            ->where('session_id', Session::getId())
+            ->orderByDesc('last_activity')
+            ->first();
 
-        return md5($browser.$platform.$deviceType);
+        return $row?->device_fingerprint ?: DeviceFingerprint::session(Request::instance());
     }
 
-    private function generateBrowserFingerprint($userAgent): string
+    /** آیا این نشست برای بینندهٔ فعلی محافظت‌شده است؟ (نشست اصلی + پنجرهٔ فعال + دستگاه متفاوت) */
+    public function isProtectedFromViewer(AdminSession $session): bool
     {
-        $browser = $this->getBrowserName($userAgent);
-        $browserVersion = $this->getBrowserVersion($userAgent);
+        if (! $session->isPrimaryProtected()) {
+            return false;
+        }
 
-        return md5($browser.$browserVersion);
+        // نشست فعلی خود بیننده هرگز «محافظت‌شده از او» نیست
+        if ($session->session_id === Session::getId()) {
+            return false;
+        }
+
+        return $session->device_fingerprint !== $this->viewerSessionFingerprint();
     }
 
-    private function getBrowserVersion($userAgent): string
+    /** گارد سرور-side — true یعنی عملیات رد شد و توست خطا نمایش داده شد */
+    private function guardPrimaryProtection(AdminSession $session): bool
     {
-        if (preg_match('/Chrome\/(\d+)/', $userAgent, $matches)) return $matches[1];
-        if (preg_match('/Firefox\/(\d+)/', $userAgent, $matches)) return $matches[1];
-        if (preg_match('/Edg\/(\d+)/', $userAgent, $matches)) return $matches[1];
-        if (preg_match('/Safari\/(\d+)/', $userAgent, $matches)) return $matches[1];
-        if (preg_match('/OPR\/(\d+)/', $userAgent, $matches)) return $matches[1];
+        if ($this->isProtectedFromViewer($session)) {
+            $this->dispatch('toast', message: 'این نشست، «سیستم اصلی» مدیر است و تا ۴۸ ساعت از دستگاه دیگر قابل خروج یا مسدودسازی نیست.', type: 'error');
 
-        return 'unknown';
-    }
+            return true;
+        }
 
-    private function getBrowserName($userAgent): string
-    {
-        if (strpos($userAgent, 'Chrome') !== false && strpos($userAgent, 'Edg') === false) return 'Chrome';
-        if (strpos($userAgent, 'Firefox') !== false) return 'Firefox';
-        if (strpos($userAgent, 'Safari') !== false && strpos($userAgent, 'Chrome') === false) return 'Safari';
-        if (strpos($userAgent, 'Edg') !== false) return 'Edge';
-        if (strpos($userAgent, 'Opera') !== false || strpos($userAgent, 'OPR') !== false) return 'Opera';
-
-        return 'Unknown';
-    }
-
-    private function getPlatformName($userAgent): string
-    {
-        if (strpos($userAgent, 'Windows') !== false) return 'Windows';
-        if (strpos($userAgent, 'Mac') !== false) return 'macOS';
-        if (strpos($userAgent, 'Linux') !== false && strpos($userAgent, 'Android') === false) return 'Linux';
-        if (strpos($userAgent, 'Android') !== false) return 'Android';
-        if (strpos($userAgent, 'iPhone') !== false || strpos($userAgent, 'iPad') !== false) return 'iOS';
-
-        return 'Unknown';
-    }
-
-    private function getDeviceType($userAgent): string
-    {
-        if (preg_match('/(mobile|android|iphone|ipod|blackberry|windows phone)/i', $userAgent)) return 'mobile';
-        if (preg_match('/(ipad|tablet)/i', $userAgent)) return 'tablet';
-
-        return 'desktop';
+        return false;
     }
 
     /* ---------------- ابزار ---------------- */

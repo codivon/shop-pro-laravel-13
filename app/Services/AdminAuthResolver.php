@@ -18,7 +18,8 @@ class AdminAuthResolver
     {
         $provider = Auth::guard('adminPanel')->getProvider();
 
-        foreach (['username', 'email'] as $field) {
+        // فاز ۷۲ — علاوه بر username و email، با «شماره موبایل» هم می‌توان وارد شد
+        foreach (['username', 'email', 'mobile'] as $field) {
             /** @var Admin|null $admin */
             $admin = $provider->retrieveByCredentials([$field => $username, 'password' => $password]);
 

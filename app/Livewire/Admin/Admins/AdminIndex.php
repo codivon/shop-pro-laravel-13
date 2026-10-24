@@ -69,6 +69,9 @@ class AdminIndex extends Component
 
     public string $username = '';
 
+    /** فاز ۷۲ — شماره همراه مستقل از نام کاربری */
+    public ?string $mobile = null;
+
     /** مثل فرم قدیمی: هنگام ایجاد اجباری، هنگام ویرایش اختیاری (min:8) */
     public string $password = '';
 
@@ -175,6 +178,7 @@ class AdminIndex extends Component
         $this->lastName = (string) $admin->last_name;
         $this->email = $admin->email;
         $this->username = (string) $admin->username;
+        $this->mobile = $admin->mobile;
         $this->password = '';
         $this->passwordConfirmation = '';
         $this->verifiedAt = false;
@@ -198,6 +202,7 @@ class AdminIndex extends Component
         $this->lastName = '';
         $this->email = null;
         $this->username = '';
+        $this->mobile = null;
         $this->password = '';
         $this->passwordConfirmation = '';
         $this->verifiedAt = false;
@@ -223,6 +228,7 @@ class AdminIndex extends Component
 
         // مثل HTTP قدیمی (ConvertEmptyStringsToNull): رشته خالی → null
         $this->email = $this->email !== null && $this->email !== '' ? $this->email : null;
+        $this->mobile = $this->mobile !== null && $this->mobile !== '' ? $this->mobile : null;
 
         $rules = [
             'firstName' => ['required', 'string', 'max:255', new NotSpecialChar()],
@@ -233,6 +239,10 @@ class AdminIndex extends Component
             'email'     => ['string', 'email', 'max:255', 'nullable', $admin
                 ? Rule::unique('admins', 'email')->ignore($admin->id)
                 : 'unique:admins,email'],
+            // فاز ۷۲ — فیلد مستقل شماره همراه (جدا از نام کاربری)
+            'mobile'    => ['nullable', 'string', 'max:20', 'regex:/^[0-9+\-\s]{7,20}$/', $admin
+                ? Rule::unique('admins', 'mobile')->ignore($admin->id)
+                : 'unique:admins,mobile'],
             'password'   => $admin
                 ? ['nullable', 'string', 'min:8'] // تکرار با same:password چک می‌شود (معادل confirmed قدیمی)
                 : ['required', 'string'],
@@ -251,6 +261,7 @@ class AdminIndex extends Component
             'lastName'             => 'نام خانوادگی',
             'username'             => 'نام کاربری',
             'email'                => 'ایمیل',
+            'mobile'               => 'شماره همراه',
             'password'             => 'گذرواژه',
             'passwordConfirmation' => 'تکرار گذرواژه',
             'roles'                => 'نقش‌ها',
@@ -262,6 +273,7 @@ class AdminIndex extends Component
             'last_name'  => $this->lastName,
             'username'   => $this->username,
             'email'      => $this->email,
+            'mobile'     => $this->mobile,
         ];
 
         if ($admin) {
