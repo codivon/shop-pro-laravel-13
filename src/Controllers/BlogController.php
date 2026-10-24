@@ -2,22 +2,13 @@
 
 namespace Themes\Saniar\src\Controllers;
 
-use App\Models\Admin;
-use App\Models\Category;
 use App\Http\Controllers\Controller;
-use App\Models\Post;
-use App\Models\Tag;
 use App\Models\Widget;
-use App\Notifications\Post\CommentPostCreated;
-use App\Traits\LogsSearch;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 
 class BlogController extends Controller
 {
-    use LogsSearch;
     public function index()
     {
         $widgets = Widget::with('options')
@@ -30,4 +21,22 @@ class BlogController extends Controller
         return view('front::blogs.index', compact('widgets'));
     }
 
+    /**
+     * جستجوی وبلاگ — سانیار فاز K:
+     * در WeblakShop این روت (front.blog.search) به متد ناموجود search پوینت می‌کرد و
+     * هر فراخوانی BadMethodCall/500 می‌داد (روت مرده). آرشیو مقالات سانیار خودش
+     * پارامتر q را می‌فهمد، پس جستجو با حفظ روت موجود به آنجا ریدایرکت می‌شود.
+     */
+    public function search(Request $request)
+    {
+        $data = $request->validate([
+            'q'   => ['nullable', 'string', 'max:191'],
+            'cat' => ['nullable', 'string', 'max:191'],
+            'tag' => ['nullable', 'string', 'max:191'],
+        ]);
+
+        $params = array_filter($data, fn ($value) => $value !== null && $value !== '');
+
+        return redirect()->to(route('front.articles.index', $params, false));
+    }
 }

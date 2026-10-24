@@ -148,7 +148,9 @@ class SitemapController extends Controller
         $sitemap = Sitemap::create();
 
         foreach ($posts as $post) {
-            $url = Url::create(route('front.articles.show', ['post' => $post->slug ?? $post->id]))
+            // سانیار فاز K — باگ لاتنت: پارامتر post به روت articles.show که {slug}
+            // می‌خواهد پوینت می‌کرد → articles.xml همیشه ۵۰۰ بود.
+            $url = Url::create(route('front.articles.show', ['slug' => $post->slug ?? $post->id]))
                 ->setLastModificationDate($post->updated_at ?? $post->created_at ?? Carbon::now())
                 ->setChangeFrequency(Url::CHANGE_FREQUENCY_WEEKLY)
                 ->setPriority(0.8);
@@ -179,13 +181,15 @@ class SitemapController extends Controller
 
         $sitemap = Sitemap::create();
 
+        // سانیار فاز K — باگ لاتنت WeblakShop: شش روت ناموجود (front.home/about/faq/blog/shop)
+        // → statics.xml همیشه ۵۰۰ بود. با نام‌های واقعی این تم + آرشیو مقالات جایگزین شد؛
+        // «درباره/سوالات متداول» صفحات داینامیک‌اند و در pages.xml می‌آیند.
         $staticPages = [
-            ['route' => 'front.home', 'priority' => 1.0, 'freq' => Url::CHANGE_FREQUENCY_DAILY],
-            ['route' => 'front.contact', 'priority' => 0.7, 'freq' => Url::CHANGE_FREQUENCY_MONTHLY],
-            ['route' => 'front.about', 'priority' => 0.7, 'freq' => Url::CHANGE_FREQUENCY_MONTHLY],
-            ['route' => 'front.faq', 'priority' => 0.6, 'freq' => Url::CHANGE_FREQUENCY_MONTHLY],
-            ['route' => 'front.blog', 'priority' => 0.8, 'freq' => Url::CHANGE_FREQUENCY_DAILY],
-            ['route' => 'front.shop', 'priority' => 0.9, 'freq' => Url::CHANGE_FREQUENCY_DAILY],
+            ['route' => 'front.index', 'priority' => 1.0, 'freq' => Url::CHANGE_FREQUENCY_DAILY],
+            ['route' => 'front.products.index', 'priority' => 0.9, 'freq' => Url::CHANGE_FREQUENCY_DAILY],
+            ['route' => 'front.blog.index', 'priority' => 0.8, 'freq' => Url::CHANGE_FREQUENCY_DAILY],
+            ['route' => 'front.articles.index', 'priority' => 0.8, 'freq' => Url::CHANGE_FREQUENCY_DAILY],
+            ['route' => 'front.contact.index', 'priority' => 0.7, 'freq' => Url::CHANGE_FREQUENCY_MONTHLY],
         ];
 
         foreach ($staticPages as $page) {

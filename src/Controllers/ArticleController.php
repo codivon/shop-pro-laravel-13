@@ -17,17 +17,23 @@ class ArticleController extends Controller
     public function index(Request $request)
     {
         $posts = Post::query()
-            ->with(['admin', 'categories'])
+            ->with(['admin', 'category', 'tags'])
             ->withCount('likes') // این هنوز کار می‌کند (رابطه در مدل Post)
             ->published();
 
+        // سانیار فاز K: جستجوی عنوان (q) — در WeblakShop روت blog/search به متد
+        // ناموجود پوینت می‌کرد و جستجوی وبلاگ عملاً از کار افتاده بود.
+        if ($request->filled('q')) {
+            $posts->where('title', 'like', '%' . str_replace(' ', '%', trim($request->q)) . '%');
+        }
+
         // فیلتر بر اساس دسته بندی
+        // سانیار فاز K: پست‌ها FK تکی category_id دارند؛ رابطهٔ categories در مدل
+        // میزبان تعریف نشده و with/whereHas آن در WeblakShop → RelationNotFound → ۵۰۰ همیشگی.
         if ($request->filled('cat')) {
-            $category = Category::where('slug', $request->cat)->first();
+            $category = Category::where('slug', $request->cat)->where('type', 'postcat')->first();
             if ($category) {
-                $posts->whereHas('categories', function ($q) use ($category) {
-                    $q->where('categories.id', $category->id);
-                });
+                $posts->where('category_id', $category->id);
             }
         }
 
@@ -90,7 +96,7 @@ class ArticleController extends Controller
     public function show($slug)
     {
         $post = Post::where('slug', $slug)
-            ->with(['admin', 'categories', 'tags'])
+            ->with(['admin', 'category', 'tags'])
             ->withCount(['likes', 'comments'])
             ->published()
             ->firstOrFail();
@@ -100,7 +106,7 @@ class ArticleController extends Controller
 
         // مقالات مرتبط (همان دسته بندی)
         $suggestions = Post::where('is_editor_pick', true)
-            ->with(['admin', 'categories'])
+            ->with(['admin', 'category'])
             ->published()
             ->latest()
             ->limit(8)
@@ -108,7 +114,7 @@ class ArticleController extends Controller
 
         // جدیدترین مقالات
         $latestPosts = Post::where('id', '!=', $post->id)
-            ->with(['admin', 'categories'])
+            ->with(['admin', 'category'])
             ->published()
             ->latest()
             ->limit(8)
@@ -521,12 +527,17 @@ class ArticleController extends Controller
     // دریافت نظرات یک مقاله
     public function getComments($postId)
     {
+        // سانیار فاز K: در WeblakShop این متد با status='approved' فیلتر می‌کرد،
+        // در حالی که واژگان وضعیت کامنت در کل سیستم 'accepted' است → لیست AJAX
+        // نظرات حتی با وجود کامنت تاییدشده همیشه خالی برمی‌گشت.
         $comments = Comment::where('commentable_id', $postId)
             ->where('commentable_type', Post::class)
             ->whereNull('comment_id')
-            ->where('status', 'approved')
+            ->where('status', 'accepted')
             ->with(['user', 'admin', 'replies' => function($q) {
-                $q->with(['user', 'admin']);
+                $q->where('status', 'accepted')
+                    ->with(['user', 'admin'])
+                    ->orderBy('created_at', 'asc');
             }])
             ->orderBy('created_at', 'desc')
             ->paginate(10);

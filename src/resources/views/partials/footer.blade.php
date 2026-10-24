@@ -1,4 +1,41 @@
 <footer class="footer">
+    {{-- سانیار فاز K — سئو: JSON-LD سازمان + وب‌سایت + اکشن جستجو (SearchAction)
+         برای موتورهای جستجو؛ همهٔ فیلدها از optionهای دیتابیس --}}
+    <script type="application/ld+json">{!! json_encode([
+        '@@context' => 'https://schema.org',
+        '@@graph' => [
+            [
+                '@@type' => 'Organization',
+                '@@id' => url('/') . '#organization',
+                'name' => option('info_site_title', config('front.demo.name')),
+                'url' => url('/'),
+                'logo' => option('info_logo', theme_asset('image/logo.png')),
+                'description' => option('info_short_description'),
+                'telephone' => option('info_tel'),
+                'email' => option('info_email'),
+                'address' => option('info_address') ? ['@@type' => 'PostalAddress', 'streetAddress' => option('info_address'), 'addressCountry' => 'IR'] : null,
+                'sameAs' => array_values(array_filter([
+                    option('social_instagram'),
+                    option('social_telegram'),
+                    option('social_whatsapp'),
+                    option('social_twitter'),
+                ])),
+            ],
+            [
+                '@@type' => 'WebSite',
+                '@@id' => url('/') . '#website',
+                'url' => url('/'),
+                'name' => option('info_site_title', config('front.demo.name')),
+                'inLanguage' => 'fa-IR',
+                'publisher' => ['@@id' => url('/') . '#organization'],
+                'potentialAction' => [
+                    '@@type' => 'SearchAction',
+                    'target' => ['@@type' => 'EntryPoint', 'urlTemplate' => route('front.products.index') . '?q={search_term_string}'],
+                    'query-input' => 'required name=search_term_string',
+                ],
+            ],
+        ],
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
     <div class="container-fluid">
         <div class="footer-socail">
             <div class="row gy-3">
@@ -76,7 +113,7 @@
                             <h4 class="font-16">{{ option('link_groups_' . $group['key'], $group['name']) }}</h4>
                             <ul class="navbar-nav">
                                 @foreach($links->where('link_group_id', $group['key']) as $link)
-                                    <li class="nav-item"><a href="{{ $link->link }}" class="nav-link">{{ $link->title }}</a></li>
+                                    <li class="nav-item"><a href="{{ $link->link }}" wire:navigate class="nav-link">{{ $link->title }}</a></li>
                                 @endforeach
                             </ul>
                         </div>

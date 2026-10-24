@@ -70,6 +70,9 @@ Route::group(['as' => 'front.'], function () {
             Route::post('/{post}/comments', [ArticleController::class, 'commentStore'])->name('store');
             Route::post('/comments/reply', [ArticleController::class, 'commentReply'])->name('reply');
             Route::post('/comments/{comment}/like', [ArticleController::class, 'commentLike'])->name('like');
+            // سانیار فاز K: صفحه‌بندی AJAX نظرات مقاله — در WeblakShop متد getComments
+            // موجود بود اما هیچ روتی به آن پوینت نمی‌کرد (متد مرده) و نظرات فقط رندر اولیه داشتند.
+            Route::get('/comments/{post}', [ArticleController::class, 'getComments'])->name('list');
         });
     });
 
@@ -235,9 +238,6 @@ Route::group(['as' => 'front.'], function () {
         // ------------------ products
         Route::get('products/{price}/download', [ProductController::class, 'download'])->name('products.download');
         Route::post('products/{product}/comments', [ProductController::class, 'comments'])->name('product.comments');
-
-        // ------------------ blogs
-        Route::post('blogs/{post}/comments', [BlogController::class, 'comments'])->name('post.comments');
 
         // ------------------ favorites
         Route::resource('profile/favorites', FavoriteController::class)->only(['index', 'store', 'destroy']);

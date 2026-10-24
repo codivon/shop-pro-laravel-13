@@ -10,13 +10,13 @@
     {{-- JSON-LD دسته‌بندی محصولات --}}
     <script type="application/ld+json">
         {!! json_encode([
-            '@context' => 'https://schema.org',
-            '@type' => 'BreadcrumbList',
+            '@@context' => 'https://schema.org',
+            '@@type' => 'BreadcrumbList',
             'itemListElement' => array_merge(
-                [['@type' => 'ListItem', 'position' => 1, 'name' => 'خانه', 'item' => route('front.index')]],
-                [['@type' => 'ListItem', 'position' => 2, 'name' => 'فروشگاه', 'item' => route('front.products.index')]],
-                $category->parents()->map(fn ($p, $i) => ['@type' => 'ListItem', 'position' => $i + 3, 'name' => $p->title, 'item' => route('front.products.category', ['category' => $p])])->values()->all(),
-                [['@type' => 'ListItem', 'position' => $category->parents()->count() + 3, 'name' => $category->title, 'item' => route('front.products.category-products', ['category' => $category])]]
+                [['@@type' => 'ListItem', 'position' => 1, 'name' => 'خانه', 'item' => route('front.index')]],
+                [['@@type' => 'ListItem', 'position' => 2, 'name' => 'فروشگاه', 'item' => route('front.products.index')]],
+                $category->parents()->map(fn ($p, $i) => ['@@type' => 'ListItem', 'position' => $i + 3, 'name' => $p->title, 'item' => route('front.products.category', ['category' => $p])])->values()->all(),
+                [['@@type' => 'ListItem', 'position' => $category->parents()->count() + 3, 'name' => $category->title, 'item' => route('front.products.category-products', ['category' => $category])]]
             ),
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
     </script>

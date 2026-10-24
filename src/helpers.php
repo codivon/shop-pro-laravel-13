@@ -1072,3 +1072,21 @@ if (!function_exists('saniar_cart_final_price')) {
         return intval(max(0, $payable));
     }
 }
+
+// سرویس‌های کمکی مشترک سانیار (فضای‌نام سراسری) — فاز K
+if (!function_exists('saniar_seo_value')) {
+    /**
+     * مقدار سئو با گارد «NULL» رشته‌ای — باگ لاتنت میزبان:
+     * پیش‌فرض ستون‌های meta_title/meta_description در مهاجرت‌ها رشتهٔ literal
+     * 'NULL' است (نه SQL NULL)؛ ردیف‌هایی که ستون در INSERT نیاید این رشته را
+     * می‌گیرند و بدون گارد، عنوان/توضیح متای صفحات «NULL» می‌شود.
+     */
+    function saniar_seo_value($value, $fallback = null)
+    {
+        $trimmed = trim((string) $value);
+        if ($trimmed === '' || strtoupper($trimmed) === 'NULL') {
+            return $fallback;
+        }
+        return $value;
+    }
+}

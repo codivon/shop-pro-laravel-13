@@ -6,7 +6,6 @@ use Illuminate\Support\ServiceProvider;
 use App\Models\Category;
 use App\Models\Link;
 use App\Models\Menu;
-use App\Models\Post;
 use App\Models\Product;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +46,14 @@ class ThemeServiceProvider extends ServiceProvider
 
         // load views
         $this->loadViewsFrom(__DIR__ . '/resources/views', 'front');
+
+        // سانیار فاز K — SPA لایووایر ۴:
+        // اسکریپت هستهٔ لایووایر با data-navigate-once تزریق می‌شود تا در ناوبری‌های
+        // wire:navigate مجدداً اجرا (و دوباره‌بوت) نشود؛ فقط بار اول کامل لود می‌شود.
+        if (class_exists(\Livewire\Mechanisms\FrontendAssets\FrontendAssets::class)) {
+            app(\Livewire\Mechanisms\FrontendAssets\FrontendAssets::class)
+                ->useScriptTagAttributes(['data-navigate-once' => 'true']);
+        }
 
         // share with views
         // کامپوزرها lazy هستند (فقط هنگام رندر ویو اجرا می‌شوند)؛ بدون ثبت در
@@ -99,14 +106,9 @@ class ThemeServiceProvider extends ServiceProvider
             $view->with(compact('productcats', 'postcats', 'menus'));
         });
 
-        view()->composer(['front::blogs.partials.sidebar'], function ($view) {
-
-            $latest_posts = Cache::remember('front.blog.latest_posts', 300, function () {
-                return Post::where('published', true)->latest()->take(6)->get();
-            });
-
-            $view->with(compact('latest_posts'));
-        });
+        // سانیار فاز K: کامپوزر قدیمی front::blogs.partials.sidebar حذف شد —
+        // این ویو در تم سانیار وجود ندارد (سایدبار مقاله از کنترلر خودش داده می‌گیرد)
+        // و کامپوزر با کوئری کش‌شدهٔ published هرگز اجرا نمی‌شد.
 
         view()->composer(['front::user.layouts.master'], function ($view) {
 

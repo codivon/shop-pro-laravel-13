@@ -14,9 +14,16 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ option('info_icon', theme_asset('image/logo.png')) }}">
     <link rel="apple-touch-icon" sizes="144x144" href="{{ option('info_icon', theme_asset('image/logo.png')) }}">
 
-    {{-- SEO & Robots --}}
-    <meta name="robots" content="index, follow">
+    {{-- SEO & Robots — سانیار فاز K: صفحات می‌توانند robots را هنگام extends
+         بازنویسی کنند (۴۰۴: noindex) — دیگر متای تکراری/متعارض رندر نمی‌شود --}}
+    <meta name="robots" content="{{ $robots ?? 'index, follow' }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    {{-- سانیار فاز K — سئو: توضیحات متا داینامیک هر صفحه ($description) با
+         فالبک به توضیح کوتاه سایت؛ نماهای تم می‌توانند description را هنگام
+         extends بدهند (مقاله/صفحه/تماس/وبلاگ) --}}
+    @php $metaDescription = $description ?? option('info_short_description'); @endphp
+    <meta name="description" content="{{ $metaDescription }}">
 
     {{-- Canonical URL --}}
     <link rel="canonical" href="{{ url()->current() }}">
@@ -26,18 +33,17 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:site_name" content="{{ option('info_site_title', config('front.demo.name')) }}">
-    <meta property="og:description" content="{{ option('info_short_description') }}">
-    @hasSection('og_image')
-        @yield('og_image')
-    @else
-        <meta property="og:image" content="{{ option('info_logo', theme_asset('image/logo.png')) }}">
-    @endif
+    <meta property="og:description" content="{{ $metaDescription }}">
+    {{-- سانیار فاز K — تصویر OG داینامیک: نماهای تم می‌توانند og_image را
+         هنگام extends پاس دهند (مقاله/صفحه) با فالبک به لوگو --}}
+    @php $ogImage = $og_image ?? option('info_logo', theme_asset('image/logo.png')); @endphp
+    <meta property="og:image" content="{{ $ogImage }}">
 
     {{-- Twitter Card --}}
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="@isset($title){{ $title }} | @endisset{{ option('info_site_title', config('front.demo.name')) }}">
-    <meta name="twitter:description" content="{{ option('info_short_description') }}">
-    <meta name="twitter:image" content="{{ option('info_logo', theme_asset('image/logo.png')) }}">
+    <meta name="twitter:description" content="{{ $metaDescription }}">
+    <meta name="twitter:image" content="{{ $ogImage }}">
 
     {{-- Dynamic Meta Tags from Pages --}}
     @stack('meta')
@@ -67,6 +73,8 @@
     <link rel="stylesheet" href="{{ theme_asset('css/components.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('plugin/go-to-top/style.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('plugin/rasta-contact/style.css') }}">
+    {{-- سانیار فاز K — SPA لایووایر ۴: استایل‌های هسته (نوار پیشرفت ناوبری) --}}
+    @livewireStyles
 
     {!! option('info_header_codes', '') !!}
 
@@ -181,7 +189,7 @@
                             </button>
                             @include('front::partials.mobile-menu.menu')
                         </div>
-                        <a href="{{ route('front.index') }}" aria-label="صفحه اصلی — سانیار">
+                        <a href="{{ route('front.index') }}" wire:navigate aria-label="صفحه اصلی — سانیار">
                             <div class="logo">
                                 <img src="{{ option('info_logo', theme_asset('image/logo.png')) }}"
                                      alt="{{ option('info_site_title', config('front.demo.name')) }}" class="img-fluid">
@@ -214,7 +222,7 @@
                             </div>
                         @else
                             <div class="dropdown ms-3">
-                                <a href="{{ route('login') }}" role="button"
+                                <a href="{{ route('login') }}" wire:navigate role="button"
                                    class="btn btn-white header-register border-0 rounded-pill">
                                     <i class="bi bi-person-circle font-20 text-muted me-1"></i>
                                     <span>ورود</span>
@@ -255,17 +263,17 @@
                         @else
                             <div class="btn-group header-btn-group shadow-sm rounded-pill">
                                 <div class="dropdown">
-                                    <a href="{{ route('register') }}" role="button"
+                                    <a href="{{ route('register') }}" wire:navigate role="button"
                                        class="btn btn-white header-register border-0 rounded-pill">
                                         <i class="bi bi-person-circle font-20 text-muted me-1"></i>
                                         <span>ثبت نام</span>
                                     </a>
                                 </div>
-                                <a href="{{ route('login') }}" class="btn btn-white header-login border-0 rounded-pill">ورود</a>
+                                <a href="{{ route('login') }}" wire:navigate class="btn btn-white header-login border-0 rounded-pill">ورود</a>
                             </div>
                         @endauth
                         <div class="header-whishlist shadow-sm">
-                            <a href="{{ route('front.favorites.index') }}" aria-label="علاقه‌مندی‌ها">
+                            <a href="{{ route('front.favorites.index') }}" wire:navigate aria-label="علاقه‌مندی‌ها">
                                 <i class="bi bi-bookmark-check font-20 text-muted"></i>
                             </a>
                         </div>
@@ -321,7 +329,7 @@
                 <i class="bi bi-chevron-up font-20"></i>
             </div>
             <div class="item">
-                <a href="{{ route('front.index') }}" aria-label="صفحه اصلی">
+                <a href="{{ route('front.index') }}" wire:navigate aria-label="صفحه اصلی">
                     <i class="bi bi-house font-20"></i>
                 </a>
             </div>
@@ -331,12 +339,12 @@
                 </a>
             </div>
             <div class="item">
-                <a href="{{ route('front.products.specials') }}" aria-label="پیشنهادهای ویژه">
+                <a href="{{ route('front.products.specials') }}" wire:navigate aria-label="پیشنهادهای ویژه">
                     <i class="bi bi-stars"></i>
                 </a>
             </div>
             <div class="item">
-                <a href="{{ auth('web')->check() ? route('front.user.profile') : route('login') }}" aria-label="حساب کاربری">
+                <a href="{{ auth('web')->check() ? route('front.user.profile') : route('login') }}" wire:navigate aria-label="حساب کاربری">
                     <i class="bi bi-person"></i>
                 </a>
             </div>
@@ -361,18 +369,26 @@
     </div>
 
     {{-- Scripts --}}
-    <script src="{{ theme_asset('js/jquery.min.js') }}"></script>
-    <script src="{{ theme_asset('js/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ theme_asset('plugin/waves/waves.min.js') }}"></script>
-    <script src="{{ theme_asset('plugin/swiper/swiper-bundle.min.js') }}"></script>
+    {{-- سانیار فاز K — SPA: کتابخانه‌های vendor با data-navigate-once فقط یک بار
+         اجرا می‌شوند (از اجرای مجدد/دوباره‌بوت در ناوبری‌های wire:navigate جلوگیری
+         می‌شود)؛ اسکریپت‌های init (app.js و صفحات) بدون این اتریبیوت در هر
+         ناوبری مجدداً اجرا می‌شوند تا ویجت‌های صفحهٔ جدید مقداردهی شوند. --}}
+    <script src="{{ theme_asset('js/jquery.min.js') }}" data-navigate-once></script>
+    <script src="{{ theme_asset('js/bootstrap.bundle.min.js') }}" data-navigate-once></script>
+    <script src="{{ theme_asset('plugin/waves/waves.min.js') }}" data-navigate-once></script>
+    <script src="{{ theme_asset('plugin/swiper/swiper-bundle.min.js') }}" data-navigate-once></script>
     <script src="{{ theme_asset('plugin/timer/timer.js') }}"></script>
-    <script src="{{ theme_asset('plugin/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js') }}"></script>
+    <script src="{{ theme_asset('plugin/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js') }}" data-navigate-once></script>
     <script src="{{ theme_asset('js/app.js') }}"></script>
     <script src="{{ theme_asset('js/jquery-app.js') }}"></script>
     {{-- سانیار فاز C: جستجوی زنده هدر --}}
     <script src="{{ theme_asset('js/live-search.js') }}"></script>
     <script src="{{ theme_asset('plugin/go-to-top/script.js') }}"></script>
-    <script src="{{ theme_asset('plugin/rasta-contact/script.js') }}"></script>
+    <script src="{{ theme_asset('plugin/rasta-contact/script.js') }}" data-navigate-once></script>
+    {{-- سانیار فاز K — SPA لایووایر ۴: هستهٔ لایووایر (با data-navigate-once که از
+         ThemeServiceProvider تزریق می‌شود) + ناوبری SPA سراسری --}}
+    @livewireScripts
+    <script src="{{ theme_asset('js/spa-navigate.js') }}"></script>
 
     @php
         $floating_contact = [

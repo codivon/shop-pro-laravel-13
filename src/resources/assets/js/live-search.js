@@ -2,6 +2,10 @@
  * سانیار — جستجوی زنده هدر
  * روی همه صفحات لود می‌شود؛ دراپ‌داون نتایج زیر فیلد جستجو (دسکتاپ و موبایل).
  * رفتار: تایپ ≥ ۲ کاراکتر → درخواست debounce شده به front.products.ajax_search → رندر partial.
+ *
+ * سانیار فاز K — سازگار با SPA (wire:navigate): این فایل data-navigate-once ندارد
+ * و در هر ناوبری مجدداً اجرا می‌شود؛ اما DOMContentLoaded قبلاً رخ داده، پس با
+ * الگوی readyState هم در بارگذاری اول و هم در ناوبری‌های SPA initialize می‌شود.
  */
 (function () {
     'use strict';
@@ -99,8 +103,10 @@
         });
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
+    function initLiveSearch() {
         document.querySelectorAll('.search-input[name="q"]').forEach(function (input) {
+            if (input.dataset.saniarSearchInit === '1') return;
+            input.dataset.saniarSearchInit = '1';
             input.setAttribute('autocomplete', 'off');
             input.addEventListener('input', function () {
                 clearTimeout(debounceTimer);
@@ -108,5 +114,11 @@
             });
             // جلوگیری از ارسال فرم وقتی کاربر فقط می‌خواهد از نتایج استفاده کند؟ نه — اینتر = جستجوی کامل صفحه
         });
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initLiveSearch);
+    } else {
+        initLiveSearch();
+    }
 })();
