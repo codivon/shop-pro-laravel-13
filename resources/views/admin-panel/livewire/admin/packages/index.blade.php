@@ -61,8 +61,13 @@
         </div>
     </div>
 
-    {{-- ============ بنر اشتراک (پورت pkg-sub-banner) ============ --}}
-    @if ($type === 'package' && !empty($subscriptionSummary) && ($subscriptionSummary['has_active_subscription'] ?? false))
+    {{-- ============ بنر اشتراک (پورت pkg-sub-banner) ============
+         فاز ۵۸ — رفع باگ «اشتراکم فعال است ولی می‌گوید اشتراک فعالی ندارید»:
+         شرط قبلی $type === 'package' بود؛ یعنی در تب پیش‌فرض «همه» حتی با اشتراک فعال
+         همیشه بنر خاکستری نشان داده می‌شد. حالا بنر در هر تبی که پکیج‌ها را نشان می‌دهد
+         (همه + پکیج‌ها) بر اساس وضعیت واقعی اشتراک رندر می‌شود و در تب قالب‌ها حذف است
+         (اشتراک فقط پکیج‌ها را پوشش می‌دهد — گلاساری API). --}}
+    @if ($this->showsPackages() && !empty($subscriptionSummary) && ($subscriptionSummary['has_active_subscription'] ?? false))
         <div class="relative flex flex-wrap items-center gap-4 overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-l from-emerald-50 to-teal-50 p-4 dark:border-emerald-500/25 dark:from-emerald-500/10 dark:to-teal-500/10 sm:p-5">
             <div class="pointer-events-none absolute -end-10 -top-10 size-32 rounded-full bg-emerald-400/20 blur-2xl" aria-hidden="true"></div>
             <span class="relative flex size-11 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/30">
@@ -80,7 +85,7 @@
                 <span class="text-[10px] font-semibold text-emerald-700/70 dark:text-emerald-400/70">روز باقی‌مانده</span>
             </div>
         </div>
-    @else
+    @elseif ($this->showsPackages())
         <div class="relative flex flex-wrap items-center gap-4 overflow-hidden rounded-2xl border border-line bg-surface p-4 dark:border-night-line dark:bg-night-2 sm:p-5">
             <div class="pointer-events-none absolute -end-10 -top-10 size-32 rounded-full bg-brand-400/15 blur-2xl" aria-hidden="true"></div>
             <span class="relative flex size-11 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-lg shadow-brand-500/30">

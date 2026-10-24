@@ -676,18 +676,29 @@ class PackageIndex extends Component
         }, $packages);
     }
 
-    /** نرمال‌سازی خلاصه اشتراک (از loadPackages جدا شد تا در حالت فیلتر هم استفاده شود) */
+    /**
+     * نرمال‌سازی خلاصه اشتراک (از loadPackages جدا شد تا در حالت فیلتر هم استفاده شود)
+     * فاز ۵۸ — مقاوم‌سازی: اگر API پرچم has_active_subscription را نفرستاده بود ولی
+     * expires_at آینده (یا روز باقی‌مانده‌ی مثبت) داشت، اشتراک «فعال» استنتاج می‌شود؛
+     * اگر API پرچم را صریحاً فرستاده باشد، همان مقدار (فقط با اعتبارسنجی انقضا) معیار است.
+     */
     protected function normalizeSubscriptionSummary(mixed $subscriptionSummary): ?array
     {
-        if (! is_array($subscriptionSummary)) {
+        if (! is_array($subscriptionSummary) || $subscriptionSummary === []) {
             return null;
         }
+
+        $flag = $subscriptionSummary['has_active_subscription'] ?? null;
 
         if (! empty($subscriptionSummary['expires_at'])) {
             $exp = Carbon::parse($subscriptionSummary['expires_at']);
             $subscriptionSummary['days_remaining'] = max(0, (int) round(now()->diffInDays($exp)));
             $subscriptionSummary['has_active_subscription'] =
-                ($subscriptionSummary['has_active_subscription'] ?? false) && $exp->isFuture();
+                $flag === null ? $exp->isFuture() : (bool) $flag && $exp->isFuture();
+        } elseif ($flag === null) {
+            // نه expires_at داریم نه پرچم — فقط روز باقی‌مانده‌ی مثبت را می‌پذیریم
+            $subscriptionSummary['has_active_subscription'] =
+                (int) ($subscriptionSummary['days_remaining'] ?? 0) > 0;
         }
 
         return $subscriptionSummary;
