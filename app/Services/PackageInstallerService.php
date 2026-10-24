@@ -1472,12 +1472,9 @@ class PackageInstallerService
         $targetPath = $this->themesPath()."/{$themeDirName}/src/resources/assets";
         $linkPath   = public_path("themes/{$themeDirName}");
 
-        if (is_dir($targetPath) && ! File::exists($linkPath)) {
-            if (! File::exists(public_path('themes'))) {
-                File::makeDirectory(public_path('themes'), 0755, true);
-            }
-
-            File::link($targetPath, $linkPath);
+        // فاز ۶۵ — زنجیرهٔ امن symlink→exec→کپی (File::link روی هاست‌های بدون symlink و exec کرش می‌کرد)
+        if (is_dir($targetPath)) {
+            \App\Services\ThemeAssetLinker::linkOrCopy($targetPath, $linkPath);
         }
 
         change_env('CURRENT_THEME', $themeDirName);

@@ -179,20 +179,33 @@ class ThemeIndex extends Component
         $targetPath = base_path("themes/{$theme}/src/resources/assets"); // مسیر اصلی فایل‌ها
         $linkPath = public_path("themes/{$theme}");       // مسیر شورت‌کات
 
-        // اگر لینک وجود ندارد، ایجاد کن (پورت دقیق قدیمی)
-        if (!File::exists($linkPath)) {
-            if (!File::exists(public_path('themes'))) {
-                File::makeDirectory(public_path('themes'), 0755, true);
-            }
-
-            File::link($targetPath, $linkPath);
+        // فاز ۶۵ — زنجیرهٔ امن symlink→exec→کپی با گارد function_exists:
+        // File::link لاراول روی هاست‌های بدون symlink مستقیم exec() می‌زد و با
+        // disable بودن exec هم، فعال‌سازی با ۵۰۰ «undefined function …exec» می‌مُرد.
+        try {
+            $linkMode = \App\Services\ThemeAssetLinker::linkOrCopy($targetPath, $linkPath);
+        } catch (Throwable $e) {
+            report($e);
+            $this->dispatch('toast', message: 'خطا در آماده‌سازی دارایی‌های قالب: ' . $e->getMessage(), type: 'error');
+            return;
         }
 
-        change_env('CURRENT_THEME', $theme);
+        try {
+            change_env('CURRENT_THEME', $theme);
+        } catch (Throwable $e) {
+            report($e);
+            $this->dispatch('toast', message: 'خطا در ثبت قالب فعال: ' . $e->getMessage(), type: 'error');
+            return;
+        }
 
         $this->loadThemes();
 
-        $this->dispatch('toast', message: 'قالب «' . $theme . '» به عنوان قالب فعال تنظیم شد.', type: 'success');
+        if ($linkMode === 'copy') {
+            // هاست symlink/exec ندارد → دارایی‌ها کپی واقعی شدند (هر فعال‌سازی نوسازی می‌شود)
+            $this->dispatch('toast', message: 'قالب «' . $theme . '» فعال شد. (symlink روی این هاست در دسترس نیست؛ دارایی‌ها کپی شدند)', type: 'warning');
+        } else {
+            $this->dispatch('toast', message: 'قالب «' . $theme . '» به عنوان قالب فعال تنظیم شد.', type: 'success');
+        }
     }
 
     /* ---------------- حذف (پورت ۱:۱ destroy قدیمی) ---------------- */

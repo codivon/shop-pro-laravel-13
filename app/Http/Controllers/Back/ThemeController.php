@@ -161,17 +161,8 @@ class ThemeController extends Controller
             return response(['errors' => ['theme' => ["مسیر قالب معتبر نیست."]]], 422);
         }
 
-        // اگر لینک وجود ندارد، ایجاد کن
-        if (!File::exists($linkPath)) {
-
-            // اول پوشه public/themes رو چک کن وجود داشته باشه
-            if (!File::exists(public_path('themes' ))) {
-                File::makeDirectory(public_path('themes'), 0755, true);
-            }
-
-            // ایجاد symlink
-            File::link($targetPath, $linkPath);
-        }
+        // فاز ۶۵ — زنجیرهٔ امن symlink→exec→کپی (File::link روی هاست‌های بدون symlink و exec کرش می‌کرد)
+        \App\Services\ThemeAssetLinker::linkOrCopy($targetPath, $linkPath);
 
 
         change_env('CURRENT_THEME', $theme);

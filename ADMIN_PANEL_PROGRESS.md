@@ -2278,3 +2278,24 @@ A=۴۹ اسکلت ✓ | B=۵۰ تکمیل ویجت‌های خانه ✓ | C=۵�
 - جمع: **۲۸۵ تست سبز** — ThemeMarketTest ۲۰ ✓ بدون رگرسیون
 
 **کامیت:** میزبان (PackageIndex + ۲ تریت + PackagePaymentCallback + PackageInstalled + blade + ۱۱ تست + این فایل) → docs/project-analysis | **گام بعدی پیشنهادی: E2E مرورگر جریان نصب (باز شدن مودال بلوکه، غیرقابل بستن بودن حین نصب، آزادسازی پس از پایان) روی دیتای واقعی + polling بین چند تب**
+
+## Phase 65 — رفع کرش «تنظیم به عنوان قالب» روی هاست‌های بدون symlink+exec — سرویس ThemeAssetLinker
+
+**تاریخ:** 2026-10-24 | **برنچ میزبان:** docs/project-analysis | **گزارش کاربر (محیط واقعی):** فعال‌سازی سانیار از پنل → `Call to undefined function Illuminate\Filesystem\exec()` — **تست:** Unit+AdminPanelSmoke+Extra: **70 ✓ / 3 skipped (192 اظهار)** شامل ۱۱ تست قفل نصبِ فاز ۶۴ همکار
+
+### ریشه‌یابی
+- `Filesystem::link()` لاراول روی لینوکس: اگر `function_exists('symlink')` نبود مستقیماً `exec('ln -s …')` می‌زد — بدون گارد روی وجود خود `exec`.
+- روی هاست‌های اشتراکی سخت‌گیرانه هر دو تابع در `disable_functions`‌اند → `Error: Call to undefined function Illuminate\Filesystem\exec()` (پیشوند namespace = نشانهٔ قطعی تابع disable‌شده، چون PHP تابع غیرفعال را undefined حساب می‌کند).
+- دکمهٔ «تنظیم به عنوان قالب» در ۳ نقطه بدون گارد/try-catch به `File::link()` وصل بود: `ThemeIndex::activate` (پنل جدید — بدون try/catch → ۵۰۰ خام)، `PackageInstallerService::activateTheme` (بازار)، `Back/ThemeController::update` (پنل قدیمی). `shop:link` از فاز ۲۶ از قبل زره‌پوش بود و سالم ماند.
+- تصمیم کاربر: سانیار پیش‌فرض نصب‌های تازه نمی‌شود (پیش‌فرض = WeblakShop؛ هیچ تغییری لازم نبود).
+
+### تحویل‌شده‌ها
+1. **سرویس جدید `App\Services\ThemeAssetLinker`** — زنجیرهٔ idempotent: symlink سالم موجود → `symlink()` بومی (با @) → `exec(ln -s|mklink)` فقط با گارد `function_exists('exec')` → **کپی واقعی محتوا + مارکر `.shoplink-copy`**. فال‌بک کپی هرگز fail نمی‌کند؛ سناریوهای لبه: لینک شکسته (بازسازی)، کپی کهنهٔ خودمان (نوسازی در هر فعال‌سازی + ارتقای خودکار کپی→symlink وقتی هاست اجازه داد)، پوشه/فایل ناشناس (هرگز نابود نمی‌شود)، هدف غایب (RuntimeException با پیام فارسی).
+2. **ادغام در هر ۳ نقطه**: ThemeIndex::activate حالا try/catch کامل + توست warning اختصاصی برای حالت کپی («symlink روی این هاست در دسترس نیست؛ دارایی‌ها کپی شدند»)؛ PackageInstallerService و ThemeController با همان سرویس.
+3. **۸ تست واحد** (`tests/Unit/ThemeAssetLinkerTest.php`): میزبان سالم (symlink)، هاست سخت‌گیرانه (کپی+مارکر — شبیه‌سازی با پارامترهای allowSymlink/allowExec بدون نیاز به disable واقعی)، idempotency، نوسازی کپی کهنه، ارتقا کپی→symlink، symlink موجود دست‌نخورده، لینک شکسته، پوشهٔ ناشناس محفوظ، هدف غایب.
+4. **شبیه‌سازی سناریوی واقعی کاربر** روی دارایی‌های واقعی سانیار: `linkOrCopy($target, tmpLink, false, false)` → mode=copy، css کپی شد، مارکر ثبت شد؛ روی public واقعی → mode=existing (بدون دست‌گذاری).
+
+### نتیجه برای کاربر
+روی هاست بدون symlink و exec، فعال‌سازی قالب از پنل حالا کار می‌کند: دارایی‌ها کپی واقعی می‌شوند (هر فعال‌سازی مجدد = نوسازی خودکار؛ اگر هاست بعداً symlink را باز کند، فعال‌سازی بعدی کپی را خودکار به symlink ارتقا می‌دهد).
+
+**کامیت:** میزبان (سرویس + ۳ ادغام + ۸ تست + این فایل) → docs/project-analysis | **گام بعدی پیشنهادی: اجرای فعال‌سازی روی هاست واقعی کاربر (update + فعال‌سازی سانیار) و تأیید توست کپی + سرو CSS/JS از public/themes/Saniar**
