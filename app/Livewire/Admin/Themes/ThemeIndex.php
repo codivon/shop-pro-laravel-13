@@ -176,6 +176,19 @@ class ThemeIndex extends Component
             return;
         }
 
+        // فاز ۶۸ — گارد ساختار قالب (ریشهٔ ۴۰۴ خام صفحه اصلی): کلاس provider تم باید
+        // با نام پوشه هم‌خوانی داشته باشد (Themes\{نام‌پوشه}\src\ThemeServiceProvider).
+        // اگر پوشه دستی تغییرنام داده شود ولی فضای‌نام PHP همان قدیمی بماند، لاراول
+        // کلاس را پیدا نمی‌کند و بی‌صدا provider را رد می‌کند → هیچ روت فرانتی ثبت نمی‌شود
+        // → صفحه اصلی ۴۰۴. اینجا قبل از ثبت CURRENT_THEME متوقف می‌شویم.
+        try {
+            \App\Services\ThemeStructureGuard::assertActivatable($theme, base_path('themes'));
+        } catch (Throwable $e) {
+            report($e);
+            $this->dispatch('toast', message: $e->getMessage(), type: 'error');
+            return;
+        }
+
         $targetPath = base_path("themes/{$theme}/src/resources/assets"); // مسیر اصلی فایل‌ها
         $linkPath = public_path("themes/{$theme}");       // مسیر شورت‌کات
 
@@ -196,6 +209,16 @@ class ThemeIndex extends Component
             report($e);
             $this->dispatch('toast', message: 'خطا در ثبت قالب فعال: ' . $e->getMessage(), type: 'error');
             return;
+        }
+
+        // فاز ۶۸ — پاک‌سازی کش‌ها تا سوییچ قالب بلافاصله اثر کند
+        // (با config/view/route cache کهنه، صفحه اصلی همچنان تم قبلی یا ۴۰۴ را نشان می‌داد)
+        foreach (['config:clear', 'view:clear', 'route:clear'] as $command) {
+            try {
+                Artisan::call($command);
+            } catch (Throwable $e) {
+                report($e);
+            }
         }
 
         $this->loadThemes();

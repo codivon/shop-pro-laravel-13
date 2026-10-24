@@ -152,6 +152,9 @@ class SecuritySettingsTest extends TestCase
     public function captcha_default_still_requires_captcha_code_on_admin_login(): void
     {
         // پیش‌فرض‌های فاز ۴۴ باید عین رفتار قبلی باشد: کپچا الزامی
+        // (فاز ۶۸: صریح‌سازی option — تست نباید به وضعیت محیطی DB وابسته باشد)
+        option_update('security_captcha_enabled', 'on');
+
         $admin = Admin::create([
             'first_name' => 'تست',
             'last_name'  => 'ورود',

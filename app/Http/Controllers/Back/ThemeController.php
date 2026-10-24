@@ -161,11 +161,30 @@ class ThemeController extends Controller
             return response(['errors' => ['theme' => ["مسیر قالب معتبر نیست."]]], 422);
         }
 
+        // فاز ۶۸ — گارد ساختار قالب (ریشهٔ ۴۰۴ خام صفحه اصلی): پوشهٔ تغییرنام‌یافتهٔ دستی
+        // با فضای‌نام قدیمی = provider پیدا نمی‌شود = هیچ روت فرانتی = صفحه اصلی ۴۰۴.
+        try {
+            \App\Services\ThemeStructureGuard::assertActivatable($theme, base_path('themes'));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response(['errors' => ['theme' => [$e->getMessage()]]], 422);
+        }
+
         // فاز ۶۵ — زنجیرهٔ امن symlink→exec→کپی (File::link روی هاست‌های بدون symlink و exec کرش می‌کرد)
         \App\Services\ThemeAssetLinker::linkOrCopy($targetPath, $linkPath);
 
 
         change_env('CURRENT_THEME', $theme);
+
+        // فاز ۶۸ — پاک‌سازی کش‌ها تا سوییچ قالب بلافاصله اثر کند
+        foreach (['config:clear', 'view:clear', 'route:clear'] as $command) {
+            try {
+                Artisan::call($command);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
 
         return response('success');
     }

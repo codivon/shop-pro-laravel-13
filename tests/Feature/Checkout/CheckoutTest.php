@@ -374,7 +374,7 @@ class CheckoutTest extends TestCase
         // سانیار (فاز D تم) همین دوبار‌حسابی را اصلاح کرده است: totals از قبل با
         // discount_price هستند و فقط کوپن از قیمت نهایی کسر می‌شود:
         // ۳۶۰,۰۰۰ + ۴۰,۰۰۰ ارسال − ۰ کوپن = ۴۰۰,۰۰۰ (ستون discount_amount همچنان ۴۰,۰۰۰)
-        $expectedPrice = config('general.current_theme') === 'Saniar' ? 400000 : 360000;
+        $expectedPrice = config('general.current_theme') === 'SaniarTheme' ? 400000 : 360000;
         $this->assertEquals($expectedPrice, $order->price);
         $this->assertEquals(40000, $order->discount_amount);
     }

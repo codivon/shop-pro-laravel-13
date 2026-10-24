@@ -260,6 +260,13 @@ class AppServiceProvider extends ServiceProvider
 
         if ($theme && class_exists($theme['service_provider'])) {
             app()->register($theme['service_provider']);
+        } elseif ($theme) {
+            // فاز ۶۸ — قالب فعال قابل بارگذاری نیست (مثلاً پوشه تغییرنام یافته ولی
+            // namespace قدیمی مانده). قبلاً بی‌صدا رد می‌شد و صفحهٔ اصلی ۴۰۴ می‌داد؛
+            // حالا دست‌کم در لاگ ردیابی می‌شود.
+            \Illuminate\Support\Facades\Log::warning(
+                'قالب فعال قابل بارگذاری نیست — کلاس '.$theme['service_provider'].' پیدا نشد؛ نام پوشهٔ themes/ باید با فضای‌نام PHP قالب یکی باشد.'
+            );
         }
     }
 

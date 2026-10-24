@@ -1469,6 +1469,10 @@ class PackageInstallerService
             throw new RuntimeException('قالب پیدا نشد.');
         }
 
+        // فاز ۶۸ — گارد ساختار قالب (ریشهٔ ۴۰۴ خام صفحه اصلی): کلاس provider باید با نام
+        // پوشه هم‌خوانی داشته باشد؛ پوشهٔ دستیِ تغییرنام‌یافته با فضای‌نام قدیمی = تم بی‌روت.
+        \App\Services\ThemeStructureGuard::assertActivatable($themeDirName, $this->themesPath());
+
         $targetPath = $this->themesPath()."/{$themeDirName}/src/resources/assets";
         $linkPath   = public_path("themes/{$themeDirName}");
 
