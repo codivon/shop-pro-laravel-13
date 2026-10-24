@@ -1,0 +1,100 @@
+/* ============================================================
+   صفحه سبد خرید — سانیار (فارسی RTL)
+   افزودنی‌های استپر تعداد و حالت‌های سبد؛ استایل‌های پایه (cart-product-item،
+   line-step، factor و...) در css/style.css تعریف شده‌اند.
+   ============================================================ */
+
+/* --- تصویر سبد خالی --- */
+.empty-cart-image {
+    max-width: 400px;
+    width: 100%;
+    height: auto;
+}
+
+/* --- دکمه حذف در مودال --- */
+.btn-remove-item {
+    background: #f21919;
+}
+.btn-remove-item:hover {
+    background: #d02304;
+    color: #fff;
+}
+
+/* --- استپر تعداد (قرارداد نام: product-{pivot_id} → TouchSpin سراسری نمی‌گیرد؛ استپر اختصاصی سبد) --- */
+.cart-product-item .counter {
+    gap: 4px;
+}
+
+.cart-product-item .counter .btn-counter {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e9e9e9;
+    border-radius: 8px;
+    background: #f4f5f9;
+    color: var(--main-color-one);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+}
+
+.cart-product-item .counter .btn-counter:hover {
+    background: #e9edfa;
+}
+
+.cart-product-item .counter .btn-counter:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.cart-product-item .counter .counter-input {
+    width: 52px;
+    height: 34px;
+    text-align: center;
+    border: 1px solid #e9e9e9;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #2b2b2b;
+    background: #fff;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.cart-product-item .counter .counter-input::-webkit-outer-spin-button,
+.cart-product-item .counter .counter-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* --- ردیف اقلام در موبایل خیلی کوچک (≤400px) هم‌راستا با مرجع w-100-in-400 --- */
+@media (max-width: 400px) {
+    .cart-product-item .action {
+        justify-content: space-between !important;
+    }
+}
+
+/* --- نوار مراحل: مرحله جاری (کامل ولی فعال) --- */
+.line-step-box.complete.current .icon {
+    box-shadow: 0 0 0 4px rgba(39, 95, 224, .18);
+}
+
+/* --- نشانگر تغییر تعداد (دکمه بروزرسانی را برجسته می‌کند) --- */
+#update-cart.needs-update {
+    animation: cart-pulse 1.4s infinite;
+}
+
+@keyframes cart-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(255, 164, 27, .55); }
+    70%  { box-shadow: 0 0 0 10px rgba(255, 164, 27, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 164, 27, 0); }
+}
+
+/* --- حالت درحال‌بارگذاری روی دکمه‌ها --- */
+#update-cart.loading,
+#checkout-link.loading {
+    opacity: .6;
+    pointer-events: none;
+}

@@ -1,0 +1,174 @@
+/*
+ * سانیار فاز K — استایل‌های صفحات محتوایی (تماس با ما / صفحات داینامیک / ۴۰۴)
+ */
+
+/* ---------- تایپوگرافی محتوای داینامیک (محتوای متنی که ادمین می‌نویسد) ---------- */
+.dynamic-content {
+    color: var(--text-color, #333);
+    line-height: 2;
+}
+
+.dynamic-content h1,
+.dynamic-content h2,
+.dynamic-content h3,
+.dynamic-content h4 {
+    font-family: var(--main-font), serif;
+    font-weight: 800;
+    margin: 1.4em 0 0.6em;
+    color: var(--text-color, #111);
+}
+
+.dynamic-content h2 {
+    font-size: 1.3rem;
+}
+
+.dynamic-content h3 {
+    font-size: 1.15rem;
+}
+
+.dynamic-content p {
+    margin-bottom: 1rem;
+}
+
+.dynamic-content a {
+    color: var(--main-color-one);
+    text-decoration: none;
+}
+
+.dynamic-content a:hover {
+    text-decoration: underline;
+}
+
+.dynamic-content ul,
+.dynamic-content ol {
+    padding-right: 1.4rem;
+    margin-bottom: 1rem;
+}
+
+.dynamic-content ul {
+    list-style: disc;
+}
+
+.dynamic-content ol {
+    list-style: decimal;
+}
+
+.dynamic-content li {
+    margin-bottom: 0.4rem;
+}
+
+.dynamic-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    margin: 0.5rem 0;
+}
+
+.dynamic-content blockquote {
+    border-right: 4px solid var(--main-color-one);
+    background: #f8f9fa;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin: 1rem 0;
+    color: var(--text-muted, #555);
+}
+
+.dynamic-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    background: #fff;
+}
+
+.dynamic-content table th,
+.dynamic-content table td {
+    border: 1px solid #e9ecef;
+    padding: 10px 12px;
+    font-size: 14px;
+    text-align: right;
+}
+
+.dynamic-content table th {
+    background: #f8f9fa;
+    font-weight: 700;
+}
+
+/* آکاردئون FAQ داخل صفحات داینامیک (الگوی مرجع accordion-style) */
+.dynamic-content .accordion-style .card {
+    border: 0;
+    border-radius: 12px;
+    box-shadow: var(--shadow-box);
+    overflow: hidden;
+}
+
+.dynamic-content .accordion-style .card-header {
+    background: #fff;
+    border: 0;
+    padding: 0;
+}
+
+.dynamic-content .accordion-style .btn-link {
+    width: 100%;
+    text-align: right;
+    text-decoration: none;
+    color: var(--text-color, #333);
+    font-weight: 700;
+    font-size: 14px;
+    padding: 14px 16px;
+    display: block;
+}
+
+.dynamic-content .accordion-style .btn-link::before {
+    content: "\F286";
+    font-family: "bootstrap-icons";
+    float: left;
+    transition: 0.3s all ease;
+    color: var(--main-color-one);
+}
+
+.dynamic-content .accordion-style .btn-link.collapsed::before {
+    transform: rotate(90deg);
+}
+
+.dynamic-content .accordion-style .card-body {
+    font-size: 14px;
+    color: var(--text-muted, #555);
+    padding-top: 0;
+}
+
+/* ---------- صفحهٔ تماس ---------- */
+.contact-item {
+    border-radius: 14px;
+    transition: 0.25s all ease;
+}
+
+.contact-item:hover {
+    transform: translateY(-4px);
+}
+
+.contact-item .contact-link {
+    transition: 0.2s all ease;
+}
+
+.contact-item .contact-link:hover {
+    color: var(--main-color-one) !important;
+}
+
+.contact-form-body .form-control:focus {
+    border-color: var(--main-color-one);
+    box-shadow: 0 0 0 0.2rem rgba(239, 64, 86, 0.12);
+}
+
+/* ---------- ۴۰۴ ---------- */
+.notfound-code {
+    font-size: 90px;
+    line-height: 1;
+    letter-spacing: 6px;
+    display: inline-block;
+}
+
+@media (max-width: 576px) {
+    .notfound-code {
+        font-size: 64px;
+    }
+}

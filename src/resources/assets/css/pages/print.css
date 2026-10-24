@@ -1,0 +1,139 @@
+/* ============================================================
+   چاپ سانیار (فاز I) — فاکتور و برچسب مرسوله
+   فونت iran-yekan تم + قواعد مرز/جدول/شکست صفحه
+   ============================================================ */
+@font-face {
+    font-family: 'print-font';
+    src: url('../font/iran-yekan/iranyekanwebregularfanum.woff') format('woff');
+    font-weight: normal;
+}
+
+@font-face {
+    font-family: 'print-font';
+    src: url('../font/iran-yekan/iranyekanwebboldfanum.woff') format('woff');
+    font-weight: bold;
+}
+
+body.print-saniar,
+body[data-saniar-print] {
+    font-family: 'print-font', Tahoma, sans-serif;
+    font-size: 13px;
+    color: #212529;
+    background: #fff;
+    padding: 8px;
+}
+
+/* ---------- مرزهای چاپی ---------- */
+.print-border { border: 1px solid #6e7275; }
+.print-border-right { border-left: 1px solid #6e7275; }  /* RTL: راستِ بصری = چپِ منطقی */
+.print-border-left { border-right: 1px solid #6e7275; }
+.print-border-top { border-top: 1px solid #6e7275; }
+.print-border-bottom { border-bottom: 1px solid #6e7275; }
+
+.factor-table-color {
+    background-color: #f1f3f5 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+/* ---------- فاکتور ---------- */
+.factor-wrap { page-break-after: always; }
+.factor-wrap:last-child { page-break-after: auto; }
+
+.factor-wrap .title-col { font-weight: bold; }
+
+.factor-wrap table.table th,
+.factor-wrap table.table td {
+    padding: .25rem .5rem;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.factor-wrap .factor-barcode img {
+    max-width: 100%;
+    height: 34px;
+    object-fit: contain;
+}
+
+.factor-totals th,
+.factor-totals td {
+    padding: .2rem .4rem;
+    font-size: 13px;
+}
+
+/* ---------- برچسب مرسوله (تمام‌عرض) ---------- */
+.ship-label {
+    border: 2px solid #6e7275;
+    page-break-after: always;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.ship-label:last-child { page-break-after: auto; }
+
+.ship-label .label-title {
+    border-bottom: 2px solid #6e7275;
+    background-color: #f1f3f5;
+}
+
+.ship-label ul.list-unstyled li {
+    line-height: 1.9;
+}
+
+.ship-label .label-barcode img {
+    width: 100%;
+    height: 44px;
+    object-fit: contain;
+}
+
+/* ---------- لیبل کوچک پستی (۱۰×۷ سانتی‌متر) ---------- */
+.ship-label-min {
+    width: 10cm;
+    height: 7cm;
+    overflow: hidden;
+    border: 2px solid #6e7275;
+    page-break-after: always;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.ship-label-min:last-child { page-break-after: auto; }
+
+.ship-label-min p,
+.ship-label-min li {
+    font-size: 10px;
+    line-height: 1.7;
+    margin-bottom: 0;
+}
+
+.ship-label-min .min-col-side {
+    border-left: 2px solid #6e7275;
+}
+
+.ship-label-min .min-row {
+    border-top: 1px solid #6e7275;
+    border-bottom: 1px solid #6e7275;
+}
+
+/* ---------- صفحه چاپ ---------- */
+@media print {
+    @page {
+        size: landscape;
+        margin: 6mm;
+    }
+
+    body[data-saniar-print] { padding: 0; }
+
+    .d-print-none { display: none !important; }
+
+    .table .factor-table-color th,
+    .table .factor-table-color td {
+        background-color: #dde2e1 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+
+@media (max-width: 576px) {
+    .ship-label-min { width: 100%; height: auto; }
+}

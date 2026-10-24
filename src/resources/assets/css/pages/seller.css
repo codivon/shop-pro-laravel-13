@@ -1,0 +1,626 @@
+/* ============================================================
+   فاز G — استایل صفحات فروشندگان سانیار (لندینگ + احراز هویت + پنل + فروشگاه عمومی)
+   ============================================================ */
+
+/* ---------- ۱) لندینگ فروشندگان (sellers/index) ---------- */
+.seller-landing-hero {
+    background: linear-gradient(135deg, var(--main-color-one) 0%, var(--main-color-one-hover) 100%);
+    border-radius: 1.25rem;
+    overflow: hidden;
+    color: #fff;
+}
+.seller-landing-hero .hero-title {
+    font-weight: 800;
+    line-height: 1.6;
+}
+.seller-landing-hero .hero-sub {
+    opacity: .85;
+    line-height: 1.9;
+}
+.seller-hero-img {
+    max-height: 260px;
+    object-fit: contain;
+}
+.seller-landing-slider .carousel-item img {
+    width: 100%;
+    height: 320px;
+    object-fit: cover;
+    border-radius: 1.25rem;
+}
+.seller-landing-slider .seller-slider-caption {
+    position: absolute;
+    inset-inline-start: 0;
+    bottom: 0;
+    width: 100%;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(to top, rgba(0,0,0,.75), transparent);
+    color: #fff;
+    border-end-end-radius: 1.25rem;
+    border-end-start-radius: 1.25rem;
+}
+.seller-benefit-card {
+    border: 1px solid #eef1f7;
+    border-radius: 1rem;
+    padding: 1.5rem 1.25rem;
+    height: 100%;
+    background: #fff;
+    transition: box-shadow .25s ease, transform .25s ease;
+}
+.seller-benefit-card:hover {
+    box-shadow: 0 .75rem 1.75rem var(--main-color-one-shadow);
+    transform: translateY(-4px);
+}
+.seller-benefit-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: .85rem;
+    background: var(--main-color-one-shadow);
+    color: var(--main-color-one);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+.seller-benefit-icon svg { width: 28px; height: 28px; fill: currentColor; }
+.seller-roadmap-step {
+    position: relative;
+    text-align: center;
+    padding: 0 .5rem;
+}
+.seller-roadmap-step .step-badge {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--main-color-one);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    box-shadow: 0 .5rem 1.25rem var(--main-color-one-shadow);
+    margin-bottom: .75rem;
+}
+.seller-roadmap-step:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 26px;
+    inset-inline-start: calc(50% + 34px);
+    width: calc(100% - 68px);
+    border-top: 2px dashed #d7dded;
+}
+.seller-doc-card {
+    border: 1px solid #eef1f7;
+    border-radius: 1rem;
+    padding: 1.75rem 1.5rem;
+    text-align: center;
+    height: 100%;
+    background: #fbfcff;
+}
+.seller-doc-card .doc-icon {
+    font-size: 2.25rem;
+    color: var(--main-color-one);
+}
+.seller-commission-item {
+    border: 1px solid #eef1f7;
+    border-radius: 1rem;
+    padding: 1.25rem;
+    height: 100%;
+    background: #fff;
+}
+.seller-commission-item .commission-icon {
+    color: var(--main-color-one);
+    font-size: 1.5rem;
+}
+.seller-commission-item svg { width: 26px; height: 26px; fill: currentColor; }
+.seller-faq-item {
+    border: 1px solid #eef1f7;
+    border-radius: .85rem;
+    background: #fff;
+    overflow: hidden;
+}
+.seller-faq-item .faq-btn {
+    width: 100%;
+    background: none;
+    border: 0;
+    text-align: start;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    font-weight: 600;
+    color: var(--main-color-one);
+}
+.seller-faq-item .faq-btn i { transition: transform .25s ease; }
+.seller-faq-item .faq-btn[aria-expanded="true"] i { transform: rotate(180deg); }
+.seller-faq-item .faq-body {
+    padding: 0 1.25rem 1rem;
+    color: #6b7280;
+    line-height: 2;
+}
+.seller-landing-cta {
+    background: linear-gradient(135deg, var(--main-color-one) 0%, var(--main-color-one-hover) 100%);
+    border-radius: 1.25rem;
+    color: #fff;
+}
+
+/* ---------- ۲) احراز هویت فروشنده (sellers/auth/*) ---------- */
+.seller-auth-card { margin-top: 2rem; }
+.seller-auth-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+.seller-auth-steps .auth-step {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    color: #9aa3b8;
+    font-size: .8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.seller-auth-steps .auth-step .step-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #eef1f7;
+    font-size: .8125rem;
+}
+.seller-auth-steps .auth-step.is-current { color: var(--main-color-one); }
+.seller-auth-steps .auth-step.is-current .step-dot {
+    background: var(--main-color-one);
+    color: #fff;
+}
+.seller-auth-steps .auth-step.is-done { color: var(--main-color-three); }
+.seller-auth-steps .auth-step.is-done .step-dot {
+    background: var(--main-color-three);
+    color: #fff;
+}
+.seller-auth-steps .step-sep {
+    width: 34px;
+    border-top: 2px dashed #d7dded;
+}
+.seller-auth-note {
+    background: #f6f8ff;
+    border: 1px dashed var(--main-color-one-shadow);
+    border-radius: .85rem;
+    padding: .9rem 1rem;
+    font-size: .8125rem;
+    color: #4b5568;
+    line-height: 1.9;
+}
+.seller-upload-box {
+    position: relative;
+    border: 2px dashed #d7dded;
+    border-radius: 1rem;
+    padding: 1.25rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .25s ease, background .25s ease;
+    background: #fbfcff;
+    overflow: hidden;
+}
+.seller-upload-box:hover { border-color: var(--main-color-one); }
+.seller-upload-box input[type=file] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+.seller-upload-box .upload-icon {
+    font-size: 1.75rem;
+    color: var(--main-color-one);
+}
+.seller-upload-box .upload-hint {
+    font-size: .8125rem;
+    color: #6b7280;
+}
+.seller-upload-box.has-file {
+    border-style: solid;
+    border-color: var(--main-color-three);
+    background: #f4fff3;
+}
+.seller-upload-box .upload-preview {
+    max-height: 120px;
+    border-radius: .75rem;
+    margin-top: .5rem;
+}
+.seller-upload-box .upload-filename {
+    font-size: .8125rem;
+    color: var(--main-color-three);
+    font-weight: 600;
+    word-break: break-all;
+}
+.seller-radio-card {
+    border: 1px solid #eef1f7;
+    border-radius: .85rem;
+    padding: .85rem 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    background: #fff;
+    transition: all .2s ease;
+    height: 100%;
+}
+.seller-radio-card input { accent-color: var(--main-color-one); }
+.seller-radio-card.is-selected {
+    border-color: var(--main-color-one);
+    background: #f6f8ff;
+    box-shadow: 0 0 0 1px var(--main-color-one) inset;
+}
+.company-fields-off { display: none; }
+.auth-wide-card .col-lg-4 { width: 100%; }
+
+/* ---------- ۳) پنل فروشنده (sellers/panel/*) ---------- */
+.seller-stat-card {
+    border: 1px solid #eef1f7;
+    border-radius: 1rem;
+    padding: 1.25rem;
+    background: #fff;
+    height: 100%;
+}
+.seller-stat-card .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: .85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    background: var(--main-color-one-shadow);
+    color: var(--main-color-one);
+}
+.seller-stat-card .stat-value {
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1.4;
+}
+.seller-stat-card .stat-label {
+    font-size: .8125rem;
+    color: #6b7280;
+}
+.seller-stat-card .stat-trend.up { color: var(--main-color-three); }
+.seller-stat-card .stat-trend.down { color: #dc3545; }
+.seller-chart-card {
+    border: 1px solid #eef1f7;
+    border-radius: 1rem;
+    background: #fff;
+    padding: 1.25rem;
+}
+.seller-chart-wrap { position: relative; height: 260px; }
+.seller-chart-wrap canvas { width: 100% !important; height: 100% !important; }
+.seller-store-link-card {
+    border: 1px solid #eef1f7;
+    border-radius: 1rem;
+    padding: 1.25rem;
+    background: #fbfcff;
+    height: 100%;
+}
+.seller-copy-btn { cursor: pointer; }
+
+/* ---------- ۴) فروشگاه عمومی فروشنده (sellerStore) ---------- */
+.seller-store-head {
+    border: 1px solid #eef1f7;
+    border-radius: 1.25rem;
+    background: #fff;
+    overflow: hidden;
+}
+.seller-store-banner {
+    height: 120px;
+    background: linear-gradient(135deg, var(--main-color-one) 0%, var(--main-color-one-hover) 100%);
+    position: relative;
+}
+.seller-store-avatar {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    border: 4px solid #fff;
+    object-fit: cover;
+    background: #fff;
+    box-shadow: 0 .5rem 1.25rem rgba(0,0,0,.12);
+}
+.seller-store-avatar-fallback {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: var(--main-color-one);
+    color: #fff;
+    font-size: 2rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 4px solid #fff;
+    box-shadow: 0 .5rem 1.25rem rgba(0,0,0,.12);
+}
+.seller-store-stat {
+    border-inline-start: 1px solid #eef1f7;
+    padding: .5rem 1rem;
+    text-align: center;
+}
+.seller-store-stat .stat-num {
+    font-weight: 800;
+    color: var(--main-color-one);
+    display: block;
+}
+
+/* موبایل — نقشه راه عمودی */
+@media (max-width: 767.98px) {
+    .seller-roadmap-step:not(:last-child)::after { display: none; }
+    .seller-landing-slider .carousel-item img { height: 200px; }
+    .seller-hero-img { max-height: 180px; }
+    .seller-store-stat { border-inline-start: 0; border-top: 1px solid #eef1f7; }
+}
+
+/* ============================================================
+   فاز H — مدیریت محصولات فروشنده (index / find / create / edit / variant)
+   ============================================================ */
+
+/* ---------- تب‌های فرم محصول ---------- */
+.saniar-form-tab-nav {
+    background: #fbfcff;
+    border-radius: 1rem;
+    border: 1px solid #eef1f7;
+    overflow-x: auto;
+    flex-wrap: nowrap !important;
+}
+@media (min-width: 992px) {
+    .saniar-form-tab-nav { flex-wrap: nowrap; }
+}
+.saniar-form-tab-link {
+    border: 0;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .65rem .9rem;
+    border-radius: .8rem;
+    font-size: .875rem;
+    font-weight: 600;
+    color: #4b5563;
+    white-space: nowrap;
+    width: 100%;
+    text-align: start;
+    transition: background .2s ease, color .2s ease;
+}
+.saniar-form-tab-link i { font-size: 1rem; }
+.saniar-form-tab-link:hover { color: var(--main-color-one); background: #fff; }
+.saniar-form-tab-link.active {
+    background: var(--main-color-one);
+    color: #fff;
+    box-shadow: 0 .35rem .9rem var(--main-color-one-shadow);
+}
+
+/* ---------- کارت ردیف تنوع/فایل ---------- */
+.saniar-price-row,
+.saniar-file-row {
+    border: 1px solid #e8ecf5;
+    background: #fff;
+    border-radius: 1rem;
+    padding: 1rem;
+    transition: box-shadow .2s ease;
+}
+.saniar-price-row:hover,
+.saniar-file-row:hover { box-shadow: 0 .25rem .9rem rgba(16,24,40,.06); }
+.saniar-price-row .form-label { margin-bottom: .15rem; }
+.saniar-price-row input[disabled].final-price {
+    background: #f6f8fc;
+    font-weight: 700;
+    color: var(--main-color-one);
+}
+
+/* ---------- گروه مشخصات ---------- */
+.saniar-spec-group {
+    border: 1px dashed #d7dded;
+    background: #fbfcff;
+    border-radius: 1rem;
+    padding: 1rem;
+}
+.saniar-spec-row { background: #fff; }
+.saniar-spec-row .form-control { min-height: 38px; }
+
+/* ---------- ردیف سایز/امتیاز ---------- */
+.saniar-size-row,
+.saniar-ability-row {
+    border: 1px solid #eef1f7;
+    background: #fff;
+    border-radius: .8rem;
+    padding: .65rem;
+}
+
+/* ---------- برچسب‌ها (chips) ---------- */
+.saniar-tags-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    margin-top: .4rem;
+}
+.saniar-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    background: var(--main-color-one-shadow);
+    color: var(--main-color-one);
+    border-radius: 100vmax;
+    padding: .18rem .65rem;
+    font-size: .78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s ease;
+}
+.saniar-chip:hover { background: #ffe3e3; color: #dc3545; }
+.saniar-chip i { font-size: .65rem; }
+
+/* ---------- گالری تصاویر ---------- */
+.saniar-upload-box {
+    border: 2px dashed #d7dded;
+    border-radius: 1rem;
+    background: #fbfcff;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    transition: border-color .2s ease, background .2s ease;
+}
+.saniar-upload-box:hover { border-color: var(--main-color-one); background: #fff; }
+.saniar-upload-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .35rem;
+    cursor: pointer;
+    margin: 0;
+}
+.saniar-upload-cta i {
+    font-size: 2rem;
+    color: var(--main-color-one);
+}
+.saniar-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: .75rem;
+    margin: 1rem 0;
+}
+.saniar-gallery-tile {
+    position: relative;
+    border-radius: .8rem;
+    overflow: hidden;
+    border: 1px solid #e8ecf5;
+    background: #f6f8fc;
+}
+.saniar-gallery-tile img {
+    width: 100%;
+    height: 96px;
+    object-fit: cover;
+    display: block;
+}
+.saniar-gallery-tile-actions {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    gap: .2rem;
+    background: linear-gradient(to top, rgba(0,0,0,.65), transparent);
+    padding: .4rem 0 .25rem;
+    opacity: 0;
+    transition: opacity .2s ease;
+}
+.saniar-gallery-tile:hover .saniar-gallery-tile-actions { opacity: 1; }
+.saniar-gallery-tile-actions .btn {
+    --bs-btn-padding-y: .1rem;
+    --bs-btn-padding-x: .35rem;
+    font-size: .8rem;
+    color: #fff;
+    border: 0;
+    background: rgba(255,255,255,.18);
+}
+.saniar-gallery-tile-actions .btn:hover { background: var(--main-color-one); }
+
+/* ---------- جدول محصولات (index/find) ---------- */
+.saniar-products-table th, .saniar-products-table td { vertical-align: middle; }
+.saniar-products-table .btn { margin-inline: .1rem; }
+.saniar-dt-wrap { border-radius: .8rem; overflow: hidden; border: 1px solid #eef1f7; }
+
+/* ---------- موبایل فرم محصول ---------- */
+@media (max-width: 767.98px) {
+    .saniar-form-tab-nav {
+        border-radius: .8rem;
+    }
+    .saniar-form-tab-link { padding: .5rem .7rem; }
+    .saniar-price-row, .saniar-file-row, .saniar-spec-group { padding: .75rem; }
+    .saniar-gallery-grid { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+    .saniar-gallery-tile img { height: 72px; }
+}
+
+/* ============================================================
+   فاز I — سفارش‌ها / کیف پول / کمیسیون
+   ============================================================ */
+
+/* ---------- نوار عملیات گروهی سفارش‌ها ---------- */
+.saniar-bulk-bar > div {
+    background: #fff8f4;
+    border: 1px solid #ffe0cf;
+}
+.saniar-bulk-bar .btn { white-space: nowrap; }
+
+/* ---------- جدول سفارش‌ها ---------- */
+.saniar-orders-table th, .saniar-orders-table td { vertical-align: middle; }
+.saniar-orders-table .btn { margin-inline: .1rem; }
+.sfo-check-all-wrap { width: 36px; }
+
+/* ---------- کارت‌های خلاصه سفارش (show) ---------- */
+.saniar-order-card {
+    background: #fff;
+    border: 1px solid #eef1f7;
+    border-radius: .9rem;
+    padding: 1rem 1.1rem;
+    height: 100%;
+    box-shadow: 0 2px 10px rgba(24, 28, 55, .04);
+}
+.saniar-order-card.border-top-success { border-top: 4px solid #2fa779; }
+.saniar-order-card.border-top-info    { border-top: 4px solid #14b8c9; }
+.saniar-order-card.border-top-warning { border-top: 4px solid #f0a13b; }
+.saniar-order-card.border-top-danger  { border-top: 4px solid #e05260; }
+.saniar-order-card ul li { border-color: #f3f4f8 !important; }
+.saniar-order-card-icon { font-size: 1.45rem; opacity: .35; }
+
+/* ---------- ردیف جمع نهایی اقلام ---------- */
+.saniar-order-total-row td {
+    background: #f6fbf8 !important;
+    border-top: 2px solid #2fa779 !important;
+}
+.saniar-order-items tfoot td { border-top-width: 1px; }
+
+/* ---------- کارت موجودی کیف پول ---------- */
+.saniar-wallet-hero {
+    background: linear-gradient(120deg, var(--main-color-one) 0%, var(--main-color-three, #2fa779) 100%);
+    border-radius: 1rem;
+    padding: 1.4rem 1.6rem;
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(24, 28, 55, .12);
+}
+.saniar-wallet-hero .text-muted { color: rgba(255,255,255,.85) !important; }
+.saniar-wallet-amount {
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: .5px;
+}
+.saniar-wallet-hero .btn-outline-danger {
+    color: #fff;
+    border-color: rgba(255,255,255,.7);
+}
+.saniar-wallet-hero .btn-outline-danger:hover {
+    background: rgba(255,255,255,.14);
+    border-color: #fff;
+}
+.saniar-wallet-detail th { font-weight: 400; }
+
+/* ---------- جدول کمیسیون (سطوح درختی) ---------- */
+.sfc-level-0 { padding-right: .5rem; }
+.sfc-level-1 { padding-right: 1.4rem; }
+.sfc-level-2 { padding-right: 2.3rem; }
+.sfc-level-3 { padding-right: 3.2rem; }
+.sfc-level-4 { padding-right: 4.1rem; }
+#sfc-commission-table tbody tr:hover { background: #f7fbff; }
+
+/* ---------- موبایل فاز I ---------- */
+@media (max-width: 767.98px) {
+    .saniar-wallet-amount { font-size: 1.45rem; }
+    .saniar-order-card { padding: .85rem .9rem; }
+    .saniar-bulk-bar .btn { font-size: .78rem; }
+    .saniar-orders-table { font-size: .82rem; }
+    .sfc-level-1 { padding-right: 1rem; }
+    .sfc-level-2 { padding-right: 1.7rem; }
+    .sfc-level-3 { padding-right: 2.4rem; }
+    .sfc-level-4 { padding-right: 3rem; }
+}

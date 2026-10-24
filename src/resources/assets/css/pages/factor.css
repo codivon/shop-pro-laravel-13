@@ -1,0 +1,125 @@
+/* ============================================================
+   فاکتور چاپی سفارش — سانیار (صفحه مستقل)
+   استایل نمایش + استایل مخصوص پرینت
+   ============================================================ */
+
+.factor-page {
+    background: #fff;
+    color: #2b2b2b;
+    font-size: 12px;
+}
+
+.factor-wrapper {
+    margin-top: 60px;
+}
+
+.factor-logo {
+    max-height: 72px;
+    max-width: 160px;
+}
+
+.factor-title {
+    font-size: 18px;
+    font-weight: 800;
+    margin: 0;
+}
+
+.factor-header {
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid #2b2b2b;
+}
+
+.table-factor {
+    width: 100%;
+    border: 1px solid #2b2b2b;
+    margin-bottom: 18px;
+}
+
+.table-factor th,
+.table-factor td {
+    border: 1px solid #2b2b2b;
+    padding: 8px 10px;
+    vertical-align: top;
+}
+
+.factor-section-title {
+    text-align: center;
+    font-weight: 800;
+    background: #f4f5f9;
+}
+
+.factor-cols-head th {
+    text-align: center;
+    font-weight: 700;
+    background: #fafafa;
+}
+
+.factor-label {
+    font-weight: 700;
+}
+
+.factor-totals td {
+    padding: 6px 10px;
+}
+
+.factor-grand td {
+    font-weight: 800;
+    background: #f4f5f9;
+}
+
+.factor-paid {
+    color: #0d9a00;
+    font-weight: 700;
+}
+
+.factor-unpaid {
+    color: #d02304;
+    font-weight: 700;
+}
+
+.factor-signature td {
+    height: 72px;
+    vertical-align: bottom;
+}
+
+.factor-download-tag {
+    color: #6c757d;
+    font-size: 11px;
+}
+
+#printPageButton {
+    margin-top: 8px;
+}
+
+/* ---------------- پرینت ---------------- */
+@media print {
+    @page {
+        size: A4;
+        margin: 10mm;
+    }
+
+    body {
+        background: #fff;
+    }
+
+    .factor-wrapper {
+        margin-top: 0;
+    }
+
+    #printPageButton {
+        display: none !important;
+    }
+
+    .table-factor th,
+    .table-factor td {
+        border: 1px solid #000 !important;
+    }
+
+    .factor-page,
+    .table-factor,
+    .factor-header * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}

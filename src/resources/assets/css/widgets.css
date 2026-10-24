@@ -1,0 +1,111 @@
+/* =========================================================
+   سانیار — فاز B: استایل‌های تکمیلی ویجت‌های صفحه اصلی
+   (اسلایدر تمام‌صفحه، بلوک رنگی، شگفت‌انگیز)
+   این فایل بعد از style.css/responsive.css لود می‌شود.
+   ========================================================= */
+
+/* ----------------- اسلایدر تمام‌صفحه ----------------- */
+
+.fullscreen-slider {
+    position: relative;
+}
+
+.fullscreen-slider .swiper-slide a {
+    position: relative;
+    display: block;
+}
+
+.fullscreen-slider .swiper-slide img {
+    width: 100%;
+    border-radius: 16px;
+}
+
+.fullscreen-slider .swiper-button-next,
+.fullscreen-slider .swiper-button-prev {
+    color: #fff;
+    background-color: rgb(0 0 0 / 35%);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+}
+
+.fullscreen-slider-caption {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 28px;
+    z-index: 2;
+    text-align: center;
+    color: #fff;
+    text-shadow: 0 2px 10px rgb(0 0 0 / 45%);
+    padding: 0 16px;
+}
+
+.fullscreen-slider-caption h3 {
+    color: #fff;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.fullscreen-slider-caption p {
+    color: rgb(255 255 255 / 92%);
+    font-size: 14px;
+    margin: 0;
+}
+
+@media (max-width: 991.98px) {
+    .fullscreen-slider .swiper-slide img {
+        border-radius: 10px;
+    }
+}
+
+/* ----------------- بلوک رنگی (کادر محصولات با پس‌زمینه) ----------------- */
+
+.colorful-block {
+    border-radius: 24px;
+    margin-inline: 10px;
+}
+
+.colorful-block .header-content {
+    /* هدر سفید روی پس‌زمینه رنگی — کنتراست بهتر */
+    box-shadow: var(--shadow-box);
+}
+
+.colorful-promo {
+    background-color: #fff;
+}
+
+.colorful-promo .image img {
+    max-height: 300px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+@media (max-width: 991.98px) {
+    .colorful-block {
+        border-radius: 14px;
+        margin-inline: 4px;
+    }
+}
+
+/* ----------------- شگفت‌انگیز (amazing) ----------------- */
+
+/* نوار تایمر داخل اسلاید شگفت‌انگیز — فاصله یکنواخت با عنوان */
+.amazing-slider .slider-item .timer {
+    margin-top: 4px;
+}
+
+/* اسکرول‌بار نازک برای ستون thumbs شگفت‌انگیز */
+.amazing-slider .parent::-webkit-scrollbar {
+    width: 5px;
+}
+
+.amazing-slider .parent::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.amazing-slider .parent::-webkit-scrollbar-thumb {
+    background-color: rgb(0 0 0 / 15%);
+    border-radius: 10px;
+}

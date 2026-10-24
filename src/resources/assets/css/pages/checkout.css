@@ -1,0 +1,82 @@
+/* ============================================================
+   صفحه تکمیل خرید (چک‌اوت) — سانیار (فارسی RTL)
+   افزودنی‌های ظاهری؛ استایل‌های پایه (shipping-item/bank-item/send-item/
+   factor/cart-canvases/comment-item) در css/style.css تعریف شده‌اند.
+   ============================================================ */
+
+/* --- فاصله بین آیتم‌های انتخاب (حامل/درگاه) --- */
+.shipping-methods .shipping-item {
+    margin-bottom: 10px;
+}
+.payment-method-list .bank-item,
+.cart-canvases .bank-item {
+    margin-bottom: 10px;
+}
+
+/* --- تاریخ ارسال غیرقابل انتخاب --- */
+.send-item.disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+/* --- کارت آدرس (addresses-item — مطابق address.html مرجع) --- */
+.addresses-item {
+    border: 1px solid #e9e9e9;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.addresses-item .gold-members {
+    padding: 14px;
+}
+
+.addresses-item .media-body h6 {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.addresses-item .address-line {
+    line-height: 1.9;
+}
+
+.addresses-item .btn-group-sm .btn {
+    border-radius: 8px;
+}
+
+.addresses-item.active-address {
+    border-color: var(--main-color-one);
+    box-shadow: 0 4px 16px rgba(39, 95, 224, .10);
+}
+
+/* --- سایدبار چک‌اوت: فقط دسکتاپ sticky --- */
+@media (max-width: 991.98px) {
+    .checkout-side {
+        position: static !important;
+    }
+}
+
+/* --- دکمه‌ها در حال لود --- */
+#checkout-link.loading,
+#address-submit-btn.loading {
+    opacity: .6;
+    pointer-events: none;
+}
+
+/* --- آیتم روش پرداخت: radio مخفی داخل label --- */
+.bank-item input[type="radio"],
+.shipping-item input[type="radio"],
+.send-item input[type="radio"],
+.addresses-item input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 1px;
+    height: 1px;
+}
+
+/* --- سرصفحه مرسولات در موبایل --- */
+@media (max-width: 575.98px) {
+    .consignments .d-flex.justify-content-between {
+        gap: 8px;
+    }
+}

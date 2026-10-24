@@ -1,0 +1,113 @@
+/* ============================================================
+   حامل‌ها و تعرفه‌های ارسال فروشنده — سانیار فاز J
+   مکمل css/pages/seller.css (که تغییرش ممنوع است) — فقط کلاس‌های sfa-*
+   ============================================================ */
+
+/* ---------- بندانگشتی تصویر حامل (جدول + فرم ویرایش) ---------- */
+.sfa-img-thumb {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: .45rem;
+    vertical-align: middle;
+    background: #f6f7fb;
+}
+
+.sfa-img-thumb--empty {
+    border: 1px dashed #dfe3ec;
+}
+
+/* ---------- جدول حامل‌ها: در دسکتاپ overflow باز تا منوی عملیات کلیپ نشود ---------- */
+@media (min-width: 992px) {
+    .sfa-table-wrap.table-responsive {
+        overflow: visible;
+    }
+}
+
+/* ---------- درخت چک‌باکس شهرهای تحت پوشش (جایگزین comboTree) ---------- */
+.sfa-cities-tree {
+    max-height: 260px;
+    overflow-y: auto;
+    border: 1px solid #e6e9f2;
+    border-radius: .6rem;
+    background: #fbfcfe;
+    padding: .5rem;
+}
+
+.sfa-province-group {
+    border-bottom: 1px solid #eef1f7;
+}
+
+.sfa-province-group:last-child {
+    border-bottom: 0;
+}
+
+.sfa-province-head {
+    position: sticky;
+    top: 0;
+    background: #f2f4fa;
+    margin: 0 -0.5rem;
+    padding: .4rem .65rem;
+    border-radius: .4rem;
+}
+
+.sfa-province-cities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem 1rem;
+    padding: .35rem .75rem .5rem;
+}
+
+.sfa-province-cities .form-check {
+    margin-bottom: 0;
+    min-width: 105px;
+}
+
+.sfa-province-cities .form-check-input {
+    margin-top: .22rem;
+}
+
+.sfa-province-cities .form-check-label {
+    cursor: pointer;
+    user-select: none;
+}
+
+/* ---------- کارت رادیو بازه‌های ارسال ---------- */
+.sfa-range-option {
+    cursor: pointer;
+    user-select: none;
+    background: #fff;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.sfa-range-option:hover {
+    border-color: var(--main-color-one);
+}
+
+.sfa-range-option:has(input:checked) {
+    border-color: var(--main-color-one);
+    box-shadow: 0 0 0 1px var(--main-color-one) inset;
+    background: #fffdfb;
+}
+
+/* ---------- کارت‌های پیش‌نمایش روزهای ارسال ---------- */
+.sfa-date-card {
+    border: 1px solid #e6e9f2;
+    border-radius: .6rem;
+    background: #fff;
+    padding: .55rem .4rem;
+    text-align: center;
+    transition: opacity .15s ease;
+}
+
+.sfa-date-card-holiday {
+    border-color: #e05260;
+    opacity: .65;
+}
+
+.sfa-date-card-disabled {
+    opacity: .35;
+}

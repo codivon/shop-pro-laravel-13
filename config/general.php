@@ -1,481 +1,478 @@
 <?php
-
+$default_images_path = 'themes/Saniar/src/resources/assets/image/';
 return [
+    'theme_name' => 'Saniar',
 
-    'api_url' => 'http://webtpro.ir/api/v1',
-
-    'admin_route_prefix' => env('ADMIN_ROUTE_PREFIX'),
-
-    'current_theme' => env('CURRENT_THEME', 'WeblakShop'),
-
-    'permissions' => [
-
-        'admins' => [
-            'title' => 'مدیریت مدیران',
-            'values' => [
-                'index' => 'لیست مدیران',
-                'view' => 'مشاهده مدیر',
-                'create' => 'ایجاد مدیر',
-                'update' => 'ویرایش مدیر',
-                'delete' => 'حذف مدیر',
-                'export' => 'خروجی گرفتن',
-            ]
+    'sliderGroups' => [
+        'home' => [
+            [
+                'group' => 'main_sliders',
+                'name' => 'اسلایدر اصلی',
+                'width' => 1780,
+                'height' => 890,
+                'count' => 5,
+                'size' => '890 * 1780',
+                'images' => [
+                    $default_images_path . 'banner-1.jpg',
+                    $default_images_path . 'banner-2.jpg',
+                    $default_images_path . 'banner-3.jpg',
+                    $default_images_path . 'banner-11.jpg',
+                    $default_images_path . 'banner-12.jpg',
+                ],
+            ],
+            [
+                'group' => 'coworker_sliders',
+                'name' => 'اسلایدر لوگو همکاران',
+                'width' => 100,
+                'height' => 100,
+                'count' => 6,
+                'size' => '100 * 100',
+                'images' => [
+                    $default_images_path . 'brand1-1.png',
+                    $default_images_path . 'brand1-2.png',
+                    $default_images_path . 'brand1-3.png',
+                    $default_images_path . 'brand1-4.png',
+                    $default_images_path . 'brand1-5.png',
+                    $default_images_path . 'brand1-6.png',
+                ],
+            ],
+            [
+                'group' => 'sevices_sliders',
+                'name' => 'اسلایدر خدمات',
+                'width' => 60,
+                'height' => 60,
+                'count' => 5,
+                'size' => '60 * 60',
+                'images' => [
+                    $default_images_path . 'about-us-2.jpg',
+                    $default_images_path . 'badge.png',
+                ],
+            ],
         ],
-        'sessions' => [
-            'title' => 'مدیریت نشست های فعال',
-            'values' => [
-                'index' => 'لیست نشست های فعال',
-                'exit' => 'خروج دادن',
-                'blocked' => 'مسدود سازی',
-            ]
-        ],
-        'pulse' => [
-            'title' => 'سنجه‌های سیستمی',
-            'values' => [
-                'monitor' => 'نمایش وضعیت لحظه‌ای سیستم',
-            ]
-        ],
-        'activity-log' => [
-            'title' => 'فعالیت های اخیر',
-            'values' => [
-                'index' => 'لیست فعالیت ها',
-            ]
-        ],
-        'users' => [
-            'title' => 'مدیریت کاربران',
-            'values' => [
-                'index' => 'لیست کاربران',
-                'view' => 'مشاهده کاربر',
-                'create' => 'ایجاد کاربر',
-                'update' => 'ویرایش کاربر',
-                'delete' => 'حذف کاربر',
-                'export' => 'خروجی گرفتن',
-                'wallet' => 'مدیریت کیف پول',
-            ]
-        ],
-
         'posts' => [
-            'title' => 'مدیریت نوشته ها',
-            'values' => [
-                'index' => 'لیست نوشته ها',
-                'details' => 'جزئیات نوشته',
-                'create' => 'ایجاد نوشته',
-                'createAi' => 'ایجاد نوشته توسط هوش مصنویی',
-                'update' => 'ویرایش نوشته',
-                'delete' => 'حذف نوشته',
-                'category' => 'مدیریت دسته بندی ها',
-                'comments' => 'مدیریت دیدگاه ها',
-            ]
-        ],
-        'packages' => [
-            'title' => 'پکیج ها',
-            'values' => [
-                'index' => 'لیست پکیج ها',
-                'installed' => 'پکیج های نصب شده',
-            ]
-        ],
-
-        'products' => [
-            'title' => 'مدیریت محصولات',
-            'values' => [
-                'index' => 'لیست محصولات',
-                'create' => 'ایجاد محصول',
-                'update' => 'ویرایش محصول',
-                'details' => 'جزئیات محصول',
-                'delete' => 'حذف محصول',
-                'export' => 'خروجی گرفتن',
-                'category' => 'مدیریت دسته بندی ها',
-                'spectypes' => 'مدیریت نوع مشخصات',
-                'sizetypes' => 'مدیریت سایزبندی ها',
-                'stock-notify' => 'مدیریت لیست اطلاع از موجودی',
-                'brands' => 'مدیریت برندها',
-                'prices' => 'قیمت ها',
-                'pricesGroup' => 'تغییر گروهی قیمت',
-                'reviews' => 'مدیریت دیدگاه ها',
-                'comments' => 'مدیریت پرسش و پاسخ ها',
-            ]
-        ],
-        'warehouses' => [
-            'title' => 'مدیریت انبارها',
-            'values' => [
-                'index' => 'لیست انبارها',
-                'create' => 'ایجاد انبار',
-                'update' => 'ویرایش انبار',
-                'show' => 'نمایش انبار',
-                'delete' => 'حذف انبار',
-                'export' => 'خروجی گرفتن از انبار',
-                'movements' => 'تاریخچه انبار',
-                'movements_export' => 'خروجی گرفتن از تاریخچه انبار',
-            ]
+            [
+                'group' => 'main_sliders',
+                'name' => 'اسلایدر اصلی',
+                'width' => 1780,
+                'height' => 890,
+                'count' => 5,
+                'size' => '890 * 1780',
+                'images' => [
+                    $default_images_path . 'banner-1.jpg',
+                    $default_images_path . 'banner-2.jpg',
+                    $default_images_path . 'banner-3.jpg',
+                ],
+            ],
         ],
         'sellers' => [
-            'title' => 'مدیریت فروشندگان',
-            'values' => [
-                'index' => 'لیست فروشندگان',
-                'view' => 'مشاهده فروشنده',
-                'update' => 'ویرایش فروشنده',
-                'delete' => 'حذف فروشنده',
-                'export' => 'خروجی گرفتن',
-                'wallet' => 'مدیریت کیف پول',
-                'products' => 'لیست محصولات',
-                'orders' => 'لیست سفارشات',
-                'orders.export' => 'خروجی گرفتن سفارشات',
-            ]
+            [
+                'group' => 'fullscreen_slider',
+                'name' => 'اسلایدر تمام صفحه',
+                'width' => 1600,
+                'height' => 600,
+                'count' => 2,
+                'size' => '600 * 1800',
+                'images' => [
+                    $default_images_path . 'banner-section-blue.webp',
+                    $default_images_path . 'banner-13.jpg',
+                ],
+            ],
         ],
-
-        'request_deposit' => 'درخواستی واریز وجه',
-
-        'payments.transactions.seller_deposit' => 'لیست واریزی فروشندگان',
-
-        'discounts' => [
-            'title' => 'مدیریت تخفیف ها',
-            'values' => [
-                'index' => 'لیست تخفیف ها',
-                'create' => 'ایجاد تخفیف',
-                'update' => 'ویرایش تخفیف',
-                'delete' => 'حذف تخفیف',
-            ]
-        ],
-
-        'attributes' => [
-            'title' => 'مدیریت ویژگی ها',
-            'values' => [
-                'groups.index' => 'لیست گروه ویژگی ها',
-                'groups.show' => 'مشاهده گروه ویژگی',
-                'groups.create' => 'ایجاد گروه ویژگی',
-                'groups.update' => 'ویرایش گروه ویژگی',
-                'groups.delete' => 'حذف گروه ویژگی',
-
-                'index' => 'لیست ویژگی ها',
-                'create' => 'ایجاد ویژگی',
-                'update' => 'ویرایش ویژگی',
-                'delete' => 'حذف ویژگی',
-            ]
-        ],
-
-        'filters' => [
-            'title' => 'مدیریت فیلترها',
-            'values' => [
-                'index' => 'لیست فیلترها',
-                'create' => 'ایجاد فیلتر',
-                'update' => 'ویرایش فیلتر',
-                'delete' => 'حذف فیلتر',
-            ]
-        ],
-
-        'orders' => [
-            'title' => 'مدیریت سفارشات',
-            'values' => [
-                'index' => 'لیست سفارشات',
-                'create' => 'افزودن سفارش جدید',
-                'view' => 'مشاهده سفارش',
-                'update' => 'ویرایش سفارش',
-                'delete' => 'حذف سفارش',
-                'export' => 'خروجی گرفتن',
-            ]
-        ],
-
-        'returns' => [
-            'title' => 'مدیریت مرجوعی',
-            'values' => [
-                'index' => 'لیست مرجوعی‌ها',
-                'show' => 'مشاهده مرجوعی',
-                'approve' => 'تأیید مرجوعی',
-                'received' => 'ثبت دریافت کالا',
-                'complete' => 'تکمیل مرجوعی',
-                'reject' => 'رد مرجوعی',
-                'reasons' => 'مدیریت دلایل مرجوعی',
-                'reasons.store' => 'افزودن دلیل مرجوعی',
-                'reasons.destroy' => 'حذف دلیل مرجوعی',
-                'reasons.toggle' => 'تغییر وضعیت دلیل مرجوعی',
-            ]
-        ],
-
-        'carriers' => [
-            'title' => 'مدیریت حمل و نقل',
-            'values' => [
-                'provinces.index' => 'لیست استان ها',
-                'provinces.update' => 'ویرایش استان',
-                'provinces.delete' => 'حذف استان',
-                'provinces.create' => 'ایجاد استان',
-                'provinces.show' => 'مشاهده استان',
-                'cities.update' => 'ویرایش شهر',
-                'cities.delete' => 'حذف شهر',
-                'cities.create' => 'ایجاد شهر',
-            ]
-        ],
-
-        'tags' => [
-            'title' => 'مدیریت تگ ها',
-            'values' => [
-                'index' => 'لیست تگ ها',
-                'create' => 'ایجاد تگ',
-                'update' => 'ویرایش',
-                'show' => 'جزئیات',
-                'delete' => 'حذف تگ',
-            ]
-        ],
-
-        'sliders' => [
-            'title' => 'مدیریت اسلایدرها',
-            'values' => [
-                'index' => 'لیست اسلایدرها',
-                'create' => 'ایجاد اسلایدر',
-                'update' => 'ویرایش اسلایدر',
-                'delete' => 'حذف اسلایدر',
-            ]
-        ],
-
-        'banners' => [
-            'title' => 'مدیریت بنرها',
-            'values' => [
-                'index' => 'لیست بنرها',
-                'create' => 'ایجاد بنر',
-                'update' => 'ویرایش بنر',
-                'delete' => 'حذف بنر',
-            ]
-        ],
-
-        'links' => [
-            'title' => 'مدیریت لینک های فوتر',
-            'values' => [
-                'index' => 'لیست لینک ها',
-                'create' => 'ایجاد لینک',
-                'update' => 'ویرایش لینک',
-                'delete' => 'حذف لینک',
-                'groups' => 'مدیریت گروه ها'
-            ]
-        ],
-
-        'backups' => [
-            'title' => 'مدیریت بکاپ ها',
-            'values' => [
-                'index' => 'لیست بکاپ ها',
-                'create' => 'ایجاد بکاپ',
-                'download' => 'دانلود بکاپ',
-                'delete' => 'حذف بکاپ',
-            ]
-        ],
-
-        'apikeys' => [
-            'title' => 'مدیریت کلیدهای وب سرویس',
-            'values' => [
-                'index' => 'لیست کلیدهای وب سرویس',
-                'create' => 'ایجاد کلید وب سرویس',
-                'update' => 'ویرایش کلید وب سرویس',
-                'delete' => 'حذف کلید وب سرویس',
-            ]
-        ],
-
-        'pages' => [
-            'title' => 'مدیریت صفحات',
-            'values' => [
-                'index' => 'لیست صفحات',
-                'details' => 'جزئیات صفحه',
-                'create' => 'ایجاد صفحه',
-                'update' => 'ویرایش صفحه',
-                'delete' => 'حذف صفحه',
-            ]
-        ],
-        'forms' => [
-            'title' => 'مدیریت فرم ها',
-            'values' => [
-                'index' => 'لیست صفحات',
-                'create' => 'ایجاد صفحه',
-                'update' => 'ویرایش صفحه',
-                'submissions' => 'مشاهده پاسخ ها',
-                'preview' => 'پیشنمایش',
-                'delete' => 'حذف صفحه',
-            ]
-        ],
-
-        'roles' => [
-            'title' => 'مدیریت مقام ها',
-            'values' => [
-                'index' => 'لیست مقام ها',
-                'create' => 'ایجاد مقام',
-                'update' => 'ویرایش مقام',
-                'delete' => 'حذف مقام',
-            ]
-        ],
-
-        'statistics' => [
-            'title' => 'گزارشات',
-            'values' => [
-                'orders' => 'سفارشات',
-                'users' => 'کاربران',
-                'views' => 'بازدیدها',
-                'viewsList' => 'لیست بازدیدها',
-                'product' => 'آمارگیری فروش هر محصول',
-                'viewers' => 'بازدید کنندگان امروز',
-                'sms' => 'لاگ پیامک های ارسالی',
-            ]
-        ],
-
-        'themes' => [
-            'title' => 'مدیریت قالب ها',
-            'values' => [
-                'index' => 'لیست قالب ها',
-                'create' => 'افزودن قالب',
-                'update' => 'تغییر قالب',
-                'delete' => 'حذف قالب',
-                'settings' => 'تنظیمات قالب',
-                'widgets' => 'مدیریت صفحه اصلی'
-            ]
-        ],
-
-        'file-manager' => 'مدیریت فایل ها',
-
-
-
-        'filds' => [
-            'title' => 'فیلدهای اختصاصی',
-            'values' => [
-                'index' => 'لیست فیلد ها',
-                'create' => 'ایجاد فیلد',
-                'update' => 'ویرایش فیلد',
-                'delete' => 'حذف فیلد',
-            ]
-        ],
-
-        'redirects' => [
-            'title' => ' ریدایرکت',
-            'values' => [
-                'index' => 'لیست ریدایرکت ها',
-                'create' => 'ایجاد ریدایرکت',
-                'update' => 'ویرایش ریدایرکت',
-                'delete' => 'حذف ریدایرکت',
-            ]
-        ],
-
-        'tickets' => [
-            'title' => 'مدیریت تیکت ها',
-            'values' => [
-                'index' => 'لیست تیکت ها',
-                'show' => 'مشاهده تیکت',
-                'create' => 'ایجاد تیکت',
-                'update' => 'ویرایش تیکت',
-                'delete' => 'حذف تیکت',
-            ]
-        ],
-
-        'menus' => [
-            'title' => 'مدیریت منو ها',
-            'values' => [
-                'index' => 'لیست منو ها',
-                'create' => 'ایجاد منو',
-                'update' => 'ویرایش منو',
-                'delete' => 'حذف منو',
-            ]
-        ],
-
-        'payments' => [
-            'title' => 'مدیریت پرداخت',
-            'values' => [
-                'transactions.index' => 'لیست تراکنش ها',
-                'transactions.view' => 'مشاهده تراکنش',
-                'transactions.delete' => 'حذف تراکنش',
-                'currencies' => 'مدیریت ارزها',
-                'wallet-histories.index' => 'تاریخچه کیف پول'
-            ]
-        ],
-
-        'contacts' => [
-            'title' => 'مدیریت تماس با ما',
-            'values' => [
-                'index' => 'لیست تماس با ما',
-                'view' => 'مشاهده تماس با ما',
-                'delete' => 'حذف تماس با ما',
-            ]
-        ],
-
-        'notifications' => [
-            'title' => 'مدیریت اعلان ها',
-            'values' => [
-                'index' => 'لیست اعلان ها',
-                'create' => 'ایجاد اعلان',
-                'show' => 'مشاهده اعلان',
-                'update' => 'ویرایش اعلان',
-                'delete' => 'حذف اعلان',
-                'panel' => 'مشاهده اعلانات پنل',
-            ]
-        ],
-        'searches' => [
-            'title' => 'مدیریت جستجوها',
-            'values' => [
-                'index' => 'لیست جستجوها',
-                'delete' => 'حذف جستجوها',
-            ]
-        ],
-        'newsletters' => [
-            'title' => 'مدیریت خبرنامه ها',
-            'values' => [
-                'index' => 'لیست خبرنامه',
-                'show' => 'جزئیات خبرنامه',
-                'delete' => 'حذف خبرنامه',
-            ]
-        ],
-        'faqs' => [
-            'title' => 'مدیریت سوالات متداول',
-            'values' => [
-                'index' => 'لیست سوالات متداول',
-                'create' => 'ایجاد  سوالات متداول',
-                'update' => 'ویرایش  سوالات متداول',
-                'delete' => 'حذف سوالات متداول',
-            ]
-        ],
-
-        'imports' => [
-            'title' => 'مدیریت درون ریزی ها',
-            'values' => [
-                'posts' => 'درون ریزی مقالات',
-                'products' => 'درون ریزی محصولات',
-                'users' => 'درون ریزی کاربران',
-            ]
-        ],
-
-        'settings' => [
-            'title' => 'تنظیمات',
-            'values' => [
-                'information' => 'اطلاعات سایت',
-                'socials' => 'شبکه های اجتماعی',
-                'gateway' => 'درگاه های پرداخت',
-                'others' => 'تنظیمات دیگر',
-                'sms' => 'تنظیمات پیامک',
-                'floating-widget' => 'تنظیمات ویجت شناور',
-            ]
-        ],
-
-
     ],
 
-    'static_menus' => [
-        'posts' => [
-            'title' => 'وبلاگ'
+    'bannerGroups' => [
+        'home' => [
+            [
+                'group' => 'index_middle_banners',
+                'name' => 'بنر تکی',
+                'width' => 1300,
+                'height' => 300,
+                'count' => 1,
+                'size' => '300 * 1300',
+                'images' => [
+                    $default_images_path . 'banner-4.webp',
+                ],
+            ],
+            [
+                'group' => 'index_middle_2_banners',
+                'name' => 'بنر دوتایی',
+                'width' => 650,
+                'height' => 300,
+                'count' => 2,
+                'size' => '300 * 650',
+                'images' => [
+                    $default_images_path . 'banner-1.webp',
+                    $default_images_path . 'banner-2.webp',
+                ],
+            ],
+            [
+                'group' => 'index_middle_4_banners',
+                'name' => 'بنر چهارتایی',
+                'width' => 320,
+                'height' => 240,
+                'count' => 4,
+                'size' => '240 * 320',
+                'images' => [
+                    $default_images_path . 'banner-four-1.jpg',
+                    $default_images_path . 'banner-four-2.jpg',
+                    $default_images_path . 'banner-four-3.jpg',
+                    $default_images_path . 'banner-four-4.jpg',
+                ],
+            ],
+            [
+                'group' => 'index_highest_banner',
+                'name' => 'بنر تکی بالای هدر',
+                'width' => 1300,
+                'height' => 60,
+                'count' => 1,
+                'size' => '1352 * 60',
+                'images' => [
+                    $default_images_path . 'banner-3.webp',
+                ],
+            ],
         ],
-        'products' => [
-            'title' => 'محصولات',
+        'posts' => [
+            [
+                'group' => 'index_middle_4_banners',
+                'name' => 'بنر چهارتایی',
+                'width' => 320,
+                'height' => 240,
+                'count' => 4,
+                'size' => '240 * 320',
+                'images' => [
+                    $default_images_path . 'banner-four-1.jpg',
+                    $default_images_path . 'banner-four-2.jpg',
+                    $default_images_path . 'banner-four-3.jpg',
+                    $default_images_path . 'banner-four-4.jpg',
+                ],
+            ],
+        ],
+        'sellers'=>[]
+    ],
+
+    'bannerGroupsPlace' => [
+        [
+            'group' => 'index_banners_place1',
+            'name' => 'گروه اول',
+            'width' => 650,
+            'height' => 300,
+            'count' => 2,
+            'size' => '300 * 650',
+            'images' => [
+                $default_images_path . 'banner-1.webp',
+            ],
+        ],
+        [
+            'group' => 'index_banners_place2',
+            'name' => 'گروه دوم',
+            'width' => 320,
+            'height' => 240,
+            'count' => 4,
+            'size' => '240 * 320'
+        ],
+        [
+            'group' => 'index_banners_place3',
+            'name' => 'گروه سوم',
+            'width' => 650,
+            'height' => 300,
+            'count' => 2,
+            'size' => '300 * 650'
+        ],
+        [
+            'group' => 'index_banners_place4',
+            'name' => 'گروه چهارم',
+            'width' => 320,
+            'height' => 240,
+            'count' => 4,
+            'size' => '240 * 320'
+        ],
+    ],
+
+    'slider_sections' => [
+        [
+            'name' => 'صفحه اصلی',
+            'key' => 'home',
+        ],
+        [
+            'name' => 'صفحه اصلی مقالات',
+            'key' => 'posts',
+        ],
+        [
+            'name' => 'صفحه اصلی فروشندگان',
+            'key' => 'sellers',
+        ],
+    ],
+    'banner_sections' => [
+        [
+            'name' => 'صفحه اصلی',
+            'key' => 'home',
+        ],
+        [
+            'name' => 'صفحه اصلی مقالات',
+            'key' => 'posts',
+        ],
+    ],
+
+
+    'imageSizes' => [
+        'productCategoryImage' => '500 * 500',
+        'CategoryImage' => '500 * 500',
+        'postImage' => '300 * 400',
+        'productGalleryImage' => '720 * 1280',
+        'productImage' => '600 * 600',
+        'logo' => '36 * 128',
+        'icon' => '32 * 32',
+    ],
+
+    'linkGroups' => [
+        [
+            'name' => 'گروه اول',
+            'key' => 1,
+        ],
+        [
+            'name' => 'گروه دوم',
+            'key' => 2,
+        ],
+        [
+            'name' => 'گروه سوم',
+            'key' => 3,
+        ],
+    ],
+
+    'errors' => [
+        '404' => 'front::errors.404'
+    ],
+
+    'pages' => [
+        'login' => 'front::auth.login',
+        'register' => 'front::auth.register',
+        'forgot-password' => 'front::auth.forgot-password',
+        'login-with-code' => 'front::auth.login-with-code',
+        'one-time-login' => 'front::auth.one-time-login',
+    ],
+
+    'routes' => [
+        'verify' => 'front.verify.showVerify',
+        'change-password' => 'front.user.force-change-password',
+        'change-password-routes' => ['front.user.force-change-password', 'front.user.force-update-password'],
+    ],
+
+    'exceptVerifyCsrfToken' => [
+        'orders/payment/callback/*',
+        'wallet/payment/callback/*',
+    ],
+
+    'asset_path' => 'themes/Saniar/',
+    'mainfest_path' => 'themes/Saniar',
+    'demo' => [
+        'image' => 'image/logo.png',
+        'name' => 'سانیار',
+        'description' => 'قالب فروشگاه سانیار'
+    ],
+
+    'socials' => [
+        [
+            'name' => 'تلگرام',
+            'key' => 'social_telegram',
+            'icon' => 'bi bi-telegram',
+        ],
+        [
+            'name' => 'اینستاگرام',
+            'key' => 'social_instagram',
+            'icon' => 'bi bi-instagram',
+        ],
+        [
+            'name' => 'واتساپ',
+            'key' => 'social_whatsapp',
+            'icon' => 'bi bi-whatsapp',
+        ],
+    ],
+
+    'settings' => [
+        'fields' => [
+            [
+                'title' => 'نمایش نمودار قیمت محصول',
+                'key' => 'dt_show_price_change_chart',
+                'input-type' => 'select',
+                'class' => 'col-md-3 col-6',
+                'options' => [
+                    [
+                        'value' => 'yes',
+                        'title' => 'بله'
+                    ],
+                    [
+                        'value' => 'no',
+                        'title' => 'خیر'
+                    ]
+                ],
+                'attributes' => 'required'
+            ],
+            [
+                'title' => 'نمایش اشتراک گذاری محصول',
+                'key' => 'show_product_share_links',
+                'input-type' => 'select',
+                'class' => 'col-md-3 col-6',
+                'options' => [
+                    [
+                        'value' => '1',
+                        'title' => 'بله'
+                    ],
+                    [
+                        'value' => '0',
+                        'title' => 'خیر'
+                    ]
+                ],
+                'attributes' => 'required'
+            ],
+            [
+                'title' => 'متن توضیحات نظرات محصول',
+                'key' => 'dt_product_reviews_description',
+                'input-type' => 'inline-editor',
+                'class' => 'col-md-7',
+            ],
+            [
+                'input-type' => 'linebreak',
+                'html' => '<hr>'
+            ],
+            [
+                'title' => 'نوع پاپ آپ صفحه اصلی',
+                'key' => 'dt_index_popup_type',
+                'input-type' => 'select',
+                'class' => 'col-md-3 col-6',
+                'options' => [
+                    [
+                        'value' => 'none',
+                        'title' => 'هیچکدام'
+                    ],
+                    [
+                        'value' => 'image',
+                        'title' => 'تصویر'
+                    ],
+                    [
+                        'value' => 'text',
+                        'title' => 'متن'
+                    ]
+                ],
+                'attributes' => 'required'
+            ],
+            [
+                'title' => 'تصویر پاپ آپ',
+                'key' => 'dt_index_popup_image',
+                'input-type' => 'file',
+                'class' => 'col-md-3 col-6',
+            ],
+            [
+                'title' => 'تصویر پاپ آپ مخصوص موبایل',
+                'key' => 'dt_index_popup_image_mobile',
+                'input-type' => 'file',
+                'class' => 'col-md-3 col-6',
+            ],
+            [
+                'title' => 'لینک تصویر',
+                'key' => 'dt_index_popup_link',
+                'input-type' => 'input',
+                'type' => 'text',
+                'class' => 'col-md-3 col-6',
+            ],
+            [
+                'title' => 'متن پاپ آپ',
+                'key' => 'dt_index_popup_text',
+                'input-type' => 'inline-editor',
+                'class' => 'col-md-7',
+            ],
+            [
+                'input-type' => 'linebreak',
+                'html' => '<hr>'
+            ],
+            [
+                'title' => 'نمایش فرم تماس در صفحه تماس باما',
+                'key' => 'dt_show_form_in_contact',
+                'input-type' => 'select',
+                'class' => 'col-md-3 col-6',
+                'options' => [
+                    [
+                        'value' => 'yes',
+                        'title' => 'بله'
+                    ],
+                    [
+                        'value' => 'no',
+                        'title' => 'خیر'
+                    ]
+                ],
+                'attributes' => 'required'
+            ],
+            [
+                'title' => 'نمایش نقشه در صفحه تماس باما',
+                'key' => 'dt_show_map_in_contact',
+                'input-type' => 'select',
+                'class' => 'col-md-3 col-6',
+                'options' => [
+                    [
+                        'value' => 'yes',
+                        'title' => 'بله'
+                    ],
+                    [
+                        'value' => 'no',
+                        'title' => 'خیر'
+                    ]
+                ],
+                'attributes' => 'required'
+            ],
+            [
+                'title' => 'متن توضیحات صفحه تماس باما بالای صفحه',
+                'key' => 'dt_show_contact_top_description',
+                'input-type' => 'inline-editor',
+                'class' => 'col-md-12',
+            ],
+            [
+                'title' => 'نمایش متن توضیحات صفحه تماس باما قسمت پایین',
+                'key' => 'dt_show_contact_bottom_description',
+                'input-type' => 'select',
+                'class' => 'col-md-3 col-6',
+                'options' => [
+                    [
+                        'value' => 'yes',
+                        'title' => 'بله'
+                    ],
+                    [
+                        'value' => 'no',
+                        'title' => 'خیر'
+                    ]
+                ],
+                'attributes' => 'required'
+            ],
+            [
+                'title' => 'متن توضیحات صفحه تماس باما قسمت پایین',
+                'key' => 'dt_contact_bottom_description',
+                'input-type' => 'inline-editor',
+                'class' => 'col-md-12',
+            ],
+        ],
+        'rules' => [
+            'dt_show_price_change_chart' => 'required|in:yes,no'
         ]
     ],
 
-    'supported_gateways' => [
-        'behpardakht' => 'به پرداخت ملت',
-        'payir' => 'pay.ir',
-        'zarinpal' => 'زرین پال',
-        'toman' => 'تومن',
-        'payping' => 'پی پینگ',
-        'irankish' => 'ایران کیش',
-        'saman' => 'سامان',
-        'sepehr' => 'بانک صادرات',
-        'idpay' => 'idpay',
-        'sadad' => 'بانک ملی',
-        'zibal' => 'زیبال',
+    'links' => [
+        public_path('themes/Saniar') => base_path('themes/Saniar/src/resources/assets'),
     ],
 
+    'home-widgets' => require __DIR__ . '/../config/HomeWidgets.php',
+    'posts-widgets' => require __DIR__ . '/../config/PostsWidgets.php',
 
-    'non_language_options' => [
-        'multi_language_enabled',
-        'debugbar_enabled',
-        'user_register_gift_credit',
+    'cache-forget' => [
+        'categories' => [
+            'front.productcats',
+            'front.index.categories',
+            'front.category.map'
+        ],
+        'products' => [
+            'front.user_layout.random_products'
+        ],
+        'posts' => [
+            'front.blog.latest_posts'
+        ],
+        'sliders' => [],
+        'banners' => []
     ]
 ];
