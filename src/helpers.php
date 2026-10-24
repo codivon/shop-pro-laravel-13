@@ -993,3 +993,82 @@ function Get_All_Tags($tag_name)
     }
     return \App\Models\Tag::whereIn('id',$ids)->get();
 }
+
+/* ============================================================
+ * فاز D (۵۳) — محاسبات مالی سبد در تم سانیار
+ * باگ لاتنت میزبان: در داده‌های واقعی ستون prices.regular_price برابر NULL است
+ * (فاز ۳۰)؛ متدهای Cart::priceWithoutDiscount/totalDiscount با NULL رفتار خراب دارند:
+ *   totalDiscount منفی می‌شود (0 − discountPrice) → finalPrice دوبرابر!
+ * این توابع در تم سانیار محاسبه درست را جایگزین می‌کنند (کد میزبان دست‌نخورده).
+ * ============================================================ */
+
+if (!function_exists('saniar_cart_price_without_discount')) {
+    /**
+     * جمع قیمت اصلی اقلام سبد (ستون price) — جایگزین Cart::priceWithoutDiscount
+     */
+    function saniar_cart_price_without_discount($cart)
+    {
+        $price = 0;
+        if (!$cart) {
+            return 0;
+        }
+        foreach ($cart->products as $product) {
+            $product_price = $product->prices()->find($product->pivot->price_id);
+            if ($product_price) {
+                $price += $product_price->price * $product->pivot->quantity;
+            }
+        }
+
+        return intval($price);
+    }
+}
+
+if (!function_exists('saniar_cart_discount')) {
+    /**
+     * تخفیف واقعی اقلام (price − discount_price وقتی تخفیف فعال است) + کد تخفیف
+     * هرگز منفی نمی‌شود — جایگزین Cart::totalDiscount برای این تم
+     */
+    function saniar_cart_discount($cart)
+    {
+        $discount = 0;
+        if (!$cart) {
+            return 0;
+        }
+        foreach ($cart->products as $product) {
+            $product_price = $product->prices()->find($product->pivot->price_id);
+            if ($product_price && $product_price->hasDiscount()) {
+                $rowDiscount = ($product_price->price - $product_price->discountPrice()) * $product->pivot->quantity;
+                if ($rowDiscount > 0) {
+                    $discount += $rowDiscount;
+                }
+            }
+        }
+
+        $codeDiscount = $cart->discountCodeTotal();
+        if ($codeDiscount > 0) {
+            $discount += $codeDiscount;
+        }
+
+        return intval($discount);
+    }
+}
+
+if (!function_exists('saniar_cart_final_price')) {
+    /**
+     * مبلغ قابل پرداخت بدون هزینه ارسال (Σ قیمت فروش − کد تخفیف) — برای رندر اولیه سایدبار
+     */
+    function saniar_cart_final_price($cart)
+    {
+        if (!$cart) {
+            return 0;
+        }
+        $payable = $cart->discountPrice();
+
+        $codeDiscount = $cart->discountCodeTotal();
+        if ($codeDiscount > 0) {
+            $payable -= $codeDiscount;
+        }
+
+        return intval(max(0, $payable));
+    }
+}

@@ -512,7 +512,9 @@ class  MainController extends Controller
             $group['selected_carrier'] = $selectedCarrier;
         }
 
-        $discount = $cart->totalDiscount();
+        // فاز D (۵۳): تخفیف با helper سانیار — با داده real (regular_price=NULL)
+        // متد میزبان totalDiscount منفی می‌شد و finalPrice را دوبرابر می‌کرد
+        $discount = saniar_cart_discount($cart);
         $finalPrice = $subtotal - $discount + $totalShippingCost;
 
         $AllDeliveryDates = [];

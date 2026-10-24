@@ -270,10 +270,16 @@ class OrderController extends Controller
         $gateway = Gateway::where('key', $request->gateway)->first();
         $data = $request->validated();
 
-        $discountAmount = $cart->totalDiscount();
+        // فاز D (۵۳): تخفیف با helper سانیار — متد میزبان با regular_price=NULL
+        // مقدار منفی برمی‌گرداند و دیتابیس (1264) رد می‌کرد
+        $discountAmount = saniar_cart_discount($cart); // برای ستون نمایشی: تخفیف کالایی + کوپن
 
-        // محاسبه قیمت نهایی: مجموع قیمت نهایی فیزیکی + دانلودی + هزینه ارسال - تخفیف کلی
-        $finalPrice = $physicalTotal + $downloadTotalPrice + $totalShippingCost - $discountAmount;
+        // نکته: physicalTotal/downloadTotal از قبل با discount_price هستند (تخفیف کالایی اعمال شده)؛
+        // پس در فرمول قیمت فقط کوپن کسر می‌شود تا تخفیف کالایی دوبار کسر نشود.
+        $couponDiscount = max(0, $cart->discountCodeTotal());
+
+        // محاسبه قیمت نهایی: مجموع قیمت نهایی فیزیکی + دانلودی + هزینه ارسال - تخفیف کوپن
+        $finalPrice = $physicalTotal + $downloadTotalPrice + $totalShippingCost - $couponDiscount;
 
         $data['shipping_cost'] = $totalShippingCost;
         $data['price'] = $finalPrice;
@@ -1419,9 +1425,10 @@ class OrderController extends Controller
             }*/
 
             // به‌روزرسانی وضعیت سفارش
+            // نکته فاز D (۵۳): ستون paid_at در جدول orders وجود ندارد (مایگریشن 2020_04_07)
+            // و نوشتن آن باعث Unknown column → rollback → لغو سفارش در هر پرداخت واقعی می‌شد.
             $order->update([
                 'status' => 'paid',
-                'paid_at' => now(),
             ]);
 
             DB::commit();

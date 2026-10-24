@@ -1,0 +1,61 @@
+/* ============================================================
+   کامپوننت‌های مشترک صفحات سانیار (toast، حالت‌های لودینگ)
+   بارگذاری سراسری در layouts/master.blade.php
+   ============================================================ */
+
+/* --- Toast سبک سانیار (جایگزین inline style؛ استفاده در cart.js/checkout.js) --- */
+.saniar-toast {
+    position: fixed;
+    top: 84px;
+    left: 18px;
+    z-index: 2000;
+    max-width: 340px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    color: #fff;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity .25s ease, transform .25s ease;
+    pointer-events: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .14);
+}
+
+.saniar-toast.saniar-toast-show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.saniar-toast.saniar-toast-success {
+    background: #189D0E;
+}
+
+.saniar-toast.saniar-toast-error {
+    background: #d02304;
+}
+
+@media (max-width: 576px) {
+    .saniar-toast {
+        left: 12px;
+        right: 12px;
+        max-width: none;
+        top: 72px;
+    }
+}
+
+/* --- پوشش بارگذاری برای ناحیه (blockUI سبک) --- */
+.saniar-loading {
+    position: relative;
+}
+
+.saniar-loading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, .6);
+    border-radius: inherit;
+    z-index: 5;
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Ccircle cx='22' cy='22' r='18' fill='none' stroke='%23275fe0' stroke-width='4' stroke-linecap='round' stroke-dasharray='85 60'/%3E%3CanimateTransform attributeName='transform' type='rotate' from='0 22 22' to='360 22 22' dur='0.9s' repeatCount='indefinite'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+}

@@ -63,6 +63,8 @@
     <link rel="stylesheet" href="{{ theme_asset('css/widgets.css') }}">
     {{-- سانیار فاز C: استایل‌های جستجو (دراپ‌داون زنده + صفحه نتایج) --}}
     <link rel="stylesheet" href="{{ theme_asset('css/search.css') }}">
+    {{-- سانیار فاز D: کامپوننت‌های مشترک (toast، حالت لودینگ) --}}
+    <link rel="stylesheet" href="{{ theme_asset('css/components.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('plugin/go-to-top/style.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('plugin/rasta-contact/style.css') }}">
 
@@ -179,7 +181,7 @@
                             </button>
                             @include('front::partials.mobile-menu.menu')
                         </div>
-                        <a href="{{ route('front.index') }}">
+                        <a href="{{ route('front.index') }}" aria-label="صفحه اصلی — سانیار">
                             <div class="logo">
                                 <img src="{{ option('info_logo', theme_asset('image/logo.png')) }}"
                                      alt="{{ option('info_site_title', config('front.demo.name')) }}" class="img-fluid">
