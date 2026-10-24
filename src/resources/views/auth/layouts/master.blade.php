@@ -21,7 +21,7 @@
 
     {!! option('info_header_codes', '') !!}
 </head>
-<body>
+<body class="bg-auth">
     <div class="content vh-100">
         <div class="container-fluid h-100">
             <div class="auth h-100 d-flex align-items-center">
@@ -42,5 +42,13 @@
     <script src="{{ theme_asset('js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ theme_asset('plugin/waves/waves.min.js') }}"></script>
     @stack('scripts')
+
+    {{-- توست ساده برای پیام‌های سشن (مثل «رمز عبور با موفقیت تغییر کرد») — فاز E --}}
+    @if(session('toast-success'))
+        <div class="auth-toast auth-toast-success" role="status">{{ session('toast-success') }}</div>
+    @endif
+    @if(session('toast-error'))
+        <div class="auth-toast auth-toast-error" role="alert">{{ session('toast-error') }}</div>
+    @endif
 </body>
 </html>

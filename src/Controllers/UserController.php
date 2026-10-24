@@ -229,7 +229,8 @@ class UserController extends Controller
             }
 
             session()->forget('UserWelcome');
-            return view('front::auth.welcome');
+            // فاز E سانیار — پاس کاربر به ویو برای نمایش شماره موبایل (سشن فراموش شده است)
+            return view('front::auth.welcome', compact('user'));
         }else{
             return redirect('/');
         }
