@@ -41,6 +41,13 @@ class WalletSellerController extends Controller
 
     public function show(WalletHistory $wallet)
     {
+        // سانیار فاز I: اسکوپ امنیتی — تاریخچه باید متعلق به کیف پول همین فروشنده باشد
+        // (نسخهٔ WeblakShop بدون بررسی است — هر فروشنده‌ای تاریخچهٔ دیگری را می‌دید)
+        $sellerId = Auth::guard('seller')->id();
+        if (!$wallet->wallet || (int)$wallet->wallet->seller_id !== (int)$sellerId) {
+            abort(404);
+        }
+
         return view('front::sellers.panel.wallet.show')->with('history', $wallet);
     }
 

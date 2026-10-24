@@ -188,6 +188,13 @@ class SellerController extends Controller
 
     public function login_check(Request $request)
     {
+        // سانیار فاز I: اعتبارسنجی پیش از getLoginField — نسخهٔ اصلی با درخواستِ
+        // بدون فیلد username، TypeError (۵۰۰) می‌داد (باگ لاتنت WeblakShop)
+        $request->validate([
+            'username' => 'required',
+            'password' => 'required',
+        ], ['username.required' => 'لطفا این قسمت را خالی نگذارید']);
+
         $loginField = $this->getLoginField($request->username);
 
         $rules = [

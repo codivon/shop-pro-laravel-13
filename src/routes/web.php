@@ -369,7 +369,6 @@ Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
 
         // ========== کیف پول و کمیسیون ==========
         Route::get('commission', [WalletSellerController::class, 'commission'])->name('commission');
-        Route::get('/commission-guide', [WalletSellerController::class, 'showCommissionRates'])->name('seller.commission.guide');
 
         Route::prefix('wallet')->name('wallet.')->group(function () {
             Route::get('/', [WalletSellerController::class, 'index'])->name('index');
@@ -411,19 +410,21 @@ Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
             Route::post('api/shippings-status', [OrderSellerController::class, 'shippingsStatus'])->name('shippings-status');
             Route::post('{order}/shipping-status', [OrderSellerController::class, 'shipping_status'])->name('shipping-status');
             Route::get('{order}/print', [OrderSellerController::class, 'print'])->name('print');
-            Route::delete('api/multipleDestroy', [OrderSellerController::class, 'multipleDestroy'])->name('multipleDestroy');
+            // سانیار فاز I: برچسب تک‌مرسوله (معادل ادمین — نمای سمت تم)
+            Route::get('{order}/shipping-form', [OrderSellerController::class, 'shippingForm'])->name('shipping-form');
+            // سانیار فاز I: ثبت کد رهگیری seller-friendly (معادل ادمین که پشت گارد Admin است)
+            Route::post('{order}/tracking-code', [OrderSellerController::class, 'set_tracking_code'])->name('tracking-code');
+            // سانیار فاز I: روت مردهٔ multipleDestroy حذف شد (متدی در کنترلر وجود ندارد — باگ لاتنت WeblakShop)
             Route::get('not-completed', [OrderSellerController::class, 'notCompleted'])->name('notCompleted');
             Route::get('api/printAllShippingForms', [OrderSellerController::class, 'printAllShippingForms'])->name('printAllShippingForms');
             Route::get('api/printAll', [OrderSellerController::class, 'printAll'])->name('printAll');
-            Route::get('api/printAllShippingForms',[OrderSellerController::class, 'printAllShippingForms'])->name('printAllShippingForms');
             Route::get('api/printAllShippingFormsMin',[OrderSellerController::class, 'printAllShippingFormsMin'])->name('printAllShippingFormsMin');
 
             Route::get('export/create', [OrderSellerController::class, 'export'])->name('export');
 
             // Resource routes
             Route::get('{order}', [OrderSellerController::class, 'show'])->name('show');
-            Route::put('{order}', [OrderSellerController::class, 'update'])->name('update');
-            Route::delete('{order}', [OrderSellerController::class, 'destroy'])->name('destroy');
+            // سانیار فاز I: روت‌های مردهٔ update/destroy حذف شدند (متد متناظر در کنترلر وجود ندارد)
         });
 
         // ========== روش‌های ارسال ==========
