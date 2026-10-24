@@ -247,11 +247,13 @@ class UserController extends Controller
     }
     public function update_profile(Request $request)
     {
+        // فاز F سانیار — کاربران ثبت‌نام‌شده با موبایل اغلب ایمیل/کدملی خالی دارند؛
+        // ConvertEmptyStringsToNull مقدار '' را null می‌کند و بدون nullable قانون string روی null شکست می‌خورد (باگ لاتنت WeblakShop)
         $this->validate($request, [
             'first_name'   => 'required|string',
             'last_name'    => 'required|string',
-            'email'        => 'string|email|max:191|unique:users,email,' . auth()->user()->id,
-            'national_code'=> 'string|digits:10|max:191|unique:users,national_code,' . auth()->user()->id . '|nullable',
+            'email'        => 'nullable|string|email|max:191|unique:users,email,' . auth()->user()->id,
+            'national_code'=> 'nullable|string|digits:10|max:191|unique:users,national_code,' . auth()->user()->id,
         ]);
         $newsletter=0;
         $birth_date=auth()->user()->birth_date;

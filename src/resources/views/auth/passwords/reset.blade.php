@@ -10,11 +10,10 @@
             </a>
         </div>
 
-        {{-- TODO فاز F: پس از ساخت صفحه پروفایل، data-stay حذف و data-redirect="{{ route('front.user.profile') }}" فعال شود --}}
         <form id="reset-form" method="POST"
               action="{{ route('front.user.password.update') }}"
               data-ajax
-              data-stay
+              data-redirect="{{ route('front.user.profile') }}?password=changed"
               data-success-message="رمز عبور شما با موفقیت تغییر کرد.">
             @csrf
             @method('PUT')

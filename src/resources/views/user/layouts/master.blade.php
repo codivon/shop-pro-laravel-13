@@ -3,14 +3,19 @@
 
 @php
     $account_menu = [
-        ['route' => 'front.user.profile', 'active' => 'profile', 'icon' => 'bi-person', 'label' => 'پروفایل'],
-        ['route' => 'front.orders.index', 'active' => 'orders', 'icon' => 'bi-cart-check', 'label' => 'همه سفارش‌ها'],
-        ['route' => 'front.favorites.index', 'active' => 'favorites', 'icon' => 'bi-heart', 'label' => 'علاقه‌مندی‌ها'],
+        ['route' => 'front.user.profile', 'active' => 'profile', 'icon' => 'bi-house-door', 'label' => 'پروفایل'],
+        ['route' => 'front.user.profile.edit', 'active' => 'profileEdit', 'icon' => 'bi-person-gear', 'label' => 'ویرایش پروفایل'],
+        ['route' => 'front.orders.index', 'active' => 'orders', 'icon' => 'bi-cart-check', 'label' => 'همه سفارش‌ها', 'badge' => $user->orders()->count()],
+        ['route' => 'front.returns.index', 'active' => 'returns', 'icon' => 'bi-arrow-return-left', 'label' => 'مرجوعی‌های من'],
         ['route' => 'front.wallet.index', 'active' => 'wallet', 'icon' => 'bi-wallet2', 'label' => 'کیف پول'],
+        ['route' => 'front.favorites.index', 'active' => 'favorites', 'icon' => 'bi-heart', 'label' => 'علاقه‌مندی‌ها'],
         ['route' => 'front.addresses.index', 'active' => 'addresses', 'icon' => 'bi-pin-map', 'label' => 'آدرس‌های من'],
-        ['route' => 'front.notifications.index', 'active' => 'notifications', 'icon' => 'bi-bell', 'label' => 'پیام‌ها و اطلاعیه‌ها'],
+        ['route' => 'front.user.user-history', 'active' => 'user-history', 'icon' => 'bi-clock-history', 'label' => 'بازدیدهای اخیر'],
+        ['route' => 'front.notifications.index', 'active' => 'notifications', 'icon' => 'bi-bell', 'label' => 'اطلاعیه‌ها'],
+        ['route' => 'front.messages.index', 'active' => 'messages', 'icon' => 'bi-envelope-open', 'label' => 'پیام‌های دریافتی'],
         ['route' => 'front.comments.index', 'active' => 'comments', 'icon' => 'bi-chat-dots', 'label' => 'نظرات من'],
         ['route' => 'front.tickets.index', 'active' => 'tickets', 'icon' => 'bi-life-preserver', 'label' => 'درخواست پشتیبانی'],
+        ['route' => 'front.user.referrals.index', 'active' => 'referrals', 'icon' => 'bi-people', 'label' => 'معرفی به دوستان'],
     ];
 @endphp
 
@@ -97,6 +102,9 @@
                                                            class="nav-link d-flex align-items-center py-2 px-2 rounded-3 {{ $is_active ? 'main-color-one-bg text-white' : 'text-dark' }}">
                                                             <i class="bi {{ $item['icon'] }} me-2 {{ $is_active ? 'text-white' : 'main-color-one-color' }}"></i>
                                                             <span class="font-14">{{ $item['label'] }}</span>
+                                                            @if(!empty($item['badge']) && $item['badge'] > 0)
+                                                                <span class="badge rounded-pill badge-spn me-auto {{ $is_active ? 'text-white' : '' }}">{{ $item['badge'] }}</span>
+                                                            @endif
                                                         </a>
                                                     </li>
                                                 @endforeach

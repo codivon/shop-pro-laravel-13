@@ -389,6 +389,34 @@
 
     {!! option('info_scripts', '') !!}
 
+    {{-- توست‌های فلش سشن (فاز F — کیف پول/برداشت و سایر جریان‌های سروری) --}}
+    @if(session('toast-success') || session('toast-error'))
+        <script>
+            (function () {
+                function show(msg, type) {
+                    var $t = jQuery('#saniar-toast');
+                    if (!$t.length) {
+                        $t = jQuery('<div id="saniar-toast" class="saniar-toast"></div>').appendTo('body');
+                    }
+                    $t.text(msg)
+                        .removeClass('saniar-toast-error saniar-toast-success')
+                        .addClass(type === 'error' ? 'saniar-toast-error' : 'saniar-toast-success')
+                        .addClass('saniar-toast-show');
+                    setTimeout(function () { $t.removeClass('saniar-toast-show'); }, 4000);
+                }
+                jQuery(function () {
+                    @if(session('toast-success'))
+                        show(@json(session('toast-success')), 'success');
+                    @endif
+                    @if(session('toast-error'))
+                        show(@json(session('toast-error')), 'error');
+                    @endif
+                });
+            })();
+        </script>
+        @php session()->forget(['toast-success', 'toast-error']); @endphp
+    @endif
+
     @stack('scripts')
 </body>
 

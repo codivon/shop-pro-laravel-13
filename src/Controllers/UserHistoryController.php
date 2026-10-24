@@ -28,7 +28,9 @@ class UserHistoryController extends Controller
 
     public function destroy(Request $request)
     {
-        Viewer::where(['user_id'=>auth()->user()->id,'page_path'=>'products','product_path'=>$request->slug])->Update(['status'=>'0']);
+        // فاز F سانیار — روت محصول /product/{slug} است؛ میدلور Viewer مقدار 'product' (مفرد) ذخیره می‌کند.
+        // در WeblakShop/Mیزبان با 'products' (جمع) فیلتر می‌شود → حذف از بازدیدهای اخیر هرگز اعمال نمی‌شد (باگ لاتنت).
+        Viewer::where(['user_id'=>auth()->user()->id,'page_path'=>'product','product_path'=>$request->slug])->Update(['status'=>'0']);
 
         return redirect()->route('front.user.user-history');
     }
