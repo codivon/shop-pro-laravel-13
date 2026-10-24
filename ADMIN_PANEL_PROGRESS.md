@@ -2199,3 +2199,33 @@ A=۴۹ اسکلت ✓ | B=۵۰ تکمیل ویجت‌های خانه ✓ | C=۵�
 ۶ پست + ۴ تگ + پیوت‌ها + ۵ کامنت + لایک‌های پست + ۲ صفحهٔ داینامیک + پیام تماس + اطلاع‌رسانی‌های وابسته + ادمین تست + ۱۲ فایل sitemap تولیدی — همه حذف شد؛ posts=0, tags=0, pages=0, contacts=0, admins=0, comments=0, postLikes=0؛ products=5 (دموی اصلی), orders=0؛ CURRENT_THEME → WeblakShop؛ خانه ۲۰۰.
 
 **کامیت:** تم → theme-saniar (eec5ac2d) | میزبان (فقط این فایل) → docs/project-analysis | **پایان نقشهٔ راه قالب سانیار (فازهای A تا K کامل شد) — گام بعدی پیشنهادی: ادغام theme-saniar در شاخهٔ اصلی + فعال‌سازی تدریجی تم در محیط staging + تست رگرسیون کامل با CURRENT_THEME=Saniar روی مجموعهٔ ۲۳۶ تست**
+
+## Phase 63 — ادغام theme-saniar در شاخهٔ اصلی + رگرسیون کامل ۲۳۶تایی با CURRENT_THEME=Saniar
+
+**تاریخ:** 2026-10-24 | **برنچ میزبان:** docs/project-analysis | **تم (مخزن مستقل themes/Saniar):** کامیت ادغام d9054ca1 + رفع‌ها 8cd755fe (هر دو برنچ master و theme-saniar)
+
+### ۱) ادغام theme-saniar در شاخهٔ اصلی (بدون force push)
+- برنچ پیش‌فرض مخزن گیت‌هاب (`master`) هنوز اسنپ‌شات قدیمی اپ کامل بود (adaccbcd) و با theme-saniar واگرا بود (۲۶۹ در برابر ۱۱ کامیت) → پوش مستقیم رد می‌شد و force پوش ممنوع.
+- راه‌حل: **کامیت ادغام واقعی دوعوالد d9054ca1** — والد اول adaccbcd (master قبلی)، والد دوم eec5ac2d (فاز K)؛ درخت نهایی دقیقاً = درخت theme-saniar (۱۷٬۸۵۴ فایلِ فقط-master حذف؛ ۵ تداخل add/add روی .gitignore/config/general.php/package.json/phpunit.xml/webpack.mix.js با theirs حل شد).
+- نتیجه: پوش **fast-forward** (`adaccbcd..d9054ca1`) — تاریخچهٔ هر دو خط حفظ شد و اکنون شاخهٔ اصلی مخزن = بستهٔ مستقل تم سانیار.
+- همگن‌سازی: برنچ theme-saniar هم با `master:theme-saniar` به 8cd755fe رسانده شد تا هر دو برنچ یکسان بمانند.
+
+### ۲) رگرسیون کامل با CURRENT_THEME=Saniar — هدف فاز: کشف رگرسیون‌های پورت
+اجرا: `CURRENT_THEME=Saniar php vendor/bin/phpunit …` (dotenv حالت immutable دارد → env خط فرمان بر .env غلبه می‌کند؛ `config('general.current_theme')` از env می‌خواند).
+
+**اولین اجرا: ۲ خطا از ۲۳۶** — هر دو ریشه‌یابی و رفع شد:
+
+1. **🔒 رگرسیون امنیتی واقعی — گاردهای فاز ۴۴ میزبان در پورت سانیار جامان بود** (کشف با SecuritySettingsTest::customer_login_honeypot_traps_ip): بلوک ربات‌گیر (هانی‌پات + تلهٔ زمان + کپچای ورود مشتری) در `Check_Mobile_Email` سانیار وجود نداشت و قفل بروت‌فورس `CheckPassword` هم نبود → پورت کامل: ۳ use (BotDetector/CaptchaService/SecuritySettings) + گارد سه‌گانه در Check_Mobile_Email + سه نقطهٔ RateLimiter در CheckPassword (بررسی اولیه / پاک‌سازی پس از ورود موفق / ثبت تلاش ناموفق). فرم ورود سانیار فیلدهای هانی‌پات را داشت ولی هیچ‌کس آن‌ها را اعتبارسنجی نمی‌کرد!
+2. **CheckoutTest::order_summary_breaks_down_prices_correctly** (۴۰۰٬۰۰۰ در برابر ۳۶۰٬۰۰۰): سانیار در فاز D «دوبار‌حسابی تخفیف کالایی» را که خود تست با ⚠️ مستند کرده بود اصلاح کرده (totals از قبل با discount_price هستند؛ فقط کوپن کسر می‌شود؛ `discount_amount` زیر هر دو تم یکسان = ۴۰٬۰۰۰) → تست میزبان **هوشمند به تم** شد (WeblakShop=۳۶۰٬۰۰۰ رفتار فعلی سرور / Saniar=۴۰۰٬۰۰۰ اصلاح‌شده) و زیر هر دو تم سبز است.
+3. **OrderTest::order_history_shows_own_orders**: نمای سانیار شماره سفارش را بدون `#` رندر می‌کرد → `#{{ $order->id }}` مطابق قرارداد پلتفرم («سفارش #۱۲»).
+
+**باگ لاتنت مجموعهٔ تست تم** (`SaniarContentPagesTest::test_article_show_renders_seo_and_schema`): تست به دیتای دموی حذف‌شدهٔ فاز ۶۲ وابسته بود — سایدبار «آخرین مطالب» پست جاری را کنار می‌گذارد (`where('id','!=',…)`) و بلوک «هشتگ‌های داغ» پشت `@if($hotTags->isNotEmpty())` است؛ با posts=0/tags=0 دو رشته هرگز رندر نمی‌شدند → تست خودکفا شد (پست دوم + تگ اختصاصی داخل تراکنش تست).
+
+### نتیجهٔ نهایی رگرسیون (همه سبز)
+- فاز ۱ (Unit+AdminPanelSmoke+Auth+Cart+Catalog+Checkout+Extra): **۱۳۴ ✓ / ۳ skipped (۳۶۴ اظهار)** — دقیقاً برابر خط پایهٔ WeblakShop
+- فاز ۲ (Security+Order+Payment+Performance): **۱۰۲ ✓ (۳۳۷ اظهار)** — دقیقاً برابر خط پایه
+- مجموعهٔ اختصاصی تم (`phpunit -c themes/Saniar/phpunit.xml`): **۲۴ ✓ (۹۵ اظهار)**
+- تک‌تست چک‌اوت زیر WeblakShop (پیش‌فرض) هم مجدداً تأیید شد — سوییچ تم اثری بر خط پایه ندارد.
+- پاکسازی: ۲ فایل sitemap تولیدی تست‌ها حذف شد؛ CURRENT_THEME → WeblakShop.
+
+**کامیت:** تم → master (d9054ca1 ادغام + 8cd755fe) و theme-saniar (8cd755fe) | میزبان (تست هوشمند چک‌اوت + این فایل) → docs/project-analysis | **گام بعدی پیشنهادی: فعال‌سازی CURRENT_THEME=Saniar در محیط staging + E2E مرورگر مسیرهای طلایی (خانه/کاتالوگ/سبد/پرداخت/پنل) روی دیتای واقعی + تصمیم دربارهٔ تم پیش‌فرض نصب‌کننده برای نصب‌های تازه**

@@ -366,11 +366,16 @@ class CheckoutTest extends TestCase
         $this->assertEquals(200000, $item->real_price, 'real_price باید قیمت اصلی باشد');
         $this->assertEquals(40000, $order->shipping_cost);
 
-        // رفتار فعلی سرور: تخفیف محصول هم در قیمت آیتم (۱۸۰,۰۰۰) لحاظ شده
+        // WeblakShop — رفتار فعلی سرور: تخفیف محصول هم در قیمت آیتم (۱۸۰,۰۰۰) لحاظ شده
         // و هم در totalDiscount — یعنی عملاً دو بار کسر می‌شود:
         // ۳۶۰,۰۰۰ (قیمت‌های تخفیف‌دار) + ۴۰,۰۰۰ ارسال − ۴۰,۰۰۰ تخفیف = ۳۶۰,۰۰۰
         // ⚠️ این دوبار‌حسابی تخفیف محصول باید در رفع اشکال بررسی شود
-        $this->assertEquals(360000, $order->price);
+        //
+        // سانیار (فاز D تم) همین دوبار‌حسابی را اصلاح کرده است: totals از قبل با
+        // discount_price هستند و فقط کوپن از قیمت نهایی کسر می‌شود:
+        // ۳۶۰,۰۰۰ + ۴۰,۰۰۰ ارسال − ۰ کوپن = ۴۰۰,۰۰۰ (ستون discount_amount همچنان ۴۰,۰۰۰)
+        $expectedPrice = config('general.current_theme') === 'Saniar' ? 400000 : 360000;
+        $this->assertEquals($expectedPrice, $order->price);
         $this->assertEquals(40000, $order->discount_amount);
     }
 
