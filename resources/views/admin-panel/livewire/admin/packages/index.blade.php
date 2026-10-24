@@ -1673,7 +1673,8 @@
          x-on:keydown.escape.window="$wire.closeTemplateDetail()" role="dialog" aria-modal="true" aria-label="جزئیات قالب">
         <div class="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" wire:click="closeTemplateDetail" aria-hidden="true"></div>
 
-        <div class="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-surface shadow-2xl dark:bg-night-2">
+            {{-- فاز ۶۶ — مودال بزرگ‌تر (4xl ≈ modal-lg/xl قدیمی) تا جزئیات HTML کامل جا شود --}}
+        <div class="relative flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-surface shadow-2xl dark:bg-night-2">
             {{-- هدر --}}
             <div class="flex items-center justify-between gap-3 border-b border-line p-4 dark:border-night-line">
                 <h2 class="flex items-center gap-2 text-sm font-extrabold">
@@ -1704,10 +1705,13 @@
                     </div>
                 @elseif ($tDetail)
                     @php
-                        $tPrice    = (int) ($tDetail['discount_price'] ?? $tDetail['price'] ?? 0);
+                        $tPrice    = (int) ($tDetail['discount_price'] ?? $tDetail['price'] ?? $tDetail['min_price'] ?? 0);
                         $tOldPrice = ($tDetail['discount_price'] ?? null) ? (int) ($tDetail['price'] ?? 0) : 0;
                         $tExPrice  = (int) ($tDetail['exclusive_price'] ?? 0);
                         $tSold     = (bool) ($tDetail['is_sold_exclusively'] ?? false);
+                        // فاز ۶۶ — تشخیص قالب رایگان + جزئیات کامل HTML از سمت بازار
+                        $tIsFree   = ! empty($tDetail['is_free']) || $tPrice === 0;
+                        $tLongDesc = $tDetail['long_description'] ?? $tDetail['description'] ?? $tDetail['content'] ?? null;
                         $tCover    = $tDetail['thumbnail'] ?? $tDetail['cover'] ?? $tDetail['preview_image'] ?? $tDetail['image'] ?? null;
                         $tVersions = $tDetail['active_versions'] ?? [];
                         $tInstalled= $tDetail['installed'] ?? null;
@@ -1724,12 +1728,19 @@
                         </div>
                         <div class="min-w-0 flex-1">
                             <h3 class="text-base font-extrabold">{{ $tDetail['name'] ?? '' }}</h3>
+                            {{-- فاز ۶۶ — short_description هم HTML است؛ مثل مودال پکیج پاک‌سازی و خام رندر می‌شود --}}
                             @if (!empty($tDetail['short_description'] ?? null))
-                                <p class="mt-1 text-xs leading-6 text-ink-3 dark:text-night-ink-2">{{ \Illuminate\Support\Str::limit(strip_tags($tDetail['short_description']), 160) }}</p>
+                                <div class="ap-rich mt-1 text-xs leading-6 text-ink-3 dark:text-night-ink-2">
+                                    {!! sanitize_package_html($tDetail['short_description']) !!}
+                                </div>
                             @endif
                             <div class="mt-2 flex flex-wrap items-center gap-2">
                                 @if ($tDetail['latestVersion'] ?? null)
                                     <span class="ap-badge bg-surface-2 font-mono text-[10px] text-ink-2 dark:bg-night-3 dark:text-night-ink-2" dir="ltr">v{{ $tDetail['latestVersion'] ?? '' }}</span>
+                                @endif
+                                {{-- فاز ۶۶ — نشان رایگان/پولی مثل مودال پکیج --}}
+                                @if ($tIsFree)
+                                    <span class="ap-badge bg-emerald-500 text-white">رایگان</span>
                                 @endif
                                 @if ($tSold)
                                     <span class="ap-badge bg-amber-50 text-amber-700 dark:bg-amber-500/12 dark:text-amber-400">اختصاصی فروخته شد</span>
@@ -1784,6 +1795,37 @@
                         </div>
                     @elseif ($tInstalled && ($tInstalled['status'] ?? '') === 'installed')
                         {{-- نصب‌شده: فقط اکشن‌های بالا --}}
+                    @elseif ($tIsFree)
+                        {{-- فاز ۶۶ — قالب رایگان: بدون انتخاب نوع خرید؛ فقط پیام «رایگان» + دکمه نصب --}}
+                        <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/25 dark:bg-emerald-500/10">
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <div class="flex items-start gap-3">
+                                    <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white">
+                                        <x-admin-panel::icon name="gift" class="size-4.5" />
+                                    </span>
+                                    <div class="text-[13px]">
+                                        <p class="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400">
+                                            <x-admin-panel::icon name="check-circle" class="size-4" />
+                                            این قالب رایگان است
+                                        </p>
+                                        <p class="mt-1 text-emerald-700/80 dark:text-emerald-400/80">نیازی به خرید نیست — با یک کلیک نصب می‌شود؛ به‌روزرسانی‌های بعدی هم رایگان دریافت می‌شود.</p>
+                                    </div>
+                                </div>
+                                <button type="button" wire:click="startTemplatePurchase" wire:loading.attr="disabled" wire:target="startTemplatePurchase"
+                                        class="ap-btn-primary min-w-36">
+                                    <span wire:loading.remove wire:target="startTemplatePurchase" class="flex items-center justify-center gap-2">
+                                        <x-admin-panel::icon name="download" class="size-4.5" />
+                                        نصب قالب
+                                    </span>
+                                    <span wire:loading wire:target="startTemplatePurchase" class="flex items-center justify-center gap-2">
+                                        <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                            <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
+                                        </svg>
+                                        در حال شروع نصب…
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
                     @else
                         <div class="rounded-xl border border-line p-4 dark:border-night-line">
                             <p class="mb-3 text-xs font-bold">نوع خرید را انتخاب کنید</p>
@@ -1827,7 +1869,8 @@
                                     @if ($tDetailPurchaseType === 'exclusive')
                                         خرید اختصاصی و ادامه
                                     @else
-                                        {{ $tPrice === 0 ? 'دریافت رایگان' : 'خرید و نصب' }}
+                                        {{-- فاز ۶۶ — قالب رایگان دیگر وارد این شاخه نمی‌شود؛ فقط خرید پولی --}}
+                                        خرید و نصب
                                     @endif
                                 </span>
                                 <span wire:loading wire:target="startTemplatePurchase" class="flex items-center justify-center gap-2">
@@ -1843,6 +1886,19 @@
                                     برای تأیید نهایی، دوباره روی «خرید اختصاصی و ادامه» کلیک کنید.
                                 </div>
                             @endif
+                        </div>
+                    @endif
+
+                    {{-- فاز ۶۶ — جزئیات کامل قالب (HTML خام بازار — مثل «توضیحات کامل» مودال پکیج) --}}
+                    @if (!empty($tLongDesc))
+                        <div class="mt-4">
+                            <p class="mb-2 flex items-center gap-1.5 text-xs font-bold">
+                                <x-admin-panel::icon name="file-text" class="size-4 text-brand-600 dark:text-brand-400" />
+                                جزئیات قالب
+                            </p>
+                            <div class="ap-rich mt-0 rounded-e-xl rounded-s-xl border border-line border-e-4 border-e-brand-500 bg-surface-2/50 p-4 text-[13px] leading-7 text-ink-2 dark:border-night-line dark:bg-night-3/40 dark:text-night-ink-2">
+                                {!! sanitize_package_html($tLongDesc) !!}
+                            </div>
                         </div>
                     @endif
 

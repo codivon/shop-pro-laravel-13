@@ -506,7 +506,8 @@ class ThemeMarketTest extends TestCase
         $this->fakeHttp();
 
         $component = Livewire::test(PackageIndex::class)
-            ->set('tDetail', ['slug' => 'moonlight', 'name' => 'قالب ماه‌تاب'])
+            // فاز ۶۶ — خرید اختصاصی فقط برای قالب پولی معنا دارد (قالب بدون قیمت = رایگان و همیشه normal)
+            ->set('tDetail', ['slug' => 'moonlight', 'name' => 'قالب ماه‌تاب', 'price' => 980000, 'exclusive_price' => 2900000])
             ->set('tDetailOpen', true)
             ->set('tDetailPurchaseType', 'exclusive')
             ->call('startTemplatePurchase');
@@ -617,6 +618,104 @@ class ThemeMarketTest extends TestCase
 
         $this->assertSame(PackagePurchase::STATUS_FAILED, PackagePurchase::where('transaction_id', 'tr_tpl_fail')->value('status'));
         Queue::assertNotPushed(InstallThemeJob::class);
+    }
+
+    /* =====================================================================
+     *  فاز ۶۶ — مودال جزئیات قالب (جزئیات HTML + حالت قالب رایگان)
+     *  ===================================================================== */
+
+    #[Test]
+    public function template_detail_modal_renders_full_html_description(): void
+    {
+        $this->actingCreator();
+
+        Livewire::test(PackageIndex::class)
+            ->set('tDetail', [
+                'slug'              => 'moonlight',
+                'name'              => 'قالب ماه‌تاب',
+                'price'             => 980000,
+                'short_description' => '<p>معرفی <strong>کوتاه</strong></p>',
+                'description'       => '<h2>ویژگی‌های قالب</h2><ul><li>اسلایدر</li></ul><p style="color:red">پشتیبانی کامل</p>',
+            ])
+            ->set('tDetailOpen', true)
+            ->assertSee('جزئیات قالب')
+            // جزئیات HTML باید خام رندر شود (نه escape) — درخواست کاربر فاز ۶۶
+            ->assertSee('<h2>ویژگی‌های قالب</h2>', false)
+            ->assertSee('<ul><li>اسلایدر</li></ul>', false)
+            // استایل inline سالم می‌ماند (sanitize_package_html فقط بردارها را حذف می‌کند)
+            ->assertSee('style="color:red"', false)
+            // short_description هم به‌صورت HTML رندر می‌شود (بدون strip_tags)
+            ->assertSee('معرفی <strong>کوتاه</strong>', false);
+    }
+
+    #[Test]
+    public function template_detail_modal_for_free_theme_hides_purchase_type(): void
+    {
+        $this->actingCreator();
+
+        Livewire::test(PackageIndex::class)
+            ->set('tDetail', [
+                'slug'        => 'moonlight',
+                'name'        => 'قالب ماه‌تاب',
+                'price'       => 0,
+                'description' => '<p>توضیحات قالب رایگان</p>',
+            ])
+            ->set('tDetailOpen', true)
+            ->assertSee('این قالب رایگان است')
+            ->assertSee('نصب قالب')
+            ->assertSee('رایگان')
+            ->assertDontSee('نوع خرید را انتخاب کنید')
+            ->assertDontSee('خرید اختصاصی')
+            ->assertDontSee('خرید عادی');
+    }
+
+    #[Test]
+    public function template_detail_modal_for_paid_theme_keeps_purchase_types(): void
+    {
+        $this->actingCreator();
+
+        Livewire::test(PackageIndex::class)
+            ->set('tDetail', [
+                'slug'            => 'moonlight',
+                'name'            => 'قالب ماه‌تاب',
+                'price'           => 980000,
+                'exclusive_price' => 2900000,
+            ])
+            ->set('tDetailOpen', true)
+            ->assertSee('نوع خرید را انتخاب کنید')
+            ->assertSee('خرید عادی')
+            ->assertSee('خرید اختصاصی')
+            ->assertSee('980,000')
+            ->assertSee('2,900,000');
+    }
+
+    #[Test]
+    public function free_template_purchase_forces_normal_type(): void
+    {
+        $this->actingCreator();
+
+        $this->fakeHttp([
+            '*/api/v1/templates/moonlight/purchase' => Http::response([
+                'is_free'        => true,
+                'download_token' => 'dl_free',
+                'version'        => '1.4.2',
+            ]),
+        ]);
+
+        // حتی اگر حالت انتخاب‌شده «اختصاصی» باشد، قالب رایگان همیشه خرید عادی است
+        Livewire::test(PackageIndex::class)
+            ->set('tDetail', ['slug' => 'moonlight', 'name' => 'قالب ماه‌تاب', 'price' => 0])
+            ->set('tDetailOpen', true)
+            ->set('tDetailPurchaseType', 'exclusive')
+            ->call('startTemplatePurchase');
+
+        Queue::assertPushed(InstallThemeJob::class, function (InstallThemeJob $job) {
+            return $job->slug === 'moonlight'
+                && $job->downloadToken === 'dl_free'
+                && $job->purchaseType === 'normal';
+        });
+
+        $this->assertSame(InstalledTheme::STATUS_UPDATING, InstalledTheme::where('slug', 'moonlight')->value('status'));
     }
 
     /* =====================================================================

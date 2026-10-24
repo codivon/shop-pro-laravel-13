@@ -2279,6 +2279,8 @@ A=۴۹ اسکلت ✓ | B=۵۰ تکمیل ویجت‌های خانه ✓ | C=۵�
 
 **کامیت:** میزبان (PackageIndex + ۲ تریت + PackagePaymentCallback + PackageInstalled + blade + ۱۱ تست + این فایل) → docs/project-analysis | **گام بعدی پیشنهادی: E2E مرورگر جریان نصب (باز شدن مودال بلوکه، غیرقابل بستن بودن حین نصب، آزادسازی پس از پایان) روی دیتای واقعی + polling بین چند تب**
 
+---
+
 ## Phase 65 — رفع کرش «تنظیم به عنوان قالب» روی هاست‌های بدون symlink+exec — سرویس ThemeAssetLinker
 
 **تاریخ:** 2026-10-24 | **برنچ میزبان:** docs/project-analysis | **گزارش کاربر (محیط واقعی):** فعال‌سازی سانیار از پنل → `Call to undefined function Illuminate\Filesystem\exec()` — **تست:** Unit+AdminPanelSmoke+Extra: **70 ✓ / 3 skipped (192 اظهار)** شامل ۱۱ تست قفل نصبِ فاز ۶۴ همکار
@@ -2299,3 +2301,42 @@ A=۴۹ اسکلت ✓ | B=۵۰ تکمیل ویجت‌های خانه ✓ | C=۵�
 روی هاست بدون symlink و exec، فعال‌سازی قالب از پنل حالا کار می‌کند: دارایی‌ها کپی واقعی می‌شوند (هر فعال‌سازی مجدد = نوسازی خودکار؛ اگر هاست بعداً symlink را باز کند، فعال‌سازی بعدی کپی را خودکار به symlink ارتقا می‌دهد).
 
 **کامیت:** میزبان (سرویس + ۳ ادغام + ۸ تست + این فایل) → docs/project-analysis | **گام بعدی پیشنهادی: اجرای فعال‌سازی روی هاست واقعی کاربر (update + فعال‌سازی سانیار) و تأیید توست کپی + سرو CSS/JS از public/themes/Saniar**
+
+---
+
+## Phase 66 — مودال جزئیات قالب: نمایش کامل جزئیات HTML + مودال بزرگ‌تر + حالت قالب رایگان
+
+**تاریخ:** 2026-10-26 | **درخواست کاربر:** «در تب قالبِ بازار، مودال جزئیات قالب جزئیات و جزئیات خرید را نمایش نمی‌دهد؛ مودال بزرگ‌تر شود (lg) و جزئیات HTML سمت بازار کامل رندر شود؛ قالب رایگان بدون بخش نوع خرید، فقط دکمه نصب + پیام رایگان»
+
+### ریشه‌یابی
+مودال جزئیات قالب (`$tDetail*` در `packages/index.blade.php`) فقط `short_description` را با `strip_tags` + سقف ۱۶۰ نویسه نشان می‌داد؛ **توضیحات کامل HTML (فیلدهای `long_description`/`description`/`content` API) اصلاً رندر نمی‌شد** — برخلاف مودال پکیج که «توضیحات کامل» دارد. عرض مودال `max-w-2xl` (۶۷۲px) برای جزئیات HTML بازاری تنگ بود. برای قالب رایگان، بخش «نوع خرید» (کارت‌های خرید عادی/اختصاصی) نمایش داده می‌شد که برای قالب رایگان بی‌معنا و گمراه‌کننده است.
+
+### رفع‌ها
+**۱) جزئیات کامل HTML (`index.blade.php` — مودال قالب)**
+- بخش جدید «جزئیات قالب» با `{!! sanitize_package_html(...) !!}` (همان پاک‌ساز مودال پکیج که `<style>` توضیحات API را نگه می‌دارد و script/on*/iframe ناامن را حذف می‌کند) — رندر خام HTML بازار، مقاوم به سه نام فیلد: `long_description` ← `description` ← `content`.
+- `short_description` هم از `strip_tags+limit` به رندر HTML پاک‌سازی‌شده تغییر کرد (اگر HTML باشد درست دیده می‌شود).
+
+**۲) مودال بزرگ‌تر**
+- `max-w-2xl` → **`max-w-4xl`** (۸۹۶px ≈ modal-lg/xl پنل قدیمی) + `max-h-[92vh]` مثل مودال پکیج — جزئیات HTML کامل و باز جا می‌شود.
+
+**۳) حالت قالب رایگان**
+- تشخیص رایگان: `$tIsFree = is_free || (discount_price ?? price ?? min_price) === 0` + نشان سبز «رایگان» در هیرو.
+- **شاخهٔ جدید `@elseif ($tIsFree)`** جایگزین کل بخش نوع خرید: جعبهٔ سبز «این قالب رایگان است — نیازی به خرید نیست» + فقط دکمهٔ «نصب قالب» (با حالت loading «در حال شروع نصب…»)؛ «نوع خرید را انتخاب کنید»، «خرید عادی» و «خرید اختصاصی» دیگر برای قالب رایگان رندر نمی‌شوند.
+- برچسب مردهٔ «دریافت رایگان» در شاخهٔ پولی حذف شد (قالب رایگان دیگر به آن شاخه نمی‌رسد).
+
+**۴) گارد سرور-ساید (`InteractsWithTemplates::startTemplatePurchase`)**
+- قالب رایگان همیشه `purchase_type=normal` خرید می‌شود — حتی اگر state سمت کلاینت روی exclusive بماند (gated UI کافی نیست؛ گارد سرور الزامی است). گارد تأیید دومرحله‌ای exclusive فقط برای قالب پولی فعال می‌ماند.
+
+### تست‌ها — `ThemeMarketTest.php` (۴ تست جدید)
+`template_detail_modal_renders_full_html_description` (رندر خام `<h2>/<ul>/<style inline>` + short_description HTML)، `template_detail_modal_for_free_theme_hides_purchase_type` (پیام رایگان + دکمه نصب + عدم رندر نوع خرید)، `template_detail_modal_for_paid_theme_keeps_purchase_types` (حفظ کارت‌ها و قیمت‌ها برای پولی)، `free_template_purchase_forces_normal_type` (state exclusive + قالب رایگان → job با purchaseType=normal). **تغییر فیکسچر:** `exclusive_purchase_requires_double_confirmation` حالا قالب پولی می‌سازد (قالب بدون قیمت = رایگان و همیشه normal — رفتار جدید عمدی است).
+
+### تست جهش
+(۱) گارد سرور به حالت قبل برگشت → `free_template_purchase_forces_normal_type` قرمز؛ (۲) `@elseif ($tIsFree)` → `@elseif (false && $tIsFree)` → تست مودال رایگان قرمز. بازگردانی → همه سبز.
+
+### نتیجهٔ کامل (MariaDB sandbox، دو فاز در یک دستور با start/wait DB)
+- فاز ۱ `(AdminPanelSmoke|Auth|Cart|Catalog|Checkout|Extra)`: **۱۳۹ ✓ (۳۹۲ اظهار)**
+- فاز ۲ `(Order|Payment|Performance|Scale|Security)|Unit`: **۱۵۰ ✓ / ۳ skipped (۴۶۸ اظهار)**
+- جمع: **۲۸۹ تست سبز** — ThemeMarketTest ۲۴ ✓ (۲۰ قبلی + ۴ جدید)
+
+**کامیت:** میزبان (InteractsWithTemplates + blade مودال قالب + ۴ تست + این فایل) → docs/project-analysis | **گام بعدی پیشنهادی: اگر API بازار فیلد گالری/پیش‌نمایش قالب (screenshots) را می‌فرستد، گالری تصاویر مثل مودال پکیج اضافه شود؛ و رندر واقعی جزئیات HTML یک قالب واقعی روی لایو بازبینی چشمی شود.**
+

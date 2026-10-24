@@ -47,8 +47,16 @@ trait InteractsWithTemplates
             return;
         }
 
-        $slug         = $this->tDetail['slug'];
-        $purchaseType = $this->tDetailPurchaseType === 'exclusive' ? 'exclusive' : 'normal';
+        $slug = $this->tDetail['slug'];
+
+        /*
+         * فاز ۶۶ — قالب رایگان همیشه «خرید عادی» است: سرور نباید اجازه دهد
+         * حالت انتخاب‌شدهٔ exclusive روی قالب رایگان اعمال شود (UI هم بخش
+         * انتخاب نوع خرید را برای قالب رایگان اصلاً نشان نمی‌دهد).
+         */
+        $tIsFree = ! empty($this->tDetail['is_free'])
+            || (int) ($this->tDetail['discount_price'] ?? $this->tDetail['price'] ?? 0) === 0;
+        $purchaseType = (! $tIsFree && $this->tDetailPurchaseType === 'exclusive') ? 'exclusive' : 'normal';
 
         // در حال نصب؟
         if (InstalledTheme::where('slug', $slug)->where('status', InstalledTheme::STATUS_UPDATING)->exists()) {
