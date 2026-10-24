@@ -57,6 +57,16 @@ trait InteractsWithTemplates
             return;
         }
 
+        /*
+         * فاز ۶۴ — قفل نصب همزمان: اگر نصب دیگری (پکیج/قالب) در جریان است،
+         * خریدِ جدید که به نصب منتهی می‌شود شروع نشود.
+         */
+        if ($this->hasOtherInstallationInProgress($slug)) {
+            $this->dispatch('toast', message: $this->installationLockMessage(), type: 'error');
+
+            return;
+        }
+
         // هشدار اختصاصی — تأیید صریح کاربر لازم است
         if ($purchaseType === 'exclusive' && ! $this->tExclusiveConfirmed) {
             $this->tExclusiveConfirmed = true;
@@ -129,6 +139,11 @@ trait InteractsWithTemplates
         );
 
         $this->dispatch('toast', message: 'نصب قالب آغاز شد — تا پایان، وضعیت «در حال نصب» نمایش داده می‌شود.', type: 'success');
+
+        // فاز ۶۴ — مودال پیشرفت بلوکه‌شده برای نصب قالب هم باز می‌شود (الگوی afterInstallQueued)
+        if (method_exists($this, 'refreshAfterTemplateInstall')) {
+            $this->refreshAfterTemplateInstall($slug);
+        }
     }
 
     /* ---------------- مودال جزئیات قالب ---------------- */
@@ -225,6 +240,13 @@ trait InteractsWithTemplates
 
         if (InstalledTheme::where('slug', $slug)->where('status', InstalledTheme::STATUS_UPDATING)->exists()) {
             $this->dispatch('toast', message: 'نصب این قالب همچنان در جریان است.', type: 'error');
+
+            return;
+        }
+
+        // فاز ۶۴ — قفل نصب همزمان: اگر نصب دیگری (پکیج/قالب) در جریان است، شروع نشود
+        if ($this->hasOtherInstallationInProgress($slug)) {
+            $this->dispatch('toast', message: $this->installationLockMessage(), type: 'error');
 
             return;
         }

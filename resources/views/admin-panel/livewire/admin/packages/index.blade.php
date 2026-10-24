@@ -1545,7 +1545,12 @@
     @endif
 
     {{-- ====================== --}}
-    {{-- فاز ۲۶ — مودال نوار پیشرفت نصب (پورت pkg-install-progress در progress.js قدیمی) --}}
+    {{-- فاز ۶۴ — مودال پیشرفت نصب تمام‌صفحهٔ بلوکه‌شده (فاز ۲۶: پورت pkg-install-progress در progress.js قدیمی)
+         درخواست کاربر: تا وقتی نصب در جریان است:
+           ۱) نصب همزمان دیگری ممکن نباشد (قفل سراسری سمت سرور — hasOtherInstallationInProgress)
+           ۲) این پنجره قابل بستن نباشد (بدون دکمهٔ بستن، بدون بک‌دراپ‌کلیک، بدون Esc)
+           ۳) جاهای دیگر صفحه قابل کلیک نباشند (اورلی تمام‌صفحه با z بالاتر از همهٔ مودال‌ها)
+         پس از پایان (موفق/ناموفق) پنجره با دکمهٔ بستن، کلیک بک‌دراپ یا Esc بسته می‌شود. --}}
     {{-- ====================== --}}
     @if ($progressSlug)
         @php
@@ -1555,13 +1560,21 @@
             $pMessage = $progressState['message'] ?? 'در حال نصب — لطفاً صبر کنید…';
             $pDone = $pStatus === 'installed';
             $pFailed = $pStatus === 'failed';
+            $pBusy = ! $pDone && ! $pFailed;          // نصب همچنان در جریان است
+            $pIsTemplate = $progressKind === 'template';
         @endphp
-        <div class="fixed bottom-5 start-1/2 z-[95] w-[min(92vw,34rem)] -translate-x-1/2 rtl:translate-x-1/2"
-             wire:poll.2s="pollProgress" wire:key="pkg-progress"
-             role="status" aria-live="polite">
-            <div class="overflow-hidden rounded-2xl border p-4 shadow-pop transition-colors {{ $pDone ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-500/25 dark:bg-emerald-500/10' : ($pFailed ? 'border-red-200 bg-red-50 dark:border-red-500/25 dark:bg-red-500/10' : 'border-line bg-surface dark:border-night-line dark:bg-night-2') }}">
+        <div class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+             wire:key="pkg-progress" wire:poll.2s="pollProgress"
+             role="dialog" aria-modal="true" aria-live="polite"
+             @if (! $pBusy) x-on:keydown.escape.window="$wire.dismissProgress()" @endif
+             aria-label="وضعیت نصب">
+            {{-- بک‌دراپ تمام‌صفحه — حین نصب هیچ تعاملی ندارد (کلیک‌های صفحه را می‌گیرد) --}}
+            <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" aria-hidden="true"
+                 @if (! $pBusy) wire:click="dismissProgress" @endif></div>
+
+            <div class="relative w-[min(92vw,34rem)] overflow-hidden rounded-2xl border shadow-pop transition-colors {{ $pDone ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-500/25 dark:bg-emerald-500/10' : ($pFailed ? 'border-red-200 bg-red-50 dark:border-red-500/25 dark:bg-red-500/10' : 'border-line bg-surface dark:border-night-line dark:bg-night-2') }}">
                 {{-- سربرگ --}}
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 p-4">
                     <span class="flex size-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-lg {{ $pDone ? 'bg-emerald-500 shadow-emerald-500/30' : ($pFailed ? 'bg-red-500 shadow-red-500/30' : 'bg-brand-500 shadow-brand-500/30') }}">
                         @if ($pDone)
                             <x-admin-panel::icon name="check" class="size-5" />
@@ -1582,44 +1595,71 @@
                         </p>
                         <p class="mt-0.5 truncate text-[11.5px] text-ink-3 dark:text-night-ink-2">{{ $pMessage }}</p>
                     </div>
-                    <button type="button" wire:click="dismissProgress" class="ap-btn-ghost !p-1.5" title="بستن"
-                            aria-label="بستن نوار پیشرفت">
-                        <x-admin-panel::icon name="x" class="size-4" />
-                    </button>
+                    {{-- دکمهٔ بستن فقط پس از پایان نصب (موفق/ناموفق) — حین نصب پنجره غیرقابل بستن است --}}
+                    @if (! $pBusy)
+                        <button type="button" wire:click="dismissProgress" class="ap-btn-ghost !p-1.5" title="بستن (Esc)"
+                                aria-label="بستن پنجرهٔ وضعیت نصب">
+                            <x-admin-panel::icon name="x" class="size-4" />
+                        </button>
+                    @endif
                 </div>
 
                 {{-- نوار پیشرفت --}}
-                <div class="mt-3.5 flex items-center gap-2.5">
-                    <div class="h-2 flex-1 overflow-hidden rounded-full bg-surface-3 dark:bg-night-3">
-                        <div class="h-full rounded-full transition-all duration-500 {{ $pFailed ? 'bg-red-500' : ($pDone ? 'bg-emerald-500' : 'bg-gradient-to-l from-brand-500 to-emerald-500') }}"
-                             style="width: {{ $pPercent }}%"></div>
+                <div class="px-4">
+                    <div class="flex items-center gap-2.5">
+                        <div class="h-2 flex-1 overflow-hidden rounded-full bg-surface-3 dark:bg-night-3">
+                            <div class="h-full rounded-full transition-all duration-500 {{ $pFailed ? 'bg-red-500' : ($pDone ? 'bg-emerald-500' : 'bg-gradient-to-l from-brand-500 to-emerald-500') }}"
+                                 style="width: {{ $pPercent }}%"></div>
+                        </div>
+                        <span class="fa-digits w-9 text-end text-[11px] font-extrabold text-ink-2 dark:text-night-ink-2">{{ $pPercent }}٪</span>
                     </div>
-                    <span class="fa-digits w-9 text-end text-[11px] font-extrabold text-ink-2 dark:text-night-ink-2">{{ $pPercent }}٪</span>
+
+                    {{-- مراحل — فقط نصب پکیج (نصب قالب لاگ مرحله‌ای ندارد) --}}
+                    @if (! $pIsTemplate)
+                        <div class="mt-3 grid grid-cols-6 gap-1">
+                            @foreach (self::$progressSteps as $i => $step)
+                                @php
+                                    $stepDone = $pDone || $i < $pStep;
+                                    $stepActive = !$pDone && !$pFailed && $i === $pStep;
+                                @endphp
+                                <div class="flex flex-col items-center gap-1">
+                                    <span class="flex size-7 items-center justify-center rounded-lg border transition-colors
+                                        {{ $stepDone ? 'border-emerald-300 bg-emerald-100 text-emerald-600 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-400'
+                                            : ($stepActive ? 'border-brand-300 bg-brand-50 text-brand-600 dark:border-brand-500/40 dark:bg-brand-500/15 dark:text-brand-400'
+                                            : 'border-line bg-surface-2 text-ink-3 dark:border-night-line dark:bg-night-3 dark:text-night-ink-2') }}">
+                                        @if ($stepDone)
+                                            <x-admin-panel::icon name="check" class="size-3.5" />
+                                        @elseif ($stepActive)
+                                            <svg class="size-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" /></svg>
+                                        @else
+                                            <x-admin-panel::icon name="{{ $step['icon'] }}" class="size-3.5" />
+                                        @endif
+                                    </span>
+                                    <span class="text-[9.5px] font-bold {{ $stepDone || $stepActive ? 'text-ink-2 dark:text-night-ink-2' : 'text-ink-3 dark:text-night-ink-2' }}">{{ $step['label'] }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
 
-                {{-- مراحل --}}
-                <div class="mt-3 grid grid-cols-6 gap-1">
-                    @foreach (self::$progressSteps as $i => $step)
-                        @php
-                            $stepDone = $pDone || $i < $pStep;
-                            $stepActive = !$pDone && !$pFailed && $i === $pStep;
-                        @endphp
-                        <div class="flex flex-col items-center gap-1">
-                            <span class="flex size-7 items-center justify-center rounded-lg border transition-colors
-                                {{ $stepDone ? 'border-emerald-300 bg-emerald-100 text-emerald-600 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-400'
-                                    : ($stepActive ? 'border-brand-300 bg-brand-50 text-brand-600 dark:border-brand-500/40 dark:bg-brand-500/15 dark:text-brand-400'
-                                    : 'border-line bg-surface-2 text-ink-3 dark:border-night-line dark:bg-night-3 dark:text-night-ink-2') }}">
-                                @if ($stepDone)
-                                    <x-admin-panel::icon name="check" class="size-3.5" />
-                                @elseif ($stepActive)
-                                    <svg class="size-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" /></svg>
-                                @else
-                                    <x-admin-panel::icon name="{{ $step['icon'] }}" class="size-3.5" />
-                                @endif
-                            </span>
-                            <span class="text-[9.5px] font-bold {{ $stepDone || $stepActive ? 'text-ink-2 dark:text-night-ink-2' : 'text-ink-3 dark:text-night-ink-2' }}">{{ $step['label'] }}</span>
-                        </div>
-                    @endforeach
+                {{-- پانویس — راهنمای قفل حین نصب / دکمهٔ پایان --}}
+                <div class="mt-3.5 flex items-center justify-between gap-3 border-t px-4 py-3
+                    {{ $pDone ? 'border-emerald-200/70 dark:border-emerald-500/20' : ($pFailed ? 'border-red-200/70 dark:border-red-500/20' : 'border-line dark:border-night-line') }}">
+                    @if ($pBusy)
+                        <p class="flex items-center gap-1.5 text-[11px] font-bold text-ink-2 dark:text-night-ink-2">
+                            <x-admin-panel::icon name="lock" class="size-3.5 shrink-0 text-amber-500" />
+                            تا پایان نصب، این پنجره قابل بستن نیست و صفحه قفل است.
+                        </p>
+                    @else
+                        <p class="truncate text-[11px] font-bold {{ $pDone ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400' }}">
+                            @if ($pDone) ✅ نصب با موفقیت به پایان رسید
+                            @else نصب ناموفق بود — می‌توانید دوباره تلاش کنید
+                            @endif
+                        </p>
+                        <button type="button" wire:click="dismissProgress" class="ap-btn-primary !py-1.5 !text-xs">
+                            بستن
+                        </button>
+                    @endif
                 </div>
             </div>
         </div>

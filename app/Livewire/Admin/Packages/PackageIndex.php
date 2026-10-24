@@ -185,6 +185,12 @@ class PackageIndex extends Component
 
     public ?string $progressName = null;
 
+    /**
+     * فاز ۶۴ — نوع نصبِ مودال پیشرفت: package | template
+     * نصب قالب هم مثل پکیج مودال پیشرفتِ بلوکه‌شده دارد (قفل نصب همزمان).
+     */
+    public string $progressKind = 'package';
+
     /** وضعیت لحظه‌ای نصب: percent/step/status/message/error */
     public array $progressState = [];
 
@@ -206,6 +212,9 @@ class PackageIndex extends Component
         $this->paymentResult = session('payment_result');
 
         $this->loadMarket();
+
+        // فاز ۶۴ — اگر نصبی در جریان باشد، مودال بلوکه‌شده دوباره باز می‌شود
+        $this->resumeActiveInstall();
     }
 
     public function updatingSearch(): void
@@ -791,10 +800,128 @@ class PackageIndex extends Component
         $this->loadPackages();
 
         if ($slug !== null) {
+            $this->progressKind = 'package';
             $this->progressSlug = $slug;
             $this->progressName = InstalledModule::where('slug', $slug)->value('name') ?: $slug;
             $this->pollProgress();
         }
+    }
+
+    /**
+     * فاز ۶۴ — پس از صف‌شدن نصب قالب: لیست قالب‌ها رفرش + مودال پیشرفت بلوکه‌شده باز می‌شود.
+     * (از تریت InteractsWithTemplates::dispatchTemplateInstall با method_exists صدا زده می‌شود —
+     * الگوی afterInstallQueued؛ نصب قالب هم مثل پکیج کل صفحه را قفل می‌کند.)
+     */
+    public function refreshAfterTemplateInstall(?string $slug = null): void
+    {
+        if (method_exists($this, 'loadTemplates')) {
+            $this->loadTemplates();
+        }
+
+        if ($slug !== null) {
+            $this->progressKind = 'template';
+            $this->progressSlug = $slug;
+            $this->progressName = InstalledTheme::where('slug', $slug)->value('name') ?: $slug;
+            $this->pollProgress();
+        }
+    }
+
+    /* ---------------- فاز ۶۴ — قفل نصب همزمان (فقط یک نصب در هر لحظه) ---------------- */
+
+    /** پیام استاندارد قفل نصب همزمان */
+    public function installationLockMessage(): string
+    {
+        return 'یک نصب دیگر در جریان است؛ تا پایان آن امکان شروع نصب پکیج یا قالب دیگری وجود ندارد.';
+    }
+
+    /**
+     * آیا نصب دیگری (پکیج/قالب/آپدیت — به‌جز همین slug) در جریان است؟
+     * پنجرهٔ تازگی ۱۰ دقیقه‌ای (مثل syncInstalledState) — تا رکورد updating گیرکرده
+     * (مثلاً کرش worker صف) قفل دائمی نسازد.
+     */
+    public function hasOtherInstallationInProgress(?string $exceptSlug = null): bool
+    {
+        $freshAfter = now()->subMinutes(10);
+
+        $moduleBusy = InstalledModule::query()
+            ->where('status', InstalledModule::STATUS_UPDATING)
+            ->where('updated_at', '>', $freshAfter)
+            ->when($exceptSlug !== null, fn ($q) => $q->where('slug', '!=', $exceptSlug))
+            ->exists();
+
+        if ($moduleBusy) {
+            return true;
+        }
+
+        return InstalledTheme::query()
+            ->where('status', InstalledTheme::STATUS_UPDATING)
+            ->where('updated_at', '>', $freshAfter)
+            ->when($exceptSlug !== null, fn ($q) => $q->where('slug', '!=', $exceptSlug))
+            ->exists();
+    }
+
+    /** آیا همین slug (پکیج یا قالب) الان در حال نصب است؟ */
+    public function isSlugInstalling(string $slug): bool
+    {
+        $freshAfter = now()->subMinutes(10);
+
+        return InstalledModule::query()
+                ->where('slug', $slug)
+                ->where('status', InstalledModule::STATUS_UPDATING)
+                ->where('updated_at', '>', $freshAfter)
+                ->exists()
+            || InstalledTheme::query()
+                ->where('slug', $slug)
+                ->where('status', InstalledTheme::STATUS_UPDATING)
+                ->where('updated_at', '>', $freshAfter)
+                ->exists();
+    }
+
+    /**
+     * فاز ۶۴ — اگر نصبی در جریان باشد (حتی پس از رفرش صفحه یا بازگشت از درگاه)،
+     * مودال پیشرفت دوباره باز می‌شود تا با رفرش نتوان از قفل نصب همزمان فرار کرد.
+     */
+    protected function resumeActiveInstall(): void
+    {
+        $freshAfter = now()->subMinutes(10);
+
+        $module = InstalledModule::query()
+            ->where('status', InstalledModule::STATUS_UPDATING)
+            ->where('updated_at', '>', $freshAfter)
+            ->orderByDesc('updated_at')
+            ->first();
+
+        $theme = InstalledTheme::query()
+            ->where('status', InstalledTheme::STATUS_UPDATING)
+            ->where('updated_at', '>', $freshAfter)
+            ->orderByDesc('updated_at')
+            ->first();
+
+        $picked = null;
+        $kind = 'package';
+
+        if ($module && $theme) {
+            if ($theme->updated_at->gt($module->updated_at)) {
+                $picked = $theme;
+                $kind = 'template';
+            } else {
+                $picked = $module;
+            }
+        } elseif ($module) {
+            $picked = $module;
+        } elseif ($theme) {
+            $picked = $theme;
+            $kind = 'template';
+        }
+
+        if (! $picked) {
+            return;
+        }
+
+        $this->progressKind = $kind;
+        $this->progressSlug = $picked->slug;
+        $this->progressName = $picked->name ?: $picked->slug;
+        $this->pollProgress();
     }
 
     /**
@@ -838,10 +965,17 @@ class PackageIndex extends Component
     /**
      * هر ۲ ثانیه از blade با wire:poll صدا زده می‌شود (فقط وقتی مودال پیشرفت باز است).
      * وضعیت InstalledModule + آخرین لاگ → درصد و مرحله؛ پایان = toast + بستن مودال.
+     * فاز ۶۴ — نصب قالب هم از همین مودال پیشرفت می‌رود (pollTemplateProgress).
      */
     public function pollProgress(): void
     {
         if (empty($this->progressSlug)) {
+            return;
+        }
+
+        if ($this->progressKind === 'template') {
+            $this->pollTemplateProgress();
+
             return;
         }
 
@@ -914,6 +1048,48 @@ class PackageIndex extends Component
             $this->progressName = null;
             $this->progressState = [];
             $this->loadPackages();
+        }
+    }
+
+    /**
+     * فاز ۶۴ — polling پیشرفت نصب قالب (از همان مودال بلوکه‌شده)
+     * نصب قالب لاگ مرحله‌ای ندارد (PackageInstallerService::installTemplate) —
+     * وضعیت کلی InstalledTheme: updating → نصب جریان دارد | installed | failed.
+     */
+    protected function pollTemplateProgress(): void
+    {
+        $slug = $this->progressSlug;
+        $theme = InstalledTheme::where('slug', $slug)->first();
+
+        $done = $theme !== null && $theme->status === InstalledTheme::STATUS_INSTALLED;
+        $failed = $theme !== null && $theme->status === InstalledTheme::STATUS_FAILED;
+        $errorMessage = $failed ? ($theme->last_error ?: 'خطا در نصب قالب') : null;
+
+        $this->progressState = [
+            'percent' => ($done || $failed) ? 100 : 55,
+            'step' => $done ? count(self::$progressSteps) : 2, // استخراج (نمایشی)
+            'status' => $failed ? 'failed' : ($done ? 'installed' : 'installing'),
+            'message' => $errorMessage ?? 'در حال نصب قالب — لطفاً صبر کنید…',
+            'error' => $errorMessage,
+        ];
+
+        if ($done || $failed) {
+            $name = $this->progressName ?: $slug;
+
+            $this->dispatch('toast', message: $done
+                ? "نصب قالب «{$name}» با موفقیت کامل شد."
+                : "نصب قالب «{$name}» ناموفق بود.".($errorMessage ? ' ('.Str::limit($errorMessage, 120).')' : ''),
+                type: $done ? 'success' : 'error');
+
+            $this->progressSlug = null;
+            $this->progressName = null;
+            $this->progressState = [];
+
+            if (method_exists($this, 'loadTemplates')) {
+                $this->loadTemplates();
+            } else {
+                $this->loadPackages();
+            }
         }
     }
 
@@ -1115,6 +1291,13 @@ class PackageIndex extends Component
 
         if ($installed->status === InstalledModule::STATUS_UPDATING) {
             $this->dispatch('toast', message: 'آپدیت قبلی همچنان در حال اجراست.', type: 'error');
+
+            return;
+        }
+
+        // فاز ۶۴ — قفل نصب همزمان: اگر نصب دیگری (پکیج/قالب) در جریان است، آپدیت شروع نشود
+        if ($this->hasOtherInstallationInProgress($slug)) {
+            $this->dispatch('toast', message: $this->installationLockMessage(), type: 'error');
 
             return;
         }

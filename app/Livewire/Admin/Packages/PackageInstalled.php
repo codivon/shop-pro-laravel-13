@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\Packages;
 use App\Jobs\UpdatePackageJob;
 use App\Livewire\Admin\Packages\Concerns\InteractsWithPackages;
 use App\Models\InstalledModule;
+use App\Models\InstalledTheme;
 use App\Services\PackageInstallerService;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -51,6 +52,25 @@ class PackageInstalled extends Component
 
         if ($installed->status === InstalledModule::STATUS_UPDATING) {
             $this->dispatch('toast', message: 'آپدیت قبلی همچنان در حال اجراست.', type: 'error');
+            return;
+        }
+
+        /*
+         * فاز ۶۴ — قفل نصب همزمان: اگر نصب دیگری (پکیج/قالب) در جریان است، آپدیت شروع نشود.
+         * پنجرهٔ تازگی ۱۰ دقیقه‌ای مثل PackageIndex::hasOtherInstallationInProgress.
+         */
+        $freshAfter = now()->subMinutes(10);
+        $locked = InstalledModule::query()
+                ->where('status', InstalledModule::STATUS_UPDATING)
+                ->where('updated_at', '>', $freshAfter)
+                ->exists()
+            || InstalledTheme::query()
+                ->where('status', InstalledTheme::STATUS_UPDATING)
+                ->where('updated_at', '>', $freshAfter)
+                ->exists();
+
+        if ($locked) {
+            $this->dispatch('toast', message: 'یک نصب دیگر در جریان است؛ تا پایان آن امکان شروع نصب پکیج یا قالب دیگری وجود ندارد.', type: 'error');
             return;
         }
 

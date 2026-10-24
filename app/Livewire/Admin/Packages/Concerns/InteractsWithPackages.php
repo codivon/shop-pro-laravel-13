@@ -53,10 +53,27 @@ trait InteractsWithPackages
     {
         auth('adminPanel')->user()?->can('packages.index') ?: abort(403);
 
+        /*
+         * فاز ۶۴ — قفل نصب همزمان: در هر لحظه فقط یک نصب (پکیج/قالب/آپدیت) مجاز است.
+         * اگر همین مورد در حال نصب است یا نصب دیگری در جریان است، شروع نشود.
+         */
+        if ($this->isSlugInstalling($slug)) {
+            $this->dispatch('toast', message: 'نصب این مورد همچنان در جریان است؛ لطفاً تا پایان آن صبر کنید.', type: 'error');
+
+            return;
+        }
+
+        if ($this->hasOtherInstallationInProgress($slug)) {
+            $this->dispatch('toast', message: $this->installationLockMessage(), type: 'error');
+
+            return;
+        }
+
         try {
             $package = $this->api()->getPackage($slug);
             $package = $package['data'] ?? $package;
-            $version = $package['active_versions'] ? $package['active_versions'][0]['version'] : null;
+            // فاز ۶۴ — کلید active_versions همیشه حاضر نیست (پاسخ‌های ناقص API) → fail-safe
+            $version = collect($package['active_versions'] ?? [])->first()['version'] ?? null;
 
             /*
              * ★ اگر پلنی انتخاب نشده و پکیج پلن دارد → ارزان‌ترین پلن خودکار انتخاب

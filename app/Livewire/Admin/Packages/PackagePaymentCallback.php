@@ -97,6 +97,22 @@ class PackagePaymentCallback extends Component
                 'gateway'            => $verify['gateway'] ?? null,
             ]);
 
+            /*
+             * فاز ۶۴ — قفل نصب همزمان: اگر نصب دیگری در جریان است، این نصب صف نمی‌شود؛
+             * لایسنس روی رکورد خرید ذخیره شده و از بازار با «بررسی و نصب» (بدون پرداخت مجدد) قابل نصب است.
+             */
+            if ($this->hasInstallationLock()) {
+                $this->redirectToIndexWithResult('success', 'پرداخت با موفقیت انجام شد',
+                    'پرداخت شما تأیید شد؛ اما اکنون نصب دیگری در جریان است. پس از پایان آن، از بازار گزینه «بررسی و نصب» را بزنید (بدون پرداخت مجدد).', [
+                        'package_name'   => $purchase->package_name ?? $purchase->package_slug,
+                        'package_slug'   => $purchase->package_slug,
+                        'amount'         => $purchase->amount ?? null,
+                        'transaction_id' => $transactionId,
+                    ]);
+
+                return;
+            }
+
             InstalledModule::markPending(
                 $purchase->package_slug,
                 $purchase->package_name,
@@ -196,6 +212,19 @@ class PackagePaymentCallback extends Component
                 'version' => $verify['version'] ?? $purchase->version,
             ]);
 
+            // فاز ۶۴ — قفل نصب همزمان: اگر نصب دیگری در جریان است، نصب قالب صف نمی‌شود (خرید ذخیره شده)
+            if ($this->hasInstallationLock()) {
+                $this->redirectToIndexWithResult('success', 'پرداخت با موفقیت انجام شد',
+                    'پرداخت شما تأیید شد؛ اما اکنون نصب دیگری در جریان است. پس از پایان آن، از بازار گزینه «نصب مجدد قالب» را بزنید (بدون پرداخت مجدد).', [
+                        'package_name'   => $purchase->package_name,
+                        'package_slug'   => $purchase->package_slug,
+                        'amount'         => $purchase->amount,
+                        'transaction_id' => $transactionId,
+                    ]);
+
+                return;
+            }
+
             InstalledTheme::markPending(
                 $purchase->package_slug,
                 $purchase->package_name,
@@ -231,6 +260,24 @@ class PackagePaymentCallback extends Component
                     'transaction_id' => $transactionId,
                 ]);
         }
+    }
+
+    /**
+     * فاز ۶۴ — آیا نصب دیگری (پکیج/قالب — با پنجرهٔ تازگی ۱۰ دقیقه‌ای) در جریان است؟
+     * همان قاعدهٔ PackageIndex::hasOtherInstallationInProgress — اینجا بدون استثنا برای slug.
+     */
+    private function hasInstallationLock(): bool
+    {
+        $freshAfter = now()->subMinutes(10);
+
+        return InstalledModule::query()
+                ->where('status', InstalledModule::STATUS_UPDATING)
+                ->where('updated_at', '>', $freshAfter)
+                ->exists()
+            || InstalledTheme::query()
+                ->where('status', InstalledTheme::STATUS_UPDATING)
+                ->where('updated_at', '>', $freshAfter)
+                ->exists();
     }
 
     /**
