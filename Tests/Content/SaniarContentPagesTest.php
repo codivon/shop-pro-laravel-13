@@ -164,6 +164,12 @@ class SaniarContentPagesTest extends TestCase
 
     public function test_article_show_renders_seo_and_schema(): void
     {
+        // پست دوم برای سایدبار «آخرین مطالب» — کنترلر پست جاری را کنار می‌گذارد
+        // (این تست بدون دیتای دموی باقیمانده هم باید خودکفا باشد — فاز ۶۳)
+        $sidebarPost = $this->publishedPost(['title' => 'مقالهٔ دوم سایدبار فاز ۶۳']);
+        $sidebarTag = \App\Models\Tag::create(['name' => 'هشتگ تستی فاز ۶۳']);
+        $sidebarPost->tags()->attach($sidebarTag->id);
+
         $post = $this->publishedPost(['is_editor_pick' => true]);
 
         $response = $this->get('/blog/articles/' . $post->slug);

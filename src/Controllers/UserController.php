@@ -18,6 +18,9 @@ use App\Notifications\Sms\NewUserCodeSent;
 use App\Notifications\Sms\VerifyCodeSent;
 use App\Notifications\User\UserCreated;
 use App\Notifications\User\UserRegistered;
+use App\Services\BotDetector;
+use App\Services\CaptchaService;
+use App\Services\SecuritySettings;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -39,6 +42,32 @@ class UserController extends Controller
         ],[
             'username.required'=>'لطفا این قسمت را خالی نگذارید'
         ]);
+
+        // ─── فاز ۴۴ میزبان — ربات‌گیر: هانی‌پات (مسدودسازی IP) + تلهٔ زمان (پورت به سانیار — فاز ۶۳) ───
+        $detector = app(BotDetector::class);
+
+        if (SecuritySettings::honeypotEnabled() && ($request->filled('website_url') || $request->filled('confirm_email'))) {
+            $detector->trap($request);
+
+            throw ValidationException::withMessages([
+                'username' => BotDetector::botMessage(),
+            ]);
+        }
+
+        if ($detector->isBot($request, $request->input('rendered_at'))) {
+            throw ValidationException::withMessages([
+                'username' => BotDetector::botMessage(),
+            ]);
+        }
+
+        // ─── فاز ۴۴ میزبان — کپچای ورود مشتری (در صورت فعال بودن از تنظیمات امنیتی) ───
+        if (SecuritySettings::captchaEnabled('customer_login') && !app(CaptchaService::class)->verify($request->input('captcha'))) {
+            app(CaptchaService::class)->flush();
+
+            throw ValidationException::withMessages([
+                'captcha' => 'کد امنیتی وارد شده صحیح نیست یا منقضی شده است.',
+            ]);
+        }
 
         if ($this->username($request->username)=="mobile") {
             $this->validate($request, [
@@ -126,6 +155,18 @@ class UserController extends Controller
     }
     public function CheckPassword(Request $request)
     {
+        // ─── فاز ۴۴ میزبان — قفل تلاش ورود مشتری (ضد brute-force) (پورت به سانیار — فاز ۶۳) ───
+        $customerLockKey = 'front-login:'.sha1(mb_strtolower(trim((string) $request->username)).'|'.$request->ip());
+
+        if (SecuritySettings::lockoutEnabled()
+            && \Illuminate\Support\Facades\RateLimiter::tooManyAttempts($customerLockKey, SecuritySettings::lockoutMax('customer'))) {
+            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($customerLockKey);
+
+            throw ValidationException::withMessages([
+                'username' => 'به دلیل تلاش‌های ناموفق زیاد، ورود موقتاً مسدود شده است. لطفاً '.(int) ceil($seconds / 60).' دقیقه دیگر دوباره تلاش کنید.',
+            ]);
+        }
+
         session()->put('ShowPasswordForm_Mobile_Email',$request->username);
         $this->validate($request, [
             'username'   => 'required',
@@ -165,6 +206,10 @@ class UserController extends Controller
                 if (Auth::user()->status){
                     //Admin::where('id', admin()->id)->update(['updated_at' => Carbon::now()->format('Y-m-d H:m:s')]);
                     $request->session()->regenerate();
+
+                    // فاز ۴۴ میزبان — پاک‌سازی شمارندهٔ تلاش‌ها پس از ورود موفق (پورت سانیار — فاز ۶۳)
+                    \Illuminate\Support\Facades\RateLimiter::clear($customerLockKey);
+
                     return redirect('/');
                 }else{
                     Auth::guard('web')->logout();
@@ -173,6 +218,11 @@ class UserController extends Controller
                 }
 
             }else{
+                // فاز ۴۴ میزبان — ثبت تلاش ناموفق (قفل تدریجی) (پورت سانیار — فاز ۶۳)
+                if (SecuritySettings::lockoutEnabled()) {
+                    \Illuminate\Support\Facades\RateLimiter::hit($customerLockKey, SecuritySettings::lockoutWindowSeconds('customer'));
+                }
+
                 session()->put('ShowPasswordForm_Mobile_Email',$request->username);
                 session()->put('admin_login_error','رمز عبور وارد شده صحیح نمی باشد.');
                 return redirect('/login/password');

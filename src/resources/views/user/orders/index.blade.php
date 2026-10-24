@@ -57,7 +57,7 @@
                         @foreach ($orders as $order)
                             <tr>
                                 <td class="font-14">{{ $orders->firstItem() + $loop->iteration - 1 }}</td>
-                                <td class="font-14 fw-bold">{{ $order->id }}</td>
+                                <td class="font-14 fw-bold">#{{ $order->id }}</td>
                                 <td class="font-14">{{ \Morilog\Jalali\Jalalian::fromDateTime($order->created_at)->format('l j F Y') }}</td>
                                 <td class="font-14">{{ number_format($order->price) }} تومان</td>
                                 <td class="font-14">
