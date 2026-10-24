@@ -1563,7 +1563,21 @@ function saveFieldValues(array $filds, string $belongsTo, int $relatedId)
  * ═══════════════════════════════════════════════════════════════════════ */
 
 if (! function_exists('shop_image_manager')) {
-    /** ImageManager سازگار با هر نسخهٔ Intervention — یک‌بار ساخته و کش می‌شود */
+    /**
+     * ImageManager سازگار با هر نسخهٔ Intervention — یک‌بار ساخته، با پروب واقعی
+     * اعتبارسنجی و کش می‌شود
+     *
+     * فاز ۷۴ — درس تازه از سرور لایو (خطای «Unknown driver type.» هنگام ذخیرهٔ
+     * محصول دیجی‌کالا): تشخیص نسخه با class_exists(Driver::class) غلط از آب درمی‌آید
+     * چون روی هاست کاربر، ماژول SeoAudit vendor خودش را با Intervention v2 دارد و
+     * سیمبل ImageManager از vendor ماژول لود می‌شود، در حالی که کلاس Driver v3 هنوز
+     * از vendor اصلی قابل لود است → به سازندهٔ v2 آرایهٔ ['driver' => DriverObject]
+     * داده می‌شد؛ v2 آرایه را می‌پذیرفت اما هنگام make() در createDriver منفجر می‌شد.
+     *
+     * راه‌حل قطعی: هیچ حدس نسخه‌ای در کار نیست — کاندیدها به ترتیب ساخته می‌شوند و
+     * هر کاندید با «پروب» واقعی (بازکردن یک PNG یک‌پیکسلی در حافظه) اعتبارسنجی
+     * می‌شود؛ هر نسخه‌ای که decode واقعی را رد کند کنار گذاشته می‌شود.
+     */
     function shop_image_manager(): object
     {
         static $manager = null;
@@ -1572,26 +1586,53 @@ if (! function_exists('shop_image_manager')) {
             return $manager;
         }
 
-        // v3 نهایی/آلفا — کلاس Driver موجود است
+        // PNG یک‌پیکسلی شفاف معتبر — پروب باید decode واقعی باشد نه فقط ساخت آبجکت
+        $probePng = (string) base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+            true
+        );
+
+        $candidates = [];
+
         if (class_exists(Driver::class)) {
-            try {
-                $manager = new ImageManager(new Driver()); // v3 نهایی
+            // v3 نهایی — سازندهٔ (string|DriverInterface)
+            $candidates[] = static fn (): object => new ImageManager(new Driver());
 
-                return $manager;
-            } catch (\Throwable) {
-                try {
-                    $manager = new ImageManager(['driver' => new Driver()]); // v3 آلفا
-
-                    return $manager;
-                } catch (\Throwable) {
-                }
-            }
+            // v3 آلفا — سازندهٔ آرایه‌ای؛ توجه: v2 هم آرایه را می‌پذیرد ولی در
+            // createDriver هنگام make() منفجر می‌شود — پروب واقعی آن را می‌گیرد
+            $candidates[] = static fn (): object => new ImageManager(['driver' => new Driver()]);
         }
 
         // v2 — درایور رشته‌ای ('gd' یا 'imagick')
-        $manager = new ImageManager(['driver' => extension_loaded('imagick') ? 'imagick' : 'gd']);
+        foreach (extension_loaded('imagick') ? ['imagick', 'gd'] : ['gd'] as $v2Driver) {
+            $candidates[] = static fn (): object => new ImageManager(['driver' => $v2Driver]);
+        }
 
-        return $manager;
+        $constructed = null;
+
+        foreach ($candidates as $build) {
+            try {
+                $candidate = $build();
+            } catch (\Throwable) {
+                continue; // این شکل سازنده با کلاسِ لودشده نمی‌سازد
+            }
+
+            try {
+                shop_image_open($candidate, $probePng);
+
+                return $manager = $candidate; // پروب سبز — همین نسخه درست است
+            } catch (\Throwable) {
+                $constructed ??= $candidate; // ساخته می‌شود ولی decode نمی‌کند — پشتیبان بدترین حالت
+            }
+        }
+
+        // هیچ نسخه‌ای پروب را رد نکرد (مثلاً GD در دسترس نیست) — مثل قبل fail-safe
+        if ($constructed !== null) {
+            return $manager = $constructed;
+        }
+
+        // پناه آخر — خطای بعدی در نقطهٔ مصرف کنترل‌شده نمایش داده می‌شود
+        return $manager = new ImageManager(['driver' => 'gd']);
     }
 }
 
@@ -1790,7 +1831,19 @@ function uploadOptimizedImage($file, $storagePath, $postId = null, $options = []
     }
 
     // خواندن تصویر — فاز ۷۳: read() در v3 نهایی، make() در v3 آلفا و v2
-    $image = shop_image_open($manager, $file->getContent());
+    // فاز ۷۴ — فرمت‌هایی که درایورِ فعلی سرور باز نمی‌کند (مثل webp روی GD قدیمی،
+    // دقیقاً باینری «RIFF…WEBP» لاگ کاربر): فایل خام ذخیره می‌شود تا آپلود محصول
+    // هرگز ۵۰۰ ندهد؛ نمایش تصویر مهم‌تر از بهینه‌سازی است.
+    try {
+        $image = shop_image_open($manager, $file->getContent());
+    } catch (\Throwable) {
+        $rawExtension = strtolower($file->getClientOriginalExtension() ?: 'bin');
+        $rawPath = $options['path'].str_replace('/', '-', $storagePath).'-'.uniqid().'.'.$rawExtension;
+
+        Storage::disk('public')->put($rawPath, $file->getContent());
+
+        return $rawPath;
+    }
 
     if (! empty($options['size'])) {
         if (is_array($options['size']) && count($options['size']) === 2) {

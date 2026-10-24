@@ -253,11 +253,13 @@
         <div x-show="open" x-on:click.stop
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
-             class="relative my-4 w-full max-w-2xl rounded-2xl border border-line bg-surface p-6 shadow-pop dark:border-night-line dark:bg-night-2"
+             class="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-pop dark:border-night-line dark:bg-night-2"
              role="dialog" aria-modal="true">
-            <h3 class="text-base font-bold">{{ $adminId ? 'ویرایش مدیر' : 'ایجاد مدیر جدید' }}</h3>
+            <h3 class="flex shrink-0 items-center justify-between gap-3 border-b border-line px-5 py-4 text-base font-bold dark:border-night-line">
+                {{ $adminId ? 'ویرایش مدیر' : 'ایجاد مدیر جدید' }}
+            </h3>
 
-            <form wire:submit="save" class="mt-4 space-y-4">
+            <form wire:submit="save" class="min-h-0 flex-1 space-y-4 overflow-y-auto p-6">
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <label class="mb-1.5 block text-[13px] font-semibold" for="admin-first-name">نام <span class="text-red-500">*</span></label>

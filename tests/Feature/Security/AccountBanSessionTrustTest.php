@@ -665,4 +665,76 @@ class AccountBanSessionTrustTest extends TestCase
             ->assertSee('۱۲ ساعت')
             ->assertSee('سفارشی');
     }
+
+    /* =====================================================================
+     *  ۸) فاز ۷۴ — استثنای سازنده در محافظت ۴۸ ساعته
+     * ===================================================================== */
+
+    #[Test]
+    public function creator_bypasses_primary_protection_from_another_device(): void
+    {
+        $this->allowAdminGates();
+
+        $manager = $this->newAdmin();
+
+        // نشست اصلیِ مدیر — دستگاه اول
+        $primary = $this->sessionRow($manager, [
+            'session_id'         => 'primary-'.Str::random(20),
+            'device_fingerprint' => 'fp-primary-device',
+            'is_primary'         => true,
+            'primary_until'      => now()->addHours(48),
+        ]);
+
+        // سازنده از دستگاهِ متفاوت (آیپی/مرورگر/سیستم دیگر) وارد شده
+        $creator = $this->newCreator();
+        $this->actingAs($creator, 'adminPanel');
+
+        $this->sessionRow($creator, [
+            'session_id'         => session()->getId(),
+            'device_fingerprint' => 'fp-creator-other-device',
+        ]);
+
+        // خروجِ نشست اصلی باید برای سازنده ممکن باشد
+        Livewire::test(SessionIndex::class)
+            ->call('confirmDelete', $primary->id)
+            ->call('destroySession')
+            ->assertDispatched('toast', type: 'success');
+
+        $this->assertDatabaseMissing('admin_sessions', ['id' => $primary->id]);
+
+        // بلاکِ نشست اصلیِ دوم هم باید ممکن باشد
+        $secondPrimary = $this->sessionRow($manager, [
+            'session_id'         => 'primary-2-'.Str::random(20),
+            'device_fingerprint' => 'fp-primary-device',
+            'is_primary'         => true,
+            'primary_until'      => now()->addHours(48),
+        ]);
+
+        Livewire::test(SessionIndex::class)
+            ->call('openBlock', $secondPrimary->id)
+            ->set('blockType', 'session')
+            ->call('blockSession')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('blocked_devices', [
+            'session_id' => $secondPrimary->session_id,
+        ]);
+    }
+
+    #[Test]
+    public function admins_form_modal_is_viewport_bounded(): void
+    {
+        // مودال ایجاد/ویرایش مدیر نباید از بالا و پایینِ صفحه بیرون بزند
+        // (فاز ۷۴ — همان الگوی مودال‌های بازار: سقف ۹۰vh + بدنهٔ اسکرول‌شو)
+        $this->allowAdminGates();
+
+        $creator = $this->newCreator();
+        $this->actingAs($creator, 'adminPanel');
+
+        Livewire::test(AdminIndex::class)
+            ->call('openCreateModal')
+            ->assertSee('max-h-[90vh]', false)
+            ->assertSee('flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden', false)
+            ->assertSee('min-h-0 flex-1 space-y-4 overflow-y-auto', false);
+    }
 }

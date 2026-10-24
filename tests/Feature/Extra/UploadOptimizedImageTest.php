@@ -74,4 +74,55 @@ class UploadOptimizedImageTest extends TestCase
 
         @unlink($tmp);
     }
+
+    #[Test]
+    public function shop_image_manager_probe_returns_manager_that_really_decodes(): void
+    {
+        // فاز ۷۴ — ریشهٔ «Unknown driver type.» سرور لایو: کاندید ImageManager باید
+        // با پروب واقعی (decode یک PNG در حافظه) اعتبارسنجی شود، نه فقط class_exists
+        $manager = shop_image_manager();
+
+        $this->assertIsObject($manager);
+
+        $probePng = (string) base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+            true
+        );
+
+        // همان مسیری که روی v2 معیوب منفجر می‌شد (make/read روی باینری)
+        $image = shop_image_open($manager, $probePng);
+
+        $this->assertIsObject($image);
+        $this->assertTrue(
+            method_exists($image, 'count') || method_exists($image, 'getWidth') || property_exists($image, 'width'),
+            'خروجی decode باید آبجکت تصویر باشد'
+        );
+    }
+
+    #[Test]
+    public function undecodable_binary_falls_back_to_raw_file_upload(): void
+    {
+        // فاز ۷۴ — باینری «RIFF…WEBP» لاگ کاربر: اگر درایور فعلی فرمت را باز نکند
+        // فایل خام ذخیره می‌شود و آپلود محصول هرگز ۵۰۰ نمی‌دهد
+        $garbage = 'RIFF(I'.chr(0x00).chr(0x00).chr(0x00).'WEBPVP8 not-a-really-decodable-webp-body';
+
+        $tmp = tempnam(sys_get_temp_dir(), 'webp');
+        file_put_contents($tmp, $garbage);
+
+        $file = new UploadedFile($tmp, 'digikala-product.webp', 'image/webp', null, true);
+
+        $path = uploadOptimizedImage($file, 'products', null, [
+            'optimize'  => false,
+            'watermark' => false,
+            'format'    => 'webp',
+        ]);
+
+        $this->assertIsString($path);
+        $this->assertStringStartsWith('uploads/products/', $path);
+        $this->assertStringEndsWith('.webp', $path, 'پسوند فایل خام باید از نام اصلی حفظ شود');
+        $this->assertTrue(Storage::disk('public')->exists($path));
+        $this->assertSame($garbage, Storage::disk('public')->get($path), 'محتوای خام باید بایت‌به‌بایت ذخیره شود');
+
+        @unlink($tmp);
+    }
 }
