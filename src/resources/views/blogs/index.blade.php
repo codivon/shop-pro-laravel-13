@@ -8,7 +8,7 @@
     $fallbackPopular  = collect();
     $fallbackCats     = collect();
     if (! $hasWidgets) {
-        $fallbackLatest  = \App\Models\Post::with('admin:id,full_name,image', 'category:id,title,slug')
+        $fallbackLatest  = \App\Models\Post::with('admin:id,first_name,last_name,image', 'category:id,title,slug')
             ->published()->latest()->limit(9)->get();
         $fallbackPopular = \App\Models\Post::with('category:id,title,slug')
             ->published()->orderByDesc('view')->limit(10)->get();

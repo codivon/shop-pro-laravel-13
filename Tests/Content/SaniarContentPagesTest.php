@@ -1,6 +1,6 @@
 <?php
 
-namespace Themes\Saniar\Tests\Content;
+namespace Themes\SaniarTheme\Tests\Content;
 
 use App\Models\Admin;
 use App\Models\Category;

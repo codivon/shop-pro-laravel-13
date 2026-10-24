@@ -1,6 +1,6 @@
 <?php
 
-namespace Themes\Saniar\src\Controllers;
+namespace Themes\SaniarTheme\src\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Datatable\Seller\SellerCollection;
@@ -34,6 +34,14 @@ class  MainController extends Controller
 
     public function index()
     {
+        // فاز ۶۸ — چیدمان پیش‌فرض در اولین بازدید: فعال‌سازی تازهٔ تم روی نصبی که هنوز
+        // ویجتی برای این تم ندارد، صفحهٔ اصلی خالی نشان می‌داد. widget_seeder داخل
+        // theme_first_config فقط وقتی هیچ ردیفی برای این تم نباشد چیدمان ۱۱-ویجتی
+        // پیش‌فرض سانیار را می‌کارد (idempotent — ادمین بعداً از پنل چیدمان را عوض می‌کند).
+        if (! Widget::where('theme', current_theme_name())->exists()) {
+            theme_first_config();
+        }
+
         $widgets = Widget::with('options')
             ->where('theme', current_theme_name())
             ->where('is_active', true)

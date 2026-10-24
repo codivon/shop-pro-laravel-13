@@ -1,6 +1,6 @@
 <?php
 
-namespace Themes\Saniar\src\Controllers;
+namespace Themes\SaniarTheme\src\Controllers;
 
 use App\Events\OrderCancelled;
 use App\Events\OrderCreated;
@@ -33,7 +33,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Shetabit\Payment\Facade\Payment;
 use Shetabit\Multipay\Invoice;
-use Themes\Saniar\src\Requests\StoreOrderRequest;
+use Themes\SaniarTheme\src\Requests\StoreOrderRequest;
 
 class OrderController extends Controller
 {

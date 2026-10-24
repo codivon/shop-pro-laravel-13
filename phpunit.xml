@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     PHPUnit اختصاصی تم سانیار — فاز K
-    اجرا:  php vendor/bin/phpunit -c themes/Saniar/phpunit.xml
+    اجرا:  php vendor/bin/phpunit -c themes/SaniarTheme/phpunit.xml
     (از ریشهٔ میزبان؛ بوت‌استراپ به vendor میزبان پوینت می‌کند و کد میزبان
     دست‌نخورده می‌ماند — تست‌ها ۱۰۰٪ داخل ریپوی تم‌اند)
 -->
@@ -11,13 +11,13 @@
          colors="true"
          cacheDirectory=".phpunit.cache">
     <testsuites>
-        <testsuite name="Saniar">
+        <testsuite name="SaniarTheme">
             <directory suffix="Test.php">./Tests</directory>
         </testsuite>
     </testsuites>
     <php>
         <server name="APP_ENV" value="testing"/>
-        <server name="CURRENT_THEME" value="Saniar"/>
+        <server name="CURRENT_THEME" value="SaniarTheme"/>
         <server name="BCRYPT_ROUNDS" value="4"/>
         <server name="CACHE_DRIVER" value="array"/>
         <server name="MAIL_MAILER" value="array"/>

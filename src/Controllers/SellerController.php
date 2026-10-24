@@ -1,6 +1,6 @@
 <?php
 
-namespace Themes\Saniar\src\Controllers;
+namespace Themes\SaniarTheme\src\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Themes\Saniar\src\Requests\Store_registration_business_details;
+use Themes\SaniarTheme\src\Requests\Store_registration_business_details;
 
 class SellerController extends Controller
 {

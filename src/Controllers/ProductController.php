@@ -1,6 +1,6 @@
 <?php
 
-namespace Themes\Saniar\src\Controllers;
+namespace Themes\SaniarTheme\src\Controllers;
 
 use App\Models\Admin;
 use App\Models\Attribute;

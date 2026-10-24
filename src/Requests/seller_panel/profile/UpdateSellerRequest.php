@@ -1,6 +1,6 @@
 <?php
 
-namespace Themes\Saniar\src\Requests\seller_panel\profile;
+namespace Themes\SaniarTheme\src\Requests\seller_panel\profile;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;

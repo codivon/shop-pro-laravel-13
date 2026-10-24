@@ -1,6 +1,6 @@
 <?php
 
-namespace Themes\Saniar\src\Controllers\sellers;
+namespace Themes\SaniarTheme\src\Controllers\sellers;
 
 use App\Events\OrderPaid;
 use App\Events\WalletAmountDecreased;

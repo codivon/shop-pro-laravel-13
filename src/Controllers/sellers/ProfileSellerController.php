@@ -1,6 +1,6 @@
 <?php
 
-namespace Themes\Saniar\src\Controllers\sellers;
+namespace Themes\SaniarTheme\src\Controllers\sellers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Address;
@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Intervention\Image\Facades\Image;
-use Themes\Saniar\src\Requests\seller_panel\profile\UpdateSellerRequest;
+use Themes\SaniarTheme\src\Requests\seller_panel\profile\UpdateSellerRequest;
 
 class ProfileSellerController extends Controller
 {

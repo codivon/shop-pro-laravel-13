@@ -1,6 +1,6 @@
 <?php
 
-namespace Themes\Saniar\src;
+namespace Themes\SaniarTheme\src;
 
 use Illuminate\Support\ServiceProvider;
 use App\Models\Category;

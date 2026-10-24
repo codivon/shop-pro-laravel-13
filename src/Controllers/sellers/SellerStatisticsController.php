@@ -1,7 +1,7 @@
 <?php
 // app/Http/Controllers/Seller/SellerStatisticsController.php
 
-namespace Themes\Saniar\src\Controllers\sellers;
+namespace Themes\SaniarTheme\src\Controllers\sellers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Viewer;

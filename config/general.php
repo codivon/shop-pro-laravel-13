@@ -1,7 +1,7 @@
 <?php
-$default_images_path = 'themes/Saniar/src/resources/assets/image/';
+$default_images_path = 'themes/SaniarTheme/src/resources/assets/image/';
 return [
-    'theme_name' => 'Saniar',
+    'theme_name' => 'SaniarTheme',
 
     'sliderGroups' => [
         'home' => [
@@ -262,8 +262,8 @@ return [
         'wallet/payment/callback/*',
     ],
 
-    'asset_path' => 'themes/Saniar/',
-    'mainfest_path' => 'themes/Saniar',
+    'asset_path' => 'themes/SaniarTheme/',
+    'mainfest_path' => 'themes/SaniarTheme',
     'demo' => [
         'image' => 'image/logo.png',
         'name' => 'سانیار',
@@ -454,7 +454,7 @@ return [
     ],
 
     'links' => [
-        public_path('themes/Saniar') => base_path('themes/Saniar/src/resources/assets'),
+        public_path('themes/SaniarTheme') => base_path('themes/SaniarTheme/src/resources/assets'),
     ],
 
     'home-widgets' => require __DIR__ . '/../config/HomeWidgets.php',

@@ -1,6 +1,6 @@
 <?php
 
-namespace Themes\Saniar\src\Requests;
+namespace Themes\SaniarTheme\src\Requests;
 
 use App\Models\Gateway;
 use Illuminate\Foundation\Http\FormRequest;

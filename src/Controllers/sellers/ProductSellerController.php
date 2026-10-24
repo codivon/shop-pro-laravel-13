@@ -1,6 +1,6 @@
 <?php
 
-namespace Themes\Saniar\src\Controllers\sellers;
+namespace Themes\SaniarTheme\src\Controllers\sellers;
 
 use App\Events\SellerProductCreated as EventsSellerProductCreated;
 use App\Http\Controllers\Controller;
@@ -12,8 +12,8 @@ use App\Notifications\Product\SellerProductCreated;
 use App\Notifications\Product\SellerProductUpdate;
 use App\Notifications\Sms\NewSellerCodeSent;
 use Illuminate\Support\Facades\Notification;
-use Themes\Saniar\src\Requests\seller_panel\products\StoreProductRequest;
-use Themes\Saniar\src\Requests\seller_panel\products\UpdateProductRequest;
+use Themes\SaniarTheme\src\Requests\seller_panel\products\StoreProductRequest;
+use Themes\SaniarTheme\src\Requests\seller_panel\products\UpdateProductRequest;
 use App\Http\Resources\Datatable\Product\ProductCollection;
 use App\Models\Address;
 use App\Models\AttributeGroup;
