@@ -82,6 +82,10 @@ class InstalledModule extends Model
     /**
      * ساخت/به‌روزرسانی رکورد در حالت "در حال نصب" — در لحظه dispatch
      * version همیشه مقدار دارد (ستون NOT NULL است)
+     *
+     * فاز ۲۷ — ستون name هم NOT NULL است؛ اگر name پاس نشود (مثل dispatchInstall
+     * پکیج رایگان) باید از خود slug ساخته شود، وگرنه در strict mode درج با
+     * خطای «1364 Field 'name' doesn't have a default value» شکست می‌خورد.
      */
     public static function markPending(
         string $slug,
@@ -95,8 +99,14 @@ class InstalledModule extends Model
         $module->is_active  = false;
         $module->last_error = null;
 
-        if ($name !== null)       $module->name = $name;
+        if ($name !== null && $name !== '') $module->name = $name;
         if ($licenseKey !== null) $module->license_key = $licenseKey;
+
+        // ★ فاز ۲۷ — name هرگز خالی نمی‌ماند (نام واقعی ماژول بعد از استخراج ZIP
+        // توسط PackageInstallerService::registerInstall جایگزین می‌شود)
+        if (empty($module->name)) {
+            $module->name = static::deriveNameFromSlug($slug);
+        }
 
         // نسخه: روی رکورد موجود حفظ، روی جدید placeholder
         if ($version !== null) {
@@ -116,5 +126,11 @@ class InstalledModule extends Model
         $module->save();
 
         return $module;
+    }
+
+    /** نام احتیاطی از روی slug — rack-widget → RackWidget (هماهنگ با نام پوشه Modules/) */
+    public static function deriveNameFromSlug(string $slug): string
+    {
+        return str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $slug)));
     }
 }

@@ -897,6 +897,7 @@ class SettingController extends Controller
     }
     public function seller_hero_store(Request $request)
     {
+        $this->authorize('settings.others');
         $data = $this->validate($request, [
             'title'         => 'required',
             'description'  => 'nullable|string',
@@ -913,6 +914,7 @@ class SettingController extends Controller
     }
     public function seller_hero_update(SellerHero $sellerHero, Request $request)
     {
+        $this->authorize('settings.others');
         $data = $this->validate($request, [
             'title'         => 'required',
             'description'  => 'nullable|string',
@@ -925,6 +927,7 @@ class SettingController extends Controller
     }
     public function seller_hero_destroy(SellerHero $sellerHero)
     {
+        $this->authorize('settings.others');
 
         $sellerHero->delete();
         return response('success');
@@ -941,6 +944,7 @@ class SettingController extends Controller
     }
     public function seller_commission_store(Request $request)
     {
+        $this->authorize('settings.others');
         $data = $this->validate($request, [
             'title'         => 'required',
             'description'  => 'nullable|string',
@@ -957,6 +961,7 @@ class SettingController extends Controller
     }
     public function seller_commission_update(SellerCommission $sellerCommission, Request $request)
     {
+        $this->authorize('settings.others');
         $data = $this->validate($request, [
             'title'         => 'required',
             'description'  => 'nullable|string',
@@ -970,6 +975,7 @@ class SettingController extends Controller
     }
     public function seller_commission_destroy(SellerCommission $sellerCommission)
     {
+        $this->authorize('settings.others');
 
         $sellerCommission->delete();
         return response('success');
@@ -1024,6 +1030,7 @@ class SettingController extends Controller
     }
     public function seller_econtract_store(Request $request)
     {
+        $this->authorize('settings.others');
 
         if ($request->input('content')==null){
             session()->put('toast-error', 'متن اصلی قرار داد نمیتواند خالی باشد.');

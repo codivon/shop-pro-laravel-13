@@ -319,7 +319,7 @@
 
                                 @if ($price->isDownloadable())
 
-                                    @if (auth()->check())
+                                    @if (auth('web')->check())
                                     <div class="table-suppliers-cell table-suppliers-cell-action">
                                             <div class="seller-wrapper">
                                                 <a  href="{{ $price->downloadLink() }}" class="js-btn-add-to-cart">دانلود</a>
@@ -561,7 +561,7 @@
 
                                     <div class="comments-summary-note">
                                         <span>شما هم درباره این کالا دیدگاه ثبت کنید</span>
-                                        @if (auth()->check())
+                                        @if (auth('web')->check())
                                             <button data-toggle="modal"
                                                     data-target="#add-product-review-modal"
                                                     class="dk-btn dk-btn-info">
@@ -706,7 +706,7 @@
         </div>
     </div>
 @endif
-@if (auth()->check())
+@if (auth('web')->check())
     @include('front::products.partials.add-review')
 @endif
 @if (option('show_product_share_links', 1) == 1)

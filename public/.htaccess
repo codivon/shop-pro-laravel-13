@@ -5,6 +5,17 @@
 
     RewriteEngine On
 
+    # ========================================================================
+    # امنیتی: خنثی‌سازی اجرای کد در پوشه‌های آپلودی
+    # اگر مهاجمی به هر روشی فایل PHP/اسکریپت در uploads یا storage بارگذاری کند،
+    # با 403 مواجه می‌شود و هرگز اجرا نمی‌شود.
+    # ========================================================================
+    RewriteCond %{REQUEST_URI} ^/?(uploads|storage|themes)/ [NC]
+    RewriteRule \.(php\d*|phtml|pht|pl|py|cgi|sh|asp|aspx|jsp|shtml|phar)$ - [F,L,NC]
+
+    # امنیتی: جلوگیری از دسترسی مستقیم به فایل‌های حساس
+    RewriteRule ^(composer\.(json|lock)|package(-lock)?\.json|\.env|\.env\..*|\.git|\.gitignore|yarn\.lock|webpack\.mix\.(js|cjs)|vite\.config\..*)$ - [F,L,NC]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

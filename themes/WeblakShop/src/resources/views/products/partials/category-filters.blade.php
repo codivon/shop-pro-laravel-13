@@ -26,18 +26,13 @@
                                 <div class="col-12 filter-product mb-3">
                                     <div class="accordion" id="accordionExample">
 
-                                        @php
-                                            $products_id = $category->allPublishedProducts()->pluck('id');
-                                        @endphp
-
                                         @foreach ($category->getFilter()->related()->orderBy('ordering')->get() as $filter)
 
                                             @switch($filter->filterable_type)
                                                 @case('App\Models\Specification')
 
                                                     @php
-                                                        $spec_values = \DB::table('product_specification')->whereIn('product_id', $products_id)->where('specification_id', $filter->filterable_id)->get()->unique('value')->pluck('value')->toArray();
-                                                        $spec_values = get_separated_values($spec_values, $filter->separator);
+                                                        $spec_values = front_filter_spec_values($category, $filter);
                                                     @endphp
 
                                                     @if (count($spec_values))
@@ -72,9 +67,7 @@
                                                 @case('App\Models\AttributeGroup')
 
                                                     @php
-                                                        $prices = \DB::table('prices')->whereIn('product_id', $products_id)->pluck('id');
-                                                        $attributes = \DB::table('attribute_price')->whereIn('price_id', $prices)->pluck('attribute_id');
-                                                        $group_values = \App\Models\Attribute::where('attribute_group_id', $filter->filterable_id)->whereIn('id', $attributes)->get();
+                                                        $group_values = front_filter_attribute_values($category, $filter);
                                                     @endphp
 
                                                     @if ($group_values->count())
@@ -156,18 +149,13 @@
                 <div class="col-12 filter-product mb-3">
                     <div class="accordion" id="accordionExample">
 
-                        @php
-                            $products_id = $category->allPublishedProducts()->pluck('id');
-                        @endphp
-
                         @foreach ($category->getFilter()->related()->orderBy('ordering')->get() as $filter)
 
                             @switch($filter->filterable_type)
                                 @case('App\Models\Specification')
 
                                     @php
-                                        $spec_values = \DB::table('product_specification')->whereIn('product_id', $products_id)->where('specification_id', $filter->filterable_id)->get()->unique('value')->pluck('value')->toArray();
-                                        $spec_values = get_separated_values($spec_values, $filter->separator);
+                                        $spec_values = front_filter_spec_values($category, $filter);
                                     @endphp
 
                                     @if (count($spec_values))
@@ -202,9 +190,7 @@
                                 @case('App\Models\AttributeGroup')
 
                                     @php
-                                        $prices = \DB::table('prices')->whereIn('product_id', $products_id)->pluck('id');
-                                        $attributes = \DB::table('attribute_price')->whereIn('price_id', $prices)->pluck('attribute_id');
-                                        $group_values = \App\Models\Attribute::where('attribute_group_id', $filter->filterable_id)->whereIn('id', $attributes)->get();
+                                        $group_values = front_filter_attribute_values($category, $filter);
                                     @endphp
 
                                     @if ($group_values->count())

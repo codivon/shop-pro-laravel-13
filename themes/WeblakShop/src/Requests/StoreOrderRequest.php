@@ -46,11 +46,14 @@ class StoreOrderRequest extends FormRequest
         ];
 
         // اگر محصول فیزیکی وجود دارد، آدرس الزامی است
+        // امنیتی (IDOR): آدرس باید متعلق به خود کاربر باشد نه کاربر دیگر
+        $userId = $this->user() ? $this->user()->id : 0;
+
         if ($hasPhysical) {
-            $rules['address'] = 'required|exists:addresses,id';
+            $rules['address'] = 'required|exists:addresses,id,user_id,' . $userId;
         } else {
             // اگر فقط محصول دانلودی است، آدرس اختیاری است
-            $rules['address'] = 'nullable|exists:addresses,id';
+            $rules['address'] = 'nullable|exists:addresses,id,user_id,' . $userId;
         }
 
         return $rules;

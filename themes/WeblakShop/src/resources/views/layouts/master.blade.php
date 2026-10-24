@@ -102,35 +102,35 @@
                         <ul class="sub-menu nav">
                             @if(auth('adminPanel')->user()->can('products.index'))
                                 <li class="list-item">
-                                    <a class="nav-link" href="{{ route('admin.products.index') }}"><i
+                                    <a class="nav-link" href="{{ route('np.products.index') }}"><i
                                             class="fa-solid fa-list"></i> لیست محصولات</a>
                                 </li>
                             @endif
                             @if(auth('adminPanel')->user()->can('products.create'))
                                 <li class="list-item">
-                                    <a class="nav-link" href="{{ route('admin.products.create') }}"><i
+                                    <a class="nav-link" href="{{ route('np.products.create') }}"><i
                                             class="fa-solid fa-plus"></i> ایجاد محصول جدید</a>
                                 </li>
                             @endif
                             @if(auth('adminPanel')->user()->can('products.category'))
                                 <li class="list-item">
-                                    <a class="nav-link" href="{{ route('admin.products.categories.index') }}"><i
+                                    <a class="nav-link" href="{{ route('np.categories.product') }}"><i
                                             class="fa-solid fa-tags"></i> دسته بندی ها</a>
                                 </li>
                             @endif
                             @if(auth('adminPanel')->user()->can('products.brands'))
                                 <li class="list-item">
-                                    <a class="nav-link" href="{{ route('admin.brands.index') }}"><i
+                                    <a class="nav-link" href="{{ route('np.brands.index') }}"><i
                                             class="fa-solid fa-trademark"></i> برندها</a>
                                 </li>
                             @endif
                             @if(auth('adminPanel')->user()->can('products.comments'))
                                 <li class="list-item">
-                                    <a class="nav-link" href="{{ route('admin.comments.products') }}"><i
+                                    <a class="nav-link" href="{{ route('np.comments.products') }}"><i
                                             class="fa-solid fa-comment"></i> دیدگاه ها</a>
                                 </li>
                                 <li class="list-item">
-                                    <a class="nav-link" href="{{ route('admin.reviews.index') }}"><i
+                                    <a class="nav-link" href="{{ route('np.reviews.index') }}"><i
                                             class="fa-solid fa-question-circle"></i> پرسش و پاسخ ها</a>
                                 </li>
                             @endif
@@ -145,26 +145,26 @@
                         <ul class="sub-menu nav">
                             @if(auth('adminPanel')->user()->can('posts.index'))
                                 <li class="list-item">
-                                    <a class="nav-link" href="{{ route('admin.posts.index') }}"><i
+                                    <a class="nav-link" href="{{ route('np.posts.index') }}"><i
                                             class="fa-solid fa-newspaper"></i> لیست مقالات</a>
                                 </li>
                             @endif
 
                             @if(auth('adminPanel')->user()->can('posts.create'))
                                 <li class="list-item">
-                                    <a class="nav-link" href="{{ route('admin.posts.create') }}"><i
+                                    <a class="nav-link" href="{{ route('np.posts.create') }}"><i
                                             class="fa-solid fa-plus"></i> ایجاد مقاله جدید</a>
                                 </li>
                             @endif
                             @if(auth('adminPanel')->user()->can('posts.category'))
                                 <li class="list-item">
-                                    <a class="nav-link" href="{{ route('admin.posts.categories.index') }}"><i
+                                    <a class="nav-link" href="{{ route('np.categories.post') }}"><i
                                             class="fa-solid fa-tags"></i> دسته بندی ها</a>
                                 </li>
                             @endif
                             @if(auth('adminPanel')->user()->can('posts.comments'))
                                 <li class="list-item">
-                                    <a class="nav-link" href="{{ route('admin.comments.posts') }}"><i
+                                    <a class="nav-link" href="{{ route('np.comments.posts') }}"><i
                                             class="fa-solid fa-comment"></i> دیدگاه ها</a>
                                 </li>
                             @endif
@@ -174,12 +174,12 @@
 
                 @if(auth('adminPanel')->user()->can('settings.information'))
                     <li class="list-item">
-                        <a class="nav-link" href="{{ route('admin.settings.information') }}"> تنظیمات</a>
+                        <a class="nav-link" href="{{ route('np.settings.information') }}"> تنظیمات</a>
                     </li>
                 @endif
                 @if(auth('adminPanel')->user()->can('themes.settings'))
                     <li class="list-item">
-                        <a class="nav-link" href="{{ route('admin.widgets.index') }}"> ویرایش صفحه</a>
+                        <a class="nav-link" href="{{ route('np.widgets.index') }}"> ویرایش صفحه</a>
                     </li>
                 @endif
 
@@ -196,23 +196,23 @@
                     </a>
                     <ul class="sub-menu nav">
                         <li class="list-item">
-                            <a class="nav-link" href="{{ route('admin.dashboard') }}"><i
+                            <a class="nav-link" href="{{ route('np.dashboard') }}"><i
                                     class="fa-solid fa-chart-line"></i> پیشخوان</a>
                         </li>
                         <li class="list-item">
-                            <a class="nav-link" href="{{ route('admin.user.profile.show') }}"><i
+                            <a class="nav-link" href="{{ route('np.profile') }}"><i
                                     class="fa-solid fa-user-edit"></i>ویرایش پروفایل</a>
                         </li>
                         <li class="list-item">
-                            <a class="nav-link" href="{{ route('admin.sessions.index') }}"><i
+                            <a class="nav-link" href="{{ route('np.sessions.index') }}"><i
                                     class="fa-solid fa-desktop"></i> نشست های فعال</a>
                         </li>
                         <li class="list-item">
-                            <a class="nav-link" href="{{ route('admin.notifications.index') }}"><i
+                            <a class="nav-link" href="{{ route('np.notifications.index') }}"><i
                                     class="fa-solid fa-bell"></i> اعلان ها</a>
                         </li>
                         <li class="list-item">
-                            <a class="nav-link" href="{{ route('admin.logout') }}"><i
+                            <a class="nav-link" href="{{ route('np.logout') }}"><i
                                     class="fa-solid fa-sign-out-alt"></i> خروج از حساب کاربری</a>
                         </li>
 
@@ -319,7 +319,7 @@
 
                     @include('front::partials.cart')
 
-                    @if(auth()->check())
+                    @if(auth('web')->check())
 
                         <a class="login-link">
                             <div class="btn-login">
@@ -332,10 +332,10 @@
                                                 <img src="{{theme_asset('images/svg/user-profile.svg')}}" alt="profile">
                                             </div>
                                             <div class="header-profile-dropdown-user-info">
-                                                <p class="header-profile-dropdown-user-name">@if(auth()->user()->fullname!== null)
-                                                        {{auth()->user()->fullname}}
+                                                <p class="header-profile-dropdown-user-name">@if(auth('web')->user()->fullname!== null)
+                                                        {{auth('web')->user()->fullname}}
                                                     @else
-                                                        {{auth()->user()->mobile}}
+                                                        {{auth('web')->user()->mobile}}
                                                     @endif
                                                     <span class="header-profile-dropdown-user-profile-link">مشاهده حساب
                                                         کاربری</span>
@@ -348,7 +348,7 @@
                                                         پول</span>
                                                     <div class="header-profile-dropdown-account-item-amount">
                                                         <span
-                                                            class="header-profile-dropdown-account-item-amount-number">{{ !auth()->user()->isAdmin() ? number_format(auth()->user()->getWallet()->balance()) : '0' }}
+                                                            class="header-profile-dropdown-account-item-amount-number">{{ !auth('web')->user()->isAdmin() ? number_format(auth('web')->user()->getWallet()->balance()) : '0' }}
                                                         </span>
                                                         تومان
                                                     </div>
@@ -395,7 +395,7 @@
                             @endif
                         </div>
 
-                        @if(auth()->check())
+                        @if(auth('web')->check())
                         <div class="btn-login-responsive">
 
                             @include('front::partials.notifications')
@@ -410,7 +410,7 @@
 
                         <div class="question-faq btn-login-responsive">
 
-                            @if(auth()->check())
+                            @if(auth('web')->check())
                                 <span class="mdi mdi-account"></span>
                                 <div class="dropdown-menu-login">
                                     <div class="header-profile-dropdown-account">
@@ -421,10 +421,10 @@
                                                          alt="profile">
                                                 </div>
                                                 <div class="header-profile-dropdown-user-info">
-                                                    <p class="header-profile-dropdown-user-name">@if(auth()->user()->fullname!=" ")
-                                                            {{auth()->user()->fullname}}
+                                                    <p class="header-profile-dropdown-user-name">@if(auth('web')->user()->fullname!=" ")
+                                                            {{auth('web')->user()->fullname}}
                                                         @else
-                                                            {{auth()->user()->mobile}}
+                                                            {{auth('web')->user()->mobile}}
                                                         @endif
                                                         <a href="{{ route('front.user.profile') }}"
                                                            class="header-profile-dropdown-user-profile-link">مشاهده

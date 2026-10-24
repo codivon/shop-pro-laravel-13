@@ -1,6 +1,9 @@
 @php
     $variables    = get_widget($widget);
     $categories   = $variables['categories'];
+    // FIX مقیاس: شمارش محصولات هر دسته در «یک کوئری» کش‌شده
+    // (قبلاً به‌ازای هر دسته ۲ کوئری بازگشتی + COUNT اجرا می‌شد = N+1)
+    $category_counts = front_category_published_counts($categories);
 @endphp
 
 <!-- Start Category-Section -->
@@ -14,7 +17,7 @@
                     <a href="{{ $category->link }}" class="image-data-src promotion-category">
                         <img data-src="{{ $category->image ? asset($category->image) : asset('/no-image-product.svg') }}" src="{{ theme_asset('images/600-600.png') }}" alt="{{ $category->title }}">
                         <div class="promotion-category-name">{{ $category->title }}</div>
-                        <div class="promotion-category-quantity">{{ $category->allPublishedProducts()->count() }} کالا</div>
+                        <div class="promotion-category-quantity">{{ $category_counts[$category->id] ?? 0 }} کالا</div>
                     </a>
                     @endforeach
                 </div>

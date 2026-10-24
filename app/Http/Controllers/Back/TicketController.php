@@ -172,7 +172,12 @@ class TicketController extends Controller
             'filename' => 'required'
         ]);
 
-        Storage::delete('tmp/' . $request->filename);
+        // امنیتی: جلوگیری از path-traversal (مثل ../../.env)
+        $filename = basename((string) $request->filename);
+        abort_if($filename === '' || $filename === '.' || $filename === '..', 422);
+        abort_unless(hash_equals((string) $request->filename, $filename), 422, 'نام فایل نامعتبر است.');
+
+        Storage::delete('tmp/' . $filename);
 
         return response('success');
     }

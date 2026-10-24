@@ -9,6 +9,7 @@ use App\Models\StaticFilter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 trait ProductScopes
 {
@@ -36,8 +37,31 @@ trait ProductScopes
         return $query;
     }
 
+    /**
+     * آیا ستون‌های دینرمال‌شده products (in_stock / min_price) موجودند؟
+     * (در Product هم همین متد هست؛ اینجا برای trait مستقل است)
+     */
+    protected static function usesDenormalizedColumns(): bool
+    {
+        static $ready = null;
+
+        if ($ready === null) {
+            $ready = Schema::hasColumn('products', 'in_stock')
+                && Schema::hasColumn('products', 'min_price');
+        }
+
+        return $ready;
+    }
+
     public function scopeAvailable($query)
     {
+        if (static::usesDenormalizedColumns()) {
+            // نسخهٔ سریع برای مقیاس میلیون رکورد — بدون subquery به‌ازای هر ردیف
+            return $query->where(function ($query2) {
+                $query2->where('in_stock', true)->orWhere('type', 'download');
+            });
+        }
+
         $query->where(function ($query2) {
             $query2->whereHas('prices', function ($p) {
                 $p->where('stock', '>', 0);
@@ -49,6 +73,10 @@ trait ProductScopes
 
     public function scopeUnavailable($query)
     {
+        if (static::usesDenormalizedColumns()) {
+            return $query->where('in_stock', false);
+        }
+
         $query->where(function ($query2) {
             $query2->whereDoesntHave('prices', function ($p) {
                 $p->where('stock', '>', 0);
@@ -102,6 +130,11 @@ trait ProductScopes
 
     public function scopeOrderByStock($query, $type = 'desc')
     {
+        if (static::usesDenormalizedColumns()) {
+            // نسخهٔ سریع: ستون in_stock ایندکس‌خور (نگهداری‌شده توسط PriceObserver)
+            return $query->orderBy('in_stock', $type);
+        }
+
         $query
             ->select('*')
             ->selectRaw(DB::raw('if ((select max(stock) from prices where prices.product_id = products.id and prices.deleted_at is null) > 0, 1, 0) as in_stock'))
@@ -471,6 +504,11 @@ trait ProductScopes
 
     public function scopeOrderByPrice($query, $type = '')
     {
+        if (static::usesDenormalizedColumns()) {
+            // نسخهٔ سریع: ستون min_price ایندکس‌خور (نگهداری‌شده توسط PriceObserver)
+            return $query->orderBy('min_price', $type);
+        }
+
         return $query
             ->selectRaw(DB::raw('(select min(if((prices.discount_expire_at is null or date(prices.discount_expire_at) > "' . now()->format('Y-m-d H:i:s') . '"), prices.discount_price, prices.regular_price)) from prices where prices.product_id = products.id and prices.deleted_at is null and prices.stock > 0) as min_price'))
             ->orderBy('min_price', $type);

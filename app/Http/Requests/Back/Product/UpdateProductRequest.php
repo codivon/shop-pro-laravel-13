@@ -62,7 +62,7 @@ class UpdateProductRequest extends FormRequest
             $rules = array_merge($rules, [
                 'download_files'                => 'required_if:type,download|array',
                 'download_files.*.title'        => 'required|string',
-                'download_files.*.file'         => 'required_without:download_files.*.price_id|file',
+                'download_files.*.file'         => ['required_without:download_files.*.price_id', 'file', 'max:102400'], // امنیتی: حداکثر ۱۰۰MB
                 'download_files.*.price'        => 'required|numeric|min:0',
                 'download_files.*.discount'     => 'nullable|min:0|max:100',
                 'download_files.*.status'       => 'required|in:active,inactive',

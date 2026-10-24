@@ -12,7 +12,7 @@ class PackagePurchase extends Model
     protected $table = 'package_purchases';
 
     protected $fillable = [
-        'admin_id', 'package_slug', 'package_name', 'version',
+        'type', 'admin_id', 'package_slug', 'package_name', 'version',
         'amount', 'currency', 'gateway', 'transaction_id',
         'license_key', 'license_expires_at', 'status',
         'payment_url', 'paid_at', 'meta',

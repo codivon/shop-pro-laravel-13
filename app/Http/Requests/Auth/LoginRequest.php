@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Services\SecuritySettings;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -46,7 +47,12 @@ class LoginRequest extends FormRequest
         $this->ensureIsNotRateLimited();
 
         if (! Auth::attempt($this->only('username', 'password'), $this->filled('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+            if (SecuritySettings::lockoutEnabled()) {
+                RateLimiter::hit(
+                    $this->throttleKey(),
+                    SecuritySettings::lockoutWindowSeconds('customer')
+                );
+            }
 
             throw ValidationException::withMessages([
                 'username' => __('auth.failed'),
@@ -65,20 +71,23 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited()
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
-            return;
+        // فاز ۴۴ — سقف و پنجره از تب «امنیت» تنظیمات برنامه‌نویس؛ خاموش بودن کلید اصلی = بدون قفل
+        $maxAttempts = SecuritySettings::lockoutEnabled()
+            ? SecuritySettings::lockoutMax('customer')
+            : 0;
+
+        if ($maxAttempts > 0 && RateLimiter::tooManyAttempts($this->throttleKey(), $maxAttempts)) {
+            event(new Lockout($this));
+
+            $seconds = RateLimiter::availableIn($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'username' => trans('auth.throttle', [
+                    'seconds' => $seconds,
+                    'minutes' => ceil($seconds / 60),
+                ]),
+            ]);
         }
-
-        event(new Lockout($this));
-
-        $seconds = RateLimiter::availableIn($this->throttleKey());
-
-        throw ValidationException::withMessages([
-            'username' => trans('auth.throttle', [
-                'seconds' => $seconds,
-                'minutes' => ceil($seconds / 60),
-            ]),
-        ]);
     }
 
     /**

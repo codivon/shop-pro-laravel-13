@@ -146,8 +146,10 @@ return [
             'to' => 'your@example.com',
 
             'from' => [
-                'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-                'name' => env('MAIL_FROM_NAME', 'Example'),
+                // فاز ۲۳: اگر MAIL_FROM_ADDRESS=null باشد (مثل .env.example قدیمی)
+                // اسپاتي با InvalidConfig روی «هر» request (وب و کنسول) 500 می‌دهد
+                'address' => env('MAIL_FROM_ADDRESS') ?: 'hello@example.com',
+                'name' => env('MAIL_FROM_NAME') ?: 'WeblakShop',
             ],
         ],
     ],

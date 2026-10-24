@@ -53,7 +53,7 @@
     <!-- END: Theme JS-->
 
     <!-- BEGIN: Page JS-->
-    <script src="{{ asset('back/assets/js/scripts.js') }}?v=8"></script>
+    <script src="{{ asset('back/assets/js/scripts.js') }}?v=12"></script>
     <script src="{{ asset('back/app-assets/js/scripts/extensions/toastr.js') }}"></script>
 
     <script>

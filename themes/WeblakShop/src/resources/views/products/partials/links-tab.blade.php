@@ -27,7 +27,7 @@
 
                         @if ($price->isDownloadable())
 
-                            @if (auth()->check())
+                            @if (auth('web')->check())
                                 <a href="{{ $price->downloadLink() }}" class="btn btn-success">
                                     دانلود
                                 </a>

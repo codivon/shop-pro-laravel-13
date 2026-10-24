@@ -18,15 +18,7 @@ class VerifyCsrfToken extends Middleware
 
     public function handle($request, Closure $next)
     {
-        //add this condition
-        if (config('front.exceptVerifyCsrfToken')) {
-            foreach (config('front.exceptVerifyCsrfToken') as $route) {
-                if ($request->is($route)) {
-                    return $next($request);
-                }
-            }
-        }
-
+        // امنیتی: هیچ مسیری به‌صورت پویا از CSRF مستثنی نمی‌شود
         return parent::handle($request, $next);
     }
 }

@@ -49,9 +49,9 @@ class ThemeServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__ . '/resources/views', 'front');
 
         // share with views
-        if (!$this->app->runningInConsole()) {
-            $this->viewComposer();
-        }
+        // کامپوزرها lazy هستند (فقط هنگام رندر ویو اجرا می‌شوند)؛ بدون ثبت در
+        // حالت کنسول، ویوهای تم در تست‌ها با متغیرهای تعریف‌نشده 500 می‌دهند
+        $this->viewComposer();
     }
 
     private function viewComposer()
@@ -61,31 +61,49 @@ class ThemeServiceProvider extends ServiceProvider
 
         view()->composer(['front::partials.footer'], function ($view) {
 
-            $footer_links     = config('front.linkGroups', []);
-            $links            = Link::orderBy('ordering')->get();
+            $footer_links = config('front.linkGroups', []);
+
+            // FIX مقیاس: لینک‌های فوتر در هر بازدید کوئری نمی‌زنند
+            $links = Cache::remember('front.footer.links', 300, function () {
+                return Link::orderBy('ordering')->get();
+            });
 
             $view->with(compact('footer_links', 'links'));
         });
 
         view()->composer(['front::partials.menu.menu', 'front::partials.mobile-menu.menu'], function ($view) {
 
+            // FIX مقیاس: درخت منو قبلاً به‌خاطر cache-forget داخل کانستراکتور
+            // CategoryObserver در «هر ریکوئست» بازسازی می‌شد — الان کش واقعاً کار می‌کند.
+            // postcats/menus هم با کش کوتاه‌مدت از کوئری حذف شدند.
+            // eager-loading درخت منو: قبلاً به‌ازای هر آیتم منو ۲-۳ کوئری
+            // ($menu->category / $menu->menus / getCategories) اجرا می‌شد = N+1
+            [$productcats, $postcats, $menus] = Cache::remember('front.menu.data', 300, function () {
+                $productcats = Cache::rememberForever('front.productcats', function () {
+                    return Category::published()->whereNull('category_id')
+                        ->orderBy('ordering')
+                        ->where('type', 'productcat')
+                        ->getWithChilds();
+                });
 
-            $productcats = Cache::rememberForever('front.productcats', function () {
-                return Category::published()->whereNull('category_id')
+                $postcats = Category::published()->where('type', 'postcat')->whereNull('category_id')->orderBy('ordering')->get();
+                $menus    = Menu::whereNull('menu_id')
+                    // درخت منو + دستهٔ هر آیتم — childrenmenus خودش category را eager می‌کند
+                    ->with(['category.categories', 'menus', 'childrenmenus'])
                     ->orderBy('ordering')
-                    ->where('type', 'productcat')
-                    ->getWithChilds();
-            });
+                    ->get();
 
-            $postcats    = Category::published()->where('type', 'postcat')->whereNull('category_id')->orderBy('ordering')->get();
-            $menus       = Menu::whereNull('menu_id')->orderBy('ordering')->get();
+                return [$productcats, $postcats, $menus];
+            });
 
             $view->with(compact('productcats', 'postcats', 'menus'));
         });
 
         view()->composer(['front::blogs.partials.sidebar'], function ($view) {
 
-            $latest_posts = Post::where('published', true)->latest()->take(6)->get();
+            $latest_posts = Cache::remember('front.blog.latest_posts', 300, function () {
+                return Post::where('published', true)->latest()->take(6)->get();
+            });
 
             $view->with(compact('latest_posts'));
         });
@@ -93,11 +111,16 @@ class ThemeServiceProvider extends ServiceProvider
         view()->composer(['front::user.layouts.master'], function ($view) {
 
             $user = auth()->user();
-            $random_products = Product::where('published', true)
-                ->available()
-                ->inRandomOrder()
-                ->limit(10)
-                ->get();
+
+            // FIX مقیاس: inRandomOrder روی میلیون محصول = full-scan؛ کش ۱۰ دقیقه‌ای
+            $random_products = Cache::remember('front.user_layout.random_products', 600, function () {
+                return Product::where('published', true)
+                    ->available()
+                    ->inRandomOrder()
+                    ->limit(10)
+                    ->get();
+            });
+
             $view->with(compact('user', 'random_products'));
         });
 

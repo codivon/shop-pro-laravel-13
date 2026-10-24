@@ -58,7 +58,7 @@
                                 <span>کد اختصاصی شما</span>
                             </div>
                             <div class="referral-code-value d-flex align-items-center justify-content-between">
-                                <span id="referralCodeText" class="referral-code-text">{{ $referralCode ?? auth()->user()->referral_code }}</span>
+                                <span id="referralCodeText" class="referral-code-text">{{ $referralCode ?? auth('web')->user()->referral_code }}</span>
                                 <button type="button" class="btn btn-sm btn-primary btn-copy" onclick="copyReferralCode(this)" data-original-text='<i class="feather icon-copy"></i> کپی'>
                                      کپی
                                 </button>
@@ -68,7 +68,7 @@
                                 <span class="hint-text d-block mb-2"><i class="feather icon-share-2"></i> لینک دعوت شما:</span>
                                 <div class="d-flex align-items-center referral-link-wrapper">
                                     <input type="text" id="referralLinkInput" class="form-control form-control-sm" readonly
-                                           value="{{ url('/login?ref=') . ($referralCode ?? auth()->user()->referral_code) }}">
+                                           value="{{ url('/login?ref=') . ($referralCode ?? auth('web')->user()->referral_code) }}">
                                     <button type="button" class="btn btn-sm btn-outline-primary btn-copy ms-2" onclick="copyReferralLink(this)" title="کپی لینک">
                                         کپی
                                     </button>
@@ -176,7 +176,7 @@
                                 <tbody>
                                 @foreach ($refrrals as $refrral)
                                     @php
-                                        $isOwner = $refrral->owner_id == auth()->id();
+                                        $isOwner = $refrral->owner_id == auth('web')->id();
 
                                         // تعیین نوع جایزه
                                         $isWallet = false;
@@ -328,8 +328,8 @@
 @endsection
 @push('scripts')
     <script>
-        var referralLink = "{{ url('/register?ref=') . ($referralCode ?? auth()->user()->referral_code) }}";
-        var referralCode = "{{ $referralCode ?? auth()->user()->referral_code }}";
+        var referralLink = "{{ url('/register?ref=') . ($referralCode ?? auth('web')->user()->referral_code) }}";
+        var referralCode = "{{ $referralCode ?? auth('web')->user()->referral_code }}";
     </script>
     <script src="{{theme_asset('js/pages/profile/referrals.js')}}"></script>
 

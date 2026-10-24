@@ -59,6 +59,13 @@ class PostController extends Controller
         $posts = Post::where('slug', sluggable_helper_function($request['slug'] ?: $request['title']))->get();
         if (!count($posts)) {
             $data = $request->validated();
+            // امنیتی: پاک‌سازی فیلدهای HTML غنی (ضد XSS)
+            foreach (['description', 'content', 'short_description'] as $richTextKey) {
+                if (array_key_exists($richTextKey, $data)) {
+                    $data[$richTextKey] = sanitize_rich_text($data[$richTextKey]);
+                }
+            }
+
             $data['published'] = $request->has('published');
             $data['is_editor_pick'] = $request->has('is_editor_pick');
             $data['allow_comments'] = $request->has('allow_comments');
@@ -119,6 +126,13 @@ class PostController extends Controller
         $request->validate($validationRules, $messagesValidationRules);
 
         $data = $request->validated();
+
+        // امنیتی: پاک‌سازی فیلدهای HTML غنی (ضد XSS)
+        foreach (['description', 'content', 'short_description'] as $richTextKey) {
+            if (array_key_exists($richTextKey, $data)) {
+                $data[$richTextKey] = sanitize_rich_text($data[$richTextKey]);
+            }
+        }
 
         if ($data['publish_date']) {
             $data['publish_date'] = Jalalian::fromFormat('Y-m-d H:i:s', $request->publish_date)->toCarbon();

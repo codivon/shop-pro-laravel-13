@@ -4,68 +4,48 @@ namespace App\Observers;
 
 use App\Models\Product;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
+/**
+ * FIX کارایی بحرانی: قبلاً کانستراکتور Observer کش‌ها را در «هر ریکوئست»
+ * پاک می‌کرد (Observerها هنگام ثبت در هر چرخهٔ برنامه instantiate می‌شوند) —
+ * یعنی عملاً هیچ کشی روی مسیر فروشگاه زنده نمی‌ماند.
+ * حالا ابطال کش فقط هنگام رویداد واقعی created/updated/deleted انجام می‌شود.
+ */
 class ProductObserver
 {
-    public function __construct()
+    public function created(Product $product): void
     {
-        // clear product caches
-        Product::clearCache();
+        $this->flush();
     }
 
-    /**
-     * Handle the Product "created" event.
-     *
-     * @param  \App\Models\Product  $product
-     * @return void
-     */
-    public function created(Product $product)
+    public function updated(Product $product): void
     {
-        //
+        $this->flush();
     }
 
-    /**
-     * Handle the Product "updated" event.
-     *
-     * @param  \App\Models\Product  $product
-     * @return void
-     */
-    public function updated(Product $product)
+    public function deleted(Product $product): void
     {
-        //
+        $this->flush();
     }
 
-    /**
-     * Handle the Product "deleted" event.
-     *
-     * @param  \App\Models\Product  $product
-     * @return void
-     */
-    public function deleted(Product $product)
+    public function restored(Product $product): void
     {
-        //
+        $this->flush();
     }
 
-    /**
-     * Handle the Product "restored" event.
-     *
-     * @param  \App\Models\Product  $product
-     * @return void
-     */
-    public function restored(Product $product)
+    public function forceDeleted(Product $product): void
     {
-        //
+        $this->flush();
     }
 
-    /**
-     * Handle the Product "force deleted" event.
-     *
-     * @param  \App\Models\Product  $product
-     * @return void
-     */
-    public function forceDeleted(Product $product)
+    protected function flush(): void
     {
-        //
+        foreach (config('front.cache-forget.products', []) as $key) {
+            Cache::forget($key);
+        }
+
+        foreach (Product::cacheKeys() as $key) {
+            Cache::forget($key);
+        }
     }
 }

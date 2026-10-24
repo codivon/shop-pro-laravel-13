@@ -18,7 +18,7 @@
                             <div class="breadcrumb-wrapper col-12">
                                 <ol class="breadcrumb no-border">
                                     <li class="breadcrumb-item">مدیریت</li>
-                                    <li class="breadcrumb-item"><a href="{{ route('admin.packages.index') }}">بازار پکیج‌ها</a></li>
+                                    <li class="breadcrumb-item"><a href="{{ route('admin.packages.index') }}">بازار</a></li>
                                     <li class="breadcrumb-item active">{{ $package['name'] ?? $package['slug'] ?? '' }}</li>
                                 </ol>
                             </div>
@@ -58,7 +58,7 @@
                                                 <span class="pkg-meta-chip"><i class="feather icon-download"></i> {{ number_format($package['downloads']) }} دانلود</span>
                                             @endif
                                         </div>
-                                        <p class="pkg-desc text-muted mb-0">{!! $package['short_description'] ?? '' !!}</p>
+                                        <p class="pkg-desc text-muted mb-0">{!! sanitize_rich_text($package['short_description'] ?? '') !!}</p>
                                     </div>
                                 </div>
                             </div>
@@ -76,7 +76,7 @@
                                 <div class="card-content">
                                     <div class="card-body">
                                         @if (!empty($package['long_description']))
-                                            <div class="pkg-long-desc mb-2">{!! $package['long_description'] !!}</div>
+                                            <div class="pkg-long-desc mb-2">{!! sanitize_rich_text($package['long_description']) !!}</div>
                                         @endif
 
                                         @if (!empty($package['changelog']))
@@ -85,7 +85,7 @@
                                                 @foreach ($package['changelog'] as $ver => $changes)
                                                     <li>
                                                         <strong>v{{ $ver }}</strong>
-                                                        <span class="text-muted">{!! is_array($changes) ? implode('<br>', $changes) : $changes !!}</span>
+                                                        <span class="text-muted">{!! sanitize_rich_text(is_array($changes) ? implode('<br>', e($changes)) : e($changes)) !!}</span>
                                                     </li>
                                                 @endforeach
                                             </ul>

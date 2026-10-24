@@ -233,6 +233,13 @@
     <div class="card-body">
         <form id="comment-form" method="POST" data-action="{{route('front.articles.comments.store',$post)}}" >
             @csrf
+            {{-- فاز ۴۴ — حفاظت ربات‌گیر (تلهٔ زمان/هانی‌پات) + کپچای اختیاری --}}
+            {!! \App\Services\CommentProtection::hiddenFields() !!}
+            @if(\App\Services\SecuritySettings::captchaEnabled('comments'))
+            <div class="row pr-4 mb-2">
+                <x-captcha />
+            </div>
+            @endif
             <div class="row">
                 <div class="col-12 mb-2">
                     <label class="mb-2">دیدگاه</label>

@@ -80,6 +80,16 @@ class NewsletterController extends Controller
     public function unsubscribe($id)
     {
         $subscriber = Newsletter::findOrFail($id);
+
+        // امنیت: هر کاربر فقط می‌تواند اشتراک خودش را لغو کند (رفع IDOR)
+        $user = auth()->user();
+        $isOwner = $user && (
+            ($user->email && $subscriber->contact === $user->email)
+            || ($user->mobile && $subscriber->contact === $user->mobile)
+        );
+
+        abort_unless($isOwner, 404);
+
         $subscriber->update(['is_active' => false]);
 
         return redirect()->back()->with('success', 'شما با موفقیت از خبرنامه لغو عضویت شدید');

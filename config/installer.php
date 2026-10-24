@@ -106,7 +106,7 @@ return [
     | route, abort, dump, 404, default, ''
     |
     */
-    'installedAlreadyAction' => '',
+    'installedAlreadyAction' => 'abort', // امنیتی: اجرای مجدد نصب/آپدیت ممنوع
 
     /*
     |--------------------------------------------------------------------------
@@ -117,6 +117,6 @@ return [
     | Boolean value
     |
     */
-    'updaterEnabled' => 'true',
+    'updaterEnabled' => 'false', // امنیتی: آپدیت‌گر وب عمومی غیرفعال
 
 ];

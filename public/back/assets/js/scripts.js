@@ -306,53 +306,62 @@ $('#province').change(function () {
 
 
 // اضافه کردن آیکون 'x' کنار اینپوت و مدیریت عملکرد آن
+// فیکس: در صفحاتی که سایدبار قدیمی (sidebar-search-input) ندارند — مثل صفحات
+// پکیج‌ها داخل کروم پنل جدید — اینپوت وجود ندارد و نباید خطای null بدهیم
 var inputElement = document.getElementById('sidebar-search-input');
-var clearIconHTML = '<span class="clear-sidebar-search-icon" style="display:none; cursor:pointer;">&times;</span>';
-inputElement.insertAdjacentHTML('afterend', clearIconHTML);
-var clearIcon = document.querySelector('.clear-sidebar-search-icon');
 
-// مدیریت عملکرد آیکون 'x' برای خالی کردن اینپوت
-clearIcon.addEventListener('click', function () {
-    inputElement.value = '';
-    inputElement.dispatchEvent(new Event('input'));
-});
+if (inputElement) {
+    var clearIconHTML = '<span class="clear-sidebar-search-icon" style="display:none; cursor:pointer;">&times;</span>';
+    inputElement.insertAdjacentHTML('afterend', clearIconHTML);
+    var clearIcon = document.querySelector('.clear-sidebar-search-icon');
 
-// اضافه کردن listener برای نمایش و مخفی کردن آیکون 'x'
-document.getElementById('sidebar-search-input').addEventListener('input', function () {
-    var searchTerm = this.value.toLowerCase();
-    var logsItems = document.getElementsByClassName('nav-item');
+    // مدیریت عملکرد آیکون 'x' برای خالی کردن اینپوت
+    if (clearIcon) {
+        clearIcon.addEventListener('click', function () {
+            inputElement.value = '';
+            inputElement.dispatchEvent(new Event('input'));
+        });
+    }
 
-    Array.from(logsItems).forEach(function (item) {
-        var originalText = item.dataset.originalText;
+    // اضافه کردن listener برای نمایش و مخفی کردن آیکون 'x'
+    inputElement.addEventListener('input', function () {
+        var searchTerm = this.value.toLowerCase();
+        var logsItems = document.getElementsByClassName('nav-item');
 
-        if (!originalText) {
-            item.dataset.originalText = item.innerHTML;
-            originalText = item.innerHTML;
-        }
+        Array.from(logsItems).forEach(function (item) {
+            var originalText = item.dataset.originalText;
 
-        var logsText = item.textContent.toLowerCase();
-        var regex = new RegExp(`(${searchTerm})`, 'gi');
+            if (!originalText) {
+                item.dataset.originalText = item.innerHTML;
+                originalText = item.innerHTML;
+            }
 
-        if (logsText.includes(searchTerm) && searchTerm.trim() !== "") {
-            item.innerHTML = originalText.replace(regex, '<span class="highlight">$1</span>');
-        } else {
-            item.innerHTML = item.dataset.originalText;
-        }
+            var logsText = item.textContent.toLowerCase();
+            var regex = new RegExp(`(${searchTerm})`, 'gi');
 
-        if (item.querySelector('.highlight') && item.classList.contains('has-sub')) {
-            item.classList.add('open');
-        } else {
-            item.classList.remove('open');
+            if (logsText.includes(searchTerm) && searchTerm.trim() !== "") {
+                item.innerHTML = originalText.replace(regex, '<span class="highlight">$1</span>');
+            } else {
+                item.innerHTML = item.dataset.originalText;
+            }
+
+            if (item.querySelector('.highlight') && item.classList.contains('has-sub')) {
+                item.classList.add('open');
+            } else {
+                item.classList.remove('open');
+            }
+        });
+
+        // مدیریت نمایش و مخفی کردن آیکون 'x'
+        if (typeof clearIcon !== 'undefined' && clearIcon) {
+            if (searchTerm.trim() !== "") {
+                clearIcon.style.display = 'inline';
+            } else {
+                clearIcon.style.display = 'none';
+            }
         }
     });
-
-    // مدیریت نمایش و مخفی کردن آیکون 'x'
-    if (searchTerm.trim() !== "") {
-        clearIcon.style.display = 'inline';
-    } else {
-        clearIcon.style.display = 'none';
-    }
-});
+}
 
 
 // ── Toast ─────────────────────────────────────────────────────

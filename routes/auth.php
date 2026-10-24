@@ -58,7 +58,7 @@ Route::post('/login-with-code', [LoginWithCodeController::class, 'store'])
     ->name('login-with-code.send');
 
 Route::post('/login-with-code/confirm', [LoginWithCodeController::class, 'confirm'])
-    ->middleware(['guest'])
+    ->middleware(['guest', 'throttle:10,1'])
     ->name('login-with-code.confirm');
 
 Route::get('/one-time-login', [OneTimeLoginController::class, 'create'])
@@ -66,7 +66,7 @@ Route::get('/one-time-login', [OneTimeLoginController::class, 'create'])
     ->name('one-time-login');
 
 Route::post('/one-time-login', [OneTimeLoginController::class, 'store'])
-    ->middleware(['guest']);
+    ->middleware(['guest', 'throttle:10,1']);
 
 Route::get('/confirm-password', [ConfirmablePasswordController::class, 'show'])
     ->middleware('auth')

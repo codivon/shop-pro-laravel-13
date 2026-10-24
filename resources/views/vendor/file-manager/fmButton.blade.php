@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ app()->getLocale() }}">
+<html lang="{{ app()->getLocale() }}" dir="rtl">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -9,9 +9,10 @@
 
     <title>{{ config('app.name', 'File Manager') }}</title>
 
-    <!-- Styles -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.1/css/all.css">
+    <!-- Styles — فاز ۱۶: همه دارایی‌ها لوکال (CDN جی‌اس‌دلیور در ایران فیلتر است و فایل‌منیجر را به‌هم می‌ریزد) -->
+    {{-- نکته: آیکون‌های خود فایل‌منیجر FontAwesome (fas fa-*) هستند نه bootstrap-icons --}}
+    <link rel="stylesheet" href="{{ asset('vendor/file-manager/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/file-manager/css/fontawesome.min.css') }}">
     <link href="{{ asset('vendor/file-manager/css/file-manager.css') }}" rel="stylesheet">
 </head>
 <body>
@@ -32,11 +33,21 @@
 
     // Add callback to file manager
     fm.$store.commit('fm/setFileCallBack', function(fileUrl) {
-      window.opener.fmSetLink(fileUrl);
-      window.close();
+      // ★ دو حالت انتگرال:
+      //   1) iframe (پنل جدید — مودال داخل صفحه) → window.parent
+      //   2) پنجره popup (پنل قدیمی — window.open) → window.opener
+      var inIframe = window.self !== window.top;
+      var target = inIframe ? window.parent : window.opener;
+
+      if (target && typeof target.fmSetLink === 'function') {
+        target.fmSetLink(fileUrl);
+      }
+
+      if (!inIframe) {
+        window.close();
+      }
     });
   });
 </script>
 </body>
 </html>
-

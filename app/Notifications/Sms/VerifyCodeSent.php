@@ -28,7 +28,7 @@ class VerifyCodeSent extends Notification
 
         $code = OneTimeCode::create([
             'user_id' => $user->id,
-            'code'    => rand(11111, 99999),
+            'code'    => random_int(10000, 99999),
         ]);
 
         $this->verify_code = $code->code;

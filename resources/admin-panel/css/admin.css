@@ -1,0 +1,1121 @@
+/* ==========================================================================
+   پنل مدیریت جدید — استایل اصلی (Tailwind CSS 4)
+   تم روشن/تاریک | RTL | فونت وزیرمتن | انیمیشن‌ها
+   ========================================================================== */
+
+@import "tailwindcss";
+
+/* فاز ۳۵ — منابع اسکن تیلویند
+   --------------------------------------------------------------------------
+   Tailwind 4 به‌صورت پیش‌فرض کل پروژه را اسکن می‌کند؛ ویوهای قدیمی (back/)،
+   پکیج‌ها (Modules/)، دارایی‌های پنل قدیمی (public/back/) و قالب‌های فرانت
+   (themes/) پر از کلاس‌های بوت‌استرپی‌اند (collapse، container، col-* و …)
+   که نباید به‌عنوان utility در CSS پنل کامپایل شوند. پنل فقط از
+   resources/admin-panel و app/Livewire و ویوهای admin-panel کلاس استفاده می‌کند. */
+@source not "../../views/back";
+@source not "../../../Modules";
+@source not "../../../public/back";
+@source not "../../../themes";
+
+/* حالت تاریک کلاس‌محور (روی <html>) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* --------------------------------------------------------------------------
+   توکن‌های طراحی
+   -------------------------------------------------------------------------- */
+@theme {
+    --font-sans: "Vazirmatn", "Tahoma", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+
+    /* رنگ برند: زمردی */
+    --color-brand-50: #ecfdf5;
+    --color-brand-100: #d1fae5;
+    --color-brand-200: #a7f3d0;
+    --color-brand-300: #6ee7b7;
+    --color-brand-400: #34d399;
+    --color-brand-500: #10b981;
+    --color-brand-600: #059669;
+    --color-brand-700: #047857;
+    --color-brand-800: #065f46;
+    --color-brand-900: #064e3b;
+    --color-brand-950: #022c22;
+
+    /* سطوح روشن */
+    --color-surface: #ffffff;
+    --color-surface-2: #f6f7f8;
+    --color-surface-3: #eef0f2;
+    --color-line: #e5e8ec;
+    --color-ink: #1a2333;
+    --color-ink-2: #5b6472;
+    --color-ink-3: #8b93a1;
+
+    /* سطوح تاریک */
+    --color-night: #0d1219;
+    --color-night-2: #111827;
+    --color-night-3: #161f2e;
+    --color-night-line: #223047;
+    --color-night-ink: #e5eaf2;
+    --color-night-ink-2: #9aa7ba;
+
+    --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06);
+    --shadow-pop: 0 12px 32px -8px rgb(16 24 40 / 0.18);
+
+    --animate-fade-up: fade-up .45s cubic-bezier(.16,1,.3,1) both;
+    --animate-fade-in: fade-in .3s ease both;
+    --animate-scale-in: scale-in .22s cubic-bezier(.16,1,.3,1) both;
+    --animate-shimmer: shimmer 1.6s linear infinite;
+    --animate-pulse-dot: pulse-dot 1.8s ease-in-out infinite;
+
+    @keyframes fade-up {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: none; }
+    }
+    @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes scale-in {
+        from { opacity: 0; transform: scale(.96); }
+        to { opacity: 1; transform: none; }
+    }
+    @keyframes shimmer {
+        from { background-position: 200% 0; }
+        to { background-position: -200% 0; }
+    }
+    @keyframes pulse-dot {
+        0%, 100% { box-shadow: 0 0 0 0 rgb(16 185 129 / .5); }
+        50% { box-shadow: 0 0 0 5px rgb(16 185 129 / 0); }
+    }
+}
+
+/* --------------------------------------------------------------------------
+   پایه
+   -------------------------------------------------------------------------- */
+@font-face {
+    font-family: "Vazirmatn";
+    src: url("../fonts/Vazirmatn-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Vazirmatn";
+    src: url("../fonts/Vazirmatn-Medium.woff2") format("woff2");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Vazirmatn";
+    src: url("../fonts/Vazirmatn-SemiBold.woff2") format("woff2");
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Vazirmatn";
+    src: url("../fonts/Vazirmatn-Bold.woff2") format("woff2");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Vazirmatn";
+    src: url("../fonts/Vazirmatn-ExtraBold.woff2") format("woff2");
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+html {
+    font-family: var(--font-sans);
+    scrollbar-color: rgb(148 163 184 / .45) transparent;
+}
+
+/* مخفی‌سازی تا آماده شدن Alpine */
+[x-cloak] { display: none !important; }
+
+body {
+    @apply bg-surface-2 text-ink antialiased;
+}
+.dark body {
+    @apply bg-night text-night-ink;
+}
+
+/* فاز ۳۵ — تداخل کلاس «collapse» با بوت‌استرپ
+   --------------------------------------------------------------------------
+   خود این فایل حاوی واژه‌ی collapse است (border-collapse: collapse) و Tailwind
+   همین را به‌عنوان candidate می‌بیند و utility ِ «.collapse { visibility: collapse }»
+   را کامپایل می‌کند. در صفحات پکیج‌ها (پل فاز ۳۲/۳۴) کلاس collapseِ بوت‌استرپ
+   روی کارت‌هاست؛ visibility:collapse تیلویند محتوایشان را «فضا-گیر ولی نامرئی»
+   می‌کند (کارت فیلتر خالی!). این قاعده‌ی unlayered بر utility لایه‌دار برتری
+   همیشگی دارد و کلاس collapse را به رفتار عادی برمی‌گرداند. */
+.collapse { visibility: visible; }
+
+/* اسکرول‌بار سفارشی */
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+    background: rgb(148 163 184 / .4);
+    border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover { background: rgb(148 163 184 / .7); }
+
+::selection {
+    background: var(--color-brand-500);
+    color: white;
+}
+
+/* اعداد فارسی */
+.fa-digits {
+    font-variant-numeric: tabular-nums;
+}
+
+/* محتوای HTML غنیِ پاک‌سازی‌شده (توضیح پکیج‌ها و...) — فاصله‌ها مثل متن ساده */
+.ap-rich p { margin: 0; }
+.ap-rich img { max-width: 100%; height: auto; border-radius: 0.5rem; display: inline-block; }
+
+/* --------------------------------------------------------------------------
+   کامپوننت‌های پرکاربرد
+   -------------------------------------------------------------------------- */
+@layer components {
+    .ap-card {
+        @apply rounded-2xl border border-line bg-surface shadow-card;
+    }
+    .dark .ap-card {
+        @apply border-night-line bg-night-2;
+    }
+
+    /* دکمه پایه — استایل پیش‌فرض مدرن (خنثی). برای رنگ خاص، ap-btn-primary/outline
+       یا utility (مثل bg-red-600) اضافه کنید؛ لایه utility همیشه روی این می‌نشیند. */
+    .ap-btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+               transition-all duration-200 select-none focus-visible:outline-2 focus-visible:outline-offset-2
+               focus-visible:outline-brand-500 disabled:opacity-50 disabled:pointer-events-none cursor-pointer
+               border border-line bg-surface-2 text-ink hover:bg-surface-3 hover:border-brand-500/40
+               active:scale-[.98];
+    }
+    /* :where → specificity پایین تا variantها (ap-btn-primary و…) همیشه برنده باشند */
+    .dark :where(.ap-btn) {
+        @apply border-night-line bg-night-3 text-night-ink hover:bg-night-2 hover:border-brand-500/40;
+    }
+    .ap-btn-primary {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+               transition-all duration-200 select-none focus-visible:outline-2 focus-visible:outline-offset-2
+               focus-visible:outline-brand-500 disabled:opacity-50 disabled:pointer-events-none cursor-pointer
+               bg-brand-600 text-white hover:bg-brand-700 active:scale-[.98]
+               shadow-[0_6px_16px_-6px_rgb(5_150_105/.45)];
+    }
+    .ap-btn-ghost {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+               transition-all duration-200 select-none focus-visible:outline-2 focus-visible:outline-offset-2
+               focus-visible:outline-brand-500 disabled:opacity-50 disabled:pointer-events-none cursor-pointer
+               bg-transparent text-ink-2 hover:bg-surface-3 hover:text-ink;
+    }
+    .dark .ap-btn-ghost {
+        @apply text-night-ink-2 hover:bg-night-3 hover:text-night-ink;
+    }
+    .ap-btn-outline {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+               transition-all duration-200 select-none focus-visible:outline-2 focus-visible:outline-offset-2
+               focus-visible:outline-brand-500 disabled:opacity-50 disabled:pointer-events-none cursor-pointer
+               border border-line bg-surface text-ink hover:border-brand-500 hover:text-brand-700;
+    }
+    .dark .ap-btn-outline {
+        @apply border-night-line bg-night-2 text-night-ink hover:border-brand-500 hover:text-brand-400;
+    }
+
+    .ap-input {
+        @apply w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-ink
+               placeholder:text-ink-3 transition-all duration-200
+               focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15 focus:outline-none;
+    }
+    .dark .ap-input {
+        @apply border-night-line bg-night-3 text-night-ink placeholder:text-night-ink-2/60;
+    }
+
+    .ap-badge {
+        @apply inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-semibold;
+    }
+
+    .ap-kbd {
+        @apply rounded-md border border-line bg-surface-2 px-1.5 py-0.5 text-[10px] font-semibold text-ink-2;
+    }
+    .dark .ap-kbd {
+        @apply border-night-line bg-night-3 text-night-ink-2;
+    }
+
+    /* آیتم منوی سایدبار */
+    .ap-menu-link {
+        @apply flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink-2
+               transition-all duration-200 hover:bg-surface-3 hover:text-ink cursor-pointer;
+    }
+    .dark .ap-menu-link {
+        @apply text-night-ink-2 hover:bg-night-3 hover:text-night-ink;
+    }
+    .ap-menu-link.is-active {
+        @apply bg-brand-50 text-brand-700;
+    }
+    .dark .ap-menu-link.is-active {
+        @apply bg-brand-500/12 text-brand-400;
+    }
+
+    .ap-menu-title {
+        @apply px-3 pt-5 pb-1.5 text-[11px] font-bold tracking-wide text-ink-3;
+    }
+    .dark .ap-menu-title {
+        @apply text-night-ink-2/60;
+    }
+
+    /* تب‌های فرم محصول */
+    .ap-tab {
+        @apply relative -mb-px flex items-center gap-1.5 rounded-t-xl border-b-2 border-transparent px-3.5 py-2.5 text-[13px] font-semibold text-ink-2
+               transition-colors hover:bg-surface-3 dark:text-night-ink-2 dark:hover:bg-night-3;
+    }
+    .ap-tab.is-active {
+        @apply border-brand-500 bg-surface text-brand-700 dark:bg-night-2 dark:text-brand-400;
+    }
+
+    /* اسکلت لودینگ */
+    .ap-skeleton {
+        @apply rounded-xl bg-linear-to-l from-surface-3 via-surface-2 to-surface-3;
+        background-size: 200% 100%;
+        animation: var(--animate-shimmer);
+    }
+    .dark .ap-skeleton {
+        @apply from-night-3 via-night-2 to-night-3;
+    }
+
+    .ap-stat-icon {
+        @apply flex size-11 items-center justify-center rounded-xl transition-transform duration-300;
+    }
+    .group:hover .ap-stat-icon {
+        transform: translateY(-2px) rotate(-4deg);
+    }
+
+    /* فوتر */
+    .ap-footer {
+        @apply mt-auto border-t border-line bg-surface;
+    }
+    .dark .ap-footer {
+        @apply border-night-line bg-night-2;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   ترنزیشن صفحه با wire:navigate (View Transitions API)
+   -------------------------------------------------------------------------- */
+@view-transition {
+    navigation: auto;
+}
+::view-transition-old(root) {
+    animation: 160ms cubic-bezier(.16,1,.3,1) both ap-vt-out;
+}
+::view-transition-new(root) {
+    animation: 220ms cubic-bezier(.16,1,.3,1) both ap-vt-in;
+}
+@keyframes ap-vt-out {
+    to { opacity: 0; transform: translateY(-6px); }
+}
+@keyframes ap-vt-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+}
+
+/* فلش آیتم بازشونده سایدبار */
+.ap-chevron {
+    transition: transform .25s cubic-bezier(.16,1,.3,1);
+}
+.ap-chevron.is-open {
+    transform: rotate(-90deg);
+}
+
+/* انیمیشن پله‌ای آیتم‌ها */
+.stagger > * {
+    animation: var(--animate-fade-up) both;
+}
+.stagger > *:nth-child(1) { animation-delay: .02s; }
+.stagger > *:nth-child(2) { animation-delay: .06s; }
+.stagger > *:nth-child(3) { animation-delay: .1s; }
+.stagger > *:nth-child(4) { animation-delay: .14s; }
+.stagger > *:nth-child(5) { animation-delay: .18s; }
+.stagger > *:nth-child(6) { animation-delay: .22s; }
+.stagger > *:nth-child(7) { animation-delay: .26s; }
+.stagger > *:nth-child(8) { animation-delay: .3s; }
+
+/* --------------------------------------------------------------------------
+   CKEditor full — ارتفاع، فونت، لایه‌بندی (z-index) و تم تاریک ویرایشگر
+   نکته: «:root:root» برای بردن بر تعریف‌های :root خود CKEditor (ترتیب لود مهم نیست)
+   -------------------------------------------------------------------------- */
+.ck-editor__editable_inline {
+    min-height: 500px;
+    font-family: var(--font-sans);
+}
+
+/* فاز ۲۶ — دراپ‌داون‌های نوار ابزار (مخصوصاً «اندازه فونت» با ۱۸ گزینه):
+   ارتفاع ثابت + اسکرول تا پنل از صفحه بیرون نزند؛ عرض هم‌اندازه‌ی دکمه بماند
+   و آیتم‌ها (مثل «۱۴px») کامل دیده شوند */
+.ck.ck-dropdown__panel-visible .ck.ck-list {
+    max-height: 280px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* اسکرول‌بار ظریف هم‌سبک پنل */
+    scrollbar-width: thin;
+    scrollbar-color: var(--ck-color-list-background-on, #ddd) transparent;
+}
+
+/* فاز ۲۶ — عرض ثابت پنل اندازه فونت تا گزینه‌ها جا بگیرند ولی پنل عریض‌تر
+   از دکمه نشود؛ (پنل فونت‌فمیلی/استایل دست‌نخورده می‌ماند) */
+.ck.ck-dropdown__panel-visible .ck.ck-list .ck-button__label {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+:root:root {
+    /* فونت محتوای ویرایشگر = فونت پنل (وزیرمتن) */
+    --ck-content-font-family: var(--font-sans);
+
+    /* پنل‌های بازشوی ویرایشگر: زیر سایدبار (z-50) و توست‌ها (z-70)، بالای هدر چسبان (z-30) */
+    --ck-z-panel: 35;
+    --ck-z-dialog: 60;
+    --ck-z-modal: 60;
+
+    /* رنگ تأکیدی ویرایشگر هم‌رنگ برند پنل (زمردی) */
+    --ck-color-base-action: #059669;
+    --ck-color-base-action-hover: #047857;
+    --ck-color-base-focus: #059669;
+    --ck-color-base-active: #059669;
+    --ck-color-base-action-muted: #d1fae5;
+    --ck-focus-border-color: #059669;
+}
+
+:root:root.dark {
+    /* ویرایشگر در تم تاریک (متغیرهای سطح پنل) */
+    --ck-color-base-background: #111827;
+    --ck-color-base-foreground: #161f2e;
+    --ck-color-base-border: #223047;
+    --ck-color-base-border-light: #1b2637;
+    --ck-color-base-text: #e5eaf2;
+    --ck-color-base-text-light: #9aa7ba;
+    --ck-color-base-hover: #1b2637;
+    --ck-color-base-hover-strong: #223047;
+    --ck-color-base-selected: #14312a;
+    --ck-color-base-selected-hover: #1a3d34;
+    --ck-color-base-action-muted: #064e3b;
+    --ck-color-base-focus-shadow: rgba(16, 185, 129, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   Widget Builder (فاز ۹-ه) — ویجت‌ساز تمام‌صفحه با پیش‌نمایش زنده
+   -------------------------------------------------------------------------- */
+
+/* اسکرول‌بار ظریف پنل ابزارک‌ها و مودال‌ها */
+.ap-builder-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(148 163 184 / .45) transparent;
+}
+.ap-builder-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.ap-builder-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.ap-builder-scroll::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: rgb(148 163 184 / .45);
+}
+.ap-builder-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgb(100 116 139 / .65);
+}
+.dark .ap-builder-scroll {
+    scrollbar-color: rgb(71 85 105 / .6) transparent;
+}
+.dark .ap-builder-scroll::-webkit-scrollbar-thumb {
+    background: rgb(71 85 105 / .6);
+}
+
+/* قاب پیش‌نمایش: جدا شدن نرم هنگام تعویض دستگاه + جلوگیری از فلاش سفید پس‌زمینه */
+.ap-builder-frame {
+    transition-property: max-width;
+    transition-duration: .3s;
+    transition-timing-function: cubic-bezier(.16, 1, .3, 1);
+}
+
+/* آیتم درگ‌شونده در حال کشیده شدن */
+.ap-builder-panel [draggable="true"]:active {
+    cursor: grabbing;
+}
+
+/* ==================================================================
+   فیکس تراز اسپینر داخل دکمه‌ها (فاز ۱۱ — بازنویسی برای Livewire 4 در فاز ۱۳)
+   Livewire 4 عنصرهای [wire:loading] را با استایل‌شیت تزریقی مخفی می‌کند (نه inline)؛
+   هنگام لودینگ display را inline می‌گذارد. پس قانون تراز فقط وقتی باید اعمال شود که
+   استایل inline (نمایان بودن حین لودینگ) وجود دارد — شرط [style] بدون آن، span لودینگ
+   در حالت پیش‌فرض همیشه نمایان می‌ماند (باگ دکمه «در حال ذخیره…»).
+   (اسپن‌های wire:loading.remove هم نام اتریبیوت متفاوت دارند و بی‌تأثیرند.)
+   ================================================================== */
+button [wire\:loading][style]:not([style*="display: none"]):not([style*="display:none"]) {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* ==================================================================
+   انتخابگر کارتی چک‌باکس/رادیو (فاز ۱۱) — جایگزین چک‌باکس خام
+   ساختار: <label class="ap-check-card"> <input type="checkbox|radio"> <span class="ap-check-card-body">…</span> </label>
+   ================================================================== */
+.ap-check-card {
+    @apply relative flex cursor-pointer items-center gap-2.5 rounded-xl border border-line bg-surface p-2.5
+           text-[13px] font-medium text-ink transition-all duration-200
+           hover:border-brand-400/70 hover:bg-brand-50/40 select-none;
+}
+.dark .ap-check-card {
+    @apply border-night-line bg-night-3 text-night-ink hover:border-brand-500/50 hover:bg-brand-500/8;
+}
+.ap-check-card input {
+    @apply absolute inset-0 size-full cursor-pointer opacity-0;
+}
+.ap-check-card .ap-check-mark {
+    @apply relative flex size-5 shrink-0 items-center justify-center rounded-md border-2 border-line bg-surface
+           text-transparent transition-all duration-200;
+}
+.dark .ap-check-card .ap-check-mark {
+    @apply border-night-line bg-night-2;
+}
+.ap-check-card .ap-check-mark svg {
+    @apply size-3.5;
+    stroke-width: 3;
+}
+.ap-check-card input:checked ~ .ap-check-mark {
+    @apply border-brand-600 bg-brand-600 text-white;
+}
+.dark .ap-check-card input:checked ~ .ap-check-mark {
+    @apply border-brand-500 bg-brand-500;
+}
+.ap-check-card input:checked ~ .ap-check-card-body {
+    @apply text-brand-800 dark:text-brand-300;
+}
+.ap-check-card input:focus-visible ~ .ap-check-mark {
+    @apply ring-4 ring-brand-500/25;
+}
+.ap-check-card:has(input:checked) {
+    @apply border-brand-500 bg-brand-50/70 shadow-[0_2px_10px_-4px_rgb(5_150_105/.35)];
+}
+.dark .ap-check-card:has(input:checked) {
+    @apply border-brand-500/70 bg-brand-500/12;
+}
+/* حالت رادیویی — mark دایره‌ای */
+.ap-check-card.is-radio .ap-check-mark {
+    @apply rounded-full;
+}
+.ap-check-card.is-radio .ap-check-mark::after {
+    content: "";
+    @apply absolute size-2 rounded-full bg-white opacity-0 transition-opacity;
+}
+.ap-check-card.is-radio input:checked ~ .ap-check-mark svg {
+    @apply hidden;
+}
+.ap-check-card.is-radio input:checked ~ .ap-check-mark::after {
+    @apply opacity-100;
+}
+/* حالت غیرفعال */
+.ap-check-card:has(input:disabled) {
+    @apply cursor-not-allowed opacity-55;
+}
+
+/* ==================================================================
+   درگ‌انددراپ درخت دسته‌بندی‌ها (فاز ۱۱) — نوارهای رهاسازی
+   ================================================================== */
+.ap-dropband {
+    /* خود نوار نامرئی است؛ بازخورد بصری با کلاس‌های والد (ap-drop-*) داده می‌شود */
+    pointer-events: none;
+}
+/* خط قبل/بعد: لبه بالایی/پایینی ردیف */
+.cat-row.ap-drop-before {
+    box-shadow: inset 0 3px 0 0 var(--color-brand-500), 0 6px 16px -8px rgb(5 150 105/.35);
+    border-color: var(--color-brand-500) !important;
+}
+.cat-row.ap-drop-after {
+    box-shadow: inset 0 -3px 0 0 var(--color-brand-500), 0 6px 16px -8px rgb(5 150 105/.35);
+    border-color: var(--color-brand-500) !important;
+}
+/* داخل: قاب برند + ته‌رنگ ملایم */
+.cat-row.ap-drop-inside {
+    box-shadow: inset 0 0 0 2px var(--color-brand-500);
+    background-color: color-mix(in srgb, var(--color-brand-500) 8%, transparent) !important;
+    border-color: var(--color-brand-500) !important;
+}
+/* ممنوع (زیرشاخه خودش) */
+.cat-row.ap-drop-forbidden {
+    box-shadow: inset 0 0 0 2px var(--color-red-500);
+    background-color: color-mix(in srgb, var(--color-red-500) 7%, transparent) !important;
+    border-color: var(--color-red-500) !important;
+}
+/* ردیف در حال کشیده شدن */
+.cat-row[style*="opacity"] {
+    cursor: grabbing;
+}
+
+/* ==================================================================
+ | فاز ۱۲ — انتخابگر درختی دسته‌بندی (ap-category-picker)
+ | دکمه + پنل درختی کارتی با جستجو و پیشنهاد پرکاربرد
+ ================================================================== */
+.ap-cat-picker .ap-input {
+    cursor: pointer;
+}
+.ap-cat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    max-width: 100%;
+    border-radius: 0.625rem;
+    border: 1px solid color-mix(in srgb, var(--color-brand-500) 35%, transparent);
+    background: color-mix(in srgb, var(--color-brand-500) 10%, transparent);
+    color: var(--color-brand-700);
+    padding: 0.2rem 0.3rem 0.2rem 0.55rem;
+    font-size: 11.5px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+.dark .ap-cat-chip {
+    color: var(--color-brand-300);
+    background: color-mix(in srgb, var(--color-brand-500) 16%, transparent);
+}
+.ap-cat-chip-x {
+    display: inline-flex;
+    border-radius: 0.375rem;
+    padding: 0.1rem;
+    color: currentColor;
+    opacity: 0.7;
+    transition: opacity 0.15s, background-color 0.15s;
+}
+.ap-cat-chip-x:hover {
+    opacity: 1;
+    background-color: color-mix(in srgb, var(--color-red-500) 18%, transparent);
+    color: var(--color-red-600);
+}
+.ap-cat-clear {
+    display: inline-flex;
+    border-radius: 0.5rem;
+    padding: 0.25rem;
+    color: var(--color-ink-3);
+    transition: background-color 0.15s, color 0.15s;
+}
+.ap-cat-clear:hover {
+    background: color-mix(in srgb, var(--color-red-500) 12%, transparent);
+    color: var(--color-red-600);
+}
+.ap-cat-panel-inner {
+    border-radius: 1rem;
+    border: 1px solid var(--color-line);
+    background: var(--color-surface);
+    box-shadow: 0 18px 40px -18px rgb(2 6 23 / 0.28);
+    overflow: hidden;
+}
+.dark .ap-cat-panel-inner {
+    border-color: var(--color-night-line);
+    background: var(--color-night-2);
+    box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.6);
+}
+.ap-cat-search {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--color-line);
+    padding: 0.6rem 0.85rem;
+    background: var(--color-surface-2);
+}
+.dark .ap-cat-search {
+    border-color: var(--color-night-line);
+    background: color-mix(in srgb, var(--color-night-3) 60%, transparent);
+}
+/* پیشنهادهای پرکاربرد */
+.ap-cat-popular {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.5rem;
+    border-bottom: 1px dashed var(--color-line);
+    padding: 0.65rem 0.85rem;
+    background: color-mix(in srgb, var(--color-brand-500) 4%, transparent);
+}
+.dark .ap-cat-popular {
+    border-color: var(--color-night-line);
+    background: color-mix(in srgb, var(--color-brand-500) 8%, transparent);
+}
+.ap-cat-popular-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    width: 100%;
+    font-size: 10.5px;
+    font-weight: 800;
+    color: var(--color-brand-600);
+}
+.dark .ap-cat-popular-title { color: var(--color-brand-400); }
+.ap-cat-pop-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-line);
+    background: var(--color-surface);
+    padding: 0.25rem 0.6rem;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-ink-2);
+    transition: border-color 0.15s, background-color 0.15s, color 0.15s, transform 0.15s;
+}
+.dark .ap-cat-pop-chip {
+    border-color: var(--color-night-line);
+    background: var(--color-night-3);
+    color: var(--color-night-ink-2);
+}
+.ap-cat-pop-chip:hover {
+    border-color: var(--color-brand-500);
+    color: var(--color-brand-700);
+    transform: translateY(-1px);
+}
+.dark .ap-cat-pop-chip:hover { color: var(--color-brand-300); }
+.ap-cat-pop-chip.is-selected {
+    border-color: var(--color-brand-500);
+    background: color-mix(in srgb, var(--color-brand-500) 14%, transparent);
+    color: var(--color-brand-700);
+}
+.dark .ap-cat-pop-chip.is-selected { color: var(--color-brand-300); }
+.ap-cat-pop-count {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-ink-3) 15%, transparent);
+    padding: 0 0.4rem;
+    font-size: 9.5px;
+    font-weight: 800;
+}
+/* درخت */
+.ap-cat-tree { min-height: 3rem; }
+.ap-cat-list { padding: 0.4rem; }
+.ap-cat-node { list-style: none; }
+.ap-cat-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0.25rem;
+    border-radius: 0.75rem;
+    padding: 0.2rem;
+    transition: background-color 0.15s;
+}
+.ap-cat-row:hover { background: var(--color-surface-2); }
+.dark .ap-cat-row:hover { background: color-mix(in srgb, var(--color-night-3) 70%, transparent); }
+.ap-cat-row-child {
+    margin-inline-start: 1.35rem;
+    border-inline-start: 2px dashed color-mix(in srgb, var(--color-ink-3) 30%, transparent);
+    padding-inline-start: 0.5rem;
+}
+.ap-cat-row.is-selected {
+    background: color-mix(in srgb, var(--color-brand-500) 9%, transparent);
+}
+.ap-cat-caret {
+    display: inline-flex;
+    width: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    color: var(--color-ink-3);
+    transition: transform 0.15s, background-color 0.15s;
+}
+.ap-cat-caret:hover { background: color-mix(in srgb, var(--color-ink-3) 14%, transparent); }
+.ap-cat-caret.is-open > svg { transform: rotate(-90deg); }
+.ap-cat-caret.is-leaf {
+    pointer-events: none;
+}
+.ap-cat-caret.is-leaf::after {
+    content: "";
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-ink-3) 45%, transparent);
+}
+.ap-cat-row-main {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 0.625rem;
+    border: 1px solid transparent;
+    padding: 0.4rem 0.55rem;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: start;
+    transition: border-color 0.15s, background-color 0.15s;
+}
+.ap-cat-row-main:hover { border-color: color-mix(in srgb, var(--color-brand-500) 45%, transparent); }
+.ap-cat-mark {
+    display: inline-flex;
+    width: 1.05rem;
+    height: 1.05rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.4rem;
+    border: 1.5px solid color-mix(in srgb, var(--color-ink-3) 55%, transparent);
+    background: var(--color-surface);
+    color: white;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+.dark .ap-cat-mark { background: var(--color-night-3); }
+.ap-cat-mark > svg {
+    width: 0.7rem;
+    height: 0.7rem;
+    opacity: 0;
+    transition: opacity 0.12s;
+}
+.ap-cat-mark.is-checked {
+    border-color: var(--color-brand-500);
+    background: var(--color-brand-500);
+}
+.ap-cat-mark.is-checked > svg { opacity: 1; }
+.ap-cat-badge {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-ink-3) 12%, transparent);
+    padding: 0.05rem 0.5rem;
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--color-ink-3);
+}
+.dark .ap-cat-badge { color: var(--color-night-ink-2); }
+.ap-cat-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--color-line);
+    padding: 0.6rem 0.85rem;
+    background: var(--color-surface-2);
+}
+.dark .ap-cat-footer {
+    border-color: var(--color-night-line);
+    background: color-mix(in srgb, var(--color-night-3) 60%, transparent);
+}
+/* حالت تاریک پنل */
+.dark .ap-cat-panel-inner {
+    --tw-shadow-color: rgb(0 0 0 / 0.55);
+}
+
+/* ==================================================================
+   فاز ۱۲ — CKEditor style definitions
+   کلاس‌های استایل‌های آماده ویرایشگر (config style.definitions در admin.js).
+   دو اسکوپ: .ck-content برای محتوای واقعی ویرایش‌شده و
+   .ck.ck-style-panel برای پیش‌نمایش درون دراپ‌داون استایل.
+   کلاس‌ها با پیشوند ap-style- هستند؛ اگر قالب فرانت بخواهد همان ظاهر را
+   داشته باشد باید همین قواعد را با اسکوپ دلخواه کپی کند.
+   ================================================================== */
+.ck-content .ap-style-callout-h2,
+.ck.ck-style-panel .ap-style-callout-h2 {
+    position: relative;
+    margin: 1.25rem 0;
+    padding: 0.7rem 1.75rem 0.7rem 1rem;
+    background: rgb(5 150 105 / 0.08);
+    border-inline-start: 4px solid rgb(5 150 105);
+    border-radius: 0.5rem;
+    color: rgb(4 120 87);
+}
+.ck-content .ap-style-callout-h2::before,
+.ck.ck-style-panel .ap-style-callout-h2::before {
+    content: '◆';
+    position: absolute;
+    inset-inline-start: 0.65rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7em;
+    opacity: 0.7;
+}
+.ck-content .ap-style-highlight-marker,
+.ck.ck-style-panel .ap-style-highlight-marker {
+    background: linear-gradient(to top, rgb(250 204 21 / 0.55) 38%, transparent 38%);
+    padding: 0 0.15rem;
+    font-weight: 600;
+}
+.ck-content .ap-style-callout-red,
+.ck.ck-style-panel .ap-style-callout-red {
+    margin: 1rem 0;
+    padding: 0.85rem 1.1rem;
+    background: rgb(220 38 38 / 0.07);
+    border: 1px solid rgb(220 38 38 / 0.35);
+    border-radius: 0.5rem;
+    color: rgb(185 28 28);
+}
+.ck-content .ap-style-code-dark,
+.ck.ck-style-panel .ap-style-code-dark {
+    direction: ltr;
+    text-align: left;
+    background: #18181b;
+    color: #e4e4e7;
+    border: 1px solid rgb(255 255 255 / 0.12);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.875em;
+    line-height: 1.8;
+    box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
+}
+.ck-content .ap-style-small-text,
+.ck.ck-style-panel .ap-style-small-text {
+    font-size: 0.8em;
+    letter-spacing: 0.01em;
+    color: #71717a;
+}
+
+/* حالت تاریک ویرایشگر (کلاس dark روی <html>؛ بدون تداخل با تم روشن) */
+.dark .ck-content .ap-style-callout-h2,
+.dark .ck.ck-style-panel .ap-style-callout-h2 {
+    background: rgb(16 185 129 / 0.12);
+    color: rgb(110 231 183);
+}
+.dark .ck-content .ap-style-callout-red,
+.dark .ck.ck-style-panel .ap-style-callout-red {
+    background: rgb(248 113 113 / 0.1);
+    border-color: rgb(248 113 113 / 0.35);
+    color: rgb(252 165 165);
+}
+.dark .ck-content .ap-style-small-text,
+.dark .ck.ck-style-panel .ap-style-small-text {
+    color: rgb(161 161 170);
+}
+
+/* ==================================================================
+   فاز ۱۳ — گارد بوت لایووایر + درگ‌انددراپ SortableJS
+   ================================================================== */
+
+/* ۱) تا لحظه راه‌اندازی لایووایر، spanهای wire:loading مخفی بمانند
+      (رفع دکمه‌هایی که وقتی JS لایووایر لود نشده از ابتدا حالت «در حال ذخیره…» دارند) */
+.lw-booting [wire\:loading],
+.lw-booting [wire\:loading\.delay],
+.lw-booting [wire\:loading\.inline],
+.lw-booting [wire\:loading\.delay\.inline],
+.lw-booting [wire\:loading\.inline\.delay] {
+    display: none !important;
+}
+
+/* ۲) درگ‌انددراپ Sortable (منوها / دسته‌بندی‌ها / ابزارک‌ها) */
+.ap-dnd-ghost {
+    opacity: 0.35 !important;
+}
+.ap-dnd-chosen {
+    cursor: grabbing !important;
+}
+/* حین درگ، لیست‌های خالی به‌عنوان ناحیه رهاسازی دیده می‌شوند (فرزند شدن گره بدون فرزند) */
+.ap-dnd-active [data-dnd-list]:empty {
+    min-height: 10px;
+    margin-block: 2px;
+    border-radius: 0.5rem;
+    outline: 1.5px dashed var(--color-brand-500);
+    outline-offset: 2px;
+    background: rgb(16 185 129 / 0.06);
+}
+/* هندل درگ در حالت فعال */
+[data-dnd-handle] {
+    cursor: grab;
+}
+[data-dnd-handle]:active {
+    cursor: grabbing;
+}
+
+/* عنصر شبح درگ در حالت fallback — سایه و شفافیت ملایم */
+.ap-dnd-fallback {
+    opacity: 0.9 !important;
+    box-shadow: 0 12px 28px -10px rgb(2 6 23 / 0.35) !important;
+    border-radius: 0.75rem !important;
+}
+
+/* ------------------------------------------------------------------
+ | نمایش HTML توضیحات پکیج‌ها (فاز ۱۴) — محتوای خام API با {! !!} رندر می‌شود
+ ------------------------------------------------------------------ */
+.pkg-prose > *:first-child { margin-top: 0; }
+.pkg-prose > *:last-child { margin-bottom: 0; }
+.pkg-prose p { margin: 0.5rem 0; }
+.pkg-prose h1, .pkg-prose h2, .pkg-prose h3, .pkg-prose h4 {
+    margin: 0.75rem 0 0.4rem;
+    font-weight: 700;
+    color: var(--color-ink-1, #1e293b);
+    font-size: 0.9rem;
+}
+.pkg-prose ul, .pkg-prose ol { margin: 0.5rem 0; padding-inline-start: 1.25rem; }
+.pkg-prose ul { list-style: disc; }
+.pkg-prose ol { list-style: decimal; }
+.pkg-prose li { margin: 0.2rem 0; }
+.pkg-prose a { color: var(--color-brand-600); text-decoration: underline; }
+.pkg-prose img { max-width: 100%; border-radius: 0.75rem; }
+.pkg-prose table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.pkg-prose th, .pkg-prose td { border: 1px solid var(--color-line, #e2e8f0); padding: 0.4rem 0.6rem; }
+.pkg-prose code {
+    font-family: ui-monospace, monospace;
+    font-size: 0.75rem;
+    background: var(--color-surface-2, #f1f5f9);
+    padding: 0.1rem 0.35rem;
+    border-radius: 0.375rem;
+}
+.dark .pkg-prose h1, .dark .pkg-prose h2, .dark .pkg-prose h3, .dark .pkg-prose h4 {
+    color: var(--color-night-ink-1, #f8fafc);
+}
+
+/* ------------------------------------------------------------------
+ | فاز ۱۶ — بازخورد لودینگ سراسری
+ | روی هر عنصر کلیک‌شدنی که درخواست Livewire راه می‌اندازد (wire:click /
+ | wire:submit / لینک‌های wire:navigate) یک اسپینر + محو‌شدگی لحظه‌ای نشان
+ | داده می‌شود؛ به‌همراه نوار پیشرفت باریک بالای صفحه در طول هر درخواست.
+ ------------------------------------------------------------------ */
+
+/* نوار پیشرفت بالای صفحه */
+#ap-top-progress {
+    position: fixed;
+    top: 0;
+    inset-inline-start: 0;
+    height: 5px; /* فاز ۱۹: بزرگ‌تر شد (قبلاً ۳ پیکسل) */
+    width: 0;
+    z-index: 9999;
+    background: linear-gradient(90deg, var(--color-brand-500, #10b981), var(--color-brand-400, #34d399));
+    border-radius: 0 9999px 9999px 0;
+    opacity: 0;
+    transition: width 0.25s ease, opacity 0.3s ease;
+    pointer-events: none;
+    box-shadow: 0 0 14px rgb(16 185 129 / 0.7);
+}
+#ap-top-progress.is-active {
+    opacity: 1;
+    width: 82%;
+}
+#ap-top-progress.is-finishing {
+    width: 100% !important;
+    opacity: 1;
+    transition: width 0.15s ease;
+}
+#ap-top-progress.is-done {
+    opacity: 0;
+    width: 100% !important;
+}
+
+/* فاز ۱۹ — لودر گرد سراسری در بالای پنل (سمت راست) — هم‌گام با نوار پیشرفت */
+#ap-nav-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    pointer-events: none;
+    color: var(--color-brand-600, #059669);
+    background: color-mix(in srgb, var(--color-brand-500, #10b981) 12%, transparent);
+}
+#ap-nav-spinner.is-active {
+    opacity: 1;
+    transform: scale(1);
+}
+#ap-nav-spinner svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    animation: ap-click-spin 0.65s linear infinite;
+}
+@keyframes ap-click-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* عنصر کلیک‌شده در حال انتظار پاسخ سرور */
+.ap-clicking {
+    opacity: 0.65 !important;
+    pointer-events: none !important;
+    position: relative;
+}
+.ap-clicking::after {
+    content: "";
+    display: inline-block;
+    width: 0.9em;
+    height: 0.9em;
+    margin-inline-start: 0.45em;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 9999px;
+    vertical-align: -0.15em;
+    animation: ap-click-spin 0.6s linear infinite;
+    flex-shrink: 0;
+}
+
+/* برای عناصری که فقط آیکون دارند، اسپینر جای متن خالی می‌نشیند */
+button.ap-clicking.icon-only span,
+a.ap-clicking.icon-only span {
+    display: none;
+}
+
+@keyframes ap-click-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* حالت تاریک — رنگ برند روشن‌تر */
+.dark #ap-top-progress {
+    background: linear-gradient(90deg, var(--color-brand-400, #34d399), var(--color-brand-300, #6ee7b7));
+}
+
+/* ------------------------------------------------------------------
+ | فاز ۲۱ — فیلترهای مدرن لیست محصولات (پیل‌های سگمنتی + چیپ فیلتر فعال)
+ ------------------------------------------------------------------ */
+.ap-pill {
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.65rem;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-ink-2, #475569);
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+.ap-pill:hover {
+    color: var(--color-ink, #0f172a);
+    background: var(--color-surface-2, #f1f5f9);
+}
+.ap-pill.is-active {
+    background: var(--color-brand-600, #059669);
+    color: #fff;
+    box-shadow: 0 2px 8px -2px rgb(5 150 105 / 0.45);
+}
+.dark .ap-pill {
+    color: var(--color-night-ink-2, #94a3b8);
+}
+.dark .ap-pill:hover {
+    color: #e2e8f0;
+    background: rgb(255 255 255 / 0.06);
+}
+.dark .ap-pill.is-active {
+    color: #fff;
+}
+
+.ap-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 9999px;
+    border: 1px solid var(--color-line, #e2e8f0);
+    background: var(--color-surface, #fff);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--color-ink-2, #475569);
+    transition: all 0.15s ease;
+}
+.ap-filter-chip:hover {
+    border-color: var(--color-red-300, #fca5a5);
+    color: var(--color-red-600, #dc2626);
+    background: var(--color-red-50, #fef2f2);
+}
+.dark .ap-filter-chip {
+    border-color: var(--color-night-line, #334155);
+    background: var(--color-night-3, #1e293b);
+    color: var(--color-night-ink-2, #94a3b8);
+}
+.dark .ap-filter-chip:hover {
+    border-color: rgb(239 68 68 / 0.4);
+    color: #f87171;
+    background: rgb(239 68 68 / 0.1);
+}

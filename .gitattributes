@@ -1,4 +1,44 @@
 * text=auto
+
+# باینری‌ها — بدون تبدیل و بدون diff
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.avif binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.mp4 binary
+*.mp3 binary
+*.webm binary
+*.sqlite binary
+*.db binary
+
+# فایل‌های سورس — همیشه LF (سازگاری ویندوز/لینوکس)
+*.php text eol=lf
+*.blade.php text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.mjs text eol=lf
+
+# ==================================================================
+# فاز ۱۱ — جلوگیری از تداخل clone/pull ویندوز: خروجی بیلد پنل مدیریت
+# هرگز EOL-convert نمی‌شود (این قانون باید بعد از قانون‌های بالا بیاید)
+# ==================================================================
+public/admin-panel/** -text
+
 *.css linguist-vendored
 *.scss linguist-vendored
 *.js linguist-vendored

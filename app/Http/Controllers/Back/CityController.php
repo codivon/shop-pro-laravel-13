@@ -98,10 +98,12 @@ class CityController extends Controller
 
         $this->validate($request, [
             'cities'    => 'required|array',
+            'cities.*'    => 'integer',
             'orderings' => 'required|array',
+            'orderings.*' => 'integer',
         ]);
 
-        $orderings = implode(',', $request->orderings);
+        $orderings = implode(',', array_map('intval', $request->orderings));
         $count = 0;
 
         $cities = City::whereIn('id', $request->cities)

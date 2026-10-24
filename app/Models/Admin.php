@@ -120,6 +120,18 @@ class Admin extends Authenticatable
 
     //------------- end relations
 
+    /**
+     * فاز ۱۶ — رفع خطای «Call to undefined method Admin::hasBoughtProduct()»:
+     * قالب فروشگاهی روی auth()->user()->hasBoughtProduct() صدا می‌زند؛ اگر سشنِ
+     * مدیر روی آن مسیر resolve شود، مدون باید متد را داشته باشد. مدیران سفارش
+     * واقعی ندارند؛ بنابراین رابطه orders به‌صورت «همیشه خالی» تعریف می‌شود تا
+     * hasBought/hasBoughtProduct بدون خطا false برگردانند.
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'user_id')->whereRaw('1 = 0');
+    }
+
     public function hasBought(Price $price)
     {
         $orders = $this->orders()->where('status', 'paid')->pluck('id');
@@ -127,6 +139,14 @@ class Admin extends Authenticatable
         $bought = DB::table('order_items')->whereIn('order_id', $orders)->where('price_id', $price->id)->exists();
 
         return $bought;
+    }
+
+    /** امضای هم‌نام با User::hasBoughtProduct — برای مدیران همیشه false */
+    public function hasBoughtProduct(Product $product)
+    {
+        $orders = $this->orders()->where('status', 'paid')->pluck('id');
+
+        return DB::table('order_items')->whereIn('order_id', $orders)->where('product_id', $product->id)->exists();
     }
 
     public function hasRole($role)

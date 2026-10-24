@@ -17,8 +17,15 @@ class RoleSeeder extends Seeder
     {
         $permissions = Permission::pluck('id');
 
-        $role = Role::create([
+        /*
+         * فاز ۲۸ — idempotent: نصاب هر سیدر را «در یک درخواست جدا» اجرا می‌کند؛ اگر
+         * ردیاب وسط کار از دست برود و سیدر دوباره اجرا شود، create() با خطای ۱۰۶۲
+         * (Duplicate entry 'مدیر کل') کل نصب را می‌کُشت. با firstOrCreate اجرای
+         * مجدد امن است و دسترسی‌ها همیشه sync می‌شوند.
+         */
+        $role = Role::firstOrCreate([
             'title' => 'مدیر کل',
+        ], [
             'description' => 'دسترسی به همه قسمت های وبسایت',
         ]);
 

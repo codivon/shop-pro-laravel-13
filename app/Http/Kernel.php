@@ -15,13 +15,15 @@ class Kernel extends HttpKernel
      */
     protected $middleware = [
         // \App\Http\Middleware\TrustHosts::class,
-        //\App\Http\Middleware\TrustProxies::class,
+        \App\Http\Middleware\TrustProxies::class, // فعال‌سازی با متغیر TRUST_PROXIES در .env (بدون مقدار = بدون اعتماد)
         //\Fruitcake\Cors\HandleCors::class,
         \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
+        \App\Http\Middleware\BlockBots::class, // ربات‌گیر — مسدودسازی IP های ثبت‌شده در تله
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
         \App\Http\Middleware\RedirectMiddleware::class,
+        \App\Http\Middleware\SecurityHeaders::class, // هدرهای امنیتی استاندارد
     ];
 
     /**
@@ -75,6 +77,7 @@ class Kernel extends HttpKernel
 
         // my own middlewares
         'Admin' => \App\Http\Middleware\Admin::class,
+        'bot.trap' => \App\Http\Middleware\BlockBots::class,
         'Seller' => \App\Http\Middleware\Seller::class,
         'CheckCreator' => \App\Http\Middleware\CheckCreator::class,
         'CheckUserExists' => \App\Http\Middleware\CheckUserExists::class,

@@ -160,11 +160,22 @@ class CategorySeeder extends Seeder
 
         $ordering = 1000; // شروع از ۱۰۰۰ برای جلوگیری از تداخل با دسته‌بندی محصولات
 
+        // تولید اسلاگ یکتا برای دسته‌بندی‌های بلاگ (جلوگیری از تداخل با دسته‌های محصول و تکرارها)
+        $uniquePostSlug = function (string $title) {
+            $base = 'blog-' . sluggable_helper_function($title);
+            $slug = $base;
+            $i = 2;
+            while (Category::where('slug', $slug)->exists()) {
+                $slug = $base . '-' . $i++;
+            }
+            return $slug;
+        };
+
         foreach ($postCategories as $parentTitle => $children) {
             // ایجاد دسته اصلی
             $parent = Category::create([
                 'title' => $parentTitle,
-                'slug' => sluggable_helper_function($parentTitle),
+                'slug' => $uniquePostSlug($parentTitle),
                 'type' => 'postcat',
                 'image' => '',
                 'ordering' => $ordering++,
@@ -175,7 +186,7 @@ class CategorySeeder extends Seeder
                 foreach ($children as $childTitle) {
                     Category::create([
                         'title' => $childTitle,
-                        'slug' => sluggable_helper_function($childTitle),
+                        'slug' => $uniquePostSlug($childTitle),
                         'category_id' => $parent->id,
                         'type' => 'postcat',
                         'image' => '',

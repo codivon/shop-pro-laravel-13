@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use App\Rules\NotSpecialChar;
+use App\Services\SecuritySettings;
 use Illuminate\Foundation\Http\FormRequest;
 
 class RegisterRequest extends FormRequest
@@ -24,12 +25,13 @@ class RegisterRequest extends FormRequest
      */
     public function rules()
     {
+        // فاز ۴۴ — کپچای ثبت‌نام از تب «امنیت» تنظیمات برنامه‌نویس کنترل می‌شود
         return [
             'first_name'    => ['required', 'string', 'max:255', new NotSpecialChar()],
             'last_name'     => ['required', 'string', 'max:255', new NotSpecialChar()],
             'username'      => ['required', 'string', 'regex:/(09)[0-9]{9}/', 'digits:11', 'unique:users'],
             'password'      => ['required', 'string', 'min:8', 'confirmed:confirmed'],
-            'captcha'       => ['required', 'captcha'],
+            'captcha'       => SecuritySettings::captchaEnabled('register') ? ['required', 'captcha'] : ['nullable'],
             'referral_code' => 'nullable|exists:users,referral_code'
         ];
     }

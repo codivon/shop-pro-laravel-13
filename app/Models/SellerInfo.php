@@ -18,6 +18,13 @@ class SellerInfo extends Model
     use SellerScopes;
     protected $table="sellers_info";
 
+    /**
+     * فاز ۳ — الگوی همسان با Seller/SellerVariant:
+     * همه ستون‌ها جز id قابل mass-assignment باشند تا firstOrCreate/updateOrCreate
+     * (مثل sellerInfo() در SellerShow پنل جدید و جریان ثبت‌نام فرانت) کرش نکند.
+     */
+    protected $guarded = ['id'];
+
     public function seller()
     {
         return $this->belongsTo(Seller::class);

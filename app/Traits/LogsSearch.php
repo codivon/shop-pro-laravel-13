@@ -5,14 +5,45 @@ namespace App\Traits;
 use App\Models\Search;
 use Illuminate\Http\Request;
 
+/**
+ * FIX FK violation (SQLSTATE 23000 / 1452):
+ * فاز ۲۱ — لاگ جستجو فقط با گارد «web» کار می‌کند.
+ * قبلاً auth()->user() از گارد پیش‌فرض می‌خواند؛ اگر گارد پیش‌فرض میزبان چیز دیگری
+ * باشد (مثل adminPanel) شناسهٔ ادمین در ستون user_id می‌نشیند و چون FK به جدول
+ * users وصل است، INSERT با خطای کلید خارجی شکست می‌خورد. حالا صریحاً گارد web
+ * بررسی می‌شود + مدل باید واقعاً App\Models\User باشد و در دیتابیس وجود داشته باشد.
+ */
 trait LogsSearch
 {
+    /** شناسه امن کاربر جاری — فقط وقتی کاربرِ فروشگاه (گارد web) واقعاً وجود دارد */
+    protected function safeSearchUserId(): ?int
+    {
+        $user = auth('web')->user();
+
+        if (! $user instanceof \App\Models\User || ! $user->exists) {
+            return null;
+        }
+
+        return $user->id;
+    }
+
     protected function logProductSearch(Request $request, $products, $categories, $brand, $brand_categories)
     {
        $keyword= $request->q ? $request->q : $request->s;
-       $keyword = $keyword ? $keyword : $categories->title;
+
+       // FIX: قبلاً وقتی $categories یک Model بود (نه Collection)،
+       // $categories->count() و ->pluck('id') از طریق __call به Query Builder
+       // منتقل می‌شد و «کل جدول categories» خوانده می‌شد!
+       if (! $keyword) {
+           if ($categories instanceof \Illuminate\Database\Eloquent\Model) {
+               $keyword = $categories->title;
+           } elseif ($categories instanceof \Illuminate\Support\Collection) {
+               $keyword = $categories->first()?->title;
+           }
+       }
+
         return Search::create([
-            'user_id' => auth()->id(),
+            'user_id' => $this->safeSearchUserId(),
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'keyword' => $keyword,
@@ -36,7 +67,7 @@ trait LogsSearch
     protected function logPostSearch(Request $request, $posts)
     {
         return Search::create([
-            'user_id' => auth()->id(),
+            'user_id' => $this->safeSearchUserId(),
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'keyword' => $request->key,

@@ -84,18 +84,41 @@ use App\Http\Controllers\Back\ReturnController;
 require __DIR__ . '/auth.php';
 Route::get('province/get-cities', [ProvinceController::class, 'getCities'])->name('provinces.get-cities');
 
-Route::group(['as' => 'admin.', 'prefix' => 'admin/' . admin_route_prefix()], function () {
+/*
+| فاز ۲۱ — نصب‌کننده: اجرای مرحله‌به‌مرحله‌ی دیتابیس با AJAX (رفع صفحه‌ی سیاه/Timeout روی هاست)
+| محافظت با همان middleware «install» پکیج (پس از نصب، 403 می‌دهد).
+*/
+Route::middleware('install')->group(function () {
+    Route::get('install/migrate', [\App\Http\Controllers\Install\MigrateController::class, 'index'])->name('install.migrate');
+    Route::get('install/migrate-step', [\App\Http\Controllers\Install\MigrateController::class, 'step'])->name('install.migrate-step');
+});
+
+/*
+| فاز ۲۵ — ثبت‌نام اولین مدیر (صفحه‌ی جدید هم‌سبک با پنل جدید)
+| پس از اتمام نصب (جداول + سیدر)، دکمه‌ی صفحه‌ی «نصب کامل شد» مدیر را به همین
+| مسیر هدایت می‌کند. با ساخت اولین مدیر، این صفحه به‌صورت خودکار 404 می‌شود.
+| (نسخه‌ی قدیمی در admin-old/{prefix}/setup با نام admin.register حفظ شده است)
+*/
+Route::get('setup', \App\Livewire\Admin\Auth\Register::class)
+    ->name('register')
+    ->middleware(['CheckUserNotExists']);
+Route::get('register', fn () => redirect()->route('register'))->name('register.legacy');
+
+Route::group(['as' => 'admin.', 'prefix' => 'admin-old/' . admin_route_prefix()], function () {
 
     Route::get('login', [AdminLoginController::class, 'showLoginForm'])->name('login');
 
-    Route::post('login/submit', [AdminLoginController::class, 'login'])->name('login-submit');
-    Route::get('register', [InstallController::class, 'showRegisterForm'])->name('register')->middleware(['CheckUserNotExists']);
-    Route::post('register', [InstallController::class, 'register'])->middleware(['CheckUserNotExists']);
+    Route::post('login/submit', [AdminLoginController::class, 'login'])->name('login-submit')->middleware('throttle:10,1');
+    // راه‌اندازی اولیه (ثبت اولین مدیر) — آدرس جدید: /admin-old/{prefix}/setup
+    // (مسیر قدیمی register به آدرس جدید ریدایرکت می‌شود تا لینک‌های قدیمی نشکند)
+    Route::get('setup', [InstallController::class, 'showRegisterForm'])->name('register')->middleware(['CheckUserNotExists']);
+    Route::post('setup', [InstallController::class, 'register'])->middleware(['CheckUserNotExists']);
+    Route::get('register', fn () => redirect()->route('admin.register'))->name('register.legacy');
     Route::get('logout', [AdminLoginController::class, 'logout'])->name('logout');
 });
 
 // ------------------ Admin Part Routes
-Route::group(['as' => 'admin.', 'prefix' => 'admin/' . admin_route_prefix(), 'middleware' => ['Admin']], function () {
+Route::group(['as' => 'admin.', 'prefix' => 'admin-old/' . admin_route_prefix(), 'middleware' => ['Admin']], function () {
 
     // ------------------ MainController
     Route::get('/', [MainController::class, 'index'])->name('dashboard');
@@ -683,10 +706,33 @@ Route::get('manifest.json', function () {
 });
 
 
-// refresh csrf token
+/*
+|--------------------------------------------------------------------------
+| ربات‌گیر (Bot Trap)
+|--------------------------------------------------------------------------
+| مسیرهای طعمه: اسکنرهای خودکار و ربات‌های مخرب همیشه این مسیرها را پیمایش
+| می‌کنند؛ هیچ کاربر واقعی‌ای به آن‌ها سر نمی‌زند. هر ضربه = مسدودسازی IP.
+| این مسیرها در robots.txt هم Disallow شده‌اند (ربات‌های مطیع می‌آیند و تله می‌شوند).
+*/
+Route::match(['get', 'post'], 'bot-trap/hit', [\App\Http\Controllers\BotTrapController::class, 'catch'])
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+
+foreach ([
+    'wp-login.php', 'wp-admin', 'wp-admin/', 'wp-content', 'wp-includes', 'wordpress',
+    'xmlrpc.php', 'phpmyadmin', 'pma', 'adminer.php', 'wp-config.php', 'wp-settings.php',
+    '.env', '.git/config', 'phpinfo.php', 'info.php', 'shell.php', 'eval-stdin.php',
+    'config.json', 'composer.json.bak', '.aws/credentials', 'cgi-bin', 'telescope',
+    'vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php', 'actuator/gateway/logout',
+] as $trapPath) {
+    Route::match(['get', 'post'], $trapPath, [\App\Http\Controllers\BotTrapController::class, 'catch']);
+}
+
+// به‌روزرسانی خودکار csrf برای اسکریپت‌های داخلی — دیگر توکن به بیرون درز نمی‌کند
 Route::get('refresh-csrf', function () {
+    abort_unless(auth('web')->check() || auth('adminPanel')->check(), 403);
+
     return csrf_token();
-})->name('csrf');
+})->name('csrf')->middleware('throttle:30,1');
 
 Route::get('/captcha/image', [\App\Http\Controllers\CaptchaController::class, 'image'])
     ->name('captcha.image')
@@ -695,4 +741,5 @@ Route::get('/captcha/image', [\App\Http\Controllers\CaptchaController::class, 'i
 /*Route::post('/bale/webhook', [BaleWebhookController::class, 'handle'])
     ->name('bale.webhook');*/
 Route::get('packages/payment/callback', [PackagePaymentController::class, 'callback'])->name('admin.packages.payment.callback');
+
 

@@ -11,6 +11,10 @@ class Widget extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
     public function options()
     {
         return $this->hasMany(WidgetOption::class);

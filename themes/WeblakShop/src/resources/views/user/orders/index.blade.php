@@ -26,7 +26,7 @@
             <a href="?status=all" class="orders-tab {{ (request('status', 'all') === 'all') ? 'active' : '' }}">
                 <i class="fas fa-list"></i>
                 همه
-                @php $allCount = auth()->user()->orders()->count(); @endphp
+                @php $allCount = auth('web')->user()->orders()->count(); @endphp
                 @if($allCount > 0)
                     <span class="tab-count">{{ $allCount }}</span>
                 @endif
@@ -34,7 +34,7 @@
             <a href="?status=paid" class="orders-tab {{ (request('status') === 'paid') ? 'active' : '' }}">
                 <i class="fas fa-check-circle"></i>
                 تکمیل شده
-                @php $paidCount = auth()->user()->orders()->where('status', 'paid')->count(); @endphp
+                @php $paidCount = auth('web')->user()->orders()->where('status', 'paid')->count(); @endphp
                 @if($paidCount > 0)
                     <span class="tab-count">{{ $paidCount }}</span>
                 @endif
@@ -42,7 +42,7 @@
             <a href="?status=unpaid" class="orders-tab {{ (request('status') === 'unpaid') ? 'active' : '' }}">
                 <i class="fas fa-clock"></i>
                 در انتظار پرداخت
-                @php $unpaidCount = auth()->user()->orders()->where('status', 'unpaid')->count(); @endphp
+                @php $unpaidCount = auth('web')->user()->orders()->where('status', 'unpaid')->count(); @endphp
                 @if($unpaidCount > 0)
                     <span class="tab-count">{{ $unpaidCount }}</span>
                 @endif
@@ -50,7 +50,7 @@
             <a href="?status=cancelled" class="orders-tab {{ (request('status') === 'cancelled') ? 'active' : '' }}">
                 <i class="fas fa-times-circle"></i>
                 لغو شده
-                @php $cancelledCount = auth()->user()->orders()->whereIn('status', ['cancelled', 'failed'])->count(); @endphp
+                @php $cancelledCount = auth('web')->user()->orders()->whereIn('status', ['cancelled', 'failed'])->count(); @endphp
                 @if($cancelledCount > 0)
                     <span class="tab-count">{{ $cancelledCount }}</span>
                 @endif
@@ -58,7 +58,7 @@
             @php
                 $returnedCount = 0;
                 if (class_exists(\App\Models\ReturnRequest::class)) {
-                    $returnedCount = \App\Models\ReturnRequest::where('user_id', auth()->id())
+                    $returnedCount = \App\Models\ReturnRequest::where('user_id', auth('web')->id())
                         ->whereNotIn('status', ['cancelled'])
                         ->distinct('order_id')
                         ->count('order_id');
@@ -76,7 +76,7 @@
         </div>
 
         @php
-            $query = auth()->user()->orders()->latest();
+            $query = auth('web')->user()->orders()->latest();
             if (request('status') === 'paid') {
                 $query->where('status', 'paid');
             } elseif (request('status') === 'unpaid') {
@@ -84,7 +84,7 @@
             } elseif (request('status') === 'cancelled') {
                 $query->whereIn('status', ['cancelled', 'failed']);
             } elseif (request('status') === 'returned' && class_exists(\App\Models\ReturnRequest::class)) {
-                $returnedOrderIds = \App\Models\ReturnRequest::where('user_id', auth()->id())
+                $returnedOrderIds = \App\Models\ReturnRequest::where('user_id', auth('web')->id())
                     ->whereNotIn('status', ['cancelled'])
                     ->pluck('order_id')
                     ->unique()

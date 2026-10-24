@@ -12,7 +12,7 @@
                 <form id="change-username-form" data-redirect="{{ route('front.verify.showVerify') }}" action="{{ route('front.verify.changeUsername') }}" method="POST">
                     @csrf
                     <label for="email-phone">شماره موبایل</label>
-                    <input type="text" id="email-phone" name="mobile" class="input-email-account" value="{{ auth()->user()->username }}" placeholder="  شماره موبایل خود را وارد نمایید">
+                    <input type="text" id="email-phone" name="mobile" class="input-email-account" value="{{ auth('web')->user()->username }}" placeholder="  شماره موبایل خود را وارد نمایید">
 
 
                     <div class="parent-btn">

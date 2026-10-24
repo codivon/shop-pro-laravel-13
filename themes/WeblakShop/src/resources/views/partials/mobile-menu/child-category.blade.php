@@ -13,7 +13,7 @@
                         موارد این دسته</a>
                 </li>
 
-                @foreach ($category->getCategories() as $childCategory)
+                @foreach (front_category_children($category) as $childCategory)
                     @include('front::partials.mobile-menu.child-category', ['category' => $childCategory])
                 @endforeach
             </ul>

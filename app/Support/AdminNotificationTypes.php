@@ -27,4 +27,74 @@ class AdminNotificationTypes
             'c1' => '#94A3B8', 'c2' => '#64748B', 'can' => null,
         ];
     }
+
+    /**
+     * فاز ۱۶ — لینک هر اعلان به «پنل جدید» (np.*) — جایگزین ورود به پنل قدیمی
+     * از هدر. اگر معادل پنل جدید وجود نداشته باشد، لینک قدیمی برمی‌گردد.
+     */
+    public static function npLink($notification): ?string
+    {
+        $data = $notification->data ?? [];
+        $type = $notification->type;
+
+        try {
+            switch ($type) {
+                case 'OrderPaid':
+                    if (! empty($data['order_id'])) {
+                        return route('np.orders.show', ['order' => $data['order_id']]);
+                    }
+                    return route('np.orders.index');
+
+                case 'UserRegistered':
+                    if (! empty($data['user_id'])) {
+                        return route('np.users.show', ['user' => $data['user_id']]);
+                    }
+                    return route('np.users.index');
+
+                case 'SellerRegistered':
+                case 'SellerEditProfile':
+                    if (! empty($data['seller_id'])) {
+                        $seller = \App\Models\Seller::find($data['seller_id']);
+                        if ($seller) {
+                            return route('np.sellers.show', ['seller' => $seller->slug]);
+                        }
+                    }
+                    return route('np.sellers.index');
+
+                case 'UserRequestDeposit':
+                case 'SellerRequestDeposit':
+                    return route('np.request-deposit.index');
+
+                case 'TicketCreated':
+                    if (! empty($data['ticket_id'])) {
+                        return route('np.tickets.show', ['ticket' => $data['ticket_id']]);
+                    }
+                    return route('np.tickets.index');
+
+                case 'CommentPostCreated':
+                    return route('np.comments.posts');
+
+                case 'CommentProductCreated':
+                    return route('np.reviews.index');
+
+                case 'QuestionProductCreated':
+                    return route('np.comments.products');
+
+                case 'SellerProductCreated':
+                case 'SellerProductUpdate':
+                    return route('np.sellers.products');
+
+                case 'ContactCreated':
+                    return route('np.contacts.index');
+            }
+        } catch (\Throwable) {
+            // روت فعلی در دسترس نیست — به صفحه اعلان‌های پنل برمی‌گردیم
+        }
+
+        try {
+            return route('np.notifications.panel');
+        } catch (\Throwable) {
+            return null;
+        }
+    }
 }

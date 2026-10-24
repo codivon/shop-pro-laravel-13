@@ -5,9 +5,10 @@ namespace App\Exports;
 use App\Exports\Sheets\OrdersListsSheet;
 use App\Exports\Sheets\OrdersProductsSheet;
 use App\Exports\Sheets\SellerOrdersListsSheet;
+use Maatwebsite\Excel\Concerns\Export;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
-class SellerOrdersExport implements WithMultipleSheets
+class SellerOrdersExport implements Export, WithMultipleSheets
 {
     public $orders;
     public $request;

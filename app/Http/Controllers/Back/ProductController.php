@@ -221,8 +221,8 @@ class ProductController extends Controller
             'type'               => $request->type,
             'seller_id'          => $request->seller_id,
             'shipping_nature'    => $request->shipping_nature,
-            'description'        => $request->description,
-            'short_description'  => $request->short_description,
+            'description'        => sanitize_rich_text($request->description),
+            'short_description'  => sanitize_rich_text($request->short_description),
             'special'            => $request->special ? true : false,
             'slug'               => $request->slug ?: $request->title,
             'meta_title'         => $request->meta_title,
@@ -424,8 +424,8 @@ class ProductController extends Controller
             'type'               => $request->type,
             'seller_id'          => $request->seller_id,
             'shipping_nature'    => $request->shipping_nature,
-            'description'        => $request->description,
-            'short_description'  => $request->short_description,
+            'description'        => sanitize_rich_text($request->description),
+            'short_description'  => sanitize_rich_text($request->short_description),
             'special'            => $request->special ? true : false,
             'slug'               => $request->slug ?: $request->title,
             'meta_title'         => $request->meta_title,
@@ -1552,10 +1552,10 @@ class ProductController extends Controller
         if ($categoriesTag) {
             $categoriesItems = $categoriesTag->find('[class^=breadcrumb_breadItem]'); // انتخابگر صحیح
             foreach ($categoriesItems as $item) {
-                dd(trim($item->plaintext) . PHP_EOL);
+                // امنیتی: خروجی اشکال‌زدایی حذف شد (dd) — dd(trim($item->plaintext) . PHP_EOL);
                 echo trim($item->plaintext) . PHP_EOL; // متن دسته‌بندی را چاپ کنید
             }
-            dd('kk', $category);
+            // امنیتی: خروجی اشکال‌زدایی حذف شد (dd) — dd('kk', $category);
             if ($category) {
                 $category1 = Category::where('name', $category)->first();
                 if ($category1) {
@@ -1571,7 +1571,7 @@ class ProductController extends Controller
             }
         }
 
-        dd($categories);
+        // امنیتی: خروجی اشکال‌زدایی حذف شد (dd) — dd($categories);
         $properties = [];
         $property = $dom->find('.sub-section');
         if ($property != '') {
@@ -1606,7 +1606,7 @@ class ProductController extends Controller
 
         $images = [];
         $image = $dom->find('.gallery img');
-        dd($image);
+        // امنیتی: خروجی اشکال‌زدایی حذف شد (dd) — dd($image);
         if ($image) {
             $image = $image->getAttribute('src');
             $image = str_replace('280x280', '560x560', $image);
@@ -1640,8 +1640,8 @@ class ProductController extends Controller
         try {
             $ch = curl_init('https://api.digikala.com/v2/product/'.$siteCode.'/');
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true); // امنیتی: گواهی TLS تأیید شود
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2); // امنیتی: تطابق هاست گواهی
             curl_setopt($ch, CURLOPT_ENCODING, '');
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 'Accept: application/json',
@@ -2040,8 +2040,8 @@ class ProductController extends Controller
         curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_ENCODING, 'UTF-8');
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true); // امنیتی: گواهی TLS تأیید شود
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2); // امنیتی: تطابق هاست گواهی
         curl_setopt($ch, CURLOPT_USERAGENT, 'AndroidTranslate/5.3.0.RC02.130475354-53000263 5.1 phone TRANSLATE_OPM5_TEST_1');
 
         $result = curl_exec($ch);
@@ -2250,8 +2250,8 @@ class ProductController extends Controller
         $ch = curl_init($imageUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true); // امنیتی: گواهی TLS تأیید شود
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2); // امنیتی: تطابق هاست گواهی
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
 

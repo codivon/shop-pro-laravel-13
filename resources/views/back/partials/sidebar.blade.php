@@ -118,7 +118,7 @@
                         @can('packages.index')
                             <li class="{{ active_class('admin.packages.index') }}">
                                 <a href="{{ route('admin.packages.index') }}"><i class="fa-solid fa-circle"></i><span
-                                        class="menu-item">لیست پکیج ها</span></a>
+                                        class="menu-item">پکیج‌ها و قالب‌ها</span></a>
                             </li>
                         @endcan
 
@@ -969,7 +969,8 @@
             <li class="title">پکیج ها </li>
             @foreach (\App\Services\ModuleMenuRegistry::all() as $menuView)
                 @if (view()->exists($menuView))
-                    @include($menuView)
+                    {{-- apPanel: پارشال منوی هر پکیج با همین کانتکست، مارک‌آپ مخصوص این سایدبار را رندر می‌کند --}}
+                    @include($menuView, ['apPanel' => 'old'])
                 @endif
             @endforeach
 

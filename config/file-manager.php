@@ -75,16 +75,23 @@ return [
     /**
      * File upload - Max file size in KB
      *
-     * null - no restrictions
+     * 20 مگابایت — جلوگیری از آپلود فایل‌های حجیم/DoS دیسک
      */
-    'maxUploadFileSize' => null,
+    'maxUploadFileSize' => 20480,
 
     /**
      * File upload - Allow these file types
      *
-     * [] - no restrictions
+     * امنیتی: لیست سفید انواع فایل — فایل‌های اجرایی (php, html, exe, ...)
+     * هرگز مجاز نیستند (پیش‌تر [] بود = بدون محدودیت = امکان RCE)
      */
-    'allowFileTypes' => [],
+    'allowFileTypes' => [
+        'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif',
+        'pdf', 'zip', 'rar', '7z',
+        'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+        'mp3', 'mp4', 'webm', 'ogg', 'wav',
+        'txt', 'csv',
+    ],
 
     /**
      * Show / Hide system files and folders

@@ -18,8 +18,11 @@ class OrderController extends Controller
         return $this->respondWithResourceCollection(new OrderCollection($orders));
     }
 
-    public function show(Order $order)
+    public function show(Request $request, Order $order)
     {
+        // امنیتی (IDOR): هر کاربر فقط سفارش‌های خودش را می‌تواند ببیند
+        abort_unless($order->user_id === $request->user()->id, 404);
+
         return $this->respondWithResource(new OrderResource($order));
     }
 }
