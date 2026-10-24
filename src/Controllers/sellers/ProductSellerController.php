@@ -335,6 +335,48 @@ class ProductSellerController extends Controller
         return response('success');
     }
 
+    /**
+     * دادهٔ گروه‌ها/مشخصات یک «نوع مشخصات» — معادل seller-friendly ادمین (spectypes.getdata)
+     * روت ادمین پشت گارد Admin است و برای فروشنده قابل دسترس نیست؛ این نسخه JSON خام
+     * برمی‌گرداند و JS سانیار ردیف‌ها را با طراحی خودش می‌سازد.
+     */
+    public function specTypeData(Request $request)
+    {
+        $request->validate(['name' => 'required|string']);
+
+        $spec_type = SpecType::detectLang()->where('name', $request->name)->firstOrFail();
+
+        $groups = [];
+        foreach ($spec_type->specificationGroups->unique() as $group) {
+            $groups[] = [
+                'name'           => $group->name,
+                'specifications' => $spec_type->specifications()
+                    ->where('specification_group_id', $group->id)
+                    ->pluck('name')
+                    ->values(),
+            ];
+        }
+
+        return response()->json([
+            'groups'             => $groups,
+            'groupCount'         => $spec_type->specificationGroups->unique()->count(),
+            'specificationCount' => $spec_type->specifications->unique()->count(),
+        ]);
+    }
+
+    /**
+     * لیست سایزهای یک «راهنمای سایز» — معادل seller-friendly ادمین (sizetypes.show)
+     */
+    public function sizeTypeValues(SizeType $sizetype)
+    {
+        return response()->json(
+            $sizetype->sizes()->get(['id', 'title'])->map(fn ($s) => [
+                'id'    => $s->id,
+                'title' => $s->title,
+            ])
+        );
+    }
+
     public function variant(Request $request)
     {
         if (seller()->status_documents!="Accept"){

@@ -361,6 +361,10 @@ Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
             Route::post('find/api/index', [ProductSellerController::class, 'apiIndexFind'])->name('apiIndexFind');
             Route::get('{product_id}/variant', [ProductSellerController::class, 'variant'])->name('variant');
             Route::post('{product}/variant', [ProductSellerController::class, 'variant_store'])->name('variant.store');
+
+            // کمکی‌های سانیار (معادل‌های seller-friendly روت‌های ادمینِ پشت گارد Admin)
+            Route::get('spec-type-data', [ProductSellerController::class, 'specTypeData'])->name('spec-type-data');
+            Route::get('size-type-values/{sizetype}', [ProductSellerController::class, 'sizeTypeValues'])->name('size-type-values');
         });
 
         // ========== کیف پول و کمیسیون ==========

@@ -362,3 +362,182 @@
     .seller-hero-img { max-height: 180px; }
     .seller-store-stat { border-inline-start: 0; border-top: 1px solid #eef1f7; }
 }
+
+/* ============================================================
+   فاز H — مدیریت محصولات فروشنده (index / find / create / edit / variant)
+   ============================================================ */
+
+/* ---------- تب‌های فرم محصول ---------- */
+.saniar-form-tab-nav {
+    background: #fbfcff;
+    border-radius: 1rem;
+    border: 1px solid #eef1f7;
+    overflow-x: auto;
+    flex-wrap: nowrap !important;
+}
+@media (min-width: 992px) {
+    .saniar-form-tab-nav { flex-wrap: nowrap; }
+}
+.saniar-form-tab-link {
+    border: 0;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .65rem .9rem;
+    border-radius: .8rem;
+    font-size: .875rem;
+    font-weight: 600;
+    color: #4b5563;
+    white-space: nowrap;
+    width: 100%;
+    text-align: start;
+    transition: background .2s ease, color .2s ease;
+}
+.saniar-form-tab-link i { font-size: 1rem; }
+.saniar-form-tab-link:hover { color: var(--main-color-one); background: #fff; }
+.saniar-form-tab-link.active {
+    background: var(--main-color-one);
+    color: #fff;
+    box-shadow: 0 .35rem .9rem var(--main-color-one-shadow);
+}
+
+/* ---------- کارت ردیف تنوع/فایل ---------- */
+.saniar-price-row,
+.saniar-file-row {
+    border: 1px solid #e8ecf5;
+    background: #fff;
+    border-radius: 1rem;
+    padding: 1rem;
+    transition: box-shadow .2s ease;
+}
+.saniar-price-row:hover,
+.saniar-file-row:hover { box-shadow: 0 .25rem .9rem rgba(16,24,40,.06); }
+.saniar-price-row .form-label { margin-bottom: .15rem; }
+.saniar-price-row input[disabled].final-price {
+    background: #f6f8fc;
+    font-weight: 700;
+    color: var(--main-color-one);
+}
+
+/* ---------- گروه مشخصات ---------- */
+.saniar-spec-group {
+    border: 1px dashed #d7dded;
+    background: #fbfcff;
+    border-radius: 1rem;
+    padding: 1rem;
+}
+.saniar-spec-row { background: #fff; }
+.saniar-spec-row .form-control { min-height: 38px; }
+
+/* ---------- ردیف سایز/امتیاز ---------- */
+.saniar-size-row,
+.saniar-ability-row {
+    border: 1px solid #eef1f7;
+    background: #fff;
+    border-radius: .8rem;
+    padding: .65rem;
+}
+
+/* ---------- برچسب‌ها (chips) ---------- */
+.saniar-tags-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    margin-top: .4rem;
+}
+.saniar-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    background: var(--main-color-one-shadow);
+    color: var(--main-color-one);
+    border-radius: 100vmax;
+    padding: .18rem .65rem;
+    font-size: .78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s ease;
+}
+.saniar-chip:hover { background: #ffe3e3; color: #dc3545; }
+.saniar-chip i { font-size: .65rem; }
+
+/* ---------- گالری تصاویر ---------- */
+.saniar-upload-box {
+    border: 2px dashed #d7dded;
+    border-radius: 1rem;
+    background: #fbfcff;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    transition: border-color .2s ease, background .2s ease;
+}
+.saniar-upload-box:hover { border-color: var(--main-color-one); background: #fff; }
+.saniar-upload-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .35rem;
+    cursor: pointer;
+    margin: 0;
+}
+.saniar-upload-cta i {
+    font-size: 2rem;
+    color: var(--main-color-one);
+}
+.saniar-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: .75rem;
+    margin: 1rem 0;
+}
+.saniar-gallery-tile {
+    position: relative;
+    border-radius: .8rem;
+    overflow: hidden;
+    border: 1px solid #e8ecf5;
+    background: #f6f8fc;
+}
+.saniar-gallery-tile img {
+    width: 100%;
+    height: 96px;
+    object-fit: cover;
+    display: block;
+}
+.saniar-gallery-tile-actions {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    gap: .2rem;
+    background: linear-gradient(to top, rgba(0,0,0,.65), transparent);
+    padding: .4rem 0 .25rem;
+    opacity: 0;
+    transition: opacity .2s ease;
+}
+.saniar-gallery-tile:hover .saniar-gallery-tile-actions { opacity: 1; }
+.saniar-gallery-tile-actions .btn {
+    --bs-btn-padding-y: .1rem;
+    --bs-btn-padding-x: .35rem;
+    font-size: .8rem;
+    color: #fff;
+    border: 0;
+    background: rgba(255,255,255,.18);
+}
+.saniar-gallery-tile-actions .btn:hover { background: var(--main-color-one); }
+
+/* ---------- جدول محصولات (index/find) ---------- */
+.saniar-products-table th, .saniar-products-table td { vertical-align: middle; }
+.saniar-products-table .btn { margin-inline: .1rem; }
+.saniar-dt-wrap { border-radius: .8rem; overflow: hidden; border: 1px solid #eef1f7; }
+
+/* ---------- موبایل فرم محصول ---------- */
+@media (max-width: 767.98px) {
+    .saniar-form-tab-nav {
+        border-radius: .8rem;
+    }
+    .saniar-form-tab-link { padding: .5rem .7rem; }
+    .saniar-price-row, .saniar-file-row, .saniar-spec-group { padding: .75rem; }
+    .saniar-gallery-grid { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+    .saniar-gallery-tile img { height: 72px; }
+}
