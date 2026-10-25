@@ -147,7 +147,18 @@ class ModuleMenuExtractor
         return md5(implode('|', $parts));
     }
 
-    /** آیتم منو با URL فعلیِ ریکوئست فعال است؟ (مقایسه‌ی مسیر بدون query/fragment) */
+    /**
+     * آیتم منو با URL فعلیِ ریکوئست فعال است؟ (مقایسه‌ی مسیر بدون query/fragment)
+     *
+     * فاز ۸۶ — درخواست کاربر: «وقتی وارد صفحه‌های افزودن یا ویرایش می‌شود باید
+     * منوی همان قسمت در سایدبار فعال بماند». تا فاز ۸۵ مقایسه «عینِ مسیر» بود و
+     * صفحات فرعی (campaigns/create، campaigns/5، segments/…/refresh و …) آیتم
+     * فهرست را غیرفعال می‌کردند و گروه آکاردئونی بسته می‌ماند. حالا عینِ مسیر
+     * «یا» زیرمجموعهٔ سگمنت‌محورِ آن فعال شمرده می‌شود:
+     *   admin/x/campaigns          → عینِ مسیر ✓
+     *   admin/x/campaigns/create   → زیرمجموعهٔ campaigns ✓
+     *   admin/x/campaigns-suffix   → ✗ (مرز سگمنت رعایت می‌شود)
+     */
     protected static function urlIsActive(string $url): bool
     {
         if ($url === '' || $url === '#') {
@@ -164,7 +175,10 @@ class ModuleMenuExtractor
         // محیط‌هایی که آدرس‌ها را با index.php سرو می‌کنند
         $current = preg_replace('#^index\.php/#', '', $current) ?? $current;
 
-        return rtrim($current, '/') === rtrim($path, '/');
+        $current = rtrim($current, '/');
+        $path    = rtrim($path, '/');
+
+        return $current === $path || str_starts_with($current.'/', $path.'/');
     }
 
     /**

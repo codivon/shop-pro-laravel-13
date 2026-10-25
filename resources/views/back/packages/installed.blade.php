@@ -105,7 +105,8 @@
                                     </div>
                                     <div class="pkg-installed-title-area">
                                         <h5 class="pkg-installed-title btn-show-modal" data-slug="{{ $module->slug }}" style="cursor: pointer;">
-                                            {{ $module->name }}
+                                            {{-- فاز ۸۶ — نمایش «عنوان» ماژول (module.json پکیج → کش بازار → نام فنی) --}}
+                                            {{ $module->displayName() }}
                                         </h5>
                                         <code class="pkg-installed-slug">{{ $module->slug }}</code>
                                     </div>

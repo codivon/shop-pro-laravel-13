@@ -133,4 +133,67 @@ class InstalledModule extends Model
     {
         return str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $slug)));
     }
+
+    /* ---------------- نمایش (فاز ۸۶) ---------------- */
+
+    /**
+     * عنوان نمایشی ماژول برای جدول‌ها و کارت‌های پنل.
+     *
+     * زنجیرهٔ حل:
+     *   ۱) کلید «title» داخل module.json خود پکیج (منبع رسمی داخل پکیج است —
+     *      سیاست فاز ۸۵/۸۶: هویت و مستندات پکیج داخل خود پکیج؛ مثلاً پکیج
+     *      ادغامی درگاه‌ها با عنوان «پرداخت‌یار» شناخته می‌شود)
+     *   ۲) نام نمایشیِ کش بازار (packages_cache.name)
+     *   ۳) نام فنی رکورد (name)
+     */
+    public function displayName(): string
+    {
+        return static::moduleJsonTitle($this->name)
+            ?? (filled($this->cache->name ?? null) ? (string) $this->cache->name : null)
+            ?? (string) $this->name;
+    }
+
+    /** مموای هر ریکوئست — هر عنوان فقط یک‌بار از دیسک خوانده می‌شود */
+    protected static ?array $moduleTitleMemo = null;
+
+    /**
+     * خواندن «title» از module.json پکیج نصب‌شده (fail-safe؛ نبودِ فایل یا
+     * کلید یعنی null و رفتن به مرحلهٔ بعدِ زنجیره).
+     */
+    public static function moduleJsonTitle(?string $moduleName): ?string
+    {
+        $moduleName = trim((string) $moduleName);
+
+        if ($moduleName === '') {
+            return null;
+        }
+
+        static::$moduleTitleMemo ??= [];
+
+        if (array_key_exists($moduleName, static::$moduleTitleMemo)) {
+            return static::$moduleTitleMemo[$moduleName];
+        }
+
+        $title = null;
+
+        try {
+            $path = base_path('Modules/'.$moduleName.'/module.json');
+
+            if (is_file($path)) {
+                $json = json_decode((string) @file_get_contents($path), true);
+
+                if (is_array($json)) {
+                    $candidate = $json['title'] ?? null;
+
+                    if (is_string($candidate) && trim($candidate) !== '') {
+                        $title = trim($candidate);
+                    }
+                }
+            }
+        } catch (Throwable) {
+            $title = null; // دیسک در دسترس نبود — مثل نبودِ عنوان
+        }
+
+        return static::$moduleTitleMemo[$moduleName] = $title;
+    }
 }

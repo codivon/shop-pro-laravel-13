@@ -122,3 +122,12 @@ API باربری‌ها (تیپاکس/ماهکس/پست) + بارنامه و پ�
 - SnappPayService/SnappPayController (OAuth2 password grant، Payment Token با cartList، verify تک‌بار، settle، status، revert/cancel) — callback ایست‌مبرگنت POST با مستثنای CSRF در تم.
 - جدول تراکنش مشترک با provider='snappay' + مایگریشن گارددار payment_token.
 - چک‌اوت: هر دو درگاه + کارت تنظیمات اختصاصی + ثبت/حذف خودکار هر دو درگاه + رفع باگ ستون‌های ناموجود gateways.
+
+---
+
+## فاز ۸۶ (پکیج‌ها) — برند «پرداخت‌یار» + عنوان ماژول از module.json + راهنمای درون‌پنلی
+
+- **هویت پکیج داخل خود پکیج**: کلید جدید `title` در module.json — منبع رسمی نمایش (زنجیرهٔ هسته: title → کش بازار → نام فنی). پکیج ادغامی درگاه‌ها = «پرداخت‌یار» (نام فنی DigiPay حفظ شد برای داده‌ها؛ مستند در docs/WORK-LOG.md خود پکیج).
+- **قرارداد جدید پکیج‌ها**: هر پکیج جدید باید ① کلید title در module.json ② صفحهٔ «راهنما و آموزش» درون‌پنلی (روت guide + آیتم منو در دو پنل) ③ docs/USAGE.md + docs/WORK-LOG.md ④ دیزاین‌سیستم اسکوپ‌شدهٔ خودش (الگوی mm-admin.css مارکتینگ) داشته باشد.
+- نسخه‌ها: MarketingMessaging **v1.1.0** (بازطراحی ۷ ویو + رفع blade create + رفع SegmentBuilder + راهنما) و DigiPay **v1.5.0** (پرداخت‌یار + راهنما + توضیحات بازار کارد-محور + featured-payyar.png).
+- درس‌های فنی: ① متغیرهای الگوی پیام (`{{name}}`) هرگز داخل اکوی blade؛ در بلوک @php بسازید (و کامنتِ داخل بلوک، نام دایرکتیو پایانی را نداشته باشد) ② `PackageApiService::verifyLicense` پارامتر دوم nullable شد — رکورد بی‌کلید نباید پنل را ۵۰۰ کند ③ type hintهای Services باید با ایمپورت صریح مدل باشند.

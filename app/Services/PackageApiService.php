@@ -66,9 +66,20 @@ class PackageApiService
     /* ===================================================================
      *  بررسی اعتبار لایسنس (همچنین برای آپدیت‌ها استفاده می‌شود)
      *  Response: { valid, expires_at, download_token, version }
+     *
+     *  فاز ۸۶ — امضای پارامتر دوم nullable شد: رکورد installed_modules
+     *  می‌تواند license_key خالی داشته باشد (نصبِ در جریان markPending /
+     *  اشتراکِ بی‌کلید / شکست صدور)؛ در این حالت به‌جای TypeError (500
+     *  تمام صفحات پنل که LicenseGuard پکیج‌ها در بوت صدا می‌شود)، پاسخِ
+     *  «نامعتبر» بدون تماس API برمی‌گردد — همان قراردادی که گاردها برای
+     *  «پاسخ ساختارناقص» انتظار دارند.
      * =================================================================== */
-    public function verifyLicense(string $slug, string $licenseKey): array
+    public function verifyLicense(string $slug, ?string $licenseKey): array
     {
+        if (empty($licenseKey)) {
+            return ['valid' => false, 'message' => 'کلید لایسنس ثبت نشده است.'];
+        }
+
         return $this->request('POST', "/api/v1/packages/{$slug}/verify-license", [
             'license_key' => $licenseKey,
             'project_key' => $this->projectKey,

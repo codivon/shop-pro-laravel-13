@@ -37,7 +37,8 @@
                     @forelse ($this->modules as $module)
                         <tr class="transition-colors hover:bg-surface-2 dark:hover:bg-night-3">
                             <td class="px-4 py-3">
-                                <p class="font-bold">{{ $module->name }}</p>
+                                {{-- فاز ۸۶ — نمایش «عنوان» ماژول (module.json پکیج → کش بازار → نام فنی) --}}
+                                <p class="font-bold">{{ $module->displayName() }}</p>
                                 <p class="ltr text-xs text-ink-3 dark:text-night-ink-2">{{ $module->slug }}</p>
                             </td>
                             <td class="fa-digits px-4 py-3">{{ $module->version }}</td>
@@ -175,7 +176,7 @@
             </div>
             <h3 class="text-base font-bold">حذف ماژول</h3>
             <p class="mt-1.5 text-[13px] leading-6 text-ink-2 dark:text-night-ink-2">
-                با حذف ماژول <b class="ltr">{{ $confirmingUninstall }}</b> فایل‌ها و تنظیمات آن از پروژه پاک می‌شود و قابل بازگشت نیست.
+                با حذف ماژول <b class="ltr">{{ \App\Models\InstalledModule::where('slug', $confirmingUninstall)->first()?->displayName() ?? $confirmingUninstall }}</b> فایل‌ها و تنظیمات آن از پروژه پاک می‌شود و قابل بازگشت نیست.
             </p>
             <div class="mt-5 flex gap-2.5">
                 <button type="button" wire:click="uninstall" wire:loading.attr="disabled"
