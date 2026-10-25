@@ -37,7 +37,8 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
-use Intervention\Image\Facades\Image;
+// فاز ۷۶ — ایمپورت مستقیم Intervention حذف شد (فاساد v2 در vendor v3 وجود ندارد؛
+// همهٔ کارهای تصویر از لایهٔ سازگار helpers / GD خالص عبور می‌کنند)
 use Maatwebsite\Excel\Facades\Excel;
 use Morilog\Jalali\Jalalian;
 use PHPHtmlParser\Dom;
@@ -1614,22 +1615,55 @@ class ProductController extends Controller
             $time = time();
             $path = $_SERVER['DOCUMENT_ROOT'] . '/upload/image/' . $year . '/';
             $url = '/upload/image/' . $year . '/';
-            $img = Image::make($image)->save('upload/image/' . $year . '/' . $time . '.' . 'jpg', 100, 'jpg');
-            $sizefile = $img->filesize() / 1000;
-            if ($sizefile > 1000) {
-                $size = round($sizefile / 1000, 2) . 'mb';
-            } else {
-                $size = round($sizefile) . 'kb';
+
+            // فاز ۷۶ — Image::make حذف شد: فاساد Intervention v2 در vendor v3 وجود ندارد و
+            // روی هاستی که vendor مخلوط دارد، autoload کلاس‌های Intervention همان کرش
+            // غیرقابل‌شکار «abstract methods» را می‌دهد (خارج از گارد فاز ۷۵ بود).
+            // مسیر جدید: دانلود باینری + انکود GD خالص (بدون هیچ کلاسی از Intervention)؛
+            // هر خطا فقط این تصویر را رد می‌کند، نه کل ذخیرهٔ محصول.
+            try {
+                $remote = Http::timeout(20)->get($image);
+                $binary = $remote->successful() ? (string) $remote->body() : '';
+            } catch (\Throwable) {
+                $binary = '';
             }
-            $image = Gallery::create([
-                'name' => $time . '.' . 'jpg',
-                'size' => $size,
-                'type' => 'jpg',
-                'user_id' => auth('adminPanel')->user()->id,
-                'url' => $url . $time . '.' . 'jpg',
-                'path' => $path . $time . '.' . 'jpg',
-            ]);
-            array_push($images, $image['url']);
+
+            if ($binary !== '') {
+                [$encoded, $ext] = function_exists('shop_gd_fallback_encode')
+                    ? shop_gd_fallback_encode($binary, 'jpg', 100)
+                    : [$binary, 'jpg'];
+
+                if ($encoded === null) {
+                    $encoded = $binary; // GD بازنکرد — همان بایت‌های خام ذخیره شود (fail-safe فاز ۷۴)
+                }
+
+                $destDir = public_path('upload/image/' . $year);
+
+                if (! is_dir($destDir)) {
+                    @mkdir($destDir, 0775, true);
+                }
+
+                $saved = file_put_contents($destDir . '/' . $time . '.' . $ext, $encoded) !== false;
+
+                if ($saved) {
+                    $sizefile = strlen($encoded) / 1000;
+                    if ($sizefile > 1000) {
+                        $size = round($sizefile / 1000, 2) . 'mb';
+                    } else {
+                        $size = round($sizefile) . 'kb';
+                    }
+
+                    $image = Gallery::create([
+                        'name' => $time . '.' . $ext,
+                        'size' => $size,
+                        'type' => $ext,
+                        'user_id' => auth('adminPanel')->user()->id,
+                        'url' => $url . $time . '.' . $ext,
+                        'path' => $path . $time . '.' . $ext,
+                    ]);
+                    array_push($images, $image['url']);
+                }
+            }
         }
 
         return [$title, $price, $abilities, $properties, $categories, $images, $count];

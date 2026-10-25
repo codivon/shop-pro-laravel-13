@@ -9,6 +9,8 @@
 /bootstrap/cache/*.php
 /Modules/*
 .env
+.env.testing
+.phpunit.cache
 .env.backup
 /modules_statuses.json
 modules_statuses.json

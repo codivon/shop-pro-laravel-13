@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Facades\Image;
+// فاز ۷۶ — ایمپورت Intervention حذف شد (فاساد v2 در vendor v3 وجود ندارد)
 
 class GetArticleAiCommand extends Command
 {
@@ -55,10 +55,8 @@ class GetArticleAiCommand extends Command
                             $imageName='ai-pro-'.uniqid().'.jpg';
                             $localFileName=public_path("/uploads/posts/".$imageName);
                             file_put_contents($localFileName, fopen($image_url, 'r'));
-                            $img = Image::make(public_path("/uploads/posts/".$imageName));
-                            $img->resize(1024, null, function ($constraint) {
-                                $constraint->aspectRatio();
-                            })->save();
+                            // فاز ۷۶ — مقیاس با GD خالص (بدون Intervention)
+                            $this->shrinkWithGd($localFileName, 1024);
                             $content->image='/uploads/posts/'.$imageName;
                         }
 
@@ -79,10 +77,8 @@ class GetArticleAiCommand extends Command
                                 $imageName = 'ai-pro-' . uniqid() . '.jpg';
                                 $localFileName = public_path("/uploads/posts/" . $imageName);
                                 file_put_contents($localFileName, fopen($image_url, 'r'));
-                                $img = Image::make(public_path("/uploads/posts/" . $imageName));
-                                $img->resize(1024, null, function ($constraint) {
-                                    $constraint->aspectRatio();
-                                })->save();
+                                // فاز ۷۶ — مقیاس با GD خالص (بدون Intervention)
+                                $this->shrinkWithGd($localFileName, 1024);
 
                                 $image[] = "<img src=" . asset('/uploads/posts/' . $imageName) . " width='20%'>";
 
@@ -110,6 +106,32 @@ class GetArticleAiCommand extends Command
             }
 
 
+        }
+    }
+
+    /**
+     * فاز ۷۶ — کوچک‌سازی تصویر با GD خالص (فقط کاهش — بدون هیچ کلاسی از Intervention)
+     *
+     * چرا: `Image::make()->resize()->save()` به فاساد v2 وابسته بود که در vendor v3
+     * وجود ندارد؛ روی هاست با vendor مخلوط هم autoload کلاس‌های Intervention کرش
+     * غیرقابل‌شکار می‌دهد. خرابی این مرحله تصویر خام را نگه می‌دارد (fail-safe).
+     */
+    private function shrinkWithGd(string $path, int $maxWidth): void
+    {
+        try {
+            $binary = (string) @file_get_contents($path);
+
+            if ($binary === '' || ! function_exists('shop_gd_fallback_encode')) {
+                return;
+            }
+
+            [$encoded] = shop_gd_fallback_encode($binary, 'jpg', 90, $maxWidth, null);
+
+            if ($encoded !== null) {
+                file_put_contents($path, $encoded);
+            }
+        } catch (\Throwable) {
+            // مقیاس اختیاری است — تصویر خام به همان شکل می‌ماند
         }
     }
 }

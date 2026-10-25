@@ -20,7 +20,6 @@ use App\Rules\NotSpecialChar;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-use Intervention\Image\Facades\Image;
 use Maatwebsite\Excel\Facades\Excel;
 
 class UserController extends Controller

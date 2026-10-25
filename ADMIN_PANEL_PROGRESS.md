@@ -2721,3 +2721,59 @@ php artisan ops:intervention-doctor    # بررسی — خروجی باید ✔ 
 
 **کامیت:** bootstrap/helpers.php (پروب + GD خالص + تله + بازآرایی مشترک آپلود) + CompatFileManager (گارد پروب)
 + InterventionDoctor.php (فرمان پزشک) + ۹ تست + این فایل → docs/project-analysis
+
+---
+
+## فاز ۷۶ — پاک‌سازی آخرین نقاطِ مصرف مستقیم Intervention Image (کامل‌کردن گارد فاز ۷۵) + تست ضد-رگرسیون «ممنوعیت فراخوانی مستقیم» (۲ تست جدید)
+
+> **زمینه:** کاربر لاگ تازهٔ ساعت ۰۶:۰۴ فرستاد — همان کرش «EncodedImage contains 5 abstract methods»
+> (چرا هنوز؟ چون Phase 75 هنوز روی هاست pull نشده بود). بررسی مجدد کد نشان داد دو نقطهٔ مصرف مستقیم
+> باقی مانده که از گارد فاز ۷۵ عبور می‌کردند + ۵ import مردهٔ فاساد v2. این فاز آن‌ها را می‌بندد تا
+> بعد از pull، «هیچ» مسیری — حتی اسکریپ دیجی‌کالا و مقالهٔ AI — دیگر به کلاس‌های Intervention وابسته نباشد.
+
+### ۱) نقطهٔ باقی‌مانده ۱ — اسکریپ «افزودن از سایت» در ProductController
+- کد قبلی: `Image::make($image)->save('upload/image/...jpg', 100, 'jpg')` + `$img->filesize()`
+  با `use Intervention\Image\Facades\Image;` (فاساد مخصوص v2 — در vendor v3 اصلاً وجود ندارد؛
+  در v3 صحیح هم «Class not found» می‌داد و در هاست مخلوط، کرش غیرقابل‌شکار abstract methods).
+- جایگزین: دانلود باینری با `Http::timeout(20)` + انکود `shop_gd_fallback_encode()` (GD خالص —
+  بدون هیچ کلاسی از Intervention) + نوشتن با پسوند واقعی (`$ext`) و `strlen` برای سایز؛
+  هر خطا فقط «آن تصویر» را رد می‌کند نه کل ذخیرهٔ محصول (fail-safe همسو با فاز ۷۴).
+
+### ۲) نقطهٔ باقی‌مانده ۲ — `get:article_ai` (دو فراخوانی)
+- کد قبلی: `Image::make($path)->resize(1024, null, aspectRatio)->save()`
+- جایگزین: متد `shrinkWithGd($path, 1024)` در خود کماند — GD خالص با `shop_gd_fallback_encode`؛
+  خرابی مقیاس = ماندن فایل خام (مقاله از کرش نمی‌میرد).
+
+### ۳) پاک‌سازی importهای مرده (فاساد v2 که در vendor v3 وجود ندارد)
+- حذف `use Intervention\Image\Facades\Image;` از: `ProductsImport`، `TicketController`،
+  `SellerControllers`، `UserController`، `PostController` — هیچ‌کدام استفادهٔ واقعی نداشتند
+  (فقط import)؛ حذف آن‌ها هیچ تغییر رفتاری ندارد ولی کد را با سیاست «صفر وابستگی مستقیم» هم‌راستا می‌کند.
+- نتیجهٔ اسکن کل `app/` + `Modules/`: صفر ارجاع مستقیم به Intervention — همهٔ کار تصویر از
+  لایهٔ سازگار `shop_image_*` / `uploadOptimizedImage` / GD خالص عبور می‌کند.
+
+### ۴) تست ضد-رگرسیون جدید (`InterventionFreeCallSitesTest` — ۲ تست)
+- `no_direct_intervention_import_or_call_survives_in_app_code`: اسکن متنی همهٔ فایل‌های PHP در
+  `app/` + `Modules/` (با حذف کامنت‌ها مثل پروب فاز ۷۵) — ممنوعیت: `use Intervention\...`،
+  `Image::make(`، `new ImageManager`؛ اگر کسی دوباره فراخوانی مستقیم اضافه کند تست قرمز می‌شود.
+- `reformed_call_sites_use_pure_gd_layer`: تثبیت اینکه دو نقطهٔ اصلاح‌شده واقعاً از
+  `shop_gd_fallback_encode` استفاده می‌کنند و فاساد v2 در آن‌ها نیست.
+
+### ۵) وضعیت لایو (پیام به کاربر)
+- لاگ ۰۶:۰۴ به این معنی است که **فاز ۷۵ هنوز روی هاست اعمال نشده** (کامیت ۲۳:۴۱ UTC بوده و push شده؛
+  سرور باید pull کند). تا قبل از pull، همان کرش قدیمی تکرار می‌شود — طبیعی است.
+- بعد از pull: `php artisan optimize:clear` + ریست OPcache از پنل هاست؛ سپس `php artisan ops:intervention-doctor`
+  (خروجی باید «سالم» بدهد). اگر vendor هاست مخلوط بماند هم آپلود محصول و فایل‌منیجر از مسیر GD خالص/خام
+  عبور می‌کنند و سایت از کار نمی‌افتد؛ فقط بهینه‌سازی تصویر موقتاً ساده‌تر است.
+- ⚠ نکتهٔ فرعی از لاگ: `highlight_file()` undefined یعنی `disable_functions` هاست — صفحهٔ خطای
+  Symfony هم کرش می‌کند؛ ربطی به ریشه ندارد ولی `APP_DEBUG=false` (همان‌طور که ویزارد می‌نویسد) باید باشد.
+
+### ۶) تلمبهٔ آزمایشی sandbox این فاز (محدودیت محیط)
+- در این sandbox، PHP/MariaDB از دسترس خارج شده بود — PHP 8.4.23 استاتیک نصب شد؛ MariaDB قابل نصب نبود
+  (بدون root) و مایگریشن‌ها روی sqlite سازگار نیستند (drop foreign key by name) ⇒ اجرای کامل ۳۵۶ تست
+  روی MariaDB ممکن نشد (محدودیت محیط، نه کد).
+- اجرا شد: `php -l` هر ۸ فایل تغییر یافته ✔ — `InterventionFreeCallSitesTest` (۲/۲) ✔ —
+  `InterventionVendorGuardTest` (۹/۹) ✔ — `tests/Unit` (۱۸/۱۸، ۳ skip محیطی) ✔ —
+  `ops:intervention-doctor` (خروجی سالم) ✔.
+
+**کامیت:** ProductController (اسکریپ → GD خالص) + GetArticleAiCommand (shrinkWithGd) + حذف ۵ import مرده
++ InterventionFreeCallSitesTest + این فایل → docs/project-analysis
