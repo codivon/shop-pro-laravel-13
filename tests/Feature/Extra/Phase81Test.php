@@ -146,27 +146,8 @@ class Phase81Test extends TestCase
         $this->assertEquals($product->id, $notification->data['product_id']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
-    public function theme_settings_contain_price_alert_and_pre_order_customization_fields()
-    {
-        $config = include base_path('themes/WeblakShop/config/general.php');
-
-        $keys = collect($config['settings']['fields'])->pluck('key')->filter()->all();
-
-        foreach ([
-            'dt_price_alert_status',
-            'dt_price_alert_button_text',
-            'dt_price_alert_button_icon',
-            'dt_pre_order_status',
-            'dt_pre_order_button_text',
-            'dt_pre_order_badge_text',
-        ] as $key) {
-            $this->assertContains($key, $keys, "فیلد تنظیمات {$key} باید در تم موجود باشد");
-        }
-
-        $this->assertArrayHasKey('dt_price_alert_status', $config['settings']['rules']);
-        $this->assertArrayHasKey('dt_pre_order_status', $config['settings']['rules']);
-    }
+    // فاز ۸۲ — فیلدهای شخصی‌سازی هشدار کاهش قیمت/پیش‌فروش از تنظیمات قالب به
+    // صفحهٔ «تنظیمات دیگر» سایت منتقل شدند؛ پوشش تستی به Phase82Test منتقل شد.
 
     /* ================= پیش‌فروش چندتنوعی ================= */
 

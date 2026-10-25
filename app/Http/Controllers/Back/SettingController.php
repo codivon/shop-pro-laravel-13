@@ -638,8 +638,20 @@ class SettingController extends Controller
         $others = $request->except(array_merge($env_options, $file_inputs, ['AI_TOKEN_KEY']));
 
         $optionChanges = [];
+        // فاز ۸۲ — قاعدهٔ «خالی بماند = پیش‌فرض»: متن/آیکون خالی ذخیره نمی‌شود
+        $defaultFeatureValues = [
+            'dt_price_alert_button_text' => 'هشدار کاهش قیمت',
+            'dt_price_alert_button_icon' => 'mdi mdi-bell-ring-outline',
+            'dt_pre_order_button_text'   => 'ثبت پیش‌فروش',
+            'dt_pre_order_badge_text'    => 'پیش‌فروش',
+        ];
         foreach ($others as $key => $value) {
             $oldValue = option($key);
+
+            // فاز ۸۲ — متن/آیکون خالی → پیش‌فرض
+            if (isset($defaultFeatureValues[$key]) && trim((string) $value) === '') {
+                $value = $defaultFeatureValues[$key];
+            }
 
             // تبدیل مقادیر boolean برای مقایسه بهتر
             $normalizedOld = $oldValue;
@@ -747,6 +759,14 @@ class SettingController extends Controller
             'watermarkStatus' => 'وضعیت واترمارک',
             'watermarkImage' => 'تصویر واترمارک',
             'watermarkImagePosition' => 'موقعیت واترمارک',
+
+            // فاز ۸۲ — قابلیت‌های فروشگاه (از تنظیمات قالب به تنظیمات سایت منتقل شد)
+            'dt_price_alert_status' => 'قابلیت هشدار کاهش قیمت',
+            'dt_price_alert_button_text' => 'متن دکمه هشدار کاهش قیمت',
+            'dt_price_alert_button_icon' => 'آیکون دکمه هشدار کاهش قیمت',
+            'dt_pre_order_status' => 'قابلیت پیش‌فروش محصولات',
+            'dt_pre_order_button_text' => 'متن دکمه پیش‌فروش',
+            'dt_pre_order_badge_text' => 'متن نشان پیش‌فروش',
         ];
 
         return $titles[$key] ?? $key;

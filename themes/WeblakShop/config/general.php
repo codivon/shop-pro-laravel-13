@@ -330,8 +330,8 @@ return [
     'exceptVerifyCsrfToken' => [
         'orders/payment/callback/*',
         'wallet/payment/callback/*',
-        // فاز ۸۱ — callback اسنپ‌پی «POST» است (transactionId/state/amount)
-        'digipay/snappay/callback',
+        // فاز ۸۲ — callback اسنپ‌پی از خود پکیج DigiPay مستثنی می‌شود (withoutMiddleware روی مسیر)؛
+        // این آرایه در هیچ‌جای کد مصرف نمی‌شود، پس مسیر POST از اینجا مستثنی نمی‌شد (419 می‌گرفت)
     ],
 
     'asset_path' => 'themes/WeblakShop/',
@@ -580,81 +580,13 @@ return [
                 'input-type' => 'inline-editor',
                 'class' => 'col-md-12',
             ],
-            [
-                'input-type' => 'linebreak',
-                'html' => '<hr><h5 class="mb-0">هشدار کاهش قیمت (فاز ۸۱)</h5>'
-            ],
-            [
-                'title' => 'قابلیت هشدار کاهش قیمت',
-                'key' => 'dt_price_alert_status',
-                'input-type' => 'select',
-                'class' => 'col-md-3 col-6',
-                'options' => [
-                    [
-                        'value' => '1',
-                        'title' => 'بله'
-                    ],
-                    [
-                        'value' => '0',
-                        'title' => 'خیر'
-                    ]
-                ],
-                'attributes' => 'required'
-            ],
-            [
-                'title' => 'متن دکمه هشدار کاهش قیمت',
-                'key' => 'dt_price_alert_button_text',
-                'input-type' => 'input',
-                'type' => 'text',
-                'class' => 'col-md-4 col-6',
-            ],
-            [
-                'title' => 'آیکون دکمه هشدار کاهش قیمت (کلاس MDI مثل mdi mdi-bell-ring-outline)',
-                'key' => 'dt_price_alert_button_icon',
-                'input-type' => 'input',
-                'type' => 'text',
-                'class' => 'col-md-5 col-6',
-            ],
-            [
-                'input-type' => 'linebreak',
-                'html' => '<hr><h5 class="mb-0">پیش‌فروش (فاز ۸۱)</h5>'
-            ],
-            [
-                'title' => 'قابلیت پیش‌فروش محصولات',
-                'key' => 'dt_pre_order_status',
-                'input-type' => 'select',
-                'class' => 'col-md-3 col-6',
-                'options' => [
-                    [
-                        'value' => '1',
-                        'title' => 'بله'
-                    ],
-                    [
-                        'value' => '0',
-                        'title' => 'خیر'
-                    ]
-                ],
-                'attributes' => 'required'
-            ],
-            [
-                'title' => 'متن دکمه پیش‌فروش',
-                'key' => 'dt_pre_order_button_text',
-                'input-type' => 'input',
-                'type' => 'text',
-                'class' => 'col-md-4 col-6',
-            ],
-            [
-                'title' => 'متن نشان پیش‌فروش (کارت‌ها، صفحه محصول، سبد و سفارش‌ها)',
-                'key' => 'dt_pre_order_badge_text',
-                'input-type' => 'input',
-                'type' => 'text',
-                'class' => 'col-md-5 col-6',
-            ],
+            // فاز ۸۲ — تنظیمات هشدار کاهش قیمت و پیش‌فروش به صفحه «تنظیمات دیگر» سایت منتقل شد
+            // (این قابلیت‌ها متعلق به خود سایت هستند نه قالب — کلیدها همان optionهای سراسری‌اند:
+            // dt_price_alert_status / dt_price_alert_button_text / dt_price_alert_button_icon /
+            // dt_pre_order_status / dt_pre_order_button_text / dt_pre_order_badge_text)
         ],
         'rules' => [
-            'dt_show_price_change_chart' => 'required|in:yes,no',
-            'dt_price_alert_status' => 'required|in:1,0',
-            'dt_pre_order_status' => 'required|in:1,0'
+            'dt_show_price_change_chart' => 'required|in:yes,no'
         ]
     ],
 

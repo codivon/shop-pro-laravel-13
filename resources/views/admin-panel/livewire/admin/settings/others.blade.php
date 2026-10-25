@@ -13,7 +13,7 @@
             </span>
             <div>
                 <h2 class="text-base font-bold">تنظیمات دیگر</h2>
-                <p class="text-xs text-ink-3 dark:text-night-ink-2">چند فروشندگی، فاکتور، کاربران، تصاویر، Pusher و ایمیل</p>
+                <p class="text-xs text-ink-3 dark:text-night-ink-2">چند فروشندگی، فاکتور، کاربران، تصاویر، Pusher، ایمیل و قابلیت‌های فروشگاه</p>
             </div>
         </div>
         <button type="submit" form="others-form" class="ap-btn-primary !py-2.5">
@@ -61,6 +61,12 @@
                         x-bind:class="tab === 'mail' ? 'is-active' : ''">
                     <x-admin-panel::icon name="mail" class="size-4" />
                     ایمیل
+                </button>
+                <button type="button" class="ap-tab relative whitespace-nowrap" x-on:click="tab = 'features'"
+                        x-bind:aria-selected="(tab === 'features').toString()" role="tab"
+                        x-bind:class="tab === 'features' ? 'is-active' : ''">
+                    <x-admin-panel::icon name="trending-down" class="size-4" />
+                    قابلیت‌های فروشگاه
                 </button>
             </div>
 
@@ -298,6 +304,69 @@
                         <input type="text" dir="ltr" wire:model="PUSHER_APP_CLUSTER" class="ap-input font-mono" placeholder="ap2">
                     </div>
                 </div>
+            </div>
+
+            {{-- ============ قابلیت‌های فروشگاه (فاز ۸۲ — از تنظیمات قالب به تنظیمات سایت منتقل شد) ============ --}}
+            <div x-show="tab === 'features'" x-cloak class="animate-fade-in space-y-5 p-5 sm:p-6">
+                {{-- هشدار کاهش قیمت --}}
+                <section>
+                    <h3 class="mb-3 flex items-center gap-2 text-sm font-bold">
+                        <x-admin-panel::icon name="trending-down" class="size-4 text-brand-600 dark:text-brand-400" />
+                        هشدار کاهش قیمت
+                    </h3>
+                    @include('admin-panel::livewire.admin.settings.partials.setting-switch', [
+                        'name'  => 'dt_price_alert_status',
+                        'live'  => true,
+                        'icon'  => 'bell-ring',
+                        'title' => 'قابلیت هشدار کاهش قیمت',
+                        'desc'  => 'وقتی قیمت یک محصول کاهش پیدا کند، به مشتریانی که قبلاً برای آن درخواست هشدار ثبت کرده‌اند پیامک می‌شود؛ دکمه هشدار هم در صفحه محصول نمایش داده می‌شود.',
+                    ])
+                    <div @class([
+                        'mt-4 grid grid-cols-1 gap-4 rounded-xl border border-line p-4 transition-opacity sm:grid-cols-2 dark:border-night-line',
+                        'opacity-50 pointer-events-none select-none' => ! $dt_price_alert_status,
+                    ])>
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold">متن دکمه هشدار کاهش قیمت</label>
+                            <input type="text" wire:model="dt_price_alert_button_text" class="ap-input" placeholder="هشدار کاهش قیمت">
+                            <p class="mt-1.5 text-[11px] text-ink-3 dark:text-night-ink-2">خالی بماند = پیش‌فرض «هشدار کاهش قیمت»</p>
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold">آیکون دکمه (کلاس MDI)</label>
+                            <input type="text" dir="ltr" wire:model="dt_price_alert_button_icon" class="ap-input font-mono" placeholder="mdi mdi-bell-ring-outline">
+                            <p class="mt-1.5 text-[11px] text-ink-3 dark:text-night-ink-2">خالی بماند = پیش‌فرض «mdi mdi-bell-ring-outline»</p>
+                        </div>
+                    </div>
+                </section>
+
+                {{-- پیش‌فروش --}}
+                <section>
+                    <h3 class="mb-3 flex items-center gap-2 text-sm font-bold">
+                        <x-admin-panel::icon name="hourglass" class="size-4 text-brand-600 dark:text-brand-400" />
+                        پیش‌فروش
+                    </h3>
+                    @include('admin-panel::livewire.admin.settings.partials.setting-switch', [
+                        'name'  => 'dt_pre_order_status',
+                        'live'  => true,
+                        'icon'  => 'hourglass',
+                        'title' => 'قابلیت پیش‌فروش محصولات',
+                        'desc'  => 'محصولاتی که مدیر برایشان تیک پیش‌فروش زده باشد با نشان «پیش‌فروش» در سایت دیده می‌شوند و مشتری می‌تواند حداکثر یک عدد پیش‌خرید کند.',
+                    ])
+                    <div @class([
+                        'mt-4 grid grid-cols-1 gap-4 rounded-xl border border-line p-4 transition-opacity sm:grid-cols-2 dark:border-night-line',
+                        'opacity-50 pointer-events-none select-none' => ! $dt_pre_order_status,
+                    ])>
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold">متن دکمه پیش‌فروش</label>
+                            <input type="text" wire:model="dt_pre_order_button_text" class="ap-input" placeholder="ثبت پیش‌فروش">
+                            <p class="mt-1.5 text-[11px] text-ink-3 dark:text-night-ink-2">خالی بماند = پیش‌فرض «ثبت پیش‌فروش»</p>
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold">متن نشان پیش‌فروش</label>
+                            <input type="text" wire:model="dt_pre_order_badge_text" class="ap-input" placeholder="پیش‌فروش">
+                            <p class="mt-1.5 text-[11px] text-ink-3 dark:text-night-ink-2">در کارت‌ها، صفحه محصول، سبد و سفارش‌ها — خالی بماند = پیش‌فرض «پیش‌فروش»</p>
+                        </div>
+                    </div>
+                </section>
             </div>
 
             {{-- ============ ایمیل ============ --}}

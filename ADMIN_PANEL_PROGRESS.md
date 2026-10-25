@@ -3021,3 +3021,23 @@ php artisan optimize:clear
 
 ### پکیج‌ها (سوییچ به گزارش PACKAGES_ROADMAP فاز ۸۱)
 DigiPay v1.3.0 (اسنپ‌پی + ری‌برندینگ) پوش شد؛ CreditPay/InstallmentPayment برگردانده شدند؛ InstallmentCredit آمادهٔ مخزن جدید؛ دو تصویر شاخص تولید شد.
+
+## فاز ۸۲ (اصلاحی) — انتقال تنظیمات هشدار کاهش قیمت/پیش‌فروش به «تنظیمات دیگر» سایت + خودکفایی CSRF اسنپ‌پی + پوش مخزن InstallmentCredit
+
+**تاریخ**: ۱۴۰۴/۰۸/۰۳ | **شاخه**: docs/project-analysis | **تست**: Phase82Test ۷ سبز (۱ اسکیپ تمیز بدون ماژول) + Phase81 ۹ سبز + Unit ۲۴ سبز
+
+### درخواست کاربر و پاسخ
+| درخواست کاربر | اقدام |
+|---|---|
+| «تنظیمات را به صفحه تنظیمات دیگر اضافه کن چون مربوط به خود سایت هستند» | ۶ فیلد (dt_price_alert_status/button_text/button_icon + dt_pre_order_status/button_text/badge_text) از تنظیمات قالب (themes/WeblakShop/config/general.php) حذف و به صفحهٔ «تنظیمات دیگر» منتقل شد — تب جدید «قابلیت‌های فروشگاه» در پنل جدید (Livewire Others) + سکشن در پنل قدیم (back/settings/others.blade.php)؛ ذخیره با فرمت «1»/«0» (سازگار با گیت‌های هسته) + قاعدهٔ «خالی بماند = پیش‌فرض» (نرمال‌سازی در هر دو پنل) |
+| «تنظیمات پکیج باید در خود پکیج باشد» | کارت تنظیمات اسنپ‌پی از قبل در پکیج DigiPay است ✓؛ استثنای CSRF کال‌بک POST اسنپ‌پی که در تم مرده بود (exceptVerifyCsrfToken هیچ‌جا مصرف نمی‌شود) به خود پکیج منتقل شد: `withoutMiddleware([App\Http\Middleware\VerifyCsrfToken::class])` روی مسیر در routes/web.php — بدون وابستگی به تم؛ DigiPay v1.3.1 |
+| «موارد را پوش کردی؟» | راستی‌آزمایی: کامیت فاز ۸۱ روی origin/docs/project-analysis بود؛ مخزن خالی InstallmentCredit (ساختهٔ کاربر) به ریموت وصل و پوش شد؛ مخزن‌های قدیمی CreditPay/InstallmentPayment دست‌نخورده تأیید شد |
+
+### نکتهٔ محیطی مهم (تست‌ها)
+- **DATABASE_URL سندباکس**: متغیر محیطی `DATABASE_URL=file:/home/z/my-project/db/custom.db` (مربوط به پروژهٔ Next.js همسایه) در ConnectionFactory لاراول (کلید `url` اتصال‌ها) پارس می‌شود → «Unsupported driver [file]». راه‌حل اجرای تست: `env -u DATABASE_URL php vendor/phpunit/phpunit/phpunit ...`
+- **گیت‌های پرمیشن فقط خارج از CLI** تعریف می‌شوند (AuthServiceProvider) → در تست‌های Livewire ادمین، گیت باید دستی `Gate::define` شود.
+- PHPUnit 12 مقدار `<server>` را فقط در `$_SERVER` می‌گذارد (نه `$_ENV`) — الگوی تست قبلی مشکلی ندارد ولی هنگام دیباگ env باید در نظر گرفته شود.
+
+### فایل‌ها
+- هسته: themes/WeblakShop/config/general.php (حذف ۶ فیلد + حذف CSRF مردهٔ اسنپ‌پی)، app/Livewire/Admin/Settings/Others.php (۶ پراپرتی + mount با «?:» + ذخیرهٔ «1»/«0» + نرمال‌سازی خالی→پیش‌فرض)، resources/views/admin-panel/livewire/admin/settings/others.blade.php (تب «قابلیت‌های فروشگاه»)، resources/views/back/settings/others.blade.php (سکشن جدید)، app/Http/Controllers/Back/SettingController.php (عناوین + نرمال‌سازی)، tests/Feature/Extra/Phase82Test.php (۷ تست)
+- پکیج DigiPay v1.3.1: routes/web.php (withoutMiddleware خودمحور) + SnappPayController (داک‌بلاک) + module.json + README

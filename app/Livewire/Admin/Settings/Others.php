@@ -102,6 +102,21 @@ class Others extends Component
 
     public string $MAIL_ENCRYPTION = '';
 
+    /* ---------------- قابلیت‌های فروشگاه (فاز ۸۲ — از تنظیمات قالب به تنظیمات سایت منتقل شد) ---------------- */
+
+    // ذخیره‌سازی «1»/«0» (هسته با option(..., '1') == '1' چک می‌کند)
+    public bool $dt_price_alert_status = true;
+
+    public string $dt_price_alert_button_text = '';
+
+    public string $dt_price_alert_button_icon = '';
+
+    public bool $dt_pre_order_status = true;
+
+    public string $dt_pre_order_button_text = '';
+
+    public string $dt_pre_order_badge_text = '';
+
     public function mount(): void
     {
         auth('adminPanel')->user()?->can('settings.others') ?: abort(403);
@@ -144,6 +159,15 @@ class Others extends Component
         $this->MAIL_USERNAME = (string) config('mail.mailers.smtp.username');
         $this->MAIL_PASSWORD = (string) config('mail.mailers.smtp.password');
         $this->MAIL_ENCRYPTION = (string) config('mail.mailers.smtp.encryption');
+
+        // فاز ۸۲ — قابلیت‌های فروشگاه (پیش‌فرض‌ها دقیقاً مثل پیش‌فرض‌های مصرف‌کننده در هسته/تم)
+        // «?:» تا اگر مقدار خالی ذخیره شده باشد، پیش‌فرض برگردد
+        $this->dt_price_alert_status = option('dt_price_alert_status', '1') == '1';
+        $this->dt_price_alert_button_text = (string) (option('dt_price_alert_button_text') ?: 'هشدار کاهش قیمت');
+        $this->dt_price_alert_button_icon = (string) (option('dt_price_alert_button_icon') ?: 'mdi mdi-bell-ring-outline');
+        $this->dt_pre_order_status = option('dt_pre_order_status', '1') == '1';
+        $this->dt_pre_order_button_text = (string) (option('dt_pre_order_button_text') ?: 'ثبت پیش‌فروش');
+        $this->dt_pre_order_badge_text = (string) (option('dt_pre_order_badge_text') ?: 'پیش‌فروش');
     }
 
     /* ---------------- ذخیره (پورت updateOthers) ---------------- */
@@ -242,17 +266,39 @@ class Others extends Component
             'minimum_amount_gift', 'minimum_product_gift',
             'optimizeImage', 'changePhotoFormat', 'watermarkStatus', 'watermarkImagePosition',
             'transport', // quirk قدیمی: این فیلد در env_options نبود → به‌صورت option ذخیره می‌شد
+            'dt_price_alert_status', 'dt_price_alert_button_text', 'dt_price_alert_button_icon',
+            'dt_pre_order_status', 'dt_pre_order_button_text', 'dt_pre_order_badge_text',
         ];
 
         // فاز ۳۰: این کلیدها سوییچ بولین دارند → مثل قدیمی "true"/"false" ذخیره شوند
         $boolOptionKeys = ['multi_vendor_system_status', 'user_referrals_enable', 'watermarkStatus'];
+
+        // فاز ۸۲ — قابلیت‌های فروشگاه: کلیدهای فعال/غیرفعال «1»/«0» ذخیره می‌شوند
+        // (هسته ProcessPriceAlerts/PriceObserver/Product::isPreOrderable با == '1' چک می‌کنند)
+        $oneZeroOptionKeys = ['dt_price_alert_status', 'dt_pre_order_status'];
+
+        // فاز ۸۲ — قاعدهٔ «خالی بماند = پیش‌فرض»: هیچ متن/آیکون خالی ذخیره نمی‌شود
+        $defaultOptionValues = [
+            'dt_price_alert_button_text' => 'هشدار کاهش قیمت',
+            'dt_price_alert_button_icon' => 'mdi mdi-bell-ring-outline',
+            'dt_pre_order_button_text' => 'ثبت پیش‌فروش',
+            'dt_pre_order_badge_text' => 'پیش‌فروش',
+        ];
 
         $optionChanges = [];
         foreach ($optionKeys as $key) {
             // فاز ۳۰: سوییچ‌های بولین → "true"/"false" (فرمت داده مثل قدیمی)
             $value = in_array($key, $boolOptionKeys, true)
                 ? ($this->{$key} ? 'true' : 'false')
-                : (string) $this->{$key};
+                : (in_array($key, $oneZeroOptionKeys, true)
+                    ? ($this->{$key} ? '1' : '0')
+                    : (string) $this->{$key});
+
+            // فاز ۸۲ — متن/آیکون خالی → پیش‌فرض
+            if (isset($defaultOptionValues[$key]) && trim($value) === '') {
+                $value = $defaultOptionValues[$key];
+            }
+
             $oldValue = option($key);
 
             // پورت نرمال‌سازی multi_vendor_system_status برای لاگ
@@ -350,6 +396,13 @@ class Others extends Component
             'watermarkStatus' => 'وضعیت واترمارک',
             'watermarkImage' => 'تصویر واترمارک',
             'watermarkImagePosition' => 'موقعیت واترمارک',
+            // فاز ۸۲ — قابلیت‌های فروشگاه
+            'dt_price_alert_status' => 'قابلیت هشدار کاهش قیمت',
+            'dt_price_alert_button_text' => 'متن دکمه هشدار کاهش قیمت',
+            'dt_price_alert_button_icon' => 'آیکون دکمه هشدار کاهش قیمت',
+            'dt_pre_order_status' => 'قابلیت پیش‌فروش محصولات',
+            'dt_pre_order_button_text' => 'متن دکمه پیش‌فروش',
+            'dt_pre_order_badge_text' => 'متن نشان پیش‌فروش',
         ];
 
         return $titles[$key] ?? $key;

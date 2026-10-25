@@ -329,6 +329,74 @@
                                         </div>
 
                                         {{-- ====================================================== --}}
+                                        {{-- 5) قابلیت‌های فروشگاه (فاز ۸۲ — از تنظیمات قالب به تنظیمات سایت منتقل شد) --}}
+                                        {{-- ====================================================== --}}
+                                        <div class="settings-section acc-features">
+                                            <div class="section-heading">
+                                                <span class="icon-wrap"><i class="feather icon-trending-down"></i></span>
+                                                <div>
+                                                    <h4>قابلیت‌های فروشگاه</h4>
+                                                    <small>هشدار کاهش قیمت و پیش‌فروش (شخصی‌سازی متن و آیکون)</small>
+                                                </div>
+                                            </div>
+                                            <div class="section-body">
+                                                <div class="sub-divider">هشدار کاهش قیمت</div>
+                                                <div class="row">
+                                                    <div class="col-md-3 col-12">
+                                                        <div class="form-group">
+                                                            <label>قابلیت هشدار کاهش قیمت</label>
+                                                            <select name="dt_price_alert_status" class="form-control">
+                                                                <option value="1" {{ option('dt_price_alert_status', '1') == '1' ? 'selected' : '' }}>فعال</option>
+                                                                <option value="0" {{ option('dt_price_alert_status', '1') != '1' ? 'selected' : '' }}>غیرفعال</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4 col-12">
+                                                        <div class="form-group">
+                                                            <label>متن دکمه هشدار کاهش قیمت</label>
+                                                            <input type="text" name="dt_price_alert_button_text" class="form-control" value="{{ option('dt_price_alert_button_text', 'هشدار کاهش قیمت') }}" placeholder="هشدار کاهش قیمت">
+                                                            <div class="hint-text"><i class="feather icon-info"></i> خالی بماند = پیش‌فرض «هشدار کاهش قیمت».</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-5 col-12">
+                                                        <div class="form-group">
+                                                            <label>آیکون دکمه هشدار کاهش قیمت (کلاس MDI)</label>
+                                                            <input type="text" name="dt_price_alert_button_icon" class="form-control ltr" value="{{ option('dt_price_alert_button_icon', 'mdi mdi-bell-ring-outline') }}" placeholder="mdi mdi-bell-ring-outline">
+                                                            <div class="hint-text"><i class="feather icon-info"></i> خالی بماند = پیش‌فرض «mdi mdi-bell-ring-outline».</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="sub-divider">پیش‌فروش</div>
+                                                <div class="row">
+                                                    <div class="col-md-3 col-12">
+                                                        <div class="form-group">
+                                                            <label>قابلیت پیش‌فروش محصولات</label>
+                                                            <select name="dt_pre_order_status" class="form-control">
+                                                                <option value="1" {{ option('dt_pre_order_status', '1') == '1' ? 'selected' : '' }}>فعال</option>
+                                                                <option value="0" {{ option('dt_pre_order_status', '1') != '1' ? 'selected' : '' }}>غیرفعال</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4 col-12">
+                                                        <div class="form-group">
+                                                            <label>متن دکمه پیش‌فروش</label>
+                                                            <input type="text" name="dt_pre_order_button_text" class="form-control" value="{{ option('dt_pre_order_button_text', 'ثبت پیش‌فروش') }}" placeholder="ثبت پیش‌فروش">
+                                                            <div class="hint-text"><i class="feather icon-info"></i> خالی بماند = پیش‌فرض «ثبت پیش‌فروش».</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-5 col-12">
+                                                        <div class="form-group">
+                                                            <label>متن نشان پیش‌فروش (کارت‌ها، صفحه محصول، سبد و سفارش‌ها)</label>
+                                                            <input type="text" name="dt_pre_order_badge_text" class="form-control" value="{{ option('dt_pre_order_badge_text', 'پیش‌فروش') }}" placeholder="پیش‌فروش">
+                                                            <div class="hint-text"><i class="feather icon-info"></i> خالی بماند = پیش‌فرض «پیش‌فروش».</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- ====================================================== --}}
                                         {{-- 5) Pusher settings                                         --}}
                                         {{-- ====================================================== --}}
                                         <div class="settings-section acc-pusher">
