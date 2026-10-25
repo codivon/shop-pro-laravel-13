@@ -2932,3 +2932,41 @@ php artisan optimize:clear
 - گام بعدی (۷۹-ب): ادغام InstallmentPayment+CreditPay، اتومات‌سازی CheckoutTurbo/CreditPay، تست پایهٔ ۴ پکیج پول‌محور.
 
 **کامیت:** PACKAGES_ROADMAP.md + این فایل → docs/project-analysis
+
+---
+
+## فاز ۷۹ (بخش ب) — ادغام پکیج قسطی+اعتباری، اتصال خودکار تم، تست پایهٔ پکیج‌های پول‌محور
+
+> **زمینه:** طبق نقشهٔ راه، InstallmentPayment و CreditPay (۹۰٪ همپوشانی فرضی) در یک پکیج واحد ادغام شدند،
+> اتصال تم به پکیج خودکار شد و تست پایهٔ پکیج‌های پول‌محور به مخزن هسته اضافه شد.
+
+### ۱) کشف‌های بازبینی قبل از ادغام (تصحیح فرض قبلی)
+- FinnotechService «تکراری» نبود: نسخهٔ InstallmentPayment **ابَرمجموعهٔ ۱۱۰۰ خطی** با ۱۸ سرویس KYC صادرات است و نسخهٔ ۲۸۶ خطی CreditPay فقط استعلام هویت دارد → ادغام یعنی «جایگزینی کوچک با بزرگ + حفظ قرارداد فلوی اعتباری».
+- شاخهٔ اعتباری تم WeblakShop با API حفظ‌شدهٔ CreditService در v2 **بدون هیچ پچی** کار می‌کند — پچ دستی OrderController صرفاً ارتقای اختیاری است نه پیش‌نیاز.
+
+### ۲) CreditPay v2.0.0 — ادغام کامل (کامیت `26fbb75`)
+- **انتقال ساب‌سیستم اقساط طرح‌محور** با همان جدول‌های `installment_*` (۷ مدل، ۳ مایگریشن شماره‌گذاری‌شدهٔ ۰۰۱۰۱-۰۰۱۰۳ با گارد hasTable، ۱۰ کنترلر، ۲۳ ویو، CSS/JS) → ارتقای خریداران InstallmentPayment بدون ازدست‌دادن داده.
+- **FinnotechService واحد (۱۴۰۰ خط)**: ۱۸ سرویس KYC + شیم‌های سازگار فلوی اعتباری (`verifyIdentity`/`saveResult`/`getToken` با کش مستقل `finnotech_access_token_credit`)؛ خوانندهٔ پیکربندی دوزبانه (`credit_settings` اولویت → `installment_settings` پشتیبان) تا تنظیمات ارتقایی‌ها زنده بماند.
+- **سیم‌کشی کامل**: منوی ادمین/کاربر اقساطی + ویجت داشبورد، کامندهای `installments:process-overdue` (۰۹:۱۰) و `installments:send-reminders` (۱۰:۱۰)، پرمیشن‌های اقساطی در کامندهٔ واحد نصب پرمیشن، `ActivateInstallmentPlanAfterOrderPaid` روی OrderPaid + `InstallmentOrderObserver` برای لغو خودکار.
+- **پاکسازی ارجاع‌های بین‌ماژولی**: گیت `module_is_active('InstallmentPayment')` در checkout_hook و CreditService به گیت داخلی `installment_settings.enabled` (با گارد hasTable) تبدیل شد؛ ۴ پوشهٔ ویو هم‌نام با ویوهای خود CreditPay به پیشوند `installment_` منتقل شد (صفر برخورد نام ویو بین دو ساب‌سیستم).
+- InstallmentPayment آرشیو شد: بنر توقف توسعه + راهنمای مهاجرت ۵-مرحله‌ای بدون ازدست‌دادن داده (`5a0e9d0`).
+
+### ۳) v2.0.1 — اتصال خودکار تم: `credit:wire-theme` (کامیت `5caa071`)
+- کشف بحرانی: تم WeblakShop هنوز به ویوهای `installment-payment::` قدیمی include می‌زند → پس از مهاجرت به v2، کرش «view not found» قطعی بود.
+- دستور idempotent با بکاپ خودکار (`*.bak-creditpay`): ۱) اصلاح includeهای قدیمی به `credit-pay::front.installment_checkout_hook` / `installment_sidebar_hook` + تبدیل گاردها؛ ۲) درج هوک‌های غایب بعد از هوک اعتباری (نصب تازه)؛ ۳) گزارش سلامت شاخهٔ اعتباری OrderController.
+- منطق تبدیل روی **کپی فایل‌های واقعی تم** آزمایش شد: ۶/۶ چک (تبدیل، حذف namespace قدیمی، درج، تعویض گارد) + idempotency سبز.
+
+### ۴) v2.0.2 — رفع باگ ارثی مایگریشن (کامیت `89dd2c3`)
+- اجرای واقعی مایگریشن‌های ماژول روی MariaDB 11.4 باگ گرفت: ایندکس دوبل `due_date` (باگ ارثی از InstallmentPayment 1.0.3 — نصب تازهٔ آن هرگز روی MySQL سبز نمی‌شد). رفع شد و هر ۱۳ مایگریشن سبز شد.
+
+### ۵) تست پایهٔ پکیج‌های پول‌محور — `tests/Feature/Packages/MoneyPackagesTest.php` (۱۰ تست)
+- فلسفه: روی میزبانِ خریدارِ نصب‌کرده **راستی‌آزمایی واقعی**، روی میزبان بدون پکیج Skip تمیز با پیام روشن (بدون گمراه‌کردن).
+- پوشش: مانیفست v2 و ساختار ادغام (۱۲ فایل حیاتی + مایگریشن + ویوهای هوک)، سیم‌کشی پرووایدر (کامند/لیسنر/آبزرور/منو)، قرارداد FinnotechService (۱۸ سرویس KYC + ۶ کلیدِ قرارداد verifyIdentity در حالت غیرفعال)، ریاضی کارمزد درصدی سبد و جریمهٔ دیرکرد (خالص و درون‌حافظه)، ثبت `credit:wire-theme`، سلامت CheckoutTurbo/DigiPay.
+- **راستی‌آزمایی سندباکس**: ماژول موقتاً در Modules/ نصب، مایگریشن اجرا و ۸ تست سبز (۸۹ assertion) شد — سپس جداول rollback و ماژول پاک‌سازی شد (مخزن هسته تمیز ماند). سناریوی Checkout هسته هم ۲۱/۲۱ سبز ماند.
+
+### نتیجه
+- ۸ پوش/کامیت روی ۲ مخزن پکیج (CreditPay v2.0.2 + InstallmentPayment آرشیو) + مخزن هسته: ۱۰ تست جدید + PACKAGES_ROADMAP (جدول وضعیت + ۷۹-ب) + این فایل.
+- ۸ از ۱۰ پکیج اکنون 🟢 فروش‌پذیرند؛ باقی‌ماندهٔ جزئی: مستندسازی Story و الگوی توزیع بدون zip.
+- گام بعدی (فاز ۸۰): پکیج جدید «مارکتینگ و پیام‌رسانی» (سبد رهاشده + کمپین پیامکی + سگمنت‌بندی).
+
+**کامیت:** tests/Feature/Packages/MoneyPackagesTest.php + PACKAGES_ROADMAP.md + این فایل → docs/project-analysis
