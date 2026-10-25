@@ -309,6 +309,14 @@ class Price extends Model
 
     public function toRoundPrice($price)
     {
+        // فاز ۸۹ — گارد قیمت یتیم: اگر ردیف قیمت محصولِ والد نداشته باشد
+        // (محصول حذف‌شده یا ردیف ناقص)، دسترسی به property روی null کل فرانت
+        // (مثل product-block-2) را با «Attempt to read property on null» می‌شکند.
+        // در این حالت گردکردن اعمال نمی‌شود و قیمت خام برمی‌گردد.
+        if (!$this->product) {
+            return (float) $price;
+        }
+
         $rounding_amount = $this->product->rounding_amount;
 
         if ($rounding_amount == 'default') {

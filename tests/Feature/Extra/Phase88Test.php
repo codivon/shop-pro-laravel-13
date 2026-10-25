@@ -256,10 +256,22 @@ class Phase88Test extends TestCase
         $this->assertStringContainsString('admin.credit.guide', $backMenu);
         $this->assertStringContainsString('راهنما و آموزش', $backMenu);
 
-        // آیتم منوی فرانت (همیشه نمایش داده می‌شود — حتی بدون حساب اعتباری)
+        // فاز ۸۹ — لینک راهنما نباید مستقیم در منوی سایدبار مشتری باشد (درخواست کاربر)
         $frontMenu = (string) file_get_contents(view('credit-pay::front.partials.menu')->getPath());
-        $this->assertStringContainsString('front.credit.guide', $frontMenu);
-        $this->assertStringContainsString('راهنما و آموزش', $frontMenu);
+        $this->assertStringNotContainsString('front.credit.guide', $frontMenu, 'لینک راهنما نباید مستقیم در منوی سایدبار مشتری باشد.');
+
+        // و به‌جایش بنر «راهنما و آموزش» داخل صفحات «اقساط من» و «اعتبار من» است
+        $cta = $dir.'/resources/views/front/partials/guide_cta.blade.php';
+        $this->assertFileExists($cta, 'پارشال بنر راهنمای درون‌صفحه‌ای وجود ندارد.');
+        $ctaContent = (string) file_get_contents($cta);
+        $this->assertStringContainsString("route('front.credit.guide')", $ctaContent);
+        $this->assertStringContainsString('راهنما و آموزش', $ctaContent);
+        $this->assertStringContainsString('icg-guide-banner', $ctaContent, 'دیزاین خودکفای بنر (icg-) حفظ نشده است.');
+
+        foreach (['front/dashboard.blade.php', 'front/index.blade.php'] as $page) {
+            $pageContent = (string) file_get_contents($dir.'/resources/views/'.$page);
+            $this->assertStringContainsString('credit-pay::front.partials.guide_cta', $pageContent, "بنر راهنما در ویوی «{$page}» نیست.");
+        }
 
         // دیزاین‌سیستم اسکوپ‌شدهٔ icp- + فونت‌های compat
         $this->assertFileExists($dir.'/resources/assets/css/guide.css');
@@ -372,6 +384,12 @@ class Phase88Test extends TestCase
             'credit-pay::front.partials.menu',
             'credit-pay::back.statistics.index',
             'credit-pay::front.installment_checkout_hook',
+            // فاز ۸۹ — ویوهای بازطراحی‌شده
+            'credit-pay::front.checkout_hook',
+            'credit-pay::front.sidebar_hook',
+            'credit-pay::front.partials.guide_cta',
+            'credit-pay::front.dashboard',
+            'credit-pay::front.index',
         ] as $viewName) {
             if (! view()->exists($viewName)) {
                 $this->fail("ویوی «{$viewName}» پیدا نشد.");
@@ -380,5 +398,75 @@ class Phase88Test extends TestCase
             [, $exitCode] = $this->compileAndLint($viewName);
             $this->assertSame(0, $exitCode, "ویوی «{$viewName}» بعد از کامپایل خطای PHP دارد.");
         }
+    }
+
+    /* ================= ۱۱) فاز ۸۹ — چک‌اوت اعتباری خودکفا ================= */
+
+    #[Test]
+    #[TestDox('بند ۱۱ — هوک چک‌اوت اعتباری خودکفاست (استایل inline با ccx-) و قرارداد JS (idها + کانفیگ + سایدبار) حفظ شده است')]
+    public function checkout_credit_hook_is_selfcontained_and_keeps_js_contract(): void
+    {
+        $dir = $this->requireCreditPay();
+
+        $hook    = (string) file_get_contents($dir.'/resources/views/front/checkout_hook.blade.php');
+        $sidebar = (string) file_get_contents($dir.'/resources/views/front/sidebar_hook.blade.php');
+
+        // هوک دیگر به css خارجی وابسته نیست (ریشهٔ به‌هم‌ریختگی روی هاست: کپی کهنهٔ credit.css)
+        $this->assertStringNotContainsString("css/credit.css", $hook, 'هوک چک‌اوت نباید به credit.css خارجی وابسته باشد.');
+        $this->assertStringContainsString('<style>', $hook, 'استایل باید inline داخل خود هوک باشد.');
+        $this->assertStringContainsString('ccx-toggle-card', $hook);
+        $this->assertStringContainsString('ccx-card', $hook, 'کارت خلاصه با دیزاین جدید (ccx-) بازطراحی نشده است.');
+
+        // قرارداد JS (credit_checkout.js) — idها و کانفیگ دست‌نخورده
+        foreach ([
+            'id="cp-credit-checkbox"',
+            'id="cp-credit-summary"',
+            'id="cp-credit-enabled-input"',
+            'id="cp-credit-amount-input"',
+            'window.cpCheckoutConfig',
+            'js/credit_checkout.js',
+            "route(\"front.credit.check\")",
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $hook, "قرارداد JS در هوک چک‌اوت شکسته شده: {$needle}");
+        }
+
+        // سایدبار: کلاس‌های مقدار که JS آپدیت می‌کند + ساختار خودکفا
+        foreach ([
+            'id="cp-credit-sidebar-info"',
+            'cp-cart-original',
+            'cp-cart-markup',
+            'cp-credit-deducted',
+            'cp-cash-payable',
+            'cp-first-installment',
+            'cp-monthly-installment',
+            'cp-total-with-markup',
+            '<style>',
+            'cp-block-header',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $sidebar, "قرارداد سایدبار اعتباری شکسته شده: {$needle}");
+        }
+    }
+
+    /* ================= ۱۲) فاز ۸۹ — گارد قیمت یتیم ================= */
+
+    #[Test]
+    #[TestDox('بند ۱۲ — Price::toRoundPrice با محصولِ null کرش نمیکند (رفع «rounding_amount on null» در product-block-2) و رفتار گردکردن سالم می‌ماند')]
+    public function orphan_price_does_not_break_rounding(): void
+    {
+        // ۱) قیمت یتیم (بدون محصول) — قبلاً «Attempt to read property rounding_amount on null» می‌داد
+        $orphan = new \App\Models\Price;
+        $orphan->setRelation('product', null);
+
+        $this->assertSame(123456.0, $orphan->toRoundPrice(123456), 'قیمت یتیم باید خام و بدون گردکردن برگردد.');
+
+        // ۲) رفتار عادی: گردکردن به بالا تا ۱۰۰۰ تومان
+        $product = new \App\Models\Product;
+        $product->rounding_amount = '1000';
+        $product->rounding_type   = 'up';
+
+        $price = new \App\Models\Price;
+        $price->setRelation('product', $product);
+
+        $this->assertSame(1235000.0, $price->toRoundPrice(1234567), 'گردکردن عادی نباید با گارد جدید خراب شود.');
     }
 }
