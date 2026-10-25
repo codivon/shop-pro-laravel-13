@@ -20,19 +20,30 @@ use Illuminate\Console\Command;
  * استفاده:
  *   php artisan ops:intervention-doctor          گزارش خوانا
  *   php artisan ops:intervention-doctor --json   خروجی ساخت‌یافته برای پیوست در تیکت
+ *   php artisan ops:intervention-doctor --write-opcache-reset   ساخت فایل یک‌بارمصرف ریست OPcache در public
+ *
+ * فاز ۷۷ — گزینهٔ --write-opcache-reset: چون validate_timestamps=0 روی هاست، بعد از
+ * هر git pull باید حتماً OPcache ریست شود؛ در cPanel همیشه دکمهٔ آن در دسترس نیست؛
+ * این گزینه یک فایل PHP یک‌بارمصرف با نام تصادفی در public می‌سازد که با یک بار
+ * بازدید در مرورگر، کش OPcache همان FPM را پاک می‌کند — سپس باید حذفش کنید.
  *
  * کد خروج: 0 = سالم | 1 = معیوب (برای اسکریپت‌ها)
  */
 class InterventionDoctor extends Command
 {
     protected $signature = 'ops:intervention-doctor
-                            {--json : خروجی JSON ساخت‌یافته (برای پیوست‌کردن در گزارش)}';
+                            {--json : خروجی JSON ساخت‌یافته (برای پیوست‌کردن در گزارش)}
+                            {--write-opcache-reset : ساخت فایل یک‌بارمصرف ریست OPcache در public و چاپ آدرس بازدید}';
 
     protected $description = 'تشخیص یکپارچگی vendor Intervention Image + قابلیت‌های GD + وضعیت OPcache (بدون بارگذاری کلاس‌ها)';
 
     public function handle(): int
     {
         $report = $this->diagnose();
+
+        if ($this->option('write-opcache-reset')) {
+            $this->writeOpcacheResetFile();
+        }
 
         if ($this->option('json')) {
             $this->line(json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
@@ -41,6 +52,41 @@ class InterventionDoctor extends Command
         }
 
         return $report['healthy'] ? self::SUCCESS : self::FAILURE;
+    }
+
+    /**
+     * فاز ۷۷ — فایل یک‌بارمصرف ریست OPcache در public می‌سازد؛ با یک بار بازدید
+     * در مرورگر، کش همان FPM پاک می‌شود (معادل دکمهٔ ریست در cPanel).
+     */
+    private function writeOpcacheResetFile(): void
+    {
+        try {
+            $name = 'opcache-reset-'.bin2hex(random_bytes(4)).'.php';
+            $content = <<<'PHP'
+            <?php
+            // فایل یک‌بارمصرف ریست OPcache — فاز ۷۷ — بعد از بازدید حذف شود!
+            header('Content-Type: text/plain; charset=utf-8');
+
+            if (function_exists('opcache_reset')) {
+                echo @opcache_reset() ? 'OPcache reset OK' : 'opcache_reset failed';
+            } else {
+                echo 'OPcache is not loaded';
+            }
+            PHP;
+
+            file_put_contents(public_path($name), $content);
+
+            $url = rtrim(url('/'), '/').'/'.$name;
+
+            $this->warn('فایل ریست OPcache ساخته شد: '.public_path($name));
+            $this->line('۱) یک‌بار در مرورگر باز کنید: '.$url);
+            $this->line('۲) باید «OPcache reset OK» ببینید.');
+            $this->line('۳) فوراً همین فایل را از public حذف کنید:   rm public/'.$name);
+            $this->newLine();
+        } catch (\Throwable $e) {
+            $this->error('ساخت فایل ریست OPcache ممکن نشد: '.$e->getMessage());
+            $this->line('به‌جای آن از پنل هاست: cPanel → Reset OPcache یا ری‌استارت PHP-FPM.');
+        }
     }
 
     /**
@@ -259,7 +305,10 @@ class InterventionDoctor extends Command
             .'   revalidate_freq: '.var_export($report['opcache']['revalidate_freq'], true));
 
         if ($report['opcache']['stale_risk']) {
-            $this->warn('   ⚠️  validate_timestamps=0 است — بعد از هر git pull کلاس‌های قدیمی در حافظه می‌مانند؛ ریست OPcache از پنل الزامی است.');
+            $this->warn('   ⚠️  validate_timestamps=0 است — بعد از هر git pull کلاس‌های قدیمی در حافظه می‌مانند؛ همین عامل تکرار خطای «abstract methods» بعد از pull بود!');
+            $this->line('   درمان فوری (یکی از دو راه):');
+            $this->line('   a) php artisan ops:intervention-doctor --write-opcache-reset   ← فایل می‌سازد؛ آدرسش را در مرورگر باز کنید و فایل را حذف کنید');
+            $this->line('   b) پنل هاست: cPanel → MultiPHP Manager / Select PHP Version → Reset OPcache یا ری‌استارت PHP-FPM');
         }
 
         $this->newLine();

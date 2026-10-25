@@ -257,4 +257,159 @@ class InterventionVendorGuardTest extends TestCase
         $this->assertArrayHasKey('opcache', $report);
         $this->assertTrue($report['healthy'], 'روی vendor سالم سندباکس باید healthy=true باشد');
     }
+
+    /* ═══════ فاز ۷۷ — GD مسیرِ اصلی آپلود + واترمارک GD + پروب OPcache ═══════ */
+
+    #[Test]
+    public function upload_entry_point_prefers_pure_gd_even_when_vendor_is_healthy(): void
+    {
+        // نقطهٔ کلیدی فاز ۷۷: حتی با vendor سالم، uploadOptimizedImage باید از مسیر
+        // GD خالص عبور کند (چون OPcache هاست با validate_timestamps=0 ممکن است کلاس
+        // کهنه سرو کند — پروب دیسک را کورکورانه نمی‌توان باور کرد)
+        $image = UploadedFile::fake()->image('product.png', 400, 300);
+
+        $path = uploadOptimizedImage($image, 'products', null, [
+            'optimize' => false,
+            'watermark' => false,
+            'format' => 'webp',
+            'size' => [100, 100],
+        ]);
+
+        $this->assertIsString($path);
+        $this->assertStringStartsWith('uploads/products/', $path);
+
+        $content = (string) Storage::disk('public')->get($path);
+        $info = @getimagesizefromstring($content);
+
+        $this->assertNotFalse($info, 'خروجی مسیر اصلی باید تصویر معتبر باشد');
+        $this->assertLessThanOrEqual(100, $info[0]);
+        $this->assertLessThanOrEqual(100, $info[1]);
+        $this->assertStringEndsWith('.webp', $path, 'روی بیلد GD دارای imagewebp باید webp واقعی ذخیره شود');
+    }
+
+    #[Test]
+    public function upload_via_gd_applies_watermark_with_alpha(): void
+    {
+        // تصویر پایه: سفید ۱۰۰×۸۰
+        $base = imagecreatetruecolor(100, 80);
+        imagefill($base, 0, 0, imagecolorallocate($base, 255, 255, 255));
+        $basePath = sys_get_temp_dir().'/wm_base_'.uniqid().'.png';
+        imagepng($base, $basePath);
+        imagedestroy($base);
+
+        // واترمارک: قرمز مات ۲۰×۱۰
+        $wm = imagecreatetruecolor(20, 10);
+        imagefill($wm, 0, 0, imagecolorallocate($wm, 255, 0, 0));
+        $wmName = 'watermark-test-'.uniqid().'.png';
+        $wmPath = public_path($wmName);
+        imagepng($wm, $wmPath);
+        imagedestroy($wm);
+
+        try {
+            $file = new UploadedFile($basePath, 'base.png', 'image/png', null, true);
+
+            $path = uploadOptimizedImage($file, 'products', null, [
+                'optimize' => false,
+                'format' => 'png',
+                'watermark' => true,
+                'watermarkPath' => $wmName,
+                'watermarkImagePosition' => 'bottom-right',
+            ]);
+
+            $decoded = @imagecreatefromstring((string) Storage::disk('public')->get($path));
+
+            $this->assertNotFalse($decoded, 'خروجی باید PNG معتبر باشد');
+
+            // bottom-right با offset 25: واترمارک ۲۰×۱۰ روی ۱۰۰×۸۰ → ناحیهٔ (۵۵..۷۵ , ۴۵..۵۵)
+            $index = imagecolorat($decoded, 60, 50);
+            $rgb = imagecolorsforindex($decoded, $index);
+
+            $this->assertGreaterThanOrEqual(200, $rgb['red'], 'پیکسل داخل ناحیهٔ واترمارک باید قرمز باشد');
+            $this->assertLessThanOrEqual(80, $rgb['green']);
+            $this->assertLessThanOrEqual(80, $rgb['blue']);
+
+            imagedestroy($decoded);
+        } finally {
+            @unlink($wmPath);
+            @unlink($basePath);
+        }
+    }
+
+    #[Test]
+    public function watermark_bigger_than_image_is_scaled_down_safely(): void
+    {
+        $base = imagecreatetruecolor(60, 40);
+        imagefill($base, 0, 0, imagecolorallocate($base, 255, 255, 255));
+        $binary = '';
+        imagepng($base, $tmp = sys_get_temp_dir().'/wm_big_'.uniqid().'.png');
+        $binary = (string) file_get_contents($tmp);
+        imagedestroy($base);
+        @unlink($tmp);
+
+        // واترمارک ۲۰۰×۱۰۰ — بزرگ‌تر از تصویر؛ باید کوچک و درج شود، نه خطا
+        $wm = imagecreatetruecolor(200, 100);
+        imagefill($wm, 0, 0, imagecolorallocate($wm, 0, 200, 0));
+        $wmPath = sys_get_temp_dir().'/wm_green_'.uniqid().'.png';
+        imagepng($wm, $wmPath);
+        imagedestroy($wm);
+
+        try {
+            [$out, $ext] = shop_gd_fallback_encode($binary, 'png', 80, null, null, $wmPath, 'center');
+
+            $this->assertNotNull($out, 'درج واترمارک بزرگ نباید انکود را بشکند');
+
+            $decoded = @imagecreatefromstring((string) $out);
+
+            $this->assertNotFalse($decoded);
+
+            // مرکز تصویر ۶۰×۴۰ باید سبز باشد (واترمارک مقیاس‌شده وسط درج شد)
+            $rgb = imagecolorsforindex($decoded, imagecolorat($decoded, 30, 20));
+
+            $this->assertLessThanOrEqual(80, $rgb['red'], 'مرکز تصویر باید سبزِ واترمارک باشد');
+            $this->assertGreaterThanOrEqual(120, $rgb['green']);
+
+            imagedestroy($decoded);
+        } finally {
+            @unlink($wmPath);
+        }
+    }
+
+    #[Test]
+    public function opcache_staleness_probe_reports_safely_without_opcache(): void
+    {
+        if (function_exists('opcache_get_status') && is_array(@opcache_get_status(true))) {
+            $this->markTestSkipped('OPcache در این محیط فعال است — شاخهٔ null قابل بررسی نیست');
+        }
+
+        $this->assertNull(
+            shop_intervention_opcache_stale($this->realSrc()),
+            'بدون OPcache باید null بدهد (پروب دیسک کافی است — کلاس‌ها از دیسک می‌آیند)'
+        );
+    }
+
+    #[Test]
+    public function doctor_can_write_one_shot_opcache_reset_file(): void
+    {
+        $exit = Artisan::call('ops:intervention-doctor', ['--write-opcache-reset' => true]);
+        $output = Artisan::output();
+
+        try {
+            $this->assertSame(0, $exit);
+            $this->assertStringContainsString('opcache-reset-', $output, 'باید نام/آدرس فایل یک‌بارمصرف چاپ شود');
+            $this->assertStringContainsString('rm public/', $output, 'یادآوری حذف فایل باید باشد');
+
+            $matches = [];
+
+            $this->assertSame(1, preg_match('/opcache-reset-[0-9a-f]{8}\.php/', $output, $matches), 'نام فایل باید الگوی امن داشته باشد');
+
+            $written = public_path($matches[0]);
+
+            $this->assertFileExists($written);
+            $this->assertStringContainsString('opcache_reset', (string) file_get_contents($written));
+        } finally {
+            foreach (glob(public_path('opcache-reset-*.php')) ?: [] as $file) {
+                @unlink($file);
+            }
+        }
+    }
 }

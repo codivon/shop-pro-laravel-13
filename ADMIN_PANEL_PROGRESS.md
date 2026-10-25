@@ -2777,3 +2777,62 @@ php artisan ops:intervention-doctor    # بررسی — خروجی باید ✔ 
 
 **کامیت:** ProductController (اسکریپ → GD خالص) + GetArticleAiCommand (shrinkWithGd) + حذف ۵ import مرده
 + InterventionFreeCallSitesTest + این فایل → docs/project-analysis
+
+---
+
+## فاز ۷۷ — GD «مسیرِ اصلی» آپلود + پروب OPcache + گزینهٔ ریست OPcache در پزشک (رفع تکرار کرش بعد از pull — لاگ ۰۶:۴۶ کاربر)
+
+### ۱) چرا بعد از pull فاز ۷۵ هنوز کرش داشتیم؟ (ریشهٔ واقعی)
+- کاربر فاز ۷۵ را روی هاست pull کرده بود (آخرین کامیت دریافت‌شده‌اش فاز ۷۵ بود) و باز هم همان
+  «EncodedImage contains 5 abstract methods» آمد (لاگ ۰۶:۴۶).
+- تحلیل: روی هاست `opcache.validate_timestamps=0` است — PHP کلاس‌های کامپایل‌شدهٔ کهنه را از حافظه
+  سرو می‌کند حتی وقتی فایل‌های دیسک با git pull سالم شده‌اند. پروب متنی فاز ۷۵ «دیسک» را می‌خواند
+  (سبز می‌شود) اما کلاسی که واقعاً load می‌شود کهنه/مخلوط است ⇒ همان کرش. دو حالت ممکن:
+  دیسک سالم+OPcache کهنه (پروب فریب می‌خورد) یا خود helpers.php هم کهنه (پروب اصلاً اجرا نمی‌شود).
+- درس: اتکای مسیر آپلود به «هر کلاسی» روی چنین هاستی نامطمئن است — حتی با پروب.
+
+### ۲) فاز ۷۷ — GD مسیرِ اصلی؛ Intervention فقط پشتیبانِ آخر
+- `uploadOptimizedImage` حالا اول `upload_optimized_image_via_gd` را صدا می‌زند (اگر GD موجود باشد —
+  عملاً همیشه)؛ Intervention فقط وقتی استفاده می‌شود که GD در دسترس نباشد و پروب سبز باشد.
+- یعنی روی بدترین سرور ممکن (vendor مخلوط + OPcache کهنه) ذخیرهٔ محصول/مقاله/تاکت/فروشنده… هیچ‌گاه
+  به کلاس‌های Intervention نمی‌رسد — کرش از این مسیرها «غیرممکن» شد.
+- برای کامل‌شدن هم‌رفتاری: **واترمارک به مسیر GD اضافه شد** — `shop_gd_apply_watermark()` با
+  `imagecopy` و آلفای سالم (نه imagecopymerge)، ۵ موقعیت مثل مسیر Intervention، کوچک‌سازی متناسب
+  واترمارک بزرگ‌تر از تصویر، fail-safe (خطا = بدون واترمارک). ترتیب همان مسیر Intervention: مقیاس ← واترمارک ← انکود.
+
+### ۳) پروب OPcache — `shop_intervention_opcache_stale()`
+- دیسک سالم است؟ کافی نیست — نسخهٔ کامپایل‌شدهٔ OPcache هم باید تازه باشد.
+- مقایسهٔ `timestamp` اسکریپت‌های کامپایل‌شدهٔ OPcache (داخل پوشهٔ src Intervention) با `filemtime` دیسک؛
+  اگر فرق داشت ⇒ vendor «از نظر این درخواست» معیوب ⇒ GD/خام. اگر `validate_timestamps=1` باشد خودِ
+  OPcache هم‌تراز می‌شود (false)؛ اگر OPcache اصلاً نباشد ⇒ null (پروب دیسک کافی است).
+- به `shop_intervention_vendor_ok()` وصل شد ⇒ `CompatFileManager` هم از همین حفاظ استفاده می‌کند.
+
+### ۴) پزشک — گزینهٔ `--write-opcache-reset`
+- چون ریست OPcache روی هاست اشتراکی همیشه دکمهٔ آماده ندارد، پزشک حالا یک فایل PHP یک‌بارمصرف با نام
+  تصادفی (`opcache-reset-xxxxxxxx.php`) در public می‌سازد؛ یک بار بازدید در مرورگر = ریست کش همان FPM؛
+  سپس حذف فایل. بخش OPcacheِ گزارش هم درمان گام‌به‌گام چاپ می‌کند.
+
+### ۵) تست خودِ «افزودن محصول دیجی‌کالا» (درخواست صریح کاربر)
+- API دیجی‌کالا از sandbox در دسترس نیست (307 geo-block) اما **کل خط تصویر با باینری webp واقعی
+  ۱۲۰۰×۹۰۰** (همان فرمت دیجی‌کالا) شبیه‌سازی و سبز شد:
+  resizeAndSaveSiteImage (GD، ۶۰۰×۴۵۰ حفظ نسبت) ← uploadOptimizedImage با گزینه‌های دقیق
+  updateProductImages (size [800,800]) ← فایل معتبر webp ذخیره شد — و **هیچ کلاس Intervention در
+  کل خط autoload نشد** (بررسی با class_exists بدون autoload). مسیر جایگزین `Image::make` هم سبز.
+- تست‌های جدید فاز ۷۷ (۵ تست): GD در نقطهٔ ورود آپلود حتی با vendor سالم + واترمارک آلفادار GD (پیکسل‌سنجی) +
+  واترمارک بزرگ‌تر از تصویر + پروب OPcache بدون OPcache + فایل ریست پزشک. (۱۶ تست فایل گارد: همگی سبز)
+
+### ۶) درمان روی هاست (ترتیب دقیق برای کاربر)
+```
+cd /home/owqdlxcv/repositories/shop.opashop.ir
+git status --short | head        # اگر vendor تغییر محلی داشت، اول: git checkout -- vendor/
+git pull origin docs/project-analysis
+php artisan optimize:clear
+php artisan ops:intervention-doctor --write-opcache-reset
+#  ← آدرس چاپ‌شده را یک‌بار در مرورگر باز کنید («OPcache reset OK») و فایل را حذف کنید
+php artisan ops:intervention-doctor   # گزارش نهایی باید سالم باشد
+```
+- از این نسخه به بعد حتی بدون ریست OPcache، ذخیرهٔ محصول از مسیر GD می‌گذرد و ۵۰۰ نمی‌دهد؛
+  ریست OPcache برای «فعال‌شدن دوبارهٔ بهینه‌سازی کامل Intervention» لازم است، نه برای بقا.
+
+**کامیت:** bootstrap/helpers.php (GD-first + واترمارک GD + پروب OPcache) + InterventionDoctor (--write-opcache-reset)
++ ۵ تست جدید + این فایل → docs/project-analysis

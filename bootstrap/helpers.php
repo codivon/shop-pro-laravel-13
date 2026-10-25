@@ -1816,11 +1816,75 @@ if (! function_exists('shop_intervention_vendor_ok')) {
             $verdict = false;
         }
 
+        // فاز ۷۷ — دیسک سالم است، اما OPcache (با validate_timestamps=0) ممکن است
+        // کلاسِ کامپایل‌شدهٔ کهنه (از دورِ مخلوط) را سرو کند — همان دام لاگ ۰۶:۴۶.
+        if ($verdict) {
+            $stale = shop_intervention_opcache_stale($src);
+
+            if ($stale) {
+                $verdict = false;
+            }
+        }
+
         if ($interventionSrcDir === null) {
             $cached = $verdict;
         }
 
         return $verdict;
+    }
+}
+
+if (! function_exists('shop_intervention_opcache_stale')) {
+    /**
+     * فاز ۷۷ — آیا OPcache کلاسِ کامپایل‌شدهٔ کهنه از این پوشهٔ src دارد؟
+     *
+     * دام واقعی لاگ ۰۶:۴۶ کاربر: دیسک بعد از git pull سالم است (پروب متنی سبز
+     * می‌شود) اما با opcache.validate_timestamps=0، کلاس‌های کامپایل‌شدهٔ دورِ
+     * مخلوط در حافظه می‌مانند و همان لحظهٔ load منفجر می‌شوند. این پروب mtime
+     * نسخهٔ کامپایل‌شده را با mtime دیسک مقایسه می‌کند.
+     *
+     * خروجی: true = کهنه (نامعتبر) | false = تازه | null = OPcache در دسترس نیست/نمی‌توان گفت
+     */
+    function shop_intervention_opcache_stale(string $srcDir): ?bool
+    {
+        if (! function_exists('opcache_get_status') || ! function_exists('opcache_get_configuration')) {
+            return null; // OPcache لود نیست — کلاس‌ها از دیسک خوانده می‌شوند؛ پروب دیسک کافی است
+        }
+
+        try {
+            $directives = @opcache_get_configuration()['directives'] ?? [];
+
+            // با بازاعتبارسنجی فعال، خود OPcache با دیسک هم‌تراز می‌شود
+            if ((bool) ($directives['opcache.validate_timestamps'] ?? true)) {
+                return false;
+            }
+
+            $status = @opcache_get_status(true);
+
+            if (! is_array($status)) {
+                return null; // (مثلاً enable_cli=0 در CLI)
+            }
+
+            $prefix = rtrim($srcDir, '/').'/';
+
+            foreach ((array) ($status['scripts'] ?? []) as $script) {
+                $fullPath = (string) ($script['full_path'] ?? '');
+
+                if ($fullPath === '' || ! str_starts_with($fullPath, $prefix)) {
+                    continue;
+                }
+
+                $diskAt = @filemtime($fullPath);
+
+                if ($diskAt !== false && (int) $diskAt !== (int) ($script['timestamp'] ?? 0)) {
+                    return true; // نسخهٔ کامپایل‌شده ≠ دیسک — کلاس‌های کهنه
+                }
+            }
+
+            return false; // چیزی از Intervention در کش نبود یا همه هم‌عصر دیسک‌اند
+        } catch (Throwable) {
+            return null;
+        }
     }
 }
 
@@ -2166,8 +2230,17 @@ function uploadOptimizedImage($file, $storagePath, $postId = null, $options = []
 
     $options = shop_upload_image_options($storagePath, $options);
 
-    // فاز ۷۵ — اگر vendor مخلوط/معیوب باشد، حتی یک کلاس هم از Intervention
-    // نباید autoload شود (خطای «abstract methods» غیرقابل شکار است) → مسیر GD خالص
+    // فاز ۷۷ — مسیر GD خالص «مسیرِ اصلی» آپلود است؛ Intervention فقط پشتیبانِ آخر.
+    // چرا: روی هاست کاربر حتی بعد از pull، OPcache با validate_timestamps=0 کلاس‌های
+    // کهنهٔ مخلوط را از حافظه سرو می‌کند — پروب متنی دیسک را سالم می‌بیند اما کلاسی
+    // که واقعاً load می‌شود کهنه است و همان کرش غیرقابل‌شکار «abstract methods» را
+    // می‌دهد (لاگ ۰۶:۴۶ کاربر بعد از pull فاز ۷۵). GD هیچ وابستگی به کلاس‌ها ندارد؛
+    // در بدترین سرور ممکن (vendor مخلوط + OPcache کهنه) هم آپلود کار می‌کند.
+    if (function_exists('imagecreatefromstring')) {
+        return upload_optimized_image_via_gd($file, $storagePath, $postId, $options);
+    }
+
+    // بدون GD (فوق‌العاده نادر) — پروب فاز ۷۵ تصمیم می‌گیرد (vendor مخلوط = ذخیرهٔ خام)
     if (! shop_intervention_vendor_ok()) {
         return upload_optimized_image_via_gd($file, $storagePath, $postId, $options);
     }
@@ -2258,7 +2331,7 @@ if (! function_exists('shop_gd_fallback_encode')) {
      * خروجی: [باینری, پسوند واقعی] — یا [null, پسوند اصلی] یعنی decode نشد
      * (تماس‌گیرنده باید فایل خام را ذخیره کند — همان fail-safe فاز ۷۴)
      */
-    function shop_gd_fallback_encode(string $binary, string $format, int $quality, ?int $maxWidth = null, ?int $maxHeight = null): array
+    function shop_gd_fallback_encode(string $binary, string $format, int $quality, ?int $maxWidth = null, ?int $maxHeight = null, ?string $watermarkPath = null, string $watermarkPosition = 'bottom-right', int $watermarkOffset = 25): array
     {
         $format = strtolower($format) === 'jpeg' ? 'jpg' : strtolower($format);
 
@@ -2357,6 +2430,16 @@ if (! function_exists('shop_gd_fallback_encode')) {
             }
         }
 
+        // فاز ۷۷ — واترمارک با GD خالص (بعد از مقیاس — هم‌تراز با ترتیب مسیر Intervention:
+        // مقیاس ← واترمارک ← انکود)؛ خطا = بدون واترمارک، آپلود نمی‌شکند
+        if ($watermarkPath !== null && $watermarkPath !== '' && is_file($watermarkPath)) {
+            $withWatermark = shop_gd_apply_watermark($src, $watermarkPath, $watermarkPosition, $watermarkOffset);
+
+            if ($withWatermark !== null) {
+                $src = $withWatermark;
+            }
+        }
+
         // انکود — فقط با توابعی که واقعاً در بیلد GD سرور وجود دارند؛
         // فرمت درخواستی → جایگزین‌های بعدی (webp → jpg → png)
         $encoders = [
@@ -2400,6 +2483,89 @@ if (! function_exists('shop_gd_fallback_encode')) {
     }
 }
 
+if (! function_exists('shop_gd_apply_watermark')) {
+    /**
+     * فاز ۷۷ — درج واترمارک با GD خالص (هم‌رفتار با shop_image_watermark مسیر Intervention)
+     *
+     * واترمارک (معمولاً PNG آلفادار) با imagecopy و blending سالم درج می‌شود؛
+     * اگر بزرگ‌تر از تصویر بود متناسب کوچک می‌شود؛ خطا = بدون واترمارک (fail-safe).
+     */
+    function shop_gd_apply_watermark($src, string $watermarkPath, string $position = 'bottom-right', int $offset = 25)
+    {
+        try {
+            $wmBinary = (string) @file_get_contents($watermarkPath);
+
+            if ($wmBinary === '' || ! function_exists('imagecreatefromstring')) {
+                return null;
+            }
+
+            $wm = @imagecreatefromstring($wmBinary);
+
+            if ($wm === false || ! is_object($wm)) {
+                return null;
+            }
+
+            if (function_exists('imagepalettetotruecolor')) {
+                @imagepalettetotruecolor($wm);
+            }
+
+            if (function_exists('imagealphablending') && function_exists('imagesavealpha')) {
+                @imagealphablending($wm, true);
+                @imagesavealpha($wm, true);
+            }
+
+            $W = (int) imagesx($src);
+            $H = (int) imagesy($src);
+            $w = (int) imagesx($wm);
+            $h = (int) imagesy($wm);
+
+            if ($w > $W || $h > $H) {
+                // واترمارک بزرگ‌تر از تصویر — متناسب کوچک می‌شود (هرگز بزرگ‌نمایی نمی‌کنیم)
+                $scale = min($W / max(1, $w), $H / max(1, $h), 1.0);
+                $nw = max(1, (int) round($w * $scale));
+                $nh = max(1, (int) round($h * $scale));
+                $resized = function_exists('imagecreatetruecolor') ? @imagecreatetruecolor($nw, $nh) : false;
+
+                if ($resized !== false && function_exists('imagecopyresampled')) {
+                    @imagealphablending($resized, false);
+                    @imagesavealpha($resized, true);
+                    @imagecopyresampled($resized, $wm, 0, 0, 0, 0, $nw, $nh, $w, $h);
+                    imagedestroy($wm);
+                    $wm = $resized;
+                    $w = $nw;
+                    $h = $nh;
+                }
+            }
+
+            if (function_exists('imagealphablending')) {
+                @imagealphablending($src, true);
+            }
+
+            $x = match ($position) {
+                'top-left', 'bottom-left' => $offset,
+                'top-right', 'bottom-right' => max(0, $W - $w - $offset),
+                'center' => max(0, (int) round(($W - $w) / 2)),
+                default => max(0, $W - $w - $offset),
+            };
+
+            $y = match ($position) {
+                'top-left', 'top-right' => $offset,
+                'bottom-left', 'bottom-right' => max(0, $H - $h - $offset),
+                'center' => max(0, (int) round(($H - $h) / 2)),
+                default => max(0, $H - $h - $offset),
+            };
+
+            // imagecopy (نه imagecopymerge) — آلفای خود واترمارک حفظ می‌شود
+            @imagecopy($src, $wm, $x, $y, 0, 0, $w, $h);
+            imagedestroy($wm);
+
+            return $src;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+}
+
 if (! function_exists('upload_optimized_image_via_gd')) {
     /**
      * فاز ۷۵ — کل مسیر آپلود با GD خالص (بدون هیچ کلاسی از Intervention)
@@ -2434,7 +2600,12 @@ if (! function_exists('upload_optimized_image_via_gd')) {
             (string) $options['format'],
             (int) $options['quality'],
             $maxWidth,
-            $maxHeight
+            $maxHeight,
+            // فاز ۷۷ — واترمارک (هم‌شرط با مسیر Intervention: watermark + watermarkPath + وجود فایل)
+            (! empty($options['watermark']) && ! empty($options['watermarkPath']) && is_file(public_path((string) $options['watermarkPath'])))
+                ? public_path((string) $options['watermarkPath'])
+                : null,
+            (string) ($options['watermarkImagePosition'] ?? 'bottom-right')
         );
 
         $modified_storagePath = str_replace('/', '-', $storagePath);
