@@ -237,6 +237,12 @@ function check_cart_quantity()
 
     foreach ($cart->products as $product) {
         $price = $product->prices()->find($product->pivot->price_id);
+
+        // فاز ۷۸ — پیش‌فروش: بدون کنترل موجودی
+        if ($product->pre_order) {
+            continue;
+        }
+
         $has_stock = $price->hasStock($product->pivot->quantity);
         if (! $has_stock['status']) {
             return false;

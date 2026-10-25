@@ -1164,7 +1164,8 @@ class OrderController extends Controller
             DB::transaction(function () use ($order) {
                 foreach ($order->items as $item) {
                     // فقط برای محصولات فیزیکی موجودی رزرو شود
-                    if ($item->product->isPhysical()) {
+                    // فاز ۷۸ — آیتم‌های پیش‌فروش رزرو نمی‌شوند (کالا هنوز تولید/تأمین نشده)
+                    if ($item->product->isPhysical() && !$item->product->pre_order) {
                         $price = $item->get_price;
 
                         if ($price) {
@@ -1365,6 +1366,11 @@ class OrderController extends Controller
                     continue;
                 }
 
+                // فاز ۷۸ — پیش‌فروش: بدون کنترل موجودی
+                if ($item->product->pre_order) {
+                    continue;
+                }
+
                 $price = $item->get_price;
 
                 if (!$price) {
@@ -1389,6 +1395,11 @@ class OrderController extends Controller
             foreach ($order->items as $item) {
                 // اگر محصول دانلودی است، از ثبت حرکات انبار صرف نظر کن
                 if (!$item->product->isPhysical()) {
+                    continue;
+                }
+
+                // فاز ۷۸ — پیش‌فروش: حرکت انبار ثبت نمی‌شود
+                if ($item->product->pre_order) {
                     continue;
                 }
 

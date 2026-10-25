@@ -236,4 +236,22 @@ class IdehPardazanSms extends SmsService implements SmsContract, SmsNotification
             'ParameterArray'   =>  $this->data,
         ];
     }
+
+    /** فاز ۷۸ — هشدار کاهش قیمت (الگو: price_alert_pattern_code با پارامترهای title و price) */
+    public function priceAlert()
+    {
+        return [
+            'TemplateId'     => option('price_alert_pattern_code'),
+            'ParameterArray' => [
+                [
+                    'Parameter'      => 'title',
+                    'ParameterValue' => $this->data['title'],
+                ],
+                [
+                    'Parameter'      => 'price',
+                    'ParameterValue' => $this->data['price'],
+                ],
+            ],
+        ];
+    }
 }

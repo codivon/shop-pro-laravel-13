@@ -245,4 +245,16 @@ class FarazSms extends SmsService implements SmsContract, SmsNotificationContrac
             'attributes'   =>  $this->data,
         ];
     }
+
+    /** فاز ۷۸ — هشدار کاهش قیمت (الگو: price_alert_pattern_code با متغیرهای title و price) */
+    public function priceAlert()
+    {
+        return [
+            'pattern_code' => option('price_alert_pattern_code'),
+            'attributes'   => [
+                'title' => $this->data['title'],
+                'price' => $this->data['price'],
+            ],
+        ];
+    }
 }

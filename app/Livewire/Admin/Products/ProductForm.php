@@ -88,6 +88,7 @@ class ProductForm extends Component
     public bool $published = true;
     public string $status = 'Accept';
     public bool $special = false;
+    public bool $pre_order = false; // فاز ۷۸ — پیش‌فروش
     public string $special_end_date = '';
 
     /* --------------------- مشخصات / سایز / امتیاز / فیلدها --------------------- */
@@ -213,6 +214,7 @@ class ProductForm extends Component
         $this->published = (bool) $product->published;
         $this->status = (string) ($product->status ?? 'Accept');
         $this->special = (bool) $product->special;
+        $this->pre_order = (bool) $product->pre_order; // فاز ۷۸
         $this->special_end_date = $product->special_end_date ? Jalalian::fromDateTime($product->special_end_date)->format('Y-m-d H:i:s') : '';
 
         $this->image_alt = (string) ($product->image_alt ?? '');
@@ -871,6 +873,7 @@ class ProductForm extends Component
                 'description' => $this->description,
                 'short_description' => $this->short_description,
                 'special' => $this->special,
+                'pre_order' => $this->pre_order, // فاز ۷۸
                 'slug' => $this->slug ?: SlugService::createSlug(Product::class, 'slug', $this->title), // فاز ۲۵ — اسلاگ فارسی یکتا
                 'meta_title' => $this->meta_title,
                 'image_alt' => $this->image_alt,
@@ -983,6 +986,7 @@ class ProductForm extends Component
                 'description' => $this->description,
                 'short_description' => $this->short_description,
                 'special' => $this->special,
+                'pre_order' => $this->pre_order, // فاز ۷۸
                 'slug' => $this->slug ?: SlugService::createSlug(Product::class, 'slug', $this->title), // فاز ۲۵ — اسلاگ فارسی یکتا
                 'meta_title' => $this->meta_title,
                 'image_alt' => $this->image_alt,

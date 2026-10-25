@@ -81,6 +81,7 @@ use App\Livewire\Admin\Faqs\FaqIndex;
 use App\Livewire\Admin\Comments\CommentsIndex;
 use App\Livewire\Admin\Reviews\ReviewIndex;
 use App\Livewire\Admin\StockNotify\StockNotifyIndex;
+use App\Livewire\Admin\PriceAlert\PriceAlertIndex;
 use App\Livewire\Admin\Forms\FormIndex;
 use App\Livewire\Admin\Forms\FormBuilder;
 use App\Livewire\Admin\Forms\FormSubmissions;
@@ -418,6 +419,7 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
         Route::get('comments/index/posts', CommentsIndex::class)->defaults('type', 'post')->name('comments.posts');
         Route::get('reviews', ReviewIndex::class)->name('reviews.index');
         Route::get('stock-notifies', StockNotifyIndex::class)->name('stock-notifies.index');
+        Route::get('price-alerts', PriceAlertIndex::class)->name('price-alerts.index');
 
         /*
         |----------------------

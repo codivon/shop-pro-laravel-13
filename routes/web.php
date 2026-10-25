@@ -56,6 +56,7 @@ use App\Http\Controllers\Back\SmsController;
 use App\Http\Controllers\Back\SpecTypeController;
 use App\Http\Controllers\Back\StatisticsController;
 use App\Http\Controllers\Back\StockNotifyController;
+use App\Http\Controllers\Back\PriceAlertController;
 use App\Http\Controllers\Back\TagController;
 use App\Http\Controllers\Back\TariffController;
 use App\Http\Controllers\Back\ThemeController;
@@ -477,6 +478,9 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin-old/' . admin_route_prefix(),
 
     // ------------------ stock-notifies
     Route::resource('stock-notifies', StockNotifyController::class)->only(['index', 'show', 'destroy']);
+
+    // ------------------ فاز ۷۸: هشدار کاهش قیمت
+    Route::resource('price-alerts', PriceAlertController::class)->only(['index', 'destroy']);
 
     // ------------------ comments
     Route::resource('comments', CommentController::class)->only(['show', 'destroy', 'update']);

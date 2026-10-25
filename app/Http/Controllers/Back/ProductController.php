@@ -225,6 +225,7 @@ class ProductController extends Controller
             'description'        => sanitize_rich_text($request->description),
             'short_description'  => sanitize_rich_text($request->short_description),
             'special'            => $request->special ? true : false,
+            'pre_order'          => $request->pre_order ? true : false, // فاز ۷۸ — پیش‌فروش
             'slug'               => $request->slug ?: $request->title,
             'meta_title'         => $request->meta_title,
             'image_alt'          => $request->image_alt,
@@ -428,6 +429,7 @@ class ProductController extends Controller
             'description'        => sanitize_rich_text($request->description),
             'short_description'  => sanitize_rich_text($request->short_description),
             'special'            => $request->special ? true : false,
+            'pre_order'          => $request->pre_order ? true : false, // فاز ۷۸ — پیش‌فروش
             'slug'               => $request->slug ?: $request->title,
             'meta_title'         => $request->meta_title,
             'image_alt'          => $request->image_alt,

@@ -425,6 +425,14 @@
                             </li>
                         @endcan
 
+                        @can('products.price-alert')
+                            <li class="{{ active_class('admin.price-alerts.index') }}">
+                                <a href="{{ route('admin.price-alerts.index') }}"><i
+                                        class="fa-solid fa-circle"></i><span
+                                        class="menu-item">هشدار کاهش قیمت</span></a>
+                            </li>
+                        @endcan
+
                         @can('products.prices')
                             <li class="{{ active_class('admin.product.prices.index') }}">
                                 <a href="{{ route('admin.product.prices.index') }}"><i

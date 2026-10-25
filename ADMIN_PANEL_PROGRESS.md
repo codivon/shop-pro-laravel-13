@@ -2836,3 +2836,73 @@ php artisan ops:intervention-doctor   # گزارش نهایی باید سالم 
 
 **کامیت:** bootstrap/helpers.php (GD-first + واترمارک GD + پروب OPcache) + InterventionDoctor (--write-opcache-reset)
 + ۵ تست جدید + این فایل → docs/project-analysis
+
+---
+
+## فاز ۷۸ — هشدار کاهش قیمت + پیش‌فروش (دو قابلیت هستهٔ «دمو-فروشی») + نقشهٔ راه پکیج‌ها
+
+> **زمینه:** پس از باز شدن خطای Intervention (فاز ۷۵-۷۷)، کاربر خواست پروژه «کامل‌تر و حرفه‌ای‌تر» شود و
+> امکانات در قالب «پکیج کارآمد» عرضه گردد. با بررسی کدِ هر ۱۰ مخزن پکیج موجود، دو-مسیر بودن توسعه
+> شفاف شد: هستهٔ رایگانِ ضروری + پکیج‌های فروشی. طبق تصمیم مدیر، پوشهٔ vendor داخل پکیج‌ها می‌ماند (خودکفایی).
+> بررسی نشان داد «پرسش‌وپاسخ محصول» از قبل با مدل Comment (سؤال=کامنت ریشه، پاسخ=ریپلای) به‌همراه
+> مدیریت در هر دو پنل پیاده شده است؛ بنابراین این فاز روی دو شکاف واقعی تمرکز کرد: **هشدار قیمت** و **پیش‌فروش**.
+
+### ۱) هشدار کاهش قیمت (پیامکی، کاربر و مهمان)
+- جدول جدید `price_alerts` (product_id، user_id نال‌پذیر، mobile، name، target_price، active، notified_at)
+  — هدفِ اشتراک = قیمت مؤثرِ لحظهٔ اشتراک؛ نسخهٔ `updateOrCreate` روی (product_id, mobile) یعنی
+  اشتراک مجدد بعد از اعلان، هشدار را دوباره فعال می‌کند.
+- **رهگیری افت قیمت در `PriceObserver::saved`**: مقایسهٔ «قیمت مؤثر» (همان منطق hasDiscount/salePrice)
+  بین مقادیر خامِ قبل از ذخیره (getRawOriginal) و مقدار فعلی؛ فقط افت → `ProcessPriceAlerts` صف می‌شود.
+  تغییرِ موجودی/انتشار بدون افت قیمت هیچ Job‌ای راه نمی‌اندازد (بینی‌هزینهٔ صف).
+- `ProcessPriceAlerts`: کمترین قیمت مؤثرِ قابل‌خرید (stock>0 + published) محصول را حساب می‌کند؛ هشدارهای
+  فعالِ با هدف بالاتر را پیامک داده و علامت می‌زند. اگر قابل‌خرید نیست، هشدارها فعال می‌مانند.
+- **پیامک الگودار**: نوع جدید `PRICE_ALERT` در Sms::TYPES + متد `priceAlert()` در هر ۵ سرویس
+  (ippanel/kavenegar/melipayamak/idehpardazan/farazsms) با کلید گزینهٔ واحد `price_alert_pattern_code`.
+  اگر الگو تنظیم نشده باشد: بدون ارسال، علامت‌خوردن + هشدار لاگ (بدون حلقهٔ تکرار). متغیرهای الگو: title و price.
+- **فرانت**: دکمهٔ «هشدار کاهش قیمت» زیر دکمهٔ خرید (product-info-sidebar) + مودال مهمان در show.blade.php
+  + هندلر AJAX در show.js (همان الگوی stock-notify: X-CSRF-TOKEN + block/unblock + توست).
+- **پنل**: پنل قدیم (Back\PriceAlertController + back/price-alerts/index + resource route + سایدبار +
+  دسترسی جدید `products.price-alert`) و پورت پنل جدید (Livewire `Admin\PriceAlert\PriceAlertIndex` +
+  route در admin-panel.php). ستون وضعیت: «در انتظار افت قیمت / اعلان شده (با تاریخ شمسی)».
+
+### ۲) پیش‌فروش (سفارش کالای ناموجود)
+- ستون `pre_order` روی products + چک‌باکس در هر سه فرم محصول (پنل قدیم create/edit، پنل جدید ProductForm)
+  و ستون‌های ذخیره در Back\ProductController.
+- **عبور کنترل‌شده از ۷ گیتِ موجودی** (فقط برای pre_order=1):
+  ۱) `Product::addableToCart` ۲) سبد وبِ افزودن ۳) سبد وبِ آپدیت ۴) `check_cart_quantity` در helpers
+  ۵) رزرو موجودی قبل از پرداخت ۶) کنترل دوباره + تأیید رزرو در orderPaid ۷) سبد API v1.
+- **قاعدهٔ سقف یک عدد**: افزودن مجددِ کالای پیش‌فروش در سبد وب و API خطای «تنها یک عدد از آن قابل سفارش است» می‌دهد.
+- **حفاظت انبار در لغو**: `CancelOrder` برای آیتم‌های پیش‌فروش unreserve/افزایشِ موجودی را رد می‌کند
+  (چون هرگز رزرو/کسر نداشته‌اند؛ وگرنه موجودی غیرواقعی باد می‌کرد).
+- **UI**: نشان «پیش‌فروش» در صفحهٔ محصول + متن دکمهٔ «ثبت پیش‌فروش» + بدون هشدار کمبود موجودی در سبد.
+
+### ۳) نقشهٔ راه محصول (PACKAGES_ROADMAP.md)
+- سند جدید در ریشهٔ پروژه: فازبندی ۷۸ تا ۸۵، جدول وضعیت ۱۰ پکیج موجود، چک‌لیست «حد فروش»،
+  تصمیم vendor، حذف SnappPay (درایورش در multipay هسته است) و ادغام InstallmentPayment+CreditPay در فاز ۷۹.
+
+### ۴) تست‌ها (۱۵ تست جدید — هر ۱۵ سبز)
+- `PriceAlertTest` (۸): اشتراک مهمان با هدف=قیمت فعلی، اشتراک کاربر بدون ورودی موبایل،
+  افت قیمت → علامت‌خوردن + صفر پیامک بدون الگو، افزایش قیمت → بی‌اثر، افت با موجودی صفر → فعال می‌ماند،
+  اشتراک مجدد → فعال دوباره، لغو توسط کاربر، رد موبایل نامعتبر.
+- `PreOrderTest` (۷): افزودنی‌بودن پیش‌فروشِ ناموجود، بلاک‌شدن معمولیِ ناموجود در سبد، افزودن مهمان به سبد وب،
+  سقف یک عدد (وب)، سقف یک عدد + 422 در API (با x-api-key)، عبور check_cart_quantity،
+  لغو خودکار → موجودی پیش‌فروش دست‌نخورده.
+- **رگرسیون محیط سندباکس**: MariaDB ۱۱.۴.۵ پرتابل نصب شد (port 3307 + .env.testing)؛ مایگریشن کامل ۲۰۱/۲۰۱
+  سبز؛ کل مجموعه ۳۷۸ تست اجرا شد — ۴۰ خطا/شکستِ موجود **با git stash اثبات شد که پیش از این فاز هم
+  روی دیتابیس تازهٔ بدون seed وجود داشتند** (FK province_id=1 در ShopTestSetup، پیشوند ادمین، ThemeActivation).
+  سابست نواحی تغییریافته: Cart+Catalog+Extra+Unit = ۱۶۲ تست، فقط همان ۱ شکستِ ازقبل‌موجود.
+
+### ۵) درمان روی هاست (ترتیب دقیق برای کاربر)
+```
+cd /home/owqdlxcv/repositories/shop.opashop.ir
+git status --short | head
+git pull origin docs/project-analysis
+php artisan optimize:clear
+# (پیشنهادی) php artisan migrate --force   ← دو مایگریشن جدید price_alerts و pre_order
+```
+- اگر پس از pull و optimize:clear خطای «column not found: pre_order» دیدید، یعنی مایگریشن اجرا نشده؛
+  دستور بالا را بزنید.
+
+**کامیت:** ۲ مایگریشن + PriceAlert/Job/Notification + Observer + ۵ سرویس پیامک + Sms::TYPES + Product
++ سبد وب/API + helpers + OrderController + CancelOrder + کنترلر/روت/ویو/JS فرانت + پنل قدیم و Livewire
++ ۳ فرم محصول + PACKAGES_ROADMAP.md + ۱۵ تست جدید + این فایل → docs/project-analysis

@@ -190,6 +190,55 @@ function sendStockNotify() {
 
 $('#sendStockNotifyBtn').click(sendStockNotify);
 
+// ---------- فاز ۷۸: هشدار کاهش قیمت ----------
+$('#price_alert_btn').click(function () {
+    var btn = this;
+
+    if ($(btn).data('user')) {
+        sendPriceAlert();
+    } else {
+        $('#modal-price-alert').modal('show');
+    }
+});
+
+function sendPriceAlert() {
+    var btn = $('#price_alert_btn');
+
+    if ($(btn).data('user')) {
+        var data = {
+            product_id: $(btn).data('product')
+        };
+    } else {
+        var data = {
+            product_id: $(btn).data('product'),
+            name: $('#price-alert-name').val(),
+            mobile: $('#price-alert-mobile').val()
+        };
+    }
+
+    $.ajax({
+        type: 'POST',
+        url: BASE_URL + '/price-alert',
+        data: data,
+        success: function () {
+            $('#modal-price-alert').modal('hide');
+            showCustomToast('هشدار کاهش قیمت برای این محصول ثبت شد.', 'success')
+        },
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader(
+                'X-CSRF-TOKEN',
+                $('meta[name="csrf-token"]').attr('content')
+            );
+            block(btn);
+        },
+        complete: function () {
+            unblock(btn);
+        }
+    });
+}
+
+$('#sendPriceAlertBtn').click(sendPriceAlert);
+
 // product prices js codes
 
 //-------------------------- Add to favorites

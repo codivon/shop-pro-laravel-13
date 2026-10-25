@@ -42,7 +42,9 @@ class CancelOrder implements ShouldQueue
             foreach ($this->order->items as $item) {
                 $price = $item->get_price;
 
-                if ($price) {
+                // فاز ۷۸ — آیتم‌های پیش‌فروش هرگز رزرو/کسر موجودی نداشته‌اند؛
+                // دست‌زدن به موجودی آن‌ها باعث بادکردن غیرواقعی انبار می‌شود
+                if ($price && ! $item->product->pre_order) {
                     $price->unreserveStock(
                         $item->quantity,
                         $this->order->id,

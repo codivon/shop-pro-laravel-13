@@ -925,6 +925,21 @@
                                             </fieldset>
                                         </div>
 
+                                        <div class="col-md-3">
+                                            <fieldset class="checkbox">
+                                                <div class="vs-checkbox-con vs-checkbox-primary">
+                                                    <input type="checkbox" name="pre_order"
+                                                        {{ $product->pre_order ? 'checked' : '' }}>
+                                                    <span class="vs-checkbox">
+                                                        <span class="vs-checkbox--check">
+                                                            <i class="vs-icon feather icon-check"></i>
+                                                        </span>
+                                                    </span>
+                                                    <span>پیش‌فروش (سفارش بدون موجودی)</span>
+                                                </div>
+                                            </fieldset>
+                                        </div>
+
                                     </div>
                                     <div id="special-end-date-container" class="row" style="display: hidden;">
                                         <div class="col-md-3 col-12">

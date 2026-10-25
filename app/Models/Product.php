@@ -282,6 +282,11 @@ class Product extends Model
             return true;
         }
 
+        // فاز ۷۸ — پیش‌فروش: حتی بدون موجودی، ثبت سفارش مجاز است
+        if ($this->pre_order) {
+            return true;
+        }
+
         if ($this->price_type == "multiple-price" && !$this->prices()->where('stock', '>', 0)->where('published', 1)->first()) {
             return false;
         }

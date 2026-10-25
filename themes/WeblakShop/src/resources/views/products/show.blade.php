@@ -326,6 +326,12 @@
                                     نا موجود
                                 </div>
                             </div>
+                        @elseif($product->pre_order)
+                            <div class="product-timeout position-relative pt-5 mb-4">
+                                <div class="promotion-badge text-center">
+                                    پیش‌فروش
+                                </div>
+                            </div>
                         @elseif($product->isSpecial())
                             <div class="product-timeout position-relative pt-5 mb-4 text-center">
                                 <div class="promotion-badge ">
@@ -1069,6 +1075,68 @@
         </div>
         <!-- End Modal stocknotify -->
     @endif
+
+    {{-- فاز ۷۸ — مودال هشدار کاهش قیمت برای مهمان‌ها --}}
+    <div class="modal fade" id="modal-price-alert" role="dialog"
+         aria-labelledby="priceAlertModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-md send-info modal-dialog-centered"
+             role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="priceAlertModalTitle">
+                        <i class="mdi mdi-bell-ring-outline"></i>
+                        هشدار کاهش قیمت
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-ui dt-sl">
+                                <form class="form-account" action="#">
+                                    <div class="row">
+                                        <div class="col-md-6 col-sm-12 mb-2">
+                                            <div class="form-row-title">
+                                                <h4>نام و نام خانوادگی</h4>
+                                            </div>
+                                            <div class="form-row">
+                                                <input class="input-ui pr-2 text-right"
+                                                       type="text"
+                                                       name="name"
+                                                       id="price-alert-name"
+                                                       placeholder=" نام شما ">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 col-sm-12 mb-2">
+                                            <div class="form-row-title">
+                                                <h4>شماره موبایل</h4>
+                                            </div>
+                                            <div class="form-row">
+                                                <input
+                                                    class="input-ui pl-2 dir-ltr text-left"
+                                                    type="text"
+                                                    name="mobile"
+                                                    id="price-alert-mobile"
+                                                    placeholder="09xxxxxxxxx" required>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-12 pr-4 pl-4 text-center">
+                                            <button id="sendPriceAlertBtn" type="button" class="btn btn-md btn-primary btn-submit-form">ثبت هشدار</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Modal price-alert -->
 
 @endsection
 

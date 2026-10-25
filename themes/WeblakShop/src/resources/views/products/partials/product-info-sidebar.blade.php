@@ -143,7 +143,15 @@
                             data-action="{{ route('front.cart.store', ['product' => $product]) }}"
                             data-product="{{ $product->slug }}" type="button"
                             class="btn-add-to-cart mt-4 w-100 btn-primary-cm cursor-pointer btn-with-icon add-to-cart btn-show-product">
-                        افزودن به سبد خرید
+                        {{ $product->pre_order ? 'ثبت پیش‌فروش' : 'افزودن به سبد خرید' }}
+                    </button>
+
+                    {{-- فاز ۷۸ — هشدار کاهش قیمت --}}
+                    <button id="price_alert_btn" data-user="{{ auth('web')->check() ? auth('web')->user()->id : '' }}"
+                            data-product="{{ $product->id }}" type="button"
+                            class="product-stock-action btn btn-secondary cart-not-available w-100 mt-2">
+                        <i class="mdi mdi-bell-ring-outline"></i>
+                        هشدار کاهش قیمت
                     </button>
 
 

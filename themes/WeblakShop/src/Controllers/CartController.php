@@ -59,7 +59,10 @@ class CartController extends Controller
 
         if (!$cart_product) {
 
-            $stock_status = $price->hasStock($request->quantity);
+            // فاز ۷۸ — پیش‌فروش: عبور کنترل‌شده از گیت موجودی
+            $stock_status = $product->pre_order
+                ? ['status' => true]
+                : $price->hasStock($request->quantity);
 
             if (!$stock_status['status']) {
                 return response(['status' => 'error', 'message' => $stock_status['message']]);
@@ -79,6 +82,14 @@ class CartController extends Controller
                 return response([
                     'status' => 'error',
                     'message' => 'این فایل قبلا در سبد اضافه شده است'
+                ]);
+            }
+
+            // فاز ۷۸ — پیش‌فروش: تنها یک عدد از کالای پیش‌فروش مجاز است
+            if ($product->pre_order) {
+                return response([
+                    'status'  => 'error',
+                    'message' => 'این کالا پیش‌فروش است و تنها یک عدد از آن قابل سفارش است'
                 ]);
             }
 
@@ -109,7 +120,8 @@ class CartController extends Controller
 
             $price     = $product->prices()->find($product->pivot->price_id);
             $quantity  = $request->input('product-' . $product->pivot->id);
-            $has_stock = $price->hasStock($quantity, true);
+            // فاز ۷۸ — پیش‌فروش: بدون کنترل موجودی
+            $has_stock = $product->pre_order ? ['status' => true] : $price->hasStock($quantity, true);
 
             if (!$has_stock['status']) {
                 $errors[] = $has_stock['message'];

@@ -35,12 +35,19 @@ class CartController extends Controller
             ]);
         }
 
-        $quantity     = $cart_product ? $request->quantity + $cart_product->pivot->quantity : $request->quantity;
+        $quantity = $cart_product ? $request->quantity + $cart_product->pivot->quantity : $request->quantity;
 
-        $stock_status = $price->hasStock($quantity);
+        if ($product->pre_order) {
+            // فاز ۷۸ — پیش‌فروش: تنها یک عدد مجاز است
+            if ($cart_product) {
+                return $this->respondError('این کالا پیش‌فروش است و تنها یک عدد از آن قابل سفارش است', 422);
+            }
+        } else {
+            $stock_status = $price->hasStock($quantity);
 
-        if (!$stock_status['status']) {
-            return $this->respondError($stock_status['message'], 422);
+            if (!$stock_status['status']) {
+                return $this->respondError($stock_status['message'], 422);
+            }
         }
 
         $cart->products()->syncWithoutDetaching([

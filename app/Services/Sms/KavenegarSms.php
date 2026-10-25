@@ -204,4 +204,16 @@ class KavenegarSms extends SmsService implements SmsContract, SmsNotificationCon
             'input_data'   =>  $this->data,
         ];
     }
+
+    /** فاز ۷۸ — هشدار کاهش قیمت (الگو: price_alert_pattern_code با token عنوان و token2 قیمت) */
+    public function priceAlert()
+    {
+        return [
+            'template'     => option('price_alert_pattern_code'),
+            'input_data'   => [
+                'token'  => $this->data['title'],
+                'token2' => $this->data['price'],
+            ],
+        ];
+    }
 }

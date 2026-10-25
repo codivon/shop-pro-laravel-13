@@ -176,4 +176,16 @@ class IppanelSms extends SmsService implements SmsContract, SmsNotificationContr
             'input_data'   =>  $this->data,
         ];
     }
+
+    /** فاز ۷۸ — هشدار کاهش قیمت (الگو: price_alert_pattern_code با متغیرهای title و price) */
+    public function priceAlert()
+    {
+        return [
+            'pattern_code' => option('price_alert_pattern_code'),
+            'input_data'   => [
+                'title' => $this->data['title'],
+                'price' => $this->data['price'],
+            ],
+        ];
+    }
 }

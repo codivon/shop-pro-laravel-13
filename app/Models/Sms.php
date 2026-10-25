@@ -76,6 +76,11 @@ class Sms extends Model
             'string' => 'ارسال پبام به کاربران',
             'method' => 'sendMessageUsers'
         ],
+        'PRICE_ALERT' => [
+            'key'    => 'price-alert',
+            'string' => 'هشدار کاهش قیمت محصول',
+            'method' => 'priceAlert'
+        ],
     ];
 
     public function user()

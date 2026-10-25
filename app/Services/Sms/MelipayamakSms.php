@@ -198,4 +198,16 @@ class MelipayamakSms extends SmsService implements SmsContract, SmsNotificationC
             'input_data'   =>  $this->data,
         ];
     }
+
+    /** فاز ۷۸ — هشدار کاهش قیمت (الگو: price_alert_pattern_code — ۰=عنوان، ۱=قیمت) */
+    public function priceAlert()
+    {
+        return [
+            'bodyId'       => option('price_alert_pattern_code'),
+            'input_data'   => [
+                '0' => $this->data['title'],
+                '1' => $this->data['price'],
+            ],
+        ];
+    }
 }

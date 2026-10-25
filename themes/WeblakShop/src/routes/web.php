@@ -6,6 +6,7 @@ use Themes\WeblakShop\src\Controllers\BlogController;
 use Themes\WeblakShop\src\Controllers\ProductController;
 use Themes\WeblakShop\src\Controllers\CartController;
 use Themes\WeblakShop\src\Controllers\StockNotifyController;
+use Themes\WeblakShop\src\Controllers\PriceAlertController;
 use Themes\WeblakShop\src\Controllers\PageController;
 use Themes\WeblakShop\src\Controllers\ReviewController;
 use Themes\WeblakShop\src\Controllers\BrandController;
@@ -123,6 +124,10 @@ Route::group(['as' => 'front.'], function () {
     Route::delete('cart/{id}', [CartController::class, 'destroy'])->name('cart.destroy');
 
     Route::post('stock-notify', [StockNotifyController::class, 'store']);
+
+    // ------------------ فاز ۷۸: هشدار کاهش قیمت
+    Route::post('price-alert', [PriceAlertController::class, 'store'])->name('price-alert.store');
+    Route::delete('price-alert', [PriceAlertController::class, 'destroy'])->name('price-alert.destroy');
 
     //------------------forms
     Route::get('form/{form}', [FormController::class, 'show'])->name('form.show');

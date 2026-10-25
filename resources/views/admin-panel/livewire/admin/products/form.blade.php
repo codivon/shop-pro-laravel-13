@@ -945,6 +945,13 @@
                            class="ap-input !py-2 fa-digits text-center {{ $special ? '' : 'opacity-40 pointer-events-none' }}"
                            placeholder="انقضای ویژه بودن">
                 </div>
+                <div>
+                    <label class="mb-1.5 flex cursor-pointer items-center gap-2 text-xs font-semibold">
+                        <input type="checkbox" wire:model.live="pre_order" class="size-4 rounded-md border-line text-brand-600 dark:border-night-line">
+                        پیش‌فروش (سفارش بدون موجودی)
+                    </label>
+                    <p class="mt-1 text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">با فعال‌سازی، کالا حتی با موجودی صفر قابل سفارش است</p>
+                </div>
                 <div class="flex items-end">
                     <button type="submit" class="ap-btn-primary w-full !py-2.5" wire:loading.attr="disabled">
                         <span wire:loading.remove wire:target="save">ذخیره محصول</span>

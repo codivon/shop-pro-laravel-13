@@ -50,7 +50,8 @@
                                         @php
 
                                             $price_to_stock = $product->prices()->find($product->pivot->price_id);
-                                            $has_stock = $price_to_stock->hasStock($product->pivot->quantity);
+                                            // فاز ۷۸ — پیش‌فروش: بدون هشدار کمبود موجودی
+                                            $has_stock = $product->pre_order ? ['status' => true] : $price_to_stock->hasStock($product->pivot->quantity);
                                             @endphp
                                         <div class="checkout-body">
                                             <span class="remove-from-cart cursor-pointer remove-card" data-action="{{ route('front.cart.destroy', ['id' => $product->pivot->id]) }}"><i class="mdi mdi-close"></i></span>
