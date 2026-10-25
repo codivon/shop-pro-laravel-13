@@ -5,7 +5,7 @@
 @endphp
 <div class="mx-auto max-w-5xl space-y-5">
 
-    {{-- سربرگ --}}
+    {{-- سربرگ — فاز ۸۴: دکمهٔ ذخیرهٔ بالایی حذف شد (به درخواست کاربر)؛ ذخیره فقط از نوار پایین --}}
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-2.5">
             <span class="flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
@@ -16,10 +16,6 @@
                 <p class="text-xs text-ink-3 dark:text-night-ink-2">چند فروشندگی، فاکتور، کاربران، تصاویر، Pusher، ایمیل و قابلیت‌های فروشگاه</p>
             </div>
         </div>
-        <button type="submit" form="others-form" class="ap-btn-primary !py-2.5">
-            <x-admin-panel::icon name="check-circle" class="size-4" />
-            ذخیره تغییرات
-        </button>
     </div>
 
     <form id="others-form" wire:submit="save" x-data="{ tab: 'vendor' }" class="space-y-5">

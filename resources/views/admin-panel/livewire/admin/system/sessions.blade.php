@@ -409,7 +409,10 @@
                                 <label class="relative block cursor-pointer">
                                     <input type="radio" name="blockType" value="{{ $opt['value'] }}" wire:model="blockType"
                                            class="peer sr-only" x-on:change="type = '{{ $opt['value'] }}'">
-                                    <div class="flex items-center gap-2.5 rounded-2xl border p-3 transition-all duration-200 border-line bg-surface-2 hover:border-red-300/60 dark:border-night-line dark:bg-night-3 dark:hover:border-red-500/30 peer-checked:border-red-500 peer-checked:bg-red-50/70 dark:peer-checked:border-red-500/60 dark:peer-checked:bg-red-500/10">
+                                    {{-- فاز ۸۴ — انتخاب همیشه‌مشخص: علاوه بر peer-checked، بایندینگ مستقیم $wire
+                                         (بوردر + پس‌زمینهٔ اینلاین) تا حتی اگر CSS پنل کهنه بود هم معلوم باشد کدام فعال است --}}
+                                    <div class="flex items-center gap-2.5 rounded-2xl border p-3 transition-all duration-200 border-line bg-surface-2 hover:border-red-300/60 dark:border-night-line dark:bg-night-3 dark:hover:border-red-500/30 peer-checked:border-red-500 peer-checked:bg-red-50/70 dark:peer-checked:border-red-500/60 dark:peer-checked:bg-red-500/10"
+                                         :style="$wire.blockType === '{{ $opt['value'] }}' ? 'border-color:#e11d48;background-color:rgba(225,29,72,.09);box-shadow:0 0 0 3px rgba(225,29,72,.12)' : ''">
                                         <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
                                             <x-admin-panel::icon name="{{ $opt['icon'] }}" class="size-4" />
                                         </span>
@@ -418,7 +421,9 @@
                                             <span class="block truncate text-[10px] text-ink-3 dark:text-night-ink-2">{{ $opt['desc'] }}</span>
                                         </span>
                                     </div>
-                                    <span class="pointer-events-none absolute end-2 top-1/2 flex size-5 -translate-y-1/2 scale-50 items-center justify-center rounded-full bg-red-600 text-white opacity-0 shadow transition-all duration-200 peer-checked:scale-100 peer-checked:opacity-100">
+                                    <span class="pointer-events-none absolute end-2 top-1/2 flex size-5 -translate-y-1/2 scale-50 items-center justify-center rounded-full bg-red-600 text-white opacity-0 shadow transition-all duration-200 peer-checked:scale-100 peer-checked:opacity-100"
+                                          x-show="$wire.blockType === '{{ $opt['value'] }}'" x-cloak
+                                          :style="$wire.blockType === '{{ $opt['value'] }}' ? 'opacity:1;transform:translateY(-50%) scale(1)' : 'opacity:0;transform:translateY(-50%) scale(.5)'">
                                         <x-admin-panel::icon name="check" class="size-3" />
                                     </span>
                                 </label>
@@ -429,7 +434,8 @@
                                 <label class="relative block col-span-2 cursor-pointer">
                                     <input type="radio" name="blockType" value="account" wire:model="blockType"
                                            class="peer sr-only" x-on:change="type = 'account'">
-                                    <div class="flex items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200 border-red-200 bg-gradient-to-l from-red-50/90 via-red-50/40 to-transparent hover:border-red-400/70 dark:border-red-500/20 dark:from-red-500/10 dark:via-red-500/5 dark:to-transparent dark:hover:border-red-500/40 peer-checked:border-red-600 peer-checked:bg-red-50 peer-checked:shadow-md peer-checked:shadow-red-600/10 dark:peer-checked:bg-red-500/10">
+                                    <div class="flex items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200 border-red-200 bg-gradient-to-l from-red-50/90 via-red-50/40 to-transparent hover:border-red-400/70 dark:border-red-500/20 dark:from-red-500/10 dark:via-red-500/5 dark:to-transparent dark:hover:border-red-500/40 peer-checked:border-red-600 peer-checked:bg-red-50 peer-checked:shadow-md peer-checked:shadow-red-600/10 dark:peer-checked:bg-red-500/10"
+                                         :style="$wire.blockType === 'account' ? 'border-color:#dc2626;box-shadow:0 0 0 3px rgba(220,38,38,.14)' : ''">
                                         <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white shadow-lg shadow-red-600/25">
                                             <x-admin-panel::icon name="user-lock" class="size-5" />
                                         </span>
@@ -441,7 +447,9 @@
                                             <span class="block text-[10.5px] leading-4 text-ink-3 dark:text-night-ink-2">کل حساب مسدود می‌شود؛ همهٔ نشست‌ها بلافاصله خارج می‌شوند</span>
                                         </span>
                                     </div>
-                                    <span class="pointer-events-none absolute end-3 top-1/2 flex size-5 -translate-y-1/2 scale-50 items-center justify-center rounded-full bg-red-600 text-white opacity-0 shadow transition-all duration-200 peer-checked:scale-100 peer-checked:opacity-100">
+                                    <span class="pointer-events-none absolute end-3 top-1/2 flex size-5 -translate-y-1/2 scale-50 items-center justify-center rounded-full bg-red-600 text-white opacity-0 shadow transition-all duration-200 peer-checked:scale-100 peer-checked:opacity-100"
+                                          x-show="$wire.blockType === 'account'" x-cloak
+                                          :style="$wire.blockType === 'account' ? 'opacity:1;transform:translateY(-50%) scale(1)' : 'opacity:0;transform:translateY(-50%) scale(.5)'">
                                         <x-admin-panel::icon name="check" class="size-3" />
                                     </span>
                                 </label>
@@ -479,13 +487,20 @@
                                 <label class="relative cursor-pointer">
                                     <input type="radio" name="blockDuration" value="{{ $d['value'] }}" wire:model="blockDuration"
                                            class="peer sr-only" x-on:change="duration = '{{ $d['value'] }}'">
-                                    <div class="flex flex-col items-center gap-1 rounded-2xl border p-2.5 text-center text-ink-2 transition-all duration-200 border-line bg-surface-2 hover:border-red-300/60 dark:border-night-line dark:bg-night-3 dark:text-night-ink-2 dark:hover:border-red-500/30 peer-checked:border-red-500 peer-checked:bg-red-50/70 peer-checked:text-red-700 peer-checked:shadow-sm peer-checked:shadow-red-600/10 dark:peer-checked:border-red-500/60 dark:peer-checked:bg-red-500/10 dark:peer-checked:text-red-300">
+                                    {{-- فاز ۸۴ — کاشی انتخاب‌شده: بوردر + تیک با بایندینگ مستقیم $wire (مستقل از CSS) --}}
+                                    <div class="flex flex-col items-center gap-1 rounded-2xl border p-2.5 text-center text-ink-2 transition-all duration-200 border-line bg-surface-2 hover:border-red-300/60 dark:border-night-line dark:bg-night-3 dark:text-night-ink-2 dark:hover:border-red-500/30 peer-checked:border-red-500 peer-checked:bg-red-50/70 peer-checked:text-red-700 peer-checked:shadow-sm peer-checked:shadow-red-600/10 dark:peer-checked:border-red-500/60 dark:peer-checked:bg-red-500/10 dark:peer-checked:text-red-300"
+                                         :style="$wire.blockDuration === '{{ $d['value'] }}' ? 'border-color:#e11d48;background-color:rgba(225,29,72,.09);box-shadow:0 0 0 3px rgba(225,29,72,.12)' : ''">
                                         <span class="shrink-0">
                                             <x-admin-panel::icon name="{{ $d['icon'] }}" class="size-4" />
                                         </span>
                                         <span class="fa-digits text-[12px] font-extrabold leading-none">{{ $d['label'] }}</span>
                                         <span class="text-[9.5px] leading-3 opacity-60">{{ $d['sub'] }}</span>
                                     </div>
+                                    <span class="pointer-events-none absolute end-2 top-2 flex size-4.5 items-center justify-center rounded-full bg-red-600 text-white shadow transition-all duration-200"
+                                          x-show="$wire.blockDuration === '{{ $d['value'] }}'" x-cloak
+                                          :style="$wire.blockDuration === '{{ $d['value'] }}' ? 'opacity:1;transform:scale(1)' : 'opacity:0;transform:scale(.5)'">
+                                        <x-admin-panel::icon name="check" class="size-2.5" />
+                                    </span>
                                 </label>
                             @endforeach
                         </div>
@@ -504,7 +519,11 @@
                                         <label class="relative cursor-pointer">
                                             <input type="radio" name="blockCustomUnit" value="{{ $u['v'] }}" wire:model="blockCustomUnit"
                                                    class="peer sr-only">
-                                            <span class="block rounded-lg py-1.5 text-center text-[11.5px] font-bold text-ink-3 transition-all duration-200 hover:text-ink-2 peer-checked:bg-red-600 peer-checked:text-white peer-checked:shadow-md peer-checked:shadow-red-600/25 dark:text-night-ink-2 dark:hover:text-white">{{ $u['l'] }}</span>
+                                            {{-- فاز ۸۴ — واحد انتخاب‌شده با تیک/پس‌زمینهٔ مستقل از CSS --}}
+                                            <span class="block rounded-lg py-1.5 text-center text-[11.5px] font-bold text-ink-3 transition-all duration-200 hover:text-ink-2 peer-checked:bg-red-600 peer-checked:text-white peer-checked:shadow-md peer-checked:shadow-red-600/25 dark:text-night-ink-2 dark:hover:text-white"
+                                                  :style="$wire.blockCustomUnit === '{{ $u['v'] }}' ? 'background-color:#dc2626;color:#ffffff' : ''">
+                                                {{ $u['l'] }}
+                                            </span>
                                         </label>
                                     @endforeach
                                 </div>

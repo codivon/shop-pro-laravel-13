@@ -116,12 +116,41 @@ class Others extends Component
 
     public const SIZES  = ['sm', 'md', 'lg'];
 
-    public const PLACEMENTS = ['below-cart', 'above-cart', 'under-price'];
+    public const PLACEMENTS = ['below-cart', 'above-cart', 'under-price', 'float', 'custom-selector'];
 
     public const PLACEMENT_LABELS = [
-        'below-cart'  => 'زیر دکمهٔ خرید',
-        'above-cart'  => 'بالای دکمهٔ خرید',
-        'under-price' => 'چسبیده به قیمت محصول',
+        'below-cart'      => 'زیر دکمهٔ خرید',
+        'above-cart'      => 'بالای دکمهٔ خرید',
+        'under-price'     => 'چسبیده به قیمت محصول',
+        'float'           => 'شناور در گوشهٔ صفحه',
+        'custom-selector' => 'در تگ دلخواه (سلکتور)',
+    ];
+
+    // فاز ۸۴ — موقعیت‌های ۹گانهٔ دکمهٔ شناور (فیزیکی؛ در موبایل حاشیهٔ کوچک‌تر)
+    public const FLOAT_POSITIONS = [
+        'top-left', 'top-center', 'top-right',
+        'middle-left', 'middle-center', 'middle-right',
+        'bottom-left', 'bottom-center', 'bottom-right',
+    ];
+
+    public const FLOAT_POSITION_LABELS = [
+        'top-left'      => 'بالا-چپ',
+        'top-center'    => 'بالا-وسط',
+        'top-right'     => 'بالا-راست',
+        'middle-left'   => 'وسط-چپ',
+        'middle-center' => 'وسط صفحه',
+        'middle-right'  => 'وسط-راست',
+        'bottom-left'   => 'پایین-چپ',
+        'bottom-center' => 'پایین-وسط',
+        'bottom-right'  => 'پایین-راست',
+    ];
+
+    // سلکتورهای نمونهٔ پیشنهادی (چیپ‌های قابل‌کلیک در UI — مثل نمونهٔ CheckoutTurbo)
+    public const SELECTOR_EXAMPLES = [
+        '#buy-box'                          => 'باکس خرید دیجی‌کالا-مانند',
+        '.product-seller-row'               => 'ردیف فروشنده/قیمت',
+        '.product-actions>.wrap'            => 'اکشن‌های کارت محصول',
+        '.product-carousel .owl-item'       => 'اسلایدر محصولات',
     ];
 
     // ذخیره‌سازی «1»/«0» (هسته با option(..., '1') == '1' چک می‌کند)
@@ -139,6 +168,15 @@ class Others extends Component
     public string $dt_price_alert_button_radius = '10';
 
     public string $dt_price_alert_button_placement = 'below-cart';
+
+    // فاز ۸۴ — موقعیت دکمهٔ شناور (۹گانه) + سلکتورهای «تگ دلخواه»
+    public string $dt_price_alert_float_pos = 'bottom-right';
+
+    /** @var array<int, string> سلکتورهای CSS (کلاس/آیدی) برای تزریق دکمه در فرانت */
+    public array $dt_price_alert_selectors = [];
+
+    /** اینپوتِ «افزودن سلکتور» (مقدار ردیف جدید قبل از تأیید) */
+    public string $pa_selector_input = '';
 
     public string $dt_price_alert_modal_title = '';
 
@@ -208,6 +246,12 @@ class Others extends Component
         $this->dt_price_alert_button_size = in_array(($s = (string) option('dt_price_alert_button_size', 'md')), self::SIZES, true) ? $s : 'md';
         $this->dt_price_alert_button_radius = (string) min(30, max(0, (int) (option('dt_price_alert_button_radius', '10') ?: 10)));
         $this->dt_price_alert_button_placement = in_array(($p = (string) option('dt_price_alert_button_placement', 'below-cart')), self::PLACEMENTS, true) ? $p : 'below-cart';
+
+        // فاز ۸۴ — موقعیت شناور + سلکتورهای تگ دلخواه
+        $this->dt_price_alert_float_pos = in_array(($fp = (string) option('dt_price_alert_float_pos', 'bottom-right')), self::FLOAT_POSITIONS, true) ? $fp : 'bottom-right';
+        $this->dt_price_alert_selectors = self::parseSelectors((string) option('dt_price_alert_selectors', ''));
+        $this->pa_selector_input = '';
+
         $this->dt_price_alert_modal_title = (string) (option('dt_price_alert_modal_title') ?: '');
         $this->dt_price_alert_modal_desc = (string) (option('dt_price_alert_modal_desc') ?: '');
 
@@ -323,6 +367,12 @@ class Others extends Component
             'dt_pre_order_status', 'dt_pre_order_button_text', 'dt_pre_order_badge_text',
         ];
 
+        /*
+         * فاز ۸۴ — «موقعیت شناور» و «سلکتورهای تگ دلخواه» جدا از حلقهٔ بالا ذخیره می‌شوند:
+         * - float_pos با وایت‌لیست ۹موقعیته
+         * - selectors به‌صورت JSON (هر سلکتور sanitize می‌شود — فقط کاراکترهای مجاز CSS)
+         */
+
         // فاز ۳۰: این کلیدها سوییچ بولین دارند → مثل قدیمی "true"/"false" ذخیره شوند
         $boolOptionKeys = ['multi_vendor_system_status', 'user_referrals_enable', 'watermarkStatus'];
 
@@ -352,7 +402,7 @@ class Others extends Component
                 $value = $defaultOptionValues[$key];
             }
 
-            // فاز ۸۳ — وایت‌لیست رنگ/اندازه/موقعیت + بازهٔ گردی گوشه‌ها
+            // فاز ۸۳/۸۴ — وایت‌لیست رنگ/اندازه/موقعیت + بازهٔ گردی گوشه‌ها
             $value = match ($key) {
                 'dt_price_alert_button_color'    => in_array($value, array_keys(self::PALETTE), true) ? $value : 'red',
                 'dt_price_alert_button_size'     => in_array($value, self::SIZES, true) ? $value : 'md',
@@ -403,6 +453,27 @@ class Others extends Component
         }
 
         option_update('dt_price_alert_channels', $channelsValue);
+
+        // فاز ۸۴ — موقعیت دکمهٔ شناور (۹گانه) + سلکتورهای تگ دلخواه (JSON)
+        $floatPos = in_array($this->dt_price_alert_float_pos, self::FLOAT_POSITIONS, true) ? $this->dt_price_alert_float_pos : 'bottom-right';
+        if (option('dt_price_alert_float_pos') != $floatPos) {
+            $optionChanges['dt_price_alert_float_pos'] = [
+                'old'   => self::FLOAT_POSITION_LABELS[(string) option('dt_price_alert_float_pos', 'bottom-right')] ?? (string) option('dt_price_alert_float_pos', 'bottom-right'),
+                'new'   => self::FLOAT_POSITION_LABELS[$floatPos],
+                'title' => $this->getOthersFieldTitle('dt_price_alert_float_pos'),
+            ];
+        }
+        option_update('dt_price_alert_float_pos', $floatPos);
+
+        $selectorsJson = json_encode(self::sanitizeSelectors($this->dt_price_alert_selectors), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        if ((string) option('dt_price_alert_selectors') != $selectorsJson) {
+            $optionChanges['dt_price_alert_selectors'] = [
+                'old'   => (string) option('dt_price_alert_selectors') ?: 'خالی',
+                'new'   => $selectorsJson ?: 'خالی',
+                'title' => $this->getOthersFieldTitle('dt_price_alert_selectors'),
+            ];
+        }
+        option_update('dt_price_alert_selectors', $selectorsJson);
 
         if (! empty($optionChanges)) {
             $allChanges['option_settings'] = $optionChanges;
@@ -489,6 +560,8 @@ class Others extends Component
             'dt_price_alert_button_size' => 'اندازه دکمه هشدار کاهش قیمت',
             'dt_price_alert_button_radius' => 'گردی گوشه‌های دکمه هشدار کاهش قیمت',
             'dt_price_alert_button_placement' => 'موقعیت دکمه هشدار کاهش قیمت',
+            'dt_price_alert_float_pos' => 'موقعیت دکمه شناور هشدار کاهش قیمت',
+            'dt_price_alert_selectors' => 'سلکتورهای تزریق دکمه هشدار کاهش قیمت',
             'dt_price_alert_modal_title' => 'عنوان مودال هشدار کاهش قیمت',
             'dt_price_alert_modal_desc' => 'توضیح مودال هشدار کاهش قیمت',
             'dt_price_alert_channels' => 'راه‌های اطلاع‌رسانی هشدار کاهش قیمت',
@@ -511,6 +584,112 @@ class Others extends Component
         $channels = collect(explode(',', $raw))->map(fn ($c) => trim($c))->filter()->map(fn ($c) => $labels[$c] ?? $c);
 
         return $channels->isNotEmpty() ? $channels->implode(' + ') : 'هر دو (پیامک + اعلان پروفایل)';
+    }
+
+    /* ================= فاز ۸۴ — سلکتورهای «تگ دلخواه» ================= */
+
+    /**
+     * حداکثر تعداد سلکتورها (ضد سوءاستفاده/شلوغی UI)
+     */
+    public const SELECTORS_MAX = 10;
+
+    /**
+     * پارس رشتهٔ ذخیره‌شدهٔ option (JSON آرایه یا رشتهٔ خط‌جداکنندهٔ قدیمی) → آرایهٔ تمیز
+     */
+    public static function parseSelectors(string $raw): array
+    {
+        $raw = trim($raw);
+
+        if ($raw === '') {
+            return [];
+        }
+
+        $items = str_starts_with($raw, '[')
+            ? (array) json_decode($raw, true)
+            : (preg_split('/[\r\n,]+/', $raw) ?: []);
+
+        return self::sanitizeSelectors(is_array($items) ? $items : []);
+    }
+
+    /**
+     * پاک‌سازی سلکتورها: فقط کاراکترهای مجاز CSS (حروف/رقم/خط‌تیره/زیرخط/نقطه/هش/
+     * براکت/کولن/اسپیس/Combine های > + ~) — حداکثر ۱۰ مورد، هر کدام تا ۱۲۰ کاراکتر، بدون تکرار
+     */
+    public static function sanitizeSelectors(array $items): array
+    {
+        $clean = [];
+
+        foreach ($items as $item) {
+            if (! is_scalar($item)) {
+                continue;
+            }
+
+            $selector = trim((string) $item);
+
+            // کاراکترهای خطرناک (برای جلوگیری از XSS در data-attribute/JS) حذف می‌شوند
+            $selector = preg_replace('/[^A-Za-z0-9\-_\.\#\[\]\:"\' >+~*(),=\$\|]/', '', $selector) ?? '';
+            $selector = trim(preg_replace('/\s+/', ' ', $selector) ?? '');
+
+            if ($selector === '' || mb_strlen($selector) > 120) {
+                continue;
+            }
+
+            $clean[$selector] = true;
+
+            if (count($clean) >= self::SELECTORS_MAX) {
+                break;
+            }
+        }
+
+        return array_keys($clean);
+    }
+
+    /**
+     * افزودن سلکتور از اینپوتِ «افزودن سلکتور» (فوراً در لیست + ذخیرهٔ option)
+     */
+    public function paAddSelector(): void
+    {
+        auth('adminPanel')->user()?->can('settings.others') ?: abort(403);
+
+        $this->dt_price_alert_selectors = self::sanitizeSelectors(array_merge(
+            $this->dt_price_alert_selectors,
+            [$this->pa_selector_input]
+        ));
+
+        $this->pa_selector_input = '';
+
+        // ذخیرهٔ فوری تا با رفرش صفحه از دست نرود (مثل کانال‌ها فقط با «ذخیره» نمی‌ماند)
+        option_update('dt_price_alert_selectors', json_encode($this->dt_price_alert_selectors, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+
+        $this->dispatch('toast', message: 'سلکتور اضافه شد (برای اعمال در فروشگاه، ذخیره کنید).', type: 'success');
+    }
+
+    /**
+     * افزودن یکی از سلکتورهای نمونه (چیپ‌ها)
+     */
+    public function paAddExampleSelector(string $selector): void
+    {
+        auth('adminPanel')->user()?->can('settings.others') ?: abort(403);
+
+        if (! array_key_exists($selector, self::SELECTOR_EXAMPLES)) {
+            return;
+        }
+
+        $this->dt_price_alert_selectors = self::sanitizeSelectors(array_merge($this->dt_price_alert_selectors, [$selector]));
+        option_update('dt_price_alert_selectors', json_encode($this->dt_price_alert_selectors, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    }
+
+    /**
+     * حذف سلکتور با اندیس (دکمهٔ سطل زباله)
+     */
+    public function paRemoveSelector(int $index): void
+    {
+        auth('adminPanel')->user()?->can('settings.others') ?: abort(403);
+
+        unset($this->dt_price_alert_selectors[$index]);
+        $this->dt_price_alert_selectors = array_values($this->dt_price_alert_selectors);
+
+        option_update('dt_price_alert_selectors', json_encode($this->dt_price_alert_selectors, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
     }
 
     public function render()

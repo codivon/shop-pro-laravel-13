@@ -128,6 +128,16 @@ return [
                             'permission' => 'products.stock-notify',
                             'icon' => 'bell-ring',
                         ],
+                        // فاز ۸۴ — به درخواست کاربر: منوی «هشدار کاهش قیمت» در «محصولات»،
+                        // دقیقاً زیر «اطلاع‌رسانی موجودی» (قبلاً در اعلان‌ها بود)؛
+                        // فقط وقتی قابلیت از تنظیمات (dt_price_alert_status) فعال باشد
+                        [
+                            'label' => 'هشدار کاهش قیمت',
+                            'route' => 'np.price-alerts.index',
+                            'permission' => 'products.price-alert',
+                            'icon' => 'trending-down',
+                            'enabled' => 'dt_price_alert_status',
+                        ],
                         [
                             'label' => 'قیمت‌ها',
                             'route' => 'np.products.prices',
@@ -799,15 +809,7 @@ return [
                             'permission' => 'notifications',
                             'icon' => 'settings-2',
                         ],
-                        // فاز ۸۳ — به درخواست کاربر: لیست مشتری‌های هشدار قیمت زیرمنوی «اعلان‌ها»؛
-                        // فقط وقتی قابلیت از تنظیمات (dt_price_alert_status) فعال باشد
-                        [
-                            'label' => 'هشدار کاهش قیمت',
-                            'route' => 'np.price-alerts.index',
-                            'permission' => 'products.price-alert',
-                            'icon' => 'trending-down',
-                            'enabled' => 'dt_price_alert_status',
-                        ],
+                        // فاز ۸۴ — آیتم «هشدار کاهش قیمت» به «محصولات» (زیر اطلاع‌رسانی موجودی) منتقل شد
                     ],
                 ],
                 [

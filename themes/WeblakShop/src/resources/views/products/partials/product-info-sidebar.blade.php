@@ -153,6 +153,22 @@
                         $paSize       = option('dt_price_alert_button_size', 'md') ?: 'md';
                         $paRadius     = (int) (option('dt_price_alert_button_radius', '10') ?: 10);
                         $paPlacement  = option('dt_price_alert_button_placement', 'below-cart') ?: 'below-cart';
+
+                        // فاز ۸۴ — موقعیت دکمهٔ شناور (۹گانه) + سلکتورهای «تگ دلخواه»
+                        $paFloatPos   = (string) (option('dt_price_alert_float_pos', 'bottom-right') ?: 'bottom-right');
+                        if (! in_array($paFloatPos, ['top-left', 'top-center', 'top-right', 'middle-left', 'middle-center', 'middle-right', 'bottom-left', 'bottom-center', 'bottom-right'], true)) {
+                            $paFloatPos = 'bottom-right';
+                        }
+
+                        $paSelectors  = [];
+                        $paSelRaw     = trim((string) option('dt_price_alert_selectors', ''));
+                        if ($paSelRaw !== '') {
+                            $decoded     = str_starts_with($paSelRaw, '[') ? json_decode($paSelRaw, true) : preg_split('/[\r\n,]+/', $paSelRaw);
+                            $paSelectors = collect(is_array($decoded) ? $decoded : [])
+                                ->map(fn ($s) => trim(preg_replace('/[^A-Za-z0-9\-_\.\#\[\]\:"\' >+~*(),=\$]/', '', (string) $s)))
+                                ->filter()->unique()->take(10)->values()->all();
+                        }
+
                         $paBtnHtml    = '<button type="button" id="dt_price_alert_btn" class="dt-pa-btn dt-pa-btn--'.e($paSize).' dt-pa-btn--'.e($paColor).'" style="--dt-pa-radius: '.e((string) $paRadius).'px">'
                             .'<i class="'.e($paIcon).'" aria-hidden="true"></i><span>'.e($paText).'</span></button>';
                     @endphp
@@ -171,6 +187,15 @@
                     @if($paEnabled && $paPlacement !== 'above-cart')
                         @if($paPlacement === 'under-price')
                             <div class="dt-pa-under-price">{!! $paBtnHtml !!}</div>
+                        @elseif($paPlacement === 'float')
+                            {{-- فاز ۸۴ — دکمهٔ شناور (fixed) در گوشهٔ انتخابی صفحه --}}
+                            <div class="dt-pa-float dt-pa-float--{{ e($paFloatPos) }}">{!! $paBtnHtml !!}</div>
+                        @elseif($paPlacement === 'custom-selector')
+                            {{-- فاز ۸۴ — تزریق در تگ دلخواه: دکمهٔ مخفی + پیکربندی سلکتورها؛
+                                 JS در show.blade.php کلون‌ها را بعد از هر عنصرِ منطبق می‌گذارد؛
+                                 اگر هیچ سلکتوری پیدا نشود، دکمه زیر دکمهٔ خرید برمی‌گردد --}}
+                            <span id="dt_pa_inject_config" data-selectors="{{ json_encode($paSelectors) }}" hidden aria-hidden="true"></span>
+                            {!! str_replace('<button type="button" id="dt_price_alert_btn"', '<button type="button" id="dt_price_alert_btn" hidden', $paBtnHtml) !!}
                         @else
                             {!! $paBtnHtml !!}
                         @endif

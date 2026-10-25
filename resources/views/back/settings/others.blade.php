@@ -398,11 +398,32 @@
                                                     <div class="col-md-3 col-12">
                                                         <div class="form-group">
                                                             <label>موقعیت دکمه</label>
+                                                            {{-- فاز ۸۴ — دو گزینهٔ جدید: شناور در گوشهٔ صفحه + تگ دلخواه --}}
                                                             <select name="dt_price_alert_button_placement" class="form-control">
                                                                 <option value="below-cart" {{ option('dt_price_alert_button_placement', 'below-cart') === 'below-cart' ? 'selected' : '' }}>زیر دکمهٔ خرید</option>
                                                                 <option value="above-cart" {{ option('dt_price_alert_button_placement', 'below-cart') === 'above-cart' ? 'selected' : '' }}>بالای دکمهٔ خرید</option>
                                                                 <option value="under-price" {{ option('dt_price_alert_button_placement', 'below-cart') === 'under-price' ? 'selected' : '' }}>چسبیده به قیمت</option>
+                                                                <option value="float" {{ option('dt_price_alert_button_placement', 'below-cart') === 'float' ? 'selected' : '' }}>شناور در گوشهٔ صفحه</option>
+                                                                <option value="custom-selector" {{ option('dt_price_alert_button_placement', 'below-cart') === 'custom-selector' ? 'selected' : '' }}>در تگ دلخواه (سلکتور)</option>
                                                             </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3 col-12">
+                                                        <div class="form-group">
+                                                            <label>موقعیت دکمهٔ شناور (برای حالت «شناور در گوشهٔ صفحه»)</label>
+                                                            <select name="dt_price_alert_float_pos" class="form-control">
+                                                                @foreach(['top-left' => 'بالا-چپ', 'top-center' => 'بالا-وسط', 'top-right' => 'بالا-راست', 'middle-left' => 'وسط-چپ', 'middle-center' => 'وسط صفحه', 'middle-right' => 'وسط-راست', 'bottom-left' => 'پایین-چپ', 'bottom-center' => 'پایین-وسط', 'bottom-right' => 'پایین-راست'] as $fpKey => $fpLabel)
+                                                                    <option value="{{ $fpKey }}" {{ option('dt_price_alert_float_pos', 'bottom-right') === $fpKey ? 'selected' : '' }}>{{ $fpLabel }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6 col-12">
+                                                        <div class="form-group">
+                                                            <label>سلکتورهای تزریق (برای حالت «در تگ دلخواه» — هر خط یک سلکتور CSS)</label>
+                                                            @php($paSelectorsRaw = json_decode((string) option('dt_price_alert_selectors', '[]'), true))
+                                                            <textarea name="dt_price_alert_selectors" rows="3" class="form-control ltr" placeholder=".product-seller-row>.product-seller-row-price">{{ is_array($paSelectorsRaw) ? implode("\n", $paSelectorsRaw) : '' }}</textarea>
+                                                            <div class="hint-text"><i class="feather icon-info"></i> هر خط یک کلاس/آیدی؛ از هر سلکتور فقط اولین عنصرِ منطبق دکمه می‌سازد؛ اگر هیچ‌کدام پیدا نشود، دکمه زیر دکمهٔ خرید نمایش داده می‌شود.</div>
                                                         </div>
                                                     </div>
                                                     <div class="col-md-6 col-12">

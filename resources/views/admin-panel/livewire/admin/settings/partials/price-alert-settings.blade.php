@@ -4,7 +4,21 @@
 @php
     $paPalette = \App\Livewire\Admin\Settings\Others::PALETTE;
     $paPlacements = \App\Livewire\Admin\Settings\Others::PLACEMENT_LABELS;
+    $paFloatLabels = \App\Livewire\Admin\Settings\Others::FLOAT_POSITION_LABELS;
     [$paPreviewBg, $paPreviewBg2] = $paPalette[$dt_price_alert_button_color] ?? $paPalette['red'];
+
+    // فاز ۸۴ — استایل مطلقِ پیش‌نمایش دکمهٔ شناور داخل ماکِت صفحه (فیزیکی، هم‌قرارداد با CSS تم)
+    $paFloatPreviewStyle = match ($dt_price_alert_float_pos) {
+        'top-left'      => 'top:10px;left:10px',
+        'top-center'    => 'top:10px;left:50%;transform:translateX(-50%)',
+        'top-right'     => 'top:10px;right:10px',
+        'middle-left'   => 'top:50%;left:10px;transform:translateY(-50%)',
+        'middle-center' => 'top:50%;left:50%;transform:translate(-50%,-50%)',
+        'middle-right'  => 'top:50%;right:10px;transform:translateY(-50%)',
+        'bottom-left'   => 'bottom:10px;left:10px',
+        'bottom-center' => 'bottom:10px;left:50%;transform:translateX(-50%)',
+        default         => 'bottom:10px;right:10px',
+    };
 @endphp
 
 <section>
@@ -41,45 +55,83 @@
             </div>
 
             {{-- ماکِت کارت فروش محصول تم (RTL مثل صفحهٔ واقعی) --}}
-            <div dir="rtl" class="mx-auto max-w-xs rounded-xl bg-white p-3 shadow-sm dark:bg-night-2">
-                <div class="mb-2 flex items-center gap-2">
-                    <span class="flex size-11 items-center justify-center rounded-lg bg-amber-100 text-amber-500 dark:bg-amber-500/15">
-                        <x-admin-panel::icon name="package" class="size-5" />
-                    </span>
-                    <div class="flex-1 leading-tight">
-                        <p class="truncate text-[12px] font-bold text-slate-800 dark:text-night-ink">نمونهٔ کارت محصول فروشگاه</p>
-                        <p class="text-[11px] text-rose-600 dark:text-rose-400">۲۴۵,۰۰۰ <span class="text-[9.5px]">تومان</span></p>
+            @if ($dt_price_alert_button_placement === 'float')
+                {{-- فاز ۸۴ — ماکِت صفحهٔ کامل با دکمهٔ شناور در گوشهٔ انتخابی --}}
+                <div dir="rtl" class="relative mx-auto h-48 w-full max-w-sm overflow-hidden rounded-xl border border-line bg-white shadow-sm dark:border-night-line dark:bg-night-2">
+                    {{-- کروم مرورگر --}}
+                    <div class="flex items-center gap-1 border-b border-line bg-surface-2 px-2.5 py-1.5 dark:border-night-line dark:bg-night-3">
+                        <span class="size-1.5 rounded-full bg-rose-400"></span>
+                        <span class="size-1.5 rounded-full bg-amber-400"></span>
+                        <span class="size-1.5 rounded-full bg-emerald-400"></span>
+                        <span class="ms-2 h-2 flex-1 rounded-full bg-surface dark:bg-night-2"></span>
+                    </div>
+                    {{-- محتوای صفحه --}}
+                    <div class="space-y-2 p-3">
+                        <div class="h-2.5 w-1/2 rounded-full bg-surface-3 dark:bg-night-line"></div>
+                        <div class="h-2 w-2/3 rounded-full bg-surface-2 dark:bg-night-3"></div>
+                        <div class="mt-3 grid grid-cols-3 gap-2">
+                            <div class="h-10 rounded-lg bg-surface-2 dark:bg-night-3"></div>
+                            <div class="h-10 rounded-lg bg-surface-2 dark:bg-night-3"></div>
+                            <div class="h-10 rounded-lg bg-surface-2 dark:bg-night-3"></div>
+                        </div>
+                        <div class="h-2 w-1/3 rounded-full bg-surface-2 dark:bg-night-3"></div>
+                    </div>
+                    {{-- دکمهٔ شناور در گوشهٔ انتخابی (انتقال نرم هنگام تغییر) --}}
+                    <div class="absolute transition-all duration-300" style="{{ $paFloatPreviewStyle }}">
+                        <button type="button" tabindex="-1" class="dt-preview-btn dt-preview-btn--float dt-preview-btn--{{ $dt_price_alert_button_size }}"
+                                style="--dt-pa-radius: {{ $dt_price_alert_button_radius }}px; --dt-pa-bg: {{ $paPreviewBg }}; --dt-pa-bg2: {{ $paPreviewBg2 }}">
+                            <i class="{{ $dt_price_alert_button_icon }}"></i>
+                            <span>{{ $dt_price_alert_button_text }}</span>
+                        </button>
                     </div>
                 </div>
-
-                @if ($dt_price_alert_button_placement === 'above-cart')
-                    <div class="mb-2 flex items-center justify-center" style="--dt-pa-bg: {{ $paPreviewBg }}; --dt-pa-bg2: {{ $paPreviewBg2 }}">
-                        <button type="button" tabindex="-1" class="dt-preview-btn dt-preview-btn--{{ $dt_price_alert_button_size }}"
-                                style="--dt-pa-radius: {{ $dt_price_alert_button_radius }}px">
-                            <i class="{{ $dt_price_alert_button_icon }}"></i>
-                            <span>{{ $dt_price_alert_button_text }}</span>
-                        </button>
+            @else
+                <div dir="rtl" class="mx-auto max-w-xs rounded-xl bg-white p-3 shadow-sm dark:bg-night-2">
+                    <div class="mb-2 flex items-center gap-2">
+                        <span class="flex size-11 items-center justify-center rounded-lg bg-amber-100 text-amber-500 dark:bg-amber-500/15">
+                            <x-admin-panel::icon name="package" class="size-5" />
+                        </span>
+                        <div class="flex-1 leading-tight">
+                            <p class="truncate text-[12px] font-bold text-slate-800 dark:text-night-ink">نمونهٔ کارت محصول فروشگاه</p>
+                            <p class="text-[11px] text-rose-600 dark:text-rose-400">۲۴۵,۰۰۰ <span class="text-[9.5px]">تومان</span></p>
+                        </div>
                     </div>
-                @endif
 
-                <button type="button" tabindex="-1" class="flex h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-rose-500 text-[13.5px] font-bold text-white opacity-90">
-                    <x-admin-panel::icon name="shopping-cart" class="size-4" />
-                    افزودن به سبد خرید
-                </button>
+                    @if ($dt_price_alert_button_placement === 'above-cart')
+                        <div class="mb-2 flex items-center justify-center" style="--dt-pa-bg: {{ $paPreviewBg }}; --dt-pa-bg2: {{ $paPreviewBg2 }}">
+                            <button type="button" tabindex="-1" class="dt-preview-btn dt-preview-btn--{{ $dt_price_alert_button_size }}"
+                                    style="--dt-pa-radius: {{ $dt_price_alert_button_radius }}px">
+                                <i class="{{ $dt_price_alert_button_icon }}"></i>
+                                <span>{{ $dt_price_alert_button_text }}</span>
+                            </button>
+                        </div>
+                    @endif
 
-                @if ($dt_price_alert_button_placement !== 'above-cart')
-                    <div class="flex items-center justify-center" style="--dt-pa-bg: {{ $paPreviewBg }}; --dt-pa-bg2: {{ $paPreviewBg2 }}">
-                        <button type="button" tabindex="-1" class="dt-preview-btn dt-preview-btn--{{ $dt_price_alert_button_size }}"
-                                style="--dt-pa-radius: {{ $dt_price_alert_button_radius }}px">
-                            <i class="{{ $dt_price_alert_button_icon }}"></i>
-                            <span>{{ $dt_price_alert_button_text }}</span>
-                        </button>
-                    </div>
-                @endif
-            </div>
+                    <button type="button" tabindex="-1" class="flex h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-rose-500 text-[13.5px] font-bold text-white opacity-90">
+                        <x-admin-panel::icon name="shopping-cart" class="size-4" />
+                        افزودن به سبد خرید
+                    </button>
+
+                    @if ($dt_price_alert_button_placement !== 'above-cart')
+                        <div class="flex items-center justify-center" style="--dt-pa-bg: {{ $paPreviewBg }}; --dt-pa-bg2: {{ $paPreviewBg2 }}">
+                            <button type="button" tabindex="-1" class="dt-preview-btn dt-preview-btn--{{ $dt_price_alert_button_size }}"
+                                    style="--dt-pa-radius: {{ $dt_price_alert_button_radius }}px">
+                                <i class="{{ $dt_price_alert_button_icon }}"></i>
+                                <span>{{ $dt_price_alert_button_text }}</span>
+                            </button>
+                        </div>
+                    @endif
+                </div>
+            @endif
 
             <p class="mt-2.5 text-center text-[10.5px] text-ink-3 dark:text-night-ink-2">
-                موقعیت فعلی دکمه: <b class="text-ink-2 dark:text-night-ink">{{ $paPlacements[$dt_price_alert_button_placement] ?? 'زیر دکمهٔ خرید' }}</b>
+                @if ($dt_price_alert_button_placement === 'float')
+                    موقعیت فعلی: <b class="text-ink-2 dark:text-night-ink">شناور ({{ $paFloatLabels[$dt_price_alert_float_pos] ?? 'پایین-راست' }})</b>
+                @elseif ($dt_price_alert_button_placement === 'custom-selector')
+                    موقعیت فعلی: <b class="text-ink-2 dark:text-night-ink">تزریق با سلکتور{{ count($dt_price_alert_selectors) ? ' (' . count($dt_price_alert_selectors) . ' سلکتور)' : ' — بدون سلکتور (زیر دکمهٔ خرید)' }}</b>
+                @else
+                    موقعیت فعلی دکمه: <b class="text-ink-2 dark:text-night-ink">{{ $paPlacements[$dt_price_alert_button_placement] ?? 'زیر دکمهٔ خرید' }}</b>
+                @endif
             </p>
         </div>
 
@@ -149,21 +201,112 @@
                 </div>
 
                 <div class="sm:col-span-2">
-                    <label class="mb-1.5 block text-xs font-semibold">موقعیت دکمه در باکس فروش</label>
-                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    <label class="mb-1.5 block text-xs font-semibold">موقعیت دکمه</label>
+                    {{-- فاز ۸۴ — سلکت (مثل نمونهٔ CheckoutTurbo) با دو گزینهٔ جدید: شناور در گوشهٔ صفحه + تگ دلخواه --}}
+                    <select wire:model.live="dt_price_alert_button_placement" class="ap-input" aria-label="موقعیت دکمه هشدار قیمت">
                         @foreach ($paPlacements as $paKey => $paLabel)
-                            <button type="button" wire:click="$set('dt_price_alert_button_placement', '{{ $paKey }}')"
-                                    wire:key="pa-place-{{ $paKey }}"
-                                    @class([
-                                        'rounded-xl border-2 px-3 py-2.5 text-xs font-bold transition-colors',
-                                        'border-brand-600 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-500/10 dark:text-brand-400' => $dt_price_alert_button_placement === $paKey,
-                                        'border-line text-ink-3 hover:border-brand-300 dark:border-night-line dark:text-night-ink-2 dark:hover:border-brand-500/40' => $dt_price_alert_button_placement !== $paKey,
-                                    ])>
-                                {{ $paLabel }}
-                            </button>
+                            <option value="{{ $paKey }}">{{ $paLabel }}</option>
                         @endforeach
-                    </div>
+                    </select>
+                    <p class="mt-1.5 text-[11px] text-ink-3 dark:text-night-ink-2">
+                        @if ($dt_price_alert_button_placement === 'custom-selector')
+                            دکمه با سلکتورهای زیر در صفحهٔ محصول تزریق می‌شود؛ اگر هیچ سلکتوری پیدا نشود، خودکار زیر دکمهٔ خرید می‌نشیند.
+                        @elseif ($dt_price_alert_button_placement === 'float')
+                            دکمه به‌صورت شناور (fixed) و همیشه‌در-دسترس در گوشهٔ انتخابی صفحه نمایش داده می‌شود.
+                        @else
+                            دکمه داخل باکس فروش صفحهٔ محصول، {{ $paPlacements[$dt_price_alert_button_placement] }} قرار می‌گیرد.
+                        @endif
+                    </p>
                 </div>
+
+                {{-- فاز ۸۴ — موقعیت دکمهٔ شناور (۹گانه با تیک/بوردر انتخاب) --}}
+                @if ($dt_price_alert_button_placement === 'float')
+                    <div class="sm:col-span-2" wire:key="pa-float-picker">
+                        <p class="mb-2 flex items-center gap-1.5 text-xs font-bold text-ink-2 dark:text-night-ink">
+                            <x-admin-panel::icon name="monitor" class="size-4 text-brand-600 dark:text-brand-400" />
+                            موقعیت دکمهٔ شناور در صفحه
+                        </p>
+                        <div class="mx-auto grid max-w-md grid-cols-3 gap-2" role="radiogroup" aria-label="موقعیت دکمهٔ شناور">
+                            @foreach (\App\Livewire\Admin\Settings\Others::FLOAT_POSITIONS as $paFp)
+                                <button type="button" wire:click="$set('dt_price_alert_float_pos', '{{ $paFp }}')"
+                                        wire:key="pa-float-{{ $paFp }}"
+                                        @class([
+                                            'relative flex flex-col items-center gap-1 rounded-xl border-2 px-2 py-2.5 text-[10px] font-bold transition-all duration-200',
+                                            'border-brand-600 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-500/10 dark:text-brand-400' => $dt_price_alert_float_pos === $paFp,
+                                            'border-line text-ink-3 hover:border-brand-300 dark:border-night-line dark:text-night-ink-2 dark:hover:border-brand-500/40' => $dt_price_alert_float_pos !== $paFp,
+                                        ])
+                                        role="radio" aria-checked="{{ $dt_price_alert_float_pos === $paFp ? 'true' : 'false' }}">
+                                    <span @class([
+                                        'size-2.5 rounded-full transition-colors',
+                                        'bg-brand-600 dark:bg-brand-400' => $dt_price_alert_float_pos === $paFp,
+                                        'bg-ink-300/60 dark:bg-night-line' => $dt_price_alert_float_pos !== $paFp,
+                                    ]) aria-hidden="true"></span>
+                                    {{ $paFloatLabels[$paFp] }}
+                                    @if ($dt_price_alert_float_pos === $paFp)
+                                        <span class="absolute -top-2 -start-2 flex size-4.5 items-center justify-center rounded-full bg-brand-600 text-white shadow">
+                                            <x-admin-panel::icon name="check" class="size-2.5" />
+                                        </span>
+                                    @endif
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                {{-- فاز ۸۴ — تزریق در تگ دلخواه (سلکتورهای کلاس/آیدی) --}}
+                @if ($dt_price_alert_button_placement === 'custom-selector')
+                    <div class="sm:col-span-2" wire:key="pa-selector-repeater">
+                        <p class="mb-2 flex items-center gap-1.5 text-xs font-bold text-ink-2 dark:text-night-ink">
+                            <x-admin-panel::icon name="code-2" class="size-4 text-brand-600 dark:text-brand-400" />
+                            تزریق در دکمه‌ها (سلکتور)
+                        </p>
+
+                        <div class="space-y-2">
+                            @forelse ($dt_price_alert_selectors as $paSelIndex => $paSel)
+                                <div class="flex items-center gap-2" wire:key="pa-sel-{{ $paSelIndex }}-{{ md5($paSel) }}">
+                                    <button type="button" wire:click="paRemoveSelector({{ $paSelIndex }})"
+                                            class="flex size-9 shrink-0 items-center justify-center rounded-lg border border-red-200 text-red-500 transition-colors hover:bg-red-50 dark:border-red-500/25 dark:hover:bg-red-500/10"
+                                            aria-label="حذف سلکتور {{ $paSel }}" title="حذف">
+                                        <x-admin-panel::icon name="trash-2" class="size-4" />
+                                    </button>
+                                    <span class="ap-input flex-1 truncate font-mono" dir="ltr">{{ $paSel }}</span>
+                                </div>
+                            @empty
+                                <p class="rounded-lg bg-surface-2 px-3 py-2 text-[11px] text-ink-3 dark:bg-night-3 dark:text-night-ink-2">
+                                    هنوز سلکتوری اضافه نشده — تا زمان افزودن، دکمه زیر دکمهٔ خرید نمایش داده می‌شود.
+                                </p>
+                            @endforelse
+                        </div>
+
+                        <div class="mt-2.5 flex items-center gap-2">
+                            <input type="text" dir="ltr" wire:model="pa_selector_input" wire:keydown.enter="paAddSelector"
+                                   class="ap-input flex-1 font-mono" placeholder="مثلاً: .product-seller-row>.product-seller-row-price"
+                                   aria-label="سلکتور جدید (کلاس یا آیدی)">
+                            <button type="button" wire:click="paAddSelector" class="ap-btn-primary shrink-0 !px-3 !py-2 text-xs">
+                                <x-admin-panel::icon name="plus" class="size-4" />
+                                افزودن سلکتور
+                            </button>
+                        </div>
+
+                        <p class="mt-2 text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">
+                            هر خط یک سلکتور CSS — از هر سلکتور فقط <b class="text-ink-2 dark:text-night-ink">اولین عنصرِ منطبق</b> دکمه را می‌سازد
+                            (کلاس با <code dir="ltr">.</code> و آیدی با <code dir="ltr">#</code>). اگر هیچ‌کدام در صفحه پیدا نشود، دکمه به‌صورت خودکار زیر دکمهٔ خرید نمایش داده می‌شود.
+                        </p>
+
+                        <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                            <span class="text-[10.5px] font-bold text-ink-3 dark:text-night-ink-2">سلکتورهای پرکاربرد:</span>
+                            @foreach (\App\Livewire\Admin\Settings\Others::SELECTOR_EXAMPLES as $paExSel => $paExLabel)
+                                <button type="button" wire:click="paAddExampleSelector('{{ $paExSel }}')"
+                                        wire:key="pa-ex-{{ md5($paExSel) }}"
+                                        class="group inline-flex items-center gap-1 rounded-lg border border-line bg-surface px-2 py-1 transition-colors hover:border-brand-400 hover:bg-brand-50/50 dark:border-night-line dark:bg-night-3 dark:hover:border-brand-500/40"
+                                        title="{{ $paExLabel }} — برای افزودن کلیک کنید">
+                                    <code dir="ltr" class="font-mono text-[10.5px] text-brand-700 dark:text-brand-400">{{ $paExSel }}</code>
+                                    <span class="text-[9.5px] text-ink-3 dark:text-night-ink-2">({{ $paExLabel }})</span>
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -291,6 +434,8 @@
             .dt-preview-btn i{font-size:1.3em}
             .dt-preview-btn--sm{--dt-pa-h:40px;--dt-pa-fs:12.5px}
             .dt-preview-btn--lg{--dt-pa-h:54px;--dt-pa-fs:14.5px}
+            /* فاز ۸۴ — حالت شناور داخل ماکِت: عرض خودکار، بدون مارجین */
+            .dt-preview-btn--float{width:auto;display:inline-flex;margin:0;padding:0 16px;box-shadow:0 10px 24px -8px rgba(15,23,42,.35)}
         </style>
     </div>
 </section>

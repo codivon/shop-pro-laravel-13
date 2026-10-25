@@ -499,5 +499,24 @@ return [
         'security_bot_trap_enabled', // فاز ۷۱ — کلید اصلی تلهٔ ربات
         'admin_2fa_enabled',
         'admin_2fa_channel',
+
+        // فاز ۸۴ — کلیدهای قابلیت‌های فروشگاه مستقل از زبان‌اند: گیت‌های هسته/تم
+        // (dt_price_alert_status / dt_pre_order_status) باید در «همهٔ» زبان‌ها یک مقدار
+        // برگردانند؛ وگرنه خاموش‌کردن قابلیت در پنل (fa) روی فرانتِ زبان دیگر بی‌اثر می‌ماند
+        'dt_price_alert_status',
+        'dt_price_alert_button_text',
+        'dt_price_alert_button_icon',
+        'dt_price_alert_button_color',
+        'dt_price_alert_button_size',
+        'dt_price_alert_button_radius',
+        'dt_price_alert_button_placement',
+        'dt_price_alert_float_pos',
+        'dt_price_alert_selectors',
+        'dt_price_alert_modal_title',
+        'dt_price_alert_modal_desc',
+        'dt_price_alert_channels',
+        'dt_pre_order_status',
+        'dt_pre_order_button_text',
+        'dt_pre_order_badge_text',
     ]
 ];

@@ -653,13 +653,16 @@ class SettingController extends Controller
                 $value = $defaultFeatureValues[$key];
             }
 
-            // فاز ۸۳ — نرمال‌سازی فیلدهای شخصی‌سازی هشدار قیمت (هم‌قرارداد با پنل جدید)
+            // فاز ۸۳/۸۴ — نرمال‌سازی فیلدهای شخصی‌سازی هشدار قیمت (هم‌قرارداد با پنل جدید)
             $value = match ($key) {
                 'dt_price_alert_button_color'     => in_array($value, ['red', 'orange', 'green', 'teal', 'purple', 'dark'], true) ? $value : 'red',
                 'dt_price_alert_button_size'      => in_array($value, ['sm', 'md', 'lg'], true) ? $value : 'md',
-                'dt_price_alert_button_placement' => in_array($value, ['below-cart', 'above-cart', 'under-price'], true) ? $value : 'below-cart',
+                'dt_price_alert_button_placement' => in_array($value, ['below-cart', 'above-cart', 'under-price', 'float', 'custom-selector'], true) ? $value : 'below-cart',
                 'dt_price_alert_button_radius'    => (string) min(30, max(0, (int) $value)),
                 'dt_price_alert_channels'         => in_array($value, ['sms,profile', 'sms', 'profile'], true) ? $value : 'sms,profile',
+                // فاز ۸۴ — موقعیت شناور ۹گانه + سلکتورهای تگ دلخواه (خط‌جداکننده → JSON پاک‌سازی‌شده)
+                'dt_price_alert_float_pos'        => in_array($value, \App\Livewire\Admin\Settings\Others::FLOAT_POSITIONS, true) ? $value : 'bottom-right',
+                'dt_price_alert_selectors'        => json_encode(\App\Livewire\Admin\Settings\Others::parseSelectors((string) $value), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
                 default                           => $value,
             };
 

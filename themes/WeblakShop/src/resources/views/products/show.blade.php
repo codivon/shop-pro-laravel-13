@@ -1123,6 +1123,30 @@
             .dt-pa-btn--sm{--dt-pa-h:40px;--dt-pa-fs:13px}
             .dt-pa-btn--lg{--dt-pa-h:54px;--dt-pa-fs:15px}
             .dt-pa-under-price .dt-pa-btn{margin:8px 0 0}
+            .dt-pa-btn[hidden]{display:none !important} /* فاز ۸۴ — منبع مخفی حالت سلکتور */
+
+            /* ===== فاز ۸۴ — دکمهٔ شناور در گوشهٔ صفحه (۹ موقعیت) ===== */
+            .dt-pa-float{position:fixed;z-index:9998;animation:dtPaFloatIn .5s cubic-bezier(.16,1,.3,1) both}
+            .dt-pa-float .dt-pa-btn{width:auto;margin:0;box-shadow:0 14px 34px -10px rgba(15,23,42,.42),0 8px 20px -10px var(--dt-pa-bg,#ef394e)}
+            @keyframes dtPaFloatIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+            .dt-pa-float--top-left{top:14px;left:14px}
+            .dt-pa-float--top-center{top:14px;left:50%;transform:translateX(-50%)}
+            .dt-pa-float--top-right{top:14px;right:14px}
+            .dt-pa-float--middle-left{top:50%;left:14px;transform:translateY(-50%)}
+            .dt-pa-float--middle-center{top:50%;left:50%;transform:translate(-50%,-50%)}
+            .dt-pa-float--middle-right{top:50%;right:14px;transform:translateY(-50%)}
+            .dt-pa-float--bottom-left{bottom:14px;left:14px}
+            .dt-pa-float--bottom-center{bottom:14px;left:50%;transform:translateX(-50%)}
+            .dt-pa-float--bottom-right{bottom:14px;right:14px}
+            @media (max-width:768px){
+                .dt-pa-float--top-left{top:10px;left:10px}.dt-pa-float--top-center{top:10px}.dt-pa-float--top-right{top:10px;right:10px}
+                .dt-pa-float--middle-left{left:10px}.dt-pa-float--middle-right{right:10px}
+                .dt-pa-float--bottom-left{bottom:10px;left:10px}.dt-pa-float--bottom-center{bottom:10px}.dt-pa-float--bottom-right{bottom:10px;right:10px}
+                .dt-pa-float .dt-pa-btn{--dt-pa-h:42px;--dt-pa-fs:12.5px;padding:0 12px}
+            }
+
+            /* ===== فاز ۸۴ — دکمهٔ تزریق‌شده با سلکتور (عرض خودکار، زیر عنصرِ منطبق) ===== */
+            .dt-pa-btn--inject{width:auto;min-width:min(220px,100%);margin:10px 0;display:inline-flex}
 
             /* ===== مودال ===== */
             .dt-pa-overlay{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;
@@ -1299,14 +1323,69 @@
                 }
 
                 // دلیگیت روی document — بلوک اطلاعات محصول با AJAX جایگزین می‌شود و
-                // بایندهای مستقیم می‌میرند (درس فاز ۸۱)؛ آی‌دی جدید پس از فاز ۸۳:
+                // بایندهای مستقیم می‌میرند (درس فاز ۸۱)؛ فاز ۸۴: همهٔ نمونه‌های دکمه
+                // (اصلی + شناور + تزریق‌شده با سلکتور) با کلاس مشترک dt-pa-btn
                 document.addEventListener('click', function (e) {
-                    var btn = e.target.closest('#dt_price_alert_btn');
+                    var btn = e.target.closest('.dt-pa-btn');
                     if (btn) {
                         e.preventDefault();
                         openModal();
                     }
                 });
+
+                /* ===== فاز ۸۴ — تزریق دکمه در تگ دلخواه (سلکتور کلاس/آیدی) ===== */
+                function dtPaInject() {
+                    var cfg = document.getElementById('dt_pa_inject_config');
+                    var src = document.getElementById('dt_price_alert_btn');
+                    if (!cfg || !src) return;
+
+                    // ایدمپوتنت: کلون‌های قبلی پاک می‌شوند (بعد از جایگزینی AJAX بلوک)
+                    Array.prototype.forEach.call(document.querySelectorAll('.dt-pa-btn--inject'), function (n) {
+                        if (n.parentNode) n.parentNode.removeChild(n);
+                    });
+
+                    var sels = [];
+                    try { sels = JSON.parse(cfg.getAttribute('data-selectors') || '[]') || []; } catch (err) { sels = []; }
+
+                    var injected = 0;
+                    for (var i = 0; i < sels.length; i++) {
+                        var target = null;
+                        try { target = document.querySelector(sels[i]); } catch (err) { target = null; }
+                        if (!target) continue;
+
+                        var clone = src.cloneNode(true);
+                        clone.removeAttribute('id');
+                        clone.removeAttribute('hidden');
+                        clone.classList.add('dt-pa-btn--inject');
+                        target.insertAdjacentElement('afterend', clone);
+                        injected++;
+                    }
+
+                    if (injected > 0) {
+                        if (src.parentNode) src.parentNode.removeChild(src);
+                    } else {
+                        // هیچ سلکتوری منطبق نشد → برگشت امن: زیر دکمهٔ خرید
+                        src.removeAttribute('hidden');
+                        src.classList.remove('dt-pa-btn--inject');
+                        var cart = document.querySelector('.product-info-block .btn-add-to-cart') || document.querySelector('.btn-add-to-cart');
+                        if (cart && cart.parentNode) {
+                            cart.insertAdjacentElement('afterend', src);
+                        }
+                    }
+                }
+
+                window.dtPriceAlertInject = dtPaInject;
+                dtPaInject();
+
+                // بعد از جایگزینی AJAX بلوک product-info (تغییر تنوع)، منبع دکمه تازه
+                // از سرور می‌آید؛ تزریق دوباره انجام شود
+                if (window.jQuery) {
+                    window.jQuery(document).ajaxSuccess(function () {
+                        if (document.getElementById('dt_pa_inject_config')) {
+                            window.setTimeout(dtPaInject, 60);
+                        }
+                    });
+                }
 
                 overlay.addEventListener('click', function (e) {
                     if (e.target === overlay || e.target.closest('.dt-pa-close')) {

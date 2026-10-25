@@ -458,30 +458,29 @@ class Phase83Test extends TestCase
         $this->assertNotNull($alert->fresh()->notified_at);
     }
 
-    /* ================= ۶) منوی زیر «اعلان‌ها» با گیت فعال‌بودن ================= */
+    /* ================= ۶) منوی هشدار قیمت با گیت فعال‌بودن ================= */
 
     #[Test]
-    #[TestDox('«هشدار کاهش قیمت» زیرمنوی «اعلان‌ها»ست با گیت enabled + گیت تنظیماتی سایدبار')]
+    #[TestDox('«هشدار کاهش قیمت» در منوی «محصولات» (فاز ۸۴: برگشت از اعلان‌ها به محصولات) با گیت enabled')]
     public function price_alert_menu_lives_under_notifications_with_enable_gate(): void
     {
+        // فاز ۸۴ — درخواست کاربر: منو باید در «محصولات»، دقیقاً زیر «اطلاع‌رسانی موجودی» باشد
+        // (تغییر تصمیم نسبت به فاز ۸۳ که موقتاً زیر «اعلان‌ها» بود)؛ تست فاز ۸۴ جایگاه دقیق را می‌سنجد
         $menu = config('admin-menu.groups');
 
         $found = null;
-        $inProducts = false;
-
         foreach ($menu as $group) {
             foreach ($group['items'] as $item) {
                 foreach ($item['children'] ?? [] as $child) {
                     if (($child['route'] ?? '') === 'np.price-alerts.index') {
                         $found = $child;
-                        $inProducts = ($item['label'] ?? '') === 'محصولات';
                     }
                 }
             }
         }
 
         $this->assertNotNull($found, 'آیتم منوی هشدار کاهش قیمت باید در منو باشد');
-        $this->assertFalse($inProducts, 'دیگر نباید زیر «محصولات» باشد (درخواست کاربر: زیر «اعلان‌ها»)');
+        $this->assertSame('products.price-alert', $found['permission'] ?? null);
         $this->assertSame('dt_price_alert_status', $found['enabled'] ?? null,
             'آیتم باید با کلید تنظیمات dt_price_alert_status گیت شده باشد');
     }
