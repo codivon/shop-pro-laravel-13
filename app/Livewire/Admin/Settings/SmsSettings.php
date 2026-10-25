@@ -38,8 +38,17 @@ class SmsSettings extends Component
         }
 
         foreach ($this->toggleKeys() as $key) {
-            $this->toggles[$key] = option($key) == 'on';
+            $this->toggles[$key] = option($key, self::toggleDefaults()[$key] ?? null) == 'on';
         }
+    }
+
+    /**
+     * آیا قابلیت «هشدار کاهش قیمت» در تنظیمات تم فعال است؟
+     * رویداد و پترن پیامکی این قابلیت فقط وقتی نمایش داده می‌شود که فعال باشد.
+     */
+    public function priceAlertEnabled(): bool
+    {
+        return option('dt_price_alert_status', '1') == '1';
     }
 
     /** ارائه‌دهنده‌ها به ترتیب ویوی قدیمی */
@@ -77,7 +86,7 @@ class SmsSettings extends Component
         return $keys;
     }
 
-    /** ۱۴ کلید چک‌باکس قدیمی ($except) + happy_birthday_sms */
+    /** ۱۵ کلید چک‌باکس قدیمی + happy_birthday_sms + هشدار کاهش قیمت (فاز ۸۷) */
     public function toggleKeys(): array
     {
         return [
@@ -88,7 +97,18 @@ class SmsSettings extends Component
             'user_sms_on_order_paid', 'user_sms_on_order_cancelled',
             'wallet_increase_sms', 'wallet_decrease_sms', 'wallet_refund_sms',
             'happy_birthday_sms',
+            'sms_on_price_alert',
         ];
+    }
+
+    /**
+     * پیش‌فرض کلیدهای toggle وقتی هنوز ذخیره نشده‌اند.
+     * هشدار کاهش قیمت پیش‌فرض «فعال» است تا رفتار فعلی (ارسال با انتخاب کاربر + پترن تنظیم‌شده)
+     * پس از افزودن کلید حفظ شود.
+     */
+    public static function toggleDefaults(): array
+    {
+        return ['sms_on_price_alert' => 'on'];
     }
 
     /** اطلاعات اتصال هر پنل (پورت پارشیال‌های قدیمی) */
@@ -140,7 +160,7 @@ class SmsSettings extends Component
                 'wallet_increase_pattern_code_ippanel' => ['label' => 'کد متن افزایش موجودی کیف پول', 'toggle' => 'wallet_increase_sms', 'required' => true, 'sample' => "مبلغ %amount% تومان به اعتبار کیف پول شما اضافه شد.\r\n {site}"],
                 'wallet_decrease_pattern_code_ippanel' => ['label' => 'کد متن کاهش موجودی کیف پول', 'toggle' => 'wallet_decrease_sms', 'required' => true, 'sample' => "مبلغ %amount% تومان از اعتبار کیف پول شما کسر شد.\r\n {site}"],
                 'happy_birthday_pattern_code_ippanel' => ['label' => 'کد پترن تبریک تولد', 'toggle' => 'happy_birthday_sms', 'required' => true, 'sample' => "%fullname% عزیز زندگی بسیار کوتاه است از هر لحظه آن لذت ببرید و با تکیه بر تجربه های سال های گذشته سال های آتی زندگی را به بهترین شکل ممکن بگذرانید تولدتان مبارک\r\n {site}"],
-                'price_alert_pattern_code' => ['label' => 'کد پترن هشدار کاهش قیمت', 'sample' => "قیمت محصول %title% به %price% تومان کاهش یافت.\r\n {site}"],
+                'price_alert_pattern_code' => ['label' => 'کد پترن هشدار کاهش قیمت', 'toggle' => 'sms_on_price_alert', 'sample' => "قیمت محصول %title% به %price% تومان کاهش یافت.\r\n {site}"],
                 'cart_recovery_pattern_code' => ['label' => 'کد پترن یادآور سبد خرید رهاشده (پکیج مارکتینگ)', 'sample' => "%name% عزیز، سبد خرید شما (%items%) در انتظار شماست. مبلغ: %total% تومان.\r\n {site}"],
                 'marketing_campaign_pattern_code' => ['label' => 'کد پترن کمپین پیامکی (پکیج مارکتینگ)', 'sample' => "%name% عزیز، %store% برای شما پیشنهاد ویژه دارد!\r\n {site}"],
             ],
@@ -158,7 +178,7 @@ class SmsSettings extends Component
                 'wallet_increase_pattern_code_kavenegar' => ['label' => 'کد متن افزایش موجودی کیف پول', 'toggle' => 'wallet_increase_sms', 'required' => true, 'sample' => "مبلغ %token تومان به اعتبار کیف پول شما اضافه شد.\r\n {site}"],
                 'wallet_decrease_pattern_code_kavenegar' => ['label' => 'کد متن کاهش موجودی کیف پول', 'toggle' => 'wallet_decrease_sms', 'required' => true, 'sample' => "مبلغ %token تومان از اعتبار کیف پول شما کسر شد.\r\n {site}"],
                 'happy_birthday_pattern_code_kavenegar' => ['label' => 'کد پترن تبریک تولد', 'toggle' => 'happy_birthday_sms', 'required' => true, 'sample' => "%token عزیز زندگی بسیار کوتاه است از هر لحظه آن لذت ببرید و با تکیه بر تجربه های سال های گذشته سال های آتی زندگی را به بهترین شکل ممکن بگذرانید تولدتان مبارک\r\n {site}"],
-                'price_alert_pattern_code' => ['label' => 'الگوی هشدار کاهش قیمت', 'sample' => "قیمت محصول به %token2 تومان کاهش یافت.\r\n {site}"],
+                'price_alert_pattern_code' => ['label' => 'الگوی هشدار کاهش قیمت', 'toggle' => 'sms_on_price_alert', 'sample' => "قیمت محصول به %token2 تومان کاهش یافت.\r\n {site}"],
                 'cart_recovery_pattern_code' => ['label' => 'الگوی یادآور سبد خرید رهاشده (پکیج مارکتینگ)', 'sample' => "%token عزیز، سبد خرید شما (%token2) در انتظار شماست. مبلغ: %token3 تومان.\r\n {site}"],
                 'marketing_campaign_pattern_code' => ['label' => 'الگوی کمپین پیامکی (پکیج مارکتینگ)', 'sample' => "%token عزیز، %token2 برای شما پیشنهاد ویژه دارد!\r\n {site}"],
             ],
@@ -176,7 +196,7 @@ class SmsSettings extends Component
                 'wallet_increase_pattern_code_melipayamak' => ['label' => 'کد متن افزایش موجودی کیف پول', 'toggle' => 'wallet_increase_sms', 'required' => true, 'sample' => "مبلغ {0} تومان به اعتبار کیف پول شما اضافه شد.\r\n {site}"],
                 'wallet_decrease_pattern_code_melipayamak' => ['label' => 'کد متن کاهش موجودی کیف پول', 'toggle' => 'wallet_decrease_sms', 'required' => true, 'sample' => "مبلغ {0} تومان از اعتبار کیف پول شما کسر شد.\r\n {site}"],
                 'happy_birthday_pattern_code_melipayamak' => ['label' => 'کد پترن تبریک تولد', 'toggle' => 'happy_birthday_sms', 'required' => true, 'sample' => "{0} عزیز زندگی بسیار کوتاه است از هر لحظه آن لذت ببرید و با تکیه بر تجربه های سال های گذشته سال های آتی زندگی را به بهترین شکل ممکن بگذرانید تولدتان مبارک\r\n {site}"],
-                'price_alert_pattern_code' => ['label' => 'کد متن هشدار کاهش قیمت', 'sample' => "قیمت محصول به {1} تومان کاهش یافت.\r\n {site}"],
+                'price_alert_pattern_code' => ['label' => 'کد متن هشدار کاهش قیمت', 'toggle' => 'sms_on_price_alert', 'sample' => "قیمت محصول به {1} تومان کاهش یافت.\r\n {site}"],
                 'cart_recovery_pattern_code' => ['label' => 'کد متن یادآور سبد خرید رهاشده (پکیج مارکتینگ)', 'sample' => "{0} عزیز، سبد خرید شما ({1}) در انتظار شماست. مبلغ: {2} تومان.\r\n {site}"],
                 'marketing_campaign_pattern_code' => ['label' => 'کد متن کمپین پیامکی (پکیج مارکتینگ)', 'sample' => "{0} عزیز، {1} برای شما پیشنهاد ویژه دارد!\r\n {site}"],
             ],
@@ -193,7 +213,7 @@ class SmsSettings extends Component
                 'wallet_increase_pattern_code_idehpardazan' => ['label' => 'کد متن افزایش موجودی کیف پول', 'toggle' => 'wallet_increase_sms', 'required' => true, 'sample' => "مبلغ [amount] تومان به اعتبار کیف پول شما اضافه شد.\r\n {site}"],
                 'wallet_decrease_pattern_code_idehpardazan' => ['label' => 'کد متن کاهش موجودی کیف پول', 'toggle' => 'wallet_decrease_sms', 'required' => true, 'sample' => "مبلغ [amount] تومان از اعتبار کیف پول شما کسر شد.\r\n {site}"],
                 'happy_birthday_pattern_code_idehpardazan' => ['label' => 'کد پترن تبریک تولد', 'toggle' => 'happy_birthday_sms', 'required' => true, 'sample' => "[fullname] عزیز زندگی بسیار کوتاه است از هر لحظه آن لذت ببرید و با تکیه بر تجربه های سال های گذشته سال های آتی زندگی را به بهترین شکل ممکن بگذرانید تولدتان مبارک\r\n {site}"],
-                'price_alert_pattern_code' => ['label' => 'کد متن هشدار کاهش قیمت', 'sample' => "قیمت محصول به [price] تومان کاهش یافت.\r\n {site}"],
+                'price_alert_pattern_code' => ['label' => 'کد متن هشدار کاهش قیمت', 'toggle' => 'sms_on_price_alert', 'sample' => "قیمت محصول به [price] تومان کاهش یافت.\r\n {site}"],
                 'cart_recovery_pattern_code' => ['label' => 'کد متن یادآور سبد خرید رهاشده (پکیج مارکتینگ)', 'sample' => "[name] عزیز، سبد خرید شما ([items]) در انتظار شماست. مبلغ: [total] تومان.\r\n {site}"],
                 'marketing_campaign_pattern_code' => ['label' => 'کد متن کمپین پیامکی (پکیج مارکتینگ)', 'sample' => "[name] عزیز، [store] برای شما پیشنهاد ویژه دارد!\r\n {site}"],
             ],
@@ -211,7 +231,7 @@ class SmsSettings extends Component
                 'wallet_increase_pattern_code_farazsms' => ['label' => 'کد پترن افزایش موجودی کیف پول', 'toggle' => 'wallet_increase_sms', 'sample' => "مبلغ %amount% تومان به اعتبار کیف پول شما اضافه شد.\r\n {site}"],
                 'wallet_decrease_pattern_code_farazsms' => ['label' => 'کد پترن کاهش موجودی کیف پول', 'toggle' => 'wallet_decrease_sms', 'sample' => "مبلغ %amount% تومان از اعتبار کیف پول شما کسر شد.\r\n {site}"],
                 'happy_birthday_pattern_code_farazsms' => ['label' => 'کد پترن تبریک تولد', 'toggle' => 'happy_birthday_sms', 'sample' => "%fullname% عزیز زندگی بسیار کوتاه است از هر لحظه آن لذت ببرید و با تکیه بر تجربه های سال های گذشته سال های آتی زندگی را به بهترین شکل ممکن بگذرانید تولدتان مبارک\r\n {site}"],
-                'price_alert_pattern_code' => ['label' => 'کد پترن هشدار کاهش قیمت', 'sample' => "قیمت محصول به %price% تومان کاهش یافت.\r\n {site}"],
+                'price_alert_pattern_code' => ['label' => 'کد پترن هشدار کاهش قیمت', 'toggle' => 'sms_on_price_alert', 'sample' => "قیمت محصول به %price% تومان کاهش یافت.\r\n {site}"],
                 'cart_recovery_pattern_code' => ['label' => 'کد پترن یادآور سبد خرید رهاشده (پکیج مارکتینگ)', 'sample' => "%name% عزیز، سبد خرید شما (%items%) در انتظار شماست. مبلغ: %total% تومان.\r\n {site}"],
                 'marketing_campaign_pattern_code' => ['label' => 'کد پترن کمپین پیامکی (پکیج مارکتینگ)', 'sample' => "%name% عزیز، %store% برای شما پیشنهاد ویژه دارد!\r\n {site}"],
             ],
@@ -244,6 +264,10 @@ class SmsSettings extends Component
             ],
             'birthday' => [
                 ['name' => 'happy_birthday_sms', 'title' => 'ارسال پیامک تبریک تولد', 'desc' => 'کاملاً خودکار، روزانه توسط زمان‌بند سیستم بررسی می‌شود', 'icon' => 'gift'],
+            ],
+            // فاز ۸۷ — فقط وقتی قابلیت هشدار کاهش قیمت فعال باشد نمایش داده می‌شود
+            'price_alert' => [
+                ['name' => 'sms_on_price_alert', 'title' => 'هشدار کاهش قیمت', 'desc' => 'اطلاع‌رسانی پیامکی به مشتریانی که برای محصول «هشدار قیمت» گذاشته‌اند', 'icon' => 'bell-ring'],
             ],
         ];
     }
@@ -343,6 +367,7 @@ class SmsSettings extends Component
             'wallet_increase_sms' => 'ارسال پیامک افزایش موجودی کیف پول',
             'wallet_decrease_sms' => 'ارسال پیامک کاهش موجودی کیف پول',
             'wallet_refund_sms' => 'ارسال پیامک برگشت وجه به کیف پول',
+            'sms_on_price_alert' => 'ارسال پیامک هشدار کاهش قیمت',
             'ippanel_api_key' => 'API Key پنل ippanel',
             'ippanel_sender_number' => 'شماره فرستنده ippanel',
             'kavenegar_api_key' => 'API Key کاوه نگار',

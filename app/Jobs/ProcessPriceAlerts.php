@@ -88,7 +88,10 @@ class ProcessPriceAlerts implements ShouldQueue
 
         foreach ($alerts as $alert) {
             // فاز ۸۳ — کانال پیامک (فقط اگر مشتری پیامک را انتخاب کرده باشد)
-            if ($alert->notify_sms && $patternConfigured) {
+            // فاز ۸۷ — گیت رویداد پیامکی: sms_on_price_alert (پیش‌فرض فعال؛ از تنظیمات پیامک مدیریت می‌شود)
+            if ($alert->notify_sms
+                && $patternConfigured
+                && option('sms_on_price_alert', 'on') == 'on') {
                 try {
                     $alert->notify(new PriceAlertSms($product, $minPrice));
                 } catch (\Throwable $e) {

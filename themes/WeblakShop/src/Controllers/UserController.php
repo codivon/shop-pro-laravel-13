@@ -16,8 +16,6 @@ use App\Models\Widget;
 use App\Notifications\Sms\NewSellerCodeSent;
 use App\Notifications\Sms\NewUserCodeSent;
 use App\Notifications\Sms\VerifyCodeSent;
-use App\Notifications\User\UserCreated;
-use App\Notifications\User\UserRegistered;
 use App\Services\BotDetector;
 use App\Services\CaptchaService;
 use App\Services\SecuritySettings;
@@ -272,11 +270,10 @@ class UserController extends Controller
         if (session('UserWelcome')){
             $user=User::where('username',session('UserWelcome'))->first();
 
-            $admins = Admin::whereIn('level', ['admin', 'creator'])->get();
-            Notification::send($admins, new UserRegistered($user));
-            if (option('sms_on_user_register', 'off') == 'on') {
-                Notification::send($user, new UserCreated($user));
-            }
+            // رفع باگ نوتیف تکراری — نوتیفیکیشن «کاربر جدید» و پیامک خوش‌آمدگویی
+            // قبلاً در Listener رویداد Registered (app/Listeners/User/Registered.php)
+            // با event(new Registered($user)) در CheckPassword ارسال شده‌اند؛
+            // ارسال مجدد در اینجا باعث دوبار آمدن نوتیف در پنل ادمین می‌شد.
 
             session()->forget('UserWelcome');
             return view('front::auth.welcome');

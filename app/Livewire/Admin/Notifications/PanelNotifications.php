@@ -11,7 +11,7 @@ use Livewire\WithPagination;
 
 /**
  * اعلان‌های پنل — پورت ۱:۱ MainController::notifications / markRead / markAllRead
- * رندر نوع‌ها عیناً با AdminNotificationTypes::meta + notification_link قدیمی
+ * رندر نوع‌ها عیناً با AdminNotificationTypes::meta + لینک پنل جدید (npLink)
  */
 #[Title('اعلان‌های سیستم')]
 class PanelNotifications extends Component
@@ -67,7 +67,7 @@ class PanelNotifications extends Component
         ];
     }
 
-    /** متادیتای هر نوع اعلان + کنترل دسترسی (پورت دقیق بلید قدیمی) */
+    /** متادیتای هر نوع اعلان + کنترل دسترسی (پورت دقیق بلید قدیمی) + لینک پنل جدید */
     public function meta($notification): array
     {
         $meta = AdminNotificationTypes::meta($notification->type);

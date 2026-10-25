@@ -230,11 +230,12 @@ class KavenegarSms extends SmsService implements SmsContract, SmsNotificationCon
         ];
     }
 
-    /** فاز ۸۰ — کمپین پیامکی مارکتینگ (پکیج MarketingMessaging؛ الگو: marketing_campaign_pattern_code با متغیرهای name و store) */
+    /** فاز ۸۰ — کمپین پیامکی مارکتینگ (پکیج MarketingMessaging؛ متغیرهای name و store)
+     *  فاز ۸۷ — کد پترن اختصاصی کمپین (data.pattern_code) مقدم بر پترن پیش‌فرض option است */
     public function marketingCampaign()
     {
         return [
-            'template'     => option('marketing_campaign_pattern_code'),
+            'template'     => $this->data['pattern_code'] ?? option('marketing_campaign_pattern_code'),
             'input_data'   => [
                 'token'  => $this->data['name'],
                 'token2' => $this->data['store'],

@@ -176,10 +176,33 @@
                 <div class="mt-3 flex items-start gap-2 rounded-xl border border-sky-200 bg-sky-50 p-3 text-[12px] leading-6 text-sky-800 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-300">
                     <x-admin-panel::icon name="info" class="mt-0.5 size-4 shrink-0" />
                     <span>
-                        این گزینه به هیچ رویداد خاصی (مثل ثبت سفارش یا ورود کاربر) وابسته نیست. با فعال بودن آن، سامانه هر روز به‌صورت خودکار تاریخ تولد ثبت‌شده کاربران را بررسی می‌کند و برای کاربرانی که امروز تولدشان است، پیامک تبریک ارسال می‌شود. کد پترن مربوطه را در تب «ارائه‌دهنده و پترن‌ها» وارد کنید.
+                        این گزینه به هیچ رویداد خاصی (مثل ثبت سفارش یا ورود کاربر) وابسته نیست. با فعال بودن آن، سامانه هر روز به‌صورت خودکار تاریخ تولد ثبت‌شده کاربران را بررسی می‌کند و برای کاربرانی که امروز تولدشان است، پیامک تبریک ارسال می‌شود. کد پترن مربوطه را در تب «پترن‌های ارسال» وارد کنید.
                     </span>
                 </div>
             </div>
+
+            {{-- هشدار کاهش قیمت — فقط وقتی قابلیت در تنظیمات تم فعال باشد نمایش داده می‌شود (فاز ۸۷) --}}
+            @if ($this->priceAlertEnabled())
+                <div class="rounded-2xl border border-dashed border-rose-300 bg-rose-50/40 p-4 dark:border-rose-500/30 dark:bg-rose-500/5 sm:p-6" wire:key="sms-events-price-alert">
+                    <h3 class="mb-4 flex items-center gap-2 text-sm font-bold">
+                        <span class="flex size-8 items-center justify-center rounded-lg bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400">
+                            <x-admin-panel::icon name="bell-ring" class="size-4" />
+                        </span>
+                        هشدار کاهش قیمت
+                    </h3>
+                    <div class="space-y-2.5">
+                        @foreach ($this->toggleCards()['price_alert'] as $card)
+                            @include('admin-panel::livewire.admin.settings.partials.sms-switch', ['card' => $card])
+                        @endforeach
+                    </div>
+                    <div class="mt-3 flex items-start gap-2 rounded-xl border border-sky-200 bg-sky-50 p-3 text-[12px] leading-6 text-sky-800 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-300">
+                        <x-admin-panel::icon name="info" class="mt-0.5 size-4 shrink-0" />
+                        <span>
+                            با فعال بودن این گزینه، هر بار قیمت محصولی کاهش پیدا کند، به مشتریانی که از صفحهٔ محصول «هشدار کاهش قیمت» فعال کرده‌اند (کانال پیامک) پیامک ارسال می‌شود. کد پترن مربوطه را در تب «پترن‌های ارسال» (بخش هشدار کاهش قیمت) وارد کنید.
+                        </span>
+                    </div>
+                </div>
+            @endif
         </div>
 
         {{-- ============ تب ۳: ارائه‌دهنده و پترن‌ها ============ --}}
@@ -188,21 +211,31 @@
             @foreach (\App\Livewire\Admin\Settings\SmsSettings::providers() as $providerKey => $providerName)
                 <div x-show="provider === @js($providerKey)" x-cloak class="space-y-5" wire:key="sms-provider-{{ $providerKey }}">
 
-                    {{-- پترن‌ها — گروه‌بندی مثل قدیمی (اطلاعات اتصال از فاز ۱۸ به تب اول منتقل شد) --}}
-                    @foreach ([
-                        'پترن‌های ثبت‌نام و احراز هویت' => ['seller_register', 'user_register', 'user_verify'],
-                        'پترن‌های پرداخت سفارش' => ['order_paid', 'seller_order_paid', 'user_order_paid'],
-                        'پترن‌های لغو سفارش' => ['order_cancelled', 'seller_order_cancelled', 'user_order_cancelled'],
-                        'پترن‌های کیف پول' => ['wallet_refund', 'wallet_increase', 'wallet_decrease'],
-                        'پترن مناسبتی' => ['happy_birthday'],
-                    ] as $sectionTitle => $baseNames)
+                    {{-- پترن‌ها — گروه‌بندی مثل قدیمی (اطلاعات اتصال از فاز ۱۸ به تب اول منتقل شد)
+                         فاز ۸۷: بخش «هشدار کاهش قیمت» فقط وقتی قابلیت فعال باشد اضافه می‌شود --}}
+                    @php
+                        $patternSections = [
+                            'پترن‌های ثبت‌نام و احراز هویت' => ['seller_register', 'user_register', 'user_verify'],
+                            'پترن‌های پرداخت سفارش' => ['order_paid', 'seller_order_paid', 'user_order_paid'],
+                            'پترن‌های لغو سفارش' => ['order_cancelled', 'seller_order_cancelled', 'user_order_cancelled'],
+                            'پترن‌های کیف پول' => ['wallet_refund', 'wallet_increase', 'wallet_decrease'],
+                            'پترن مناسبتی' => ['happy_birthday'],
+                        ];
+                        if ($this->priceAlertEnabled()) {
+                            $patternSections['پترن هشدار کاهش قیمت'] = ['price_alert'];
+                        }
+                    @endphp
+                    @foreach ($patternSections as $sectionTitle => $baseNames)
                         @php
                             $sectionPatterns = [];
                             foreach ($baseNames as $baseName) {
-                                $patternKey = $providerKey === 'ippanel'
-                                    ? ($baseName === 'happy_birthday' ? 'happy_birthday_pattern_code_ippanel'
-                                        : (in_array($baseName, ['wallet_increase', 'wallet_decrease']) ? $baseName.'_pattern_code_ippanel' : $baseName.'_pattern_code'))
-                                    : $baseName.'_pattern_code_'.$providerKey;
+                                // پترن‌های بدون پسوند ارائه‌دهنده (فاز ۸۷): price_alert برای همهٔ سرویس‌ها کلید یکسان دارد
+                                $patternKey = in_array($baseName, ['price_alert'])
+                                    ? $baseName.'_pattern_code'
+                                    : ($providerKey === 'ippanel'
+                                        ? ($baseName === 'happy_birthday' ? 'happy_birthday_pattern_code_ippanel'
+                                            : (in_array($baseName, ['wallet_increase', 'wallet_decrease']) ? $baseName.'_pattern_code_ippanel' : $baseName.'_pattern_code'))
+                                        : $baseName.'_pattern_code_'.$providerKey);
                                 $meta = $this->patternMeta($providerKey, $patternKey);
                                 if ($meta) {
                                     $sectionPatterns[] = ['key' => $patternKey, 'meta' => $meta];

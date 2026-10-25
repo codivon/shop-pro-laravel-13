@@ -112,7 +112,7 @@
                                 </button>
                             @endunless
 
-                            @php($notification_link = notification_link($notification))
+                            @php($notification_link = \App\Support\AdminNotificationTypes::npLink($notification))
                             @if ($notification_link)
                                 <a href="{{ $notification_link }}" wire:navigate
                                    class="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-brand-600 transition-colors hover:bg-brand-50 dark:hover:bg-brand-500/10">
