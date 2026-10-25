@@ -44,9 +44,9 @@
             </li>--}}
 
 
-            {{-- Hook برای نمایش اطلاعات اقساط در sidebar --}}
-            @if(function_exists('module_is_active') && module_is_active('InstallmentPayment'))
-                @include('installment-payment::front.sidebar_hook')
+            {{-- Hook برای نمایش اطلاعات اقساط در sidebar — فاز ۸۸: پکیج ادغامی CreditPay جایگزین پکیج قدیمی اقساطی شد --}}
+            @if(function_exists('module_is_active') && module_is_active('CreditPay'))
+                @include('credit-pay::front.installment_sidebar_hook')
             @endif
 
             @if(function_exists('module_is_active') && module_is_active('CreditPay'))

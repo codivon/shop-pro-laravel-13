@@ -305,22 +305,19 @@ class Phase86Test extends TestCase
     }
 
     #[Test]
-    #[TestDox('بند ۵ — متغیرهای الگو در placeholder از اکو خارج شده‌اند و دست‌نخورده می‌مانند')]
+    #[TestDox('بند ۵ — فرم ساخت کمپین (نسخهٔ پترن‌محور فاز ۸۷ب): کامپایل سالم + فیلد کد پترن بدون اکوی تودرتوی الگو')]
     public function template_variables_survive_blade_compilation(): void
     {
         $this->requireMM();
 
-        [$compiled] = $this->compileAndLint('marketing-messaging::back.campaigns.create');
+        [$compiled, $exitCode] = $this->compileAndLint('marketing-messaging::back.campaigns.create');
+        $this->assertSame(0, $exitCode, 'کامپایل/پارس فرم ساخت کمپین شکست خورد.');
 
-        // نمونهٔ متغیرهای الگو باید «عین متن» در خروجی کامپایل باقی بماند
-        $this->assertStringContainsString('مثال: {{name}} عزیز، {{store}}', $compiled);
+        // فاز ۸۷ب — به‌جای «متن مرجع پیام»، فیلد «کد پترن پیامک» آمده است
+        $this->assertStringContainsString('pattern_code', $compiled);
 
-        // و دیگر نباید نشانهٔ قطع‌شدن تطبیق (اکوی نیمه‌کاره) در خروجی باشد
-        $this->assertStringNotContainsString("?? 'مثال: {{name", $compiled);
-
-        // خودِ ویو باید مثال را از متغیر @php بگیرد نه از اکوی تودرتو
-        $source = (string) file_get_contents(view('marketing-messaging::back.campaigns.create')->getPath());
-        $this->assertStringContainsString('$mmExampleMessage', $source);
+        // نشانهٔ قطع‌شدن تطبیق (اکوی نیمه‌کاره) نباید در خروجی باشد
+        $this->assertStringNotContainsString("?? 'مثال:", $compiled);
     }
 
     #[Test]
@@ -479,13 +476,13 @@ class Phase86Test extends TestCase
     /* ================= ۶-مکمل) نسخهٔ پکیج مارکتینگ ================= */
 
     #[Test]
-    #[TestDox('پکیج مارکتینگ: نسخهٔ ۱.۱.۰ با هویت فاز ۸۶')]
+    #[TestDox('پکیج مارکتینگ: نسخهٔ ۱.۳.۰ با هویت ثابت (فاز ۸۷ب/۸۸ — پترن‌محور شدن)')]
     public function marketing_version_bumped(): void
     {
         $dir = $this->requireMM();
 
         $manifest = json_decode((string) file_get_contents($dir.'/module.json'), true);
-        $this->assertSame('1.1.0', $manifest['version'] ?? null);
+        $this->assertGreaterThanOrEqual('1.3.0', $manifest['version'] ?? null, 'نسخهٔ پکیج مارکتینگ باید ۱.۳.۰ یا بالاتر باشد.');
         $this->assertSame('MarketingMessaging', $manifest['name'] ?? null);
         $this->assertSame('مارکتینگ و پیام‌رسانی', $manifest['title'] ?? null);
     }

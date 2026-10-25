@@ -99,13 +99,11 @@
             @foreach ($orders as $order)
 
                 @php
-                    // بررسی نوع پرداخت
+                    // بررسی نوع پرداخت — فاز ۸۸: پکیج ادغامی CreditPay (پرداخت قسطی و اعتباری) جایگزین پکیج قدیمی اقساطی شد
                     $isInstallment = false;
                     $isCredit = false;
-                    if (function_exists('module_is_active') && module_is_active('InstallmentPayment')) {
-                        $isInstallment = \Modules\InstallmentPayment\Models\InstallmentPlan::where('order_id', $order->id)->exists();
-                    }
                     if (function_exists('module_is_active') && module_is_active('CreditPay')) {
+                        $isInstallment = \Modules\CreditPay\Models\InstallmentPlan::where('order_id', $order->id)->exists();
                         $isCredit = \Modules\CreditPay\Models\CreditOrder::where('order_id', $order->id)->exists();
                     }
 

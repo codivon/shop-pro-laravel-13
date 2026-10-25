@@ -1,8 +1,8 @@
 @extends('back.layouts.master')
 
 @push('styles')
-    @if(function_exists('module_is_active') && module_is_active('InstallmentPayment'))
-        <link rel="stylesheet" href="{{ module_asset('InstallmentPayment', 'css/installment.css') }}">
+    @if(function_exists('module_is_active') && module_is_active('CreditPay'))
+        <link rel="stylesheet" href="{{ module_asset('CreditPay', 'css/installment.css') }}">
     @endif
 @endpush
 
@@ -56,7 +56,7 @@
                                         تعداد محصولات سفارشات
                                     </a>
                                 </li>
-                                @if(function_exists('module_is_active') && module_is_active('InstallmentPayment'))
+                                @if(function_exists('module_is_active') && module_is_active('CreditPay'))
                                     <li class="nav-item" role="presentation">
                                         <a class="nav-link" data-toggle="tab" href="#order-installments" role="tab" aria-controls="order-installments" aria-selected="false">
                                             <i class="fas fa-money-check-alt"></i> خریدهای قسطی
@@ -156,9 +156,9 @@
                                 </div>
 
                                 {{-- ======== تب خریدهای قسطی ======== --}}
-                                @if(function_exists('module_is_active') && module_is_active('InstallmentPayment'))
+                                @if(function_exists('module_is_active') && module_is_active('CreditPay'))
                                     <div class="tab-pane fade" id="order-installments" role="tabpanel" aria-labelledby="installment">
-                                        @include('installment-payment::back.statistics.filter-tabs')
+                                        @include('credit-pay::back.statistics.filter-tabs')
 
                                         {{-- نمودار ارزش طرح‌های اقساطی --}}
                                         <h6 class="mt-3 mb-2"><i class="fas fa-chart-line text-primary"></i> ارزش طرح‌های اقساطی</h6>
@@ -232,9 +232,9 @@
 
 @include('back.partials.plugins', ['plugins' => ['apexcharts', 'persian-datepicker']])
 
-@if(function_exists('module_is_active') && module_is_active('InstallmentPayment'))
+@if(function_exists('module_is_active') && module_is_active('CreditPay'))
     @push('scripts')
-        <script src="{{ module_asset('InstallmentPayment', 'js/statistics.js') }}?v=1"></script>
+        <script src="{{ module_asset('CreditPay', 'js/installment_statistics.js') }}?v=1"></script>
     @endpush
 @endif
 

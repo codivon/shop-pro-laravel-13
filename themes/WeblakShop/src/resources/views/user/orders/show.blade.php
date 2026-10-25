@@ -99,10 +99,10 @@
             }
         }
 
-        // ========== بررسی اقساطی ==========
+        // ========== بررسی اقساطی — فاز ۸۸: پکیج ادغامی CreditPay (پرداخت قسطی و اعتباری) جایگزین پکیج قدیمی اقساطی شد ==========
         $installmentPlan = null;
-        if (function_exists('module_is_active') && module_is_active('InstallmentPayment')) {
-            $installmentPlan = \Modules\InstallmentPayment\Models\InstallmentPlan::where('order_id', $order->id)->first();
+        if (function_exists('module_is_active') && module_is_active('CreditPay')) {
+            $installmentPlan = \Modules\CreditPay\Models\InstallmentPlan::where('order_id', $order->id)->first();
         }
         $isInstallment = (bool) $installmentPlan;
         $displayPayable = $isInstallment ? $installmentPlan->down_payment : $finalPayable;
@@ -286,7 +286,7 @@
 
                         {{-- ======== نمایش اطلاعات طرح اقساطی ======== --}}
                         @if($isInstallment)
-                            @include('installment-payment::front.order_installment_info', ['order' => $order])
+                            @include('credit-pay::front.order_installment_info', ['order' => $order])
                         @endif
 
                         {{-- دکمه پرداخت سفارش --}}

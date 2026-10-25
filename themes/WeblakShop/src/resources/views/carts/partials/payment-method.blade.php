@@ -3,9 +3,9 @@
 @endphp
 
 <div  class=" shopping-page">
-    {{-- Hook برای پرداخت اقساطی --}}
-    @if(module_is_ready('InstallmentPayment', ['installment_excluded_products']))
-        @include('installment-payment::front.checkout_hook', ['cart' => $cart])
+    {{-- Hook برای پرداخت اقساطی — فاز ۸۸: پکیج ادغامی CreditPay (پرداخت قسطی و اعتباری) جایگزین پکیج قدیمی اقساطی شد --}}
+    @if(module_is_ready('CreditPay', ['installment_excluded_products']))
+        @include('credit-pay::front.installment_checkout_hook', ['cart' => $cart])
     @endif
 
     @if(module_is_ready('CreditPay', ['credit_product_markups']))

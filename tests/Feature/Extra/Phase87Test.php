@@ -293,6 +293,11 @@ class Phase87Test extends TestCase
         \Illuminate\Support\Facades\DB::statement('DROP TABLE IF EXISTS digipay_transactions');
         \Illuminate\Support\Facades\DB::table('migrations')->where('migration', 'like', '%create_digipay_%')->delete();
         \Illuminate\Support\Facades\DB::table('migrations')->where('migration', 'like', '%digipay_transactions_table%')->delete();
+
+        // فاز ۸۸ — بازسازی فوری جدول‌های digipay_*: چون DDL داخل DatabaseTransactions
+        // implicit-commit می‌شود، اگر همین‌جا migrate نکنیم، تست‌های «بعدی» در اجرای
+        // کامل سوت با جدول حذف‌شدهٔ digipay_settings مواجه می‌شوند (خطای 42S02).
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
     }
 
     /* ================= ۳) صفحات ادمین + منو ================= */

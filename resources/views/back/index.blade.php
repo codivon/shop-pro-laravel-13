@@ -110,7 +110,7 @@
                                         <button class="d-tab" data-toggle="tab" data-target="#order-products" role="tab" type="button">
                                             <i class="feather icon-package"></i> محصولات
                                         </button>
-                                        @if(function_exists('module_is_active') && module_is_active('InstallmentPayment'))
+                                        @if(function_exists('module_is_active') && module_is_active('CreditPay'))
                                             <button class="d-tab" data-toggle="tab" data-target="#order-installments" role="tab" type="button">
                                                 <i class="fas fa-money-check-alt"></i> اقساطی
                                             </button>
@@ -211,9 +211,9 @@
                                         </div>
 
                                         {{-- Installments Tab --}}
-                                        @if(function_exists('module_is_active') && module_is_active('InstallmentPayment'))
+                                        @if(function_exists('module_is_active') && module_is_active('CreditPay'))
                                             <div class="tab-pane fade" id="order-installments" role="tabpanel">
-                                                @include('installment-payment::back.statistics.filter-tabs')
+                                                @include('credit-pay::back.statistics.filter-tabs')
                                                 <div id="installment-plan-values-chart" class="chart-area" style="min-height:445px;" data-min-height="445px" data-action="{{ route('admin.installment.statistics.planValues') }}"></div>
                                                 <div class="d-chart-stats d-chart-stats--4">
                                                     <div class="d-chart-stat">
@@ -749,9 +749,9 @@
 
 @include('back.partials.plugins', ['plugins' => ['apexcharts', 'persian-datepicker']])
 
-@if(function_exists('module_is_active') && module_is_active('InstallmentPayment'))
+@if(function_exists('module_is_active') && module_is_active('CreditPay'))
     @push('scripts')
-        <script src="{{ module_asset('InstallmentPayment', 'js/statistics.js') }}?v=1"></script>
+        <script src="{{ module_asset('CreditPay', 'js/installment_statistics.js') }}?v=1"></script>
     @endpush
 @endif
 
