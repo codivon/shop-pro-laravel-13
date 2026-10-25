@@ -128,13 +128,6 @@ return [
                             'permission' => 'products.stock-notify',
                             'icon' => 'bell-ring',
                         ],
-                        // فاز ۸۱ — منوی هشدار کاهش قیمت (صفحه از قبل وجود داشت؛ آیتم منو جا افتاده بود)
-                        [
-                            'label' => 'هشدار کاهش قیمت',
-                            'route' => 'np.price-alerts.index',
-                            'permission' => 'products.price-alert',
-                            'icon' => 'trending-down',
-                        ],
                         [
                             'label' => 'قیمت‌ها',
                             'route' => 'np.products.prices',
@@ -805,6 +798,15 @@ return [
                             'route' => 'np.notifications.index',
                             'permission' => 'notifications',
                             'icon' => 'settings-2',
+                        ],
+                        // فاز ۸۳ — به درخواست کاربر: لیست مشتری‌های هشدار قیمت زیرمنوی «اعلان‌ها»؛
+                        // فقط وقتی قابلیت از تنظیمات (dt_price_alert_status) فعال باشد
+                        [
+                            'label' => 'هشدار کاهش قیمت',
+                            'route' => 'np.price-alerts.index',
+                            'permission' => 'products.price-alert',
+                            'icon' => 'trending-down',
+                            'enabled' => 'dt_price_alert_status',
                         ],
                     ],
                 ],

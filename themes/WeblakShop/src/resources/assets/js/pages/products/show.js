@@ -192,54 +192,12 @@ function sendStockNotify() {
 
 $(document).on('click', '#sendStockNotifyBtn', sendStockNotify);
 
-// ---------- فاز ۷۸/۸۱: هشدار کاهش قیمت (binding delegated) ----------
-$(document).on('click', '#price_alert_btn', function () {
-    var btn = this;
-
-    if ($(btn).data('user')) {
-        sendPriceAlert();
-    } else {
-        $('#modal-price-alert').modal('show');
-    }
-});
-
-function sendPriceAlert() {
-    var btn = $('#price_alert_btn');
-
-    if ($(btn).data('user')) {
-        var data = {
-            product_id: $(btn).data('product')
-        };
-    } else {
-        var data = {
-            product_id: $(btn).data('product'),
-            name: $('#price-alert-name').val(),
-            mobile: $('#price-alert-mobile').val()
-        };
-    }
-
-    $.ajax({
-        type: 'POST',
-        url: BASE_URL + '/price-alert',
-        data: data,
-        success: function () {
-            $('#modal-price-alert').modal('hide');
-            showCustomToast('هشدار کاهش قیمت برای این محصول ثبت شد.', 'success')
-        },
-        beforeSend: function (xhr) {
-            xhr.setRequestHeader(
-                'X-CSRF-TOKEN',
-                $('meta[name="csrf-token"]').attr('content')
-            );
-            block(btn);
-        },
-        complete: function () {
-            unblock(btn);
-        }
-    });
-}
-
-$(document).on('click', '#sendPriceAlertBtn', sendPriceAlert);
+/*
+ * فاز ۸۳ — منطق «هشدار کاهش قیمت» از این فایل به show.blade.php منتقل شد
+ * (CSS + JS اینلاین) تا مستقل از کپی assetها روی هر هاستی به‌روز بماند.
+ * آی‌دی دکمه از price_alert_btn به dt_price_alert_btn تغییر کرد؛ بایندهای
+ * قدیمی این فایل برای آن دیگر وجود ندارد.
+ */
 
 // product prices js codes
 

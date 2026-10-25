@@ -425,13 +425,7 @@
                             </li>
                         @endcan
 
-                        @can('products.price-alert')
-                            <li class="{{ active_class('admin.price-alerts.index') }}">
-                                <a href="{{ route('admin.price-alerts.index') }}"><i
-                                        class="fa-solid fa-circle"></i><span
-                                        class="menu-item">هشدار کاهش قیمت</span></a>
-                            </li>
-                        @endcan
+                        {{-- فاز ۸۳ — «هشدار کاهش قیمت» به زیرمنوی «اعلان‌ها» منتقل شد (درخواست کاربر) --}}
 
                         @can('products.prices')
                             <li class="{{ active_class('admin.product.prices.index') }}">
@@ -1072,6 +1066,16 @@
                                         class="menu-item">مدیریت اعلان ها</span></a>
                             </li>
                         @endcan
+                        {{-- فاز ۸۳ — لیست مشتری‌های هشدار کاهش قیمت؛ فقط وقتی قابلیت از تنظیمات فعال باشد --}}
+                        @if(option('dt_price_alert_status', '1') == '1')
+                            @can('products.price-alert')
+                                <li class="{{ active_class('admin.price-alerts.index') }}">
+                                    <a href="{{ route('admin.price-alerts.index') }}"><i
+                                            class="fa-solid fa-circle"></i><span
+                                            class="menu-item">هشدار کاهش قیمت</span></a>
+                                </li>
+                            @endcan
+                        @endif
                     </ul>
                 </li>
             @endif

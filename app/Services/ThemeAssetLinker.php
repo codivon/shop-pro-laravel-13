@@ -112,7 +112,14 @@ class ThemeAssetLinker
 
         if (is_dir($target)) {
             File::copyDirectory($target, $link);
-            @file_put_contents($link.'/'.self::COPY_MARKER, 'symlink/exec unavailable on this host — real copy created by ThemeAssetLinker (Phase 65)');
+
+            /*
+             * فاز ۸۳ — مارکر حالا «مُهر زمانی» هم دارد:
+             * بیشترین mtime منبع در لحظهٔ کپی. ThemeAssetSync با مقایسهٔ
+             * این عدد و mtime فعلیِ منبع، کهنگیِ کپی را بدون اسکن لینک تشخیص می‌دهد.
+             * (مارکرهای متنی قدیمی به‌صورت (int) صفر خوانده می‌شوند → یک‌بار نوسازی خودکار)
+             */
+            @file_put_contents($link.'/'.self::COPY_MARKER, (string) ThemeAssetSync::maxMtime($target));
         } else {
             File::copy($target, $link);
         }

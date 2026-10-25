@@ -653,6 +653,16 @@ class SettingController extends Controller
                 $value = $defaultFeatureValues[$key];
             }
 
+            // فاز ۸۳ — نرمال‌سازی فیلدهای شخصی‌سازی هشدار قیمت (هم‌قرارداد با پنل جدید)
+            $value = match ($key) {
+                'dt_price_alert_button_color'     => in_array($value, ['red', 'orange', 'green', 'teal', 'purple', 'dark'], true) ? $value : 'red',
+                'dt_price_alert_button_size'      => in_array($value, ['sm', 'md', 'lg'], true) ? $value : 'md',
+                'dt_price_alert_button_placement' => in_array($value, ['below-cart', 'above-cart', 'under-price'], true) ? $value : 'below-cart',
+                'dt_price_alert_button_radius'    => (string) min(30, max(0, (int) $value)),
+                'dt_price_alert_channels'         => in_array($value, ['sms,profile', 'sms', 'profile'], true) ? $value : 'sms,profile',
+                default                           => $value,
+            };
+
             // تبدیل مقادیر boolean برای مقایسه بهتر
             $normalizedOld = $oldValue;
             $normalizedNew = $value;
@@ -764,6 +774,14 @@ class SettingController extends Controller
             'dt_price_alert_status' => 'قابلیت هشدار کاهش قیمت',
             'dt_price_alert_button_text' => 'متن دکمه هشدار کاهش قیمت',
             'dt_price_alert_button_icon' => 'آیکون دکمه هشدار کاهش قیمت',
+            // فاز ۸۳ — شخصی‌سازی کامل
+            'dt_price_alert_button_color' => 'رنگ دکمه هشدار کاهش قیمت',
+            'dt_price_alert_button_size' => 'اندازه دکمه هشدار کاهش قیمت',
+            'dt_price_alert_button_radius' => 'گردی گوشه‌های دکمه هشدار کاهش قیمت',
+            'dt_price_alert_button_placement' => 'موقعیت دکمه هشدار کاهش قیمت',
+            'dt_price_alert_modal_title' => 'عنوان مودال هشدار کاهش قیمت',
+            'dt_price_alert_modal_desc' => 'توضیح مودال هشدار کاهش قیمت',
+            'dt_price_alert_channels' => 'راه‌های اطلاع‌رسانی هشدار کاهش قیمت',
             'dt_pre_order_status' => 'قابلیت پیش‌فروش محصولات',
             'dt_pre_order_button_text' => 'متن دکمه پیش‌فروش',
             'dt_pre_order_badge_text' => 'متن نشان پیش‌فروش',

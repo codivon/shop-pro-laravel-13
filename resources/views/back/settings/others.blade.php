@@ -367,6 +367,71 @@
                                                     </div>
                                                 </div>
 
+                                                {{-- فاز ۸۳ — شخصی‌سازی کامل (هم‌قرارداد با پنل جدید) --}}
+                                                <div class="row">
+                                                    <div class="col-md-3 col-12">
+                                                        <div class="form-group">
+                                                            <label>رنگ دکمه</label>
+                                                            <select name="dt_price_alert_button_color" class="form-control">
+                                                                @foreach(['red' => 'قرمز', 'orange' => 'نارنجی', 'green' => 'سبز', 'teal' => 'فیروزه‌ای', 'purple' => 'بنفش', 'dark' => 'سرمه‌ای'] as $cKey => $cLabel)
+                                                                    <option value="{{ $cKey }}" {{ option('dt_price_alert_button_color', 'red') === $cKey ? 'selected' : '' }}>{{ $cLabel }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3 col-12">
+                                                        <div class="form-group">
+                                                            <label>اندازه دکمه</label>
+                                                            <select name="dt_price_alert_button_size" class="form-control">
+                                                                <option value="sm" {{ option('dt_price_alert_button_size', 'md') === 'sm' ? 'selected' : '' }}>کوچک</option>
+                                                                <option value="md" {{ option('dt_price_alert_button_size', 'md') === 'md' ? 'selected' : '' }}>متوسط</option>
+                                                                <option value="lg" {{ option('dt_price_alert_button_size', 'md') === 'lg' ? 'selected' : '' }}>بزرگ</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3 col-12">
+                                                        <div class="form-group">
+                                                            <label>گردی گوشه‌ها (۰ تا ۳۰ پیکسل)</label>
+                                                            <input type="number" name="dt_price_alert_button_radius" min="0" max="30" class="form-control ltr fa-digits" value="{{ option('dt_price_alert_button_radius', '10') }}">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3 col-12">
+                                                        <div class="form-group">
+                                                            <label>موقعیت دکمه</label>
+                                                            <select name="dt_price_alert_button_placement" class="form-control">
+                                                                <option value="below-cart" {{ option('dt_price_alert_button_placement', 'below-cart') === 'below-cart' ? 'selected' : '' }}>زیر دکمهٔ خرید</option>
+                                                                <option value="above-cart" {{ option('dt_price_alert_button_placement', 'below-cart') === 'above-cart' ? 'selected' : '' }}>بالای دکمهٔ خرید</option>
+                                                                <option value="under-price" {{ option('dt_price_alert_button_placement', 'below-cart') === 'under-price' ? 'selected' : '' }}>چسبیده به قیمت</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6 col-12">
+                                                        <div class="form-group">
+                                                            <label>عنوان مودال</label>
+                                                            <input type="text" name="dt_price_alert_modal_title" class="form-control" value="{{ option('dt_price_alert_modal_title') }}" placeholder="هشدار کاهش قیمت">
+                                                            <div class="hint-text"><i class="feather icon-info"></i> خالی بماند = پیش‌فرض «هشدار کاهش قیمت».</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6 col-12">
+                                                        <div class="form-group">
+                                                            <label>راه‌های اطلاع‌رسانی مجاز</label>
+                                                            <select name="dt_price_alert_channels" class="form-control">
+                                                                <option value="sms,profile" {{ option('dt_price_alert_channels', 'sms,profile') === 'sms,profile' ? 'selected' : '' }}>پیامک + اعلان پروفایل</option>
+                                                                <option value="sms" {{ option('dt_price_alert_channels', 'sms,profile') === 'sms' ? 'selected' : '' }}>فقط پیامک</option>
+                                                                <option value="profile" {{ option('dt_price_alert_channels', 'sms,profile') === 'profile' ? 'selected' : '' }}>فقط اعلان پروفایل</option>
+                                                            </select>
+                                                            <div class="hint-text"><i class="feather icon-info"></i> مشتری در مودال انتخاب می‌کند؛ مهمان فقط پیامک می‌گیرد.</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <div class="form-group">
+                                                            <label>متن توضیح مودال</label>
+                                                            <textarea name="dt_price_alert_modal_desc" rows="2" class="form-control" placeholder="به‌محض اینکه قیمت این محصول کمتر شد، همان لحظه به شما خبر می‌دهیم.">{{ option('dt_price_alert_modal_desc') }}</textarea>
+                                                            <div class="hint-text"><i class="feather icon-info"></i> خالی بماند = متن پیش‌فرض توضیح قابلیت.</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
                                                 <div class="sub-divider">پیش‌فروش</div>
                                                 <div class="row">
                                                     <div class="col-md-3 col-12">

@@ -10,12 +10,16 @@ use Illuminate\Validation\Rule;
 
 /**
  * فاز ۷۸ — اشتراک هشدار کاهش قیمت (کاربر یا مهمان با موبایل).
+ * فاز ۸۳ — انتخاب کانال اطلاع‌رسانی: پیامک و/یا اعلان پروفایل.
+ *   - کانال‌های مجاز از تنظیمات سایت (dt_price_alert_channels) می‌آید.
+ *   - مهمان فقط پیامک می‌گیرد (اعلان پروفایل مخصوص کاربر عضو است).
+ *   - پاسخ JSON تا مودال مدرن فرانت بتواند وضعیت موفقیت/خطا را نمایش دهد.
  */
 class PriceAlertController extends Controller
 {
     public function store(Request $request)
     {
-        // فاز ۸۱ — قابلیت از تنظیمات تم غیرفعال شده است
+        // فاز ۸۱ — قابلیت از تنظیمات سایت غیرفعال شده است
         abort_if(option('dt_price_alert_status', '1') != '1', 404);
 
         $this->validate($request, [
@@ -30,6 +34,14 @@ class PriceAlertController extends Controller
             ->where('status', 'Accept')
             ->firstOrFail();
 
+        // فاز ۸۳ — کانال‌های مجاز از تنظیمات سایت («هر دو» پیش‌فرض)
+        $allowed = $this->allowedChannels();
+
+        $channels = $request->input('channels');
+        $channels = is_array($channels) ? $channels : (! empty($channels) ? [$channels] : $allowed);
+        $channels = array_values(array_unique(array_intersect($channels, $allowed)));
+
+        // کاربر عضو یا مهمان؟
         if (auth()->check()) {
             $user   = auth()->user();
             $mobile = $user->mobile ?: $user->username;
@@ -46,21 +58,41 @@ class PriceAlertController extends Controller
             $userId = null;
         }
 
+        // فاز ۸۳ — قاعده‌های کانال: مهمان فقط پیامک؛ اگر پیامک در کانال‌های مجاز نیست،
+        // اشتراکِ بدون هیچ کانالی بی‌معناست → خطا
+        if (! in_array('sms', $allowed, true) && ! $userId) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'اطلاع‌رسانی این قابلیت فقط از طریق اعلان پروفایل است؛ لطفاً وارد حساب کاربری شوید.',
+            ], 422);
+        }
+
+        if (! $userId) {
+            $channels = ['sms'];
+        } elseif (empty($channels)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'حداقل یکی از راه‌های اطلاع‌رسانی را انتخاب کنید.',
+            ], 422);
+        }
+
         PriceAlert::updateOrCreate(
             [
                 'product_id' => $product->id,
                 'mobile'     => $mobile,
             ],
             [
-                'user_id'      => $userId,
-                'name'         => $name,
-                'target_price' => $this->currentBuyablePrice($product),
-                'active'       => true,
-                'notified_at'  => null,
+                'user_id'        => $userId,
+                'name'           => $name,
+                'target_price'   => $this->currentBuyablePrice($product),
+                'notify_sms'     => in_array('sms', $channels, true),
+                'notify_profile' => $userId && in_array('profile', $channels, true),
+                'active'         => true,
+                'notified_at'    => null,
             ]
         );
 
-        return response('success');
+        return response()->json(['status' => 'ok']);
     }
 
     public function destroy(Request $request)
@@ -83,6 +115,29 @@ class PriceAlertController extends Controller
             ->delete();
 
         return response('success');
+    }
+
+    /**
+     * فاز ۸۳ — کانال‌های اطلاع‌رسانی مجاز از تنظیمات سایت.
+     * مقادیر ممکن dt_price_alert_channels: «sms,profile» | «sms» | «profile»
+     * خالی/نامعتبر = هر دو (پیش‌فرض).
+     */
+    private function allowedChannels(): array
+    {
+        $raw = trim((string) option('dt_price_alert_channels', 'sms,profile'));
+
+        if ($raw === '') {
+            return ['sms', 'profile'];
+        }
+
+        $channels = collect(explode(',', $raw))
+            ->map(fn ($c) => trim(strtolower($c)))
+            ->filter(fn ($c) => in_array($c, ['sms', 'profile'], true))
+            ->unique()
+            ->values()
+            ->all();
+
+        return $channels ?: ['sms', 'profile'];
     }
 
     /**

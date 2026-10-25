@@ -35,6 +35,15 @@ class ThemeServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // فاز ۸۳ — اگر دارایی‌های تم روی هاست «کپی واقعی» است (بدون symlink) و
+        // منبع بعد از git pull جدیدتر شده، خودکار نوسازی می‌شود (اسکن کش‌شده؛
+        // پس از optimize:clear اولین بازدید تازه‌سازی می‌کند) — بدون shop:link دستی
+        try {
+            \App\Services\ThemeAssetSync::syncIfStale(basename(realpath(__DIR__.'/..')));
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         // load routes
 
         Route::group([

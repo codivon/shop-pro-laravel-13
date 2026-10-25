@@ -18,8 +18,10 @@ class PriceAlert extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'active'      => 'boolean',
-        'notified_at' => 'datetime',
+        'active'         => 'boolean',
+        'notified_at'    => 'datetime',
+        'notify_sms'     => 'boolean',
+        'notify_profile' => 'boolean',
     ];
 
     public function product()

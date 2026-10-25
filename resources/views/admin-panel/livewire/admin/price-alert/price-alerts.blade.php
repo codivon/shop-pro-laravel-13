@@ -1,4 +1,4 @@
-{{-- لیست هشدارهای کاهش قیمت — پورت back/price-alerts/index.blade.php — پنل جدید (فاز ۷۸) --}}
+{{-- لیست هشدارهای کاهش قیمت — پورت back/price-alerts/index.blade.php — پنل جدید (فاز ۷۸) — فاز ۸۳: تب‌های فیلتر + نوع مشتری + کانال‌ها --}}
 <div class="mx-auto max-w-7xl space-y-5">
 
     {{-- سربرگ --}}
@@ -7,6 +7,34 @@
             <span class="ap-badge bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-400">
                 کل هشدارها: <span class="fa-digits">{{ number_format($this->totalCount) }}</span>
             </span>
+        </div>
+
+        {{-- فاز ۸۳ — تب‌های فیلتر وضعیت --}}
+        <div class="flex items-center gap-1 rounded-xl border border-line bg-surface-2 p-1 dark:border-night-line dark:bg-night-3/60" role="tablist" aria-label="فیلتر وضعیت">
+            <button type="button" wire:click="setFilter('all')"
+                    @class([
+                        'rounded-lg px-3 py-1.5 text-xs font-bold transition-colors',
+                        'bg-brand-600 text-white shadow-sm' => $filter === 'all',
+                        'text-ink-3 hover:text-ink-2 dark:text-night-ink-2' => $filter !== 'all',
+                    ]) role="tab" aria-selected="{{ $filter === 'all' ? 'true' : 'false' }}">
+                همه <span class="fa-digits opacity-75">({{ number_format($this->totalCount) }})</span>
+            </button>
+            <button type="button" wire:click="setFilter('active')"
+                    @class([
+                        'rounded-lg px-3 py-1.5 text-xs font-bold transition-colors',
+                        'bg-brand-600 text-white shadow-sm' => $filter === 'active',
+                        'text-ink-3 hover:text-ink-2 dark:text-night-ink-2' => $filter !== 'active',
+                    ]) role="tab" aria-selected="{{ $filter === 'active' ? 'true' : 'false' }}">
+                در انتظار افت قیمت <span class="fa-digits opacity-75">({{ number_format($this->activeCount) }})</span>
+            </button>
+            <button type="button" wire:click="setFilter('notified')"
+                    @class([
+                        'rounded-lg px-3 py-1.5 text-xs font-bold transition-colors',
+                        'bg-brand-600 text-white shadow-sm' => $filter === 'notified',
+                        'text-ink-3 hover:text-ink-2 dark:text-night-ink-2' => $filter !== 'notified',
+                    ]) role="tab" aria-selected="{{ $filter === 'notified' ? 'true' : 'false' }}">
+                اطلاع‌داده‌شده <span class="fa-digits opacity-75">({{ number_format($this->notifiedCount) }})</span>
+            </button>
         </div>
     </div>
 
@@ -18,8 +46,9 @@
                     <tr class="border-b border-line bg-surface-2 text-ink-2 dark:border-night-line dark:bg-night-3">
                         <th class="w-16 px-3 py-3 text-start font-bold">ID</th>
                         <th class="px-3 py-3 text-start font-bold">محصول</th>
-                        <th class="px-3 py-3 text-start font-bold">نام</th>
+                        <th class="px-3 py-3 text-start font-bold">مشتری</th>
                         <th class="w-36 px-3 py-3 text-start font-bold">شماره موبایل</th>
+                        <th class="w-40 px-3 py-3 text-start font-bold">راه اطلاع‌رسانی</th>
                         <th class="w-36 px-3 py-3 text-start font-bold">قیمت هدف</th>
                         <th class="w-32 px-3 py-3 text-start font-bold">وضعیت</th>
                         <th class="w-28 px-3 py-3 text-start font-bold">تاریخ</th>
@@ -43,9 +72,36 @@
                                 </span>
                             </td>
                             <td class="max-w-36 px-3 py-3">
-                                <p class="truncate font-semibold">{{ $priceAlert->name ?? '—' }}</p>
+                                {{-- فاز ۸۳ — نوع مشتری (عضو/مهمان) + نام --}}
+                                @if ($priceAlert->user_id)
+                                    <span class="flex items-center gap-1.5">
+                                        <span class="ap-badge bg-sky-50 text-sky-700 dark:bg-sky-500/12 dark:text-sky-400" title="کاربر عضو">
+                                            <x-admin-panel::icon name="user-round" class="size-3" />
+                                            عضو
+                                        </span>
+                                    </span>
+                                    <p class="mt-0.5 truncate text-[11.5px] font-semibold text-ink-2 dark:text-night-ink">{{ $priceAlert->name ?? ($priceAlert->user->fullname ?? '—') }}</p>
+                                @else
+                                    <span class="ap-badge bg-slate-100 text-slate-600 dark:bg-slate-500/12 dark:text-slate-400" title="مهمان (بدون ثبت‌نام)">
+                                        <x-admin-panel::icon name="user-round" class="size-3" />
+                                        مهمان
+                                    </span>
+                                    @if ($priceAlert->name)
+                                        <p class="mt-0.5 truncate text-[11.5px] font-semibold text-ink-2 dark:text-night-ink">{{ $priceAlert->name }}</p>
+                                    @endif
+                                @endif
                             </td>
                             <td class="px-3 py-3 fa-digits" dir="ltr">{{ $priceAlert->mobile }}</td>
+                            <td class="px-3 py-3">
+                                {{-- فاز ۸۳ — کانال‌های انتخابی مشتری --}}
+                                <span class="flex flex-wrap gap-1">
+                                    @foreach ($this->channelsLabel($priceAlert) as $channelLabel)
+                                        <span class="ap-badge {{ $channelLabel === 'پیامک' ? 'bg-violet-50 text-violet-700 dark:bg-violet-500/12 dark:text-violet-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/12 dark:text-amber-400' }}">
+                                            {{ $channelLabel }}
+                                        </span>
+                                    @endforeach
+                                </span>
+                            </td>
                             <td class="px-3 py-3 fa-digits whitespace-nowrap">
                                 {{ $priceAlert->target_price !== null ? number_format($priceAlert->target_price) : '—' }}
                             </td>
@@ -74,10 +130,12 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8">
+                            <td colspan="9">
                                 <div class="flex flex-col items-center gap-2 py-14 text-ink-3 dark:text-night-ink-2">
                                     <x-admin-panel::icon name="bell" class="size-10 opacity-40" />
-                                    <p class="text-sm font-medium">هنوز هشدار قیمتی ثبت نشده است</p>
+                                    <p class="text-sm font-medium">
+                                        {{ $filter === 'active' ? 'هشداری در انتظار افت قیمت نیست' : ($filter === 'notified' ? 'هشدار اطلاع‌داده‌شده‌ای نیست' : 'هنوز هشدار قیمتی ثبت نشده است') }}
+                                    </p>
                                 </div>
                             </td>
                         </tr>
@@ -169,16 +227,38 @@
                         </span>
                     </div>
 
-                    {{-- نام --}}
+                    {{-- مشتری (فاز ۸۳ — نوع + نام) --}}
                     <div class="flex items-start justify-between gap-4 border-b border-line/60 py-2.5 dark:border-night-line/60">
-                        <span class="shrink-0 text-xs font-bold text-ink-3 dark:text-night-ink-2">نام</span>
-                        <span class="text-end font-semibold">{{ $alert->name ?? '—' }}</span>
+                        <span class="shrink-0 text-xs font-bold text-ink-3 dark:text-night-ink-2">مشتری</span>
+                        <span class="text-end font-semibold">
+                            {{ $alert->name ?? '—' }}
+                            <span class="ap-badge ms-1 {{ $alert->user_id ? 'bg-sky-50 text-sky-700 dark:bg-sky-500/12 dark:text-sky-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-500/12 dark:text-slate-400' }}">
+                                {{ $alert->user_id ? 'کاربر عضو' : 'مهمان' }}
+                            </span>
+                        </span>
                     </div>
 
                     {{-- شماره موبایل --}}
                     <div class="flex items-start justify-between gap-4 border-b border-line/60 py-2.5 dark:border-night-line/60">
                         <span class="shrink-0 text-xs font-bold text-ink-3 dark:text-night-ink-2">شماره موبایل</span>
                         <span class="fa-digits text-end font-semibold" dir="ltr">{{ $alert->mobile }}</span>
+                    </div>
+
+                    {{-- راه اطلاع‌رسانی (فاز ۸۳) --}}
+                    <div class="flex items-start justify-between gap-4 border-b border-line/60 py-2.5 dark:border-night-line/60">
+                        <span class="shrink-0 text-xs font-bold text-ink-3 dark:text-night-ink-2">راه اطلاع‌رسانی</span>
+                        <span class="text-end">
+                            @if ($alert->notify_sms)
+                                <span class="ap-badge bg-violet-50 text-violet-700 dark:bg-violet-500/12 dark:text-violet-400">پیامک</span>
+                            @endif
+                            @if ($alert->notify_profile)
+                                <span class="ap-badge bg-amber-50 text-amber-700 dark:bg-amber-500/12 dark:text-amber-400">اعلان پروفایل</span>
+                            @endif
+                            @if (! $alert->notify_sms && ! $alert->notify_profile)
+                                <span class="ap-badge bg-violet-50 text-violet-700 dark:bg-violet-500/12 dark:text-violet-400">پیامک</span>
+                                <span class="text-[11px] text-ink-3 dark:text-night-ink-2">(رکورد قبل از فاز ۸۳)</span>
+                            @endif
+                        </span>
                     </div>
 
                     {{-- قیمت هدف --}}
@@ -194,10 +274,18 @@
                     </div>
 
                     {{-- تاریخ ثبت --}}
-                    <div class="flex items-start justify-between gap-4 py-2.5">
+                    <div class="flex items-start justify-between gap-4 border-b border-line/60 py-2.5 dark:border-night-line/60">
                         <span class="shrink-0 text-xs font-bold text-ink-3 dark:text-night-ink-2">تاریخ ثبت</span>
                         <span class="fa-digits text-end font-semibold">{{ $this->jdate($alert->created_at, 'Y/m/d | H:i') }}</span>
                     </div>
+
+                    {{-- تاریخ اطلاع‌رسانی (فاز ۸۳) --}}
+                    @if ($alert->notified_at)
+                        <div class="flex items-start justify-between gap-4 py-2.5">
+                            <span class="shrink-0 text-xs font-bold text-ink-3 dark:text-night-ink-2">تاریخ اطلاع‌رسانی</span>
+                            <span class="fa-digits text-end font-semibold">{{ $this->jdate($alert->notified_at, 'Y/m/d | H:i') }}</span>
+                        </div>
+                    @endif
                 </div>
             @else
                 <div class="py-10 text-center text-sm text-ink-3 dark:text-night-ink-2">رکوردی یافت نشد</div>

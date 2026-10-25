@@ -1076,69 +1076,336 @@
         <!-- End Modal stocknotify -->
     @endif
 
-    {{-- فاز ۷۸/۸۱ — مودال هشدار کاهش قیمت برای مهمان‌ها (فقط وقتی قابلیت فعال است) --}}
+    {{-- فاز ۸۳ — مودال مدرن هشدار کاهش قیمت (برای مهمان و کاربر عضو) --}}
+    {{-- CSS و JS عمداً اینلاین است: بلید مستقیم از سورس تم سرو می‌شود و حتی روی
+         هاست‌هایی که کپی assetها کهنه مانده، این قابلیت کامل و به‌روز است. --}}
     @if(option('dt_price_alert_status', '1') == '1')
-    <div class="modal fade" id="modal-price-alert" role="dialog"
-         aria-labelledby="priceAlertModalTitle" aria-hidden="true">
-        <div class="modal-dialog modal-md send-info modal-dialog-centered"
-             role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="priceAlertModalTitle">
-                        <i class="{{ option('dt_price_alert_button_icon', 'mdi mdi-bell-ring-outline') }}"></i>
-                        {{ option('dt_price_alert_button_text', 'هشدار کاهش قیمت') }}
-                    </h5>
-                    <button type="button" class="close" data-dismiss="modal"
-                            aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="form-ui dt-sl">
-                                <form class="form-account" action="#">
-                                    <div class="row">
-                                        <div class="col-md-6 col-sm-12 mb-2">
-                                            <div class="form-row-title">
-                                                <h4>نام و نام خانوادگی</h4>
-                                            </div>
-                                            <div class="form-row">
-                                                <input class="input-ui pr-2 text-right"
-                                                       type="text"
-                                                       name="name"
-                                                       id="price-alert-name"
-                                                       placeholder=" نام شما ">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6 col-sm-12 mb-2">
-                                            <div class="form-row-title">
-                                                <h4>شماره موبایل</h4>
-                                            </div>
-                                            <div class="form-row">
-                                                <input
-                                                    class="input-ui pl-2 dir-ltr text-left"
-                                                    type="text"
-                                                    name="mobile"
-                                                    id="price-alert-mobile"
-                                                    placeholder="09xxxxxxxxx" required>
-                                            </div>
-                                        </div>
+        @php
+            $paModalTitle = option('dt_price_alert_modal_title', 'هشدار کاهش قیمت') ?: 'هشدار کاهش قیمت';
+            $paModalDesc  = option('dt_price_alert_modal_desc', '') ?: 'به‌محض اینکه قیمت این محصول کمتر شد، همان لحظه به شما خبر می‌دهیم؛ دیگر لازم نیست صفحه را دنبال کنید.';
 
-                                        <div class="col-12 pr-4 pl-4 text-center">
-                                            <button id="sendPriceAlertBtn" type="button" class="btn btn-md btn-primary btn-submit-form">ثبت هشدار</button>
-                                        </div>
-                                    </div>
-                                </form>
+            $paChannelRaw = trim((string) option('dt_price_alert_channels', 'sms,profile'));
+            $paChannelList = collect(explode(',', $paChannelRaw))
+                ->map(fn ($c) => trim(strtolower($c)))
+                ->filter(fn ($c) => in_array($c, ['sms', 'profile'], true))
+                ->unique()->values()->all();
+            $paChannelList = $paChannelList ?: ['sms', 'profile'];
+
+            $paIsUser = auth('web')->check();
+            $paUserMobile = $paIsUser ? (auth('web')->user()->mobile ?: auth('web')->user()->username) : '';
+
+            // نقشهٔ رنگ — هم‌قرارداد با مودال/دکمه
+            $paColorMap = [
+                'red'    => ['#ef394e', '#c8102e'],
+                'orange' => ['#f97316', '#ea580c'],
+                'green'  => ['#10b981', '#059669'],
+                'teal'   => ['#06b6d4', '#0891b2'],
+                'purple' => ['#8b5cf6', '#7c3aed'],
+                'dark'   => ['#334155', '#0f172a'],
+            ];
+            [$paBg, $paBg2] = $paColorMap[option('dt_price_alert_button_color', 'red') ?: 'red'] ?? $paColorMap['red'];
+        @endphp
+
+        <style>
+            /* ===== فاز ۸۳ — دکمهٔ هشدار کاهش قیمت (کاملاً مستقل، بدون مارجین اضافه) ===== */
+            .dt-pa-btn{--dt-pa-radius:10px;--dt-pa-h:48px;--dt-pa-fs:14px;
+                display:flex;align-items:center;justify-content:center;gap:8px;
+                width:100%;height:var(--dt-pa-h);
+                margin:10px 0 0; /* صریح: هیچ مارجین راست/چپ ارثی نمی‌ماند */
+                padding:0 14px;border:0;outline:0;border-radius:var(--dt-pa-radius);
+                background:linear-gradient(135deg,var(--dt-pa-bg,#ef394e),var(--dt-pa-bg2,#c8102e));
+                color:#fff !important;font-size:var(--dt-pa-fs);font-weight:600;line-height:1;
+                cursor:pointer;box-shadow:0 8px 20px -10px var(--dt-pa-bg,#ef394e);
+                transition:transform .18s ease,box-shadow .25s ease,filter .2s ease;}
+            .dt-pa-btn i{font-size:1.35em;line-height:1}
+            .dt-pa-btn:hover{transform:translateY(-1px);filter:brightness(1.07);box-shadow:0 12px 26px -12px var(--dt-pa-bg,#ef394e);color:#fff}
+            .dt-pa-btn:active{transform:translateY(0) scale(.99)}
+            .dt-pa-btn--sm{--dt-pa-h:40px;--dt-pa-fs:13px}
+            .dt-pa-btn--lg{--dt-pa-h:54px;--dt-pa-fs:15px}
+            .dt-pa-under-price .dt-pa-btn{margin:8px 0 0}
+
+            /* ===== مودال ===== */
+            .dt-pa-overlay{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;
+                padding:16px;background:rgba(15,23,42,.55);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);}
+            .dt-pa-overlay.is-open{display:flex;animation:dtPaFade .22s ease}
+            .dt-pa-modal{position:relative;width:100%;max-width:430px;max-height:92vh;overflow-y:auto;
+                background:#fff;border-radius:22px;box-shadow:0 28px 70px -18px rgba(15,23,42,.5);
+                font-family:inherit;text-align:right;animation:dtPaPop .3s cubic-bezier(.16,1,.3,1)}
+            @keyframes dtPaFade{from{opacity:0}to{opacity:1}}
+            @keyframes dtPaPop{from{opacity:0;transform:translateY(16px) scale(.95)}to{opacity:1;transform:none}}
+            .dt-pa-close{position:absolute;top:14px;left:14px;z-index:2;width:32px;height:32px;border:0;border-radius:50%;
+                background:#f1f5f9;color:#64748b;font-size:20px;line-height:1;cursor:pointer;transition:background .2s,color .2s}
+            .dt-pa-close:hover{background:#e2e8f0;color:#0f172a}
+            .dt-pa-body{padding:24px 22px 20px}
+            .dt-pa-icon{width:64px;height:64px;margin:0 auto 14px;border-radius:20px;display:flex;align-items:center;justify-content:center;
+                font-size:30px;color:#fff;background:linear-gradient(135deg,var(--dt-pa-bg,#ef394e),var(--dt-pa-bg2,#c8102e));
+                box-shadow:0 14px 30px -12px var(--dt-pa-bg,#ef394e);animation:dtPaRing 2.6s ease-in-out infinite}
+            @keyframes dtPaRing{0%,72%,100%{transform:rotate(0)}76%{transform:rotate(12deg)}80%{transform:rotate(-10deg)}84%{transform:rotate(7deg)}88%{transform:rotate(-5deg)}}
+            .dt-pa-title{margin:0 0 8px;font-size:18px;font-weight:800;color:#0f172a;text-align:center}
+            .dt-pa-desc{margin:0 0 16px;font-size:12.5px;line-height:2;color:#64748b;text-align:center}
+            .dt-pa-channels{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+            .dt-pa-channel{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border:1.5px solid #e2e8f0;
+                border-radius:14px;background:#f8fafc;cursor:pointer;text-align:right;transition:border-color .2s,background .2s,box-shadow .2s}
+            .dt-pa-channel:hover{border-color:var(--dt-pa-bg,#ef394e)}
+            .dt-pa-channel.is-on{border-color:var(--dt-pa-bg,#ef394e);background:#fff;box-shadow:0 6px 18px -10px var(--dt-pa-bg,#ef394e)}
+            .dt-pa-channel.is-locked{opacity:.55;cursor:not-allowed;background:#f8fafc}
+            .dt-pa-channel-ico{flex-shrink:0;width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+                font-size:19px;color:var(--dt-pa-bg,#ef394e);background:color-mix(in srgb,var(--dt-pa-bg,#ef394e) 12%,#fff)}
+            .dt-pa-channel-txt{flex:1;min-width:0}
+            .dt-pa-channel-txt strong{display:block;font-size:13px;font-weight:700;color:#0f172a}
+            .dt-pa-channel-txt small{display:block;margin-top:2px;font-size:11px;color:#94a3b8;line-height:1.8}
+            .dt-pa-check{flex-shrink:0;width:22px;height:22px;border-radius:50%;border:2px solid #cbd5e1;display:flex;align-items:center;justify-content:center;
+                font-size:13px;color:transparent;transition:all .2s}
+            .dt-pa-channel.is-on .dt-pa-check{border-color:var(--dt-pa-bg,#ef394e);background:var(--dt-pa-bg,#ef394e);color:#fff}
+            .dt-pa-field{margin-bottom:10px}
+            .dt-pa-field label{display:block;margin-bottom:6px;font-size:11.5px;font-weight:700;color:#475569}
+            .dt-pa-input{width:100%;height:44px;padding:0 14px;border:1.5px solid #e2e8f0;border-radius:12px;background:#f8fafc;
+                font-size:13px;color:#0f172a;font-family:inherit;transition:border-color .2s,box-shadow .2s}
+            .dt-pa-input:focus{outline:0;border-color:var(--dt-pa-bg,#ef394e);background:#fff;box-shadow:0 0 0 3px color-mix(in srgb,var(--dt-pa-bg,#ef394e) 14%,transparent)}
+            .dt-pa-hint{margin:0 0 10px;padding:9px 12px;border-radius:11px;background:#f1f5f9;font-size:11.5px;color:#475569;line-height:1.9}
+            .dt-pa-hint b{direction:ltr;display:inline-block}
+            .dt-pa-error{display:block;margin:-2px 0 10px;padding:9px 12px;border-radius:11px;background:#fef2f2;color:#dc2626;font-size:11.5px;line-height:1.9}
+            .dt-pa-submit{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:50px;border:0;border-radius:14px;
+                background:linear-gradient(135deg,var(--dt-pa-bg,#ef394e),var(--dt-pa-bg2,#c8102e));color:#fff;
+                font-size:14.5px;font-weight:700;font-family:inherit;cursor:pointer;
+                box-shadow:0 12px 26px -12px var(--dt-pa-bg,#ef394e);transition:transform .18s,filter .2s}
+            .dt-pa-submit:hover{filter:brightness(1.07);transform:translateY(-1px)}
+            .dt-pa-submit.is-busy{opacity:.75;pointer-events:none}
+            .dt-pa-note{margin:12px 0 0;font-size:10.5px;color:#94a3b8;text-align:center;line-height:1.9}
+            .dt-pa-success{padding:38px 22px 30px;text-align:center}
+            .dt-pa-success-ico{width:74px;height:74px;margin:0 auto 16px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+                font-size:38px;color:#fff;background:#10b981;box-shadow:0 14px 34px -14px #10b981;animation:dtPaPopIn .45s cubic-bezier(.16,1,.3,1)}
+            @keyframes dtPaPopIn{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:scale(1)}}
+            .dt-pa-success h3{margin:0 0 8px;font-size:17px;font-weight:800;color:#0f172a}
+            .dt-pa-success p{margin:0;font-size:12.5px;color:#64748b;line-height:2}
+            @media (prefers-reduced-motion: reduce){.dt-pa-icon,.dt-pa-success-ico,.dt-pa-modal,.dt-pa-overlay{animation:none}}
+        </style>
+
+        <div class="dt-pa-overlay" id="dt_pa_overlay" aria-hidden="true">
+            <div class="dt-pa-modal" role="dialog" aria-modal="true" aria-labelledby="dt_pa_title"
+                 data-product="{{ $product->id }}"
+                 data-user="{{ $paIsUser ? '1' : '0' }}"
+                 data-action="{{ route('front.price-alert.store') }}"
+                 style="--dt-pa-bg: {{ $paBg }}; --dt-pa-bg2: {{ $paBg2 }};">
+
+                <button type="button" class="dt-pa-close" aria-label="بستن" title="بستن">&times;</button>
+
+                {{-- حالت اصلی --}}
+                <div class="dt-pa-body" id="dt_pa_body">
+                    <div class="dt-pa-icon"><i class="mdi mdi-bell-ring-outline" aria-hidden="true"></i></div>
+                    <h3 class="dt-pa-title" id="dt_pa_title">{{ $paModalTitle }}</h3>
+                    <p class="dt-pa-desc">{{ $paModalDesc }}</p>
+
+                    <div class="dt-pa-channels" role="group" aria-label="راه اطلاع‌رسانی">
+                        @if(in_array('sms', $paChannelList))
+                            <button type="button" class="dt-pa-channel is-on" data-channel="sms" aria-pressed="true">
+                                <span class="dt-pa-channel-ico"><i class="mdi mdi-cellphone-message" aria-hidden="true"></i></span>
+                                <span class="dt-pa-channel-txt">
+                                    <strong>پیامک موبایل</strong>
+                                    <small>به‌محض کاهش قیمت، پیامک اطلاع‌رسانی می‌گیرید</small>
+                                </span>
+                                <span class="dt-pa-check"><i class="mdi mdi-check" aria-hidden="true"></i></span>
+                            </button>
+                        @endif
+
+                        @if($paIsUser && in_array('profile', $paChannelList))
+                            <button type="button" class="dt-pa-channel is-on" data-channel="profile" aria-pressed="true">
+                                <span class="dt-pa-channel-ico"><i class="mdi mdi-account-box-outline" aria-hidden="true"></i></span>
+                                <span class="dt-pa-channel-txt">
+                                    <strong>اعلان در پروفایل</strong>
+                                    <small>در صفحهٔ «اعلان‌ها»ی پروفایل کاربری شما ذخیره می‌شود</small>
+                                </span>
+                                <span class="dt-pa-check"><i class="mdi mdi-check" aria-hidden="true"></i></span>
+                            </button>
+                        @elseif(!$paIsUser && in_array('profile', $paChannelList))
+                            <div class="dt-pa-channel is-locked" aria-disabled="true">
+                                <span class="dt-pa-channel-ico"><i class="mdi mdi-lock-outline" aria-hidden="true"></i></span>
+                                <span class="dt-pa-channel-txt">
+                                    <strong>اعلان در پروفایل</strong>
+                                    <small>مخصوص کاربران عضو — با <a href="{{ route('login') }}">ورود به حساب</a> فعال می‌شود</small>
+                                </span>
                             </div>
-                        </div>
+                        @endif
                     </div>
+
+                    <div id="dt_pa_guest_fields">
+                        @if($paIsUser)
+                            <p class="dt-pa-hint">
+                                <i class="mdi mdi-cellphone" aria-hidden="true"></i>
+                                پیامک به شمارهٔ حساب شما (<b>{{ $paUserMobile }}</b>) ارسال می‌شود.
+                            </p>
+                        @else
+                            <div class="dt-pa-field">
+                                <label for="dt_pa_name">نام و نام خانوادگی (اختیاری)</label>
+                                <input type="text" class="dt-pa-input" id="dt_pa_name" placeholder="نام شما" maxlength="100" autocomplete="name">
+                            </div>
+                            <div class="dt-pa-field">
+                                <label for="dt_pa_mobile">شماره موبایل</label>
+                                <input type="tel" class="dt-pa-input" id="dt_pa_mobile" dir="ltr" inputmode="numeric"
+                                       placeholder="09xxxxxxxxx" maxlength="11" autocomplete="tel">
+                            </div>
+                        @endif
+                    </div>
+
+                    <p class="dt-pa-error" id="dt_pa_error" hidden></p>
+
+                    <button type="button" class="dt-pa-submit" id="dt_pa_submit">
+                        <i class="mdi mdi-bell-check" aria-hidden="true"></i>
+                        فعال‌سازی هشدار
+                    </button>
+
+                    <p class="dt-pa-note">با هر افت قیمت فقط یک‌بار خبردار می‌شوید؛ بعد از آن می‌توانید دوباره هشدار بگذارید.</p>
+                </div>
+
+                {{-- حالت موفقیت --}}
+                <div class="dt-pa-success" id="dt_pa_success" hidden>
+                    <div class="dt-pa-success-ico"><i class="mdi mdi-check" aria-hidden="true"></i></div>
+                    <h3>هشدار فعال شد!</h3>
+                    <p>به‌محض کاهش قیمت این محصول، از طریق راه‌هایی که انتخاب کردید خبرتان می‌کنیم.</p>
                 </div>
             </div>
         </div>
-    </div>
-    <!-- End Modal price-alert -->
+
+        <script>
+            (function () {
+                'use strict';
+
+                var overlay = document.getElementById('dt_pa_overlay');
+                if (!overlay) return;
+
+                var modal     = overlay.querySelector('.dt-pa-modal');
+                var body      = document.getElementById('dt_pa_body');
+                var success   = document.getElementById('dt_pa_success');
+                var errorBox  = document.getElementById('dt_pa_error');
+                var submitBtn = document.getElementById('dt_pa_submit');
+                var busy      = false;
+
+                function openModal() {
+                    overlay.classList.add('is-open');
+                    overlay.setAttribute('aria-hidden', 'false');
+                    document.body.style.overflow = 'hidden';
+                }
+
+                function closeModal() {
+                    overlay.classList.remove('is-open');
+                    overlay.setAttribute('aria-hidden', 'true');
+                    document.body.style.overflow = '';
+                    // ریست به حالت اصلی برای باز شدن بعدی
+                    window.setTimeout(function () {
+                        body.hidden = false;
+                        success.hidden = true;
+                        errorBox.hidden = true;
+                    }, 250);
+                }
+
+                // دلیگیت روی document — بلوک اطلاعات محصول با AJAX جایگزین می‌شود و
+                // بایندهای مستقیم می‌میرند (درس فاز ۸۱)؛ آی‌دی جدید پس از فاز ۸۳:
+                document.addEventListener('click', function (e) {
+                    var btn = e.target.closest('#dt_price_alert_btn');
+                    if (btn) {
+                        e.preventDefault();
+                        openModal();
+                    }
+                });
+
+                overlay.addEventListener('click', function (e) {
+                    if (e.target === overlay || e.target.closest('.dt-pa-close')) {
+                        closeModal();
+                    }
+                });
+
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape' && overlay.classList.contains('is-open')) {
+                        closeModal();
+                    }
+                });
+
+                // انتخاب/لغو کانال‌ها
+                modal.addEventListener('click', function (e) {
+                    var card = e.target.closest('.dt-pa-channel:not(.is-locked)');
+                    if (!card) return;
+                    e.preventDefault();
+                    card.classList.toggle('is-on');
+                    card.setAttribute('aria-pressed', card.classList.contains('is-on') ? 'true' : 'false');
+                });
+
+                function selectedChannels() {
+                    return Array.prototype.slice.call(modal.querySelectorAll('.dt-pa-channel.is-on'))
+                        .map(function (card) { return card.getAttribute('data-channel'); });
+                }
+
+                function showError(message) {
+                    errorBox.textContent = message;
+                    errorBox.hidden = false;
+                }
+
+                submitBtn.addEventListener('click', function () {
+                    if (busy) return;
+
+                    var channels = selectedChannels();
+
+                    if (!channels.length) {
+                        showError('حداقل یکی از راه‌های اطلاع‌رسانی (پیامک یا اعلان پروفایل) را انتخاب کنید.');
+                        return;
+                    }
+
+                    var isUser   = modal.getAttribute('data-user') === '1';
+                    var nameEl   = document.getElementById('dt_pa_name');
+                    var mobileEl = document.getElementById('dt_pa_mobile');
+                    var name     = nameEl ? nameEl.value.trim() : '';
+                    var mobile   = mobileEl ? mobileEl.value.trim() : '';
+
+                    if (!isUser && !/^09\d{9}$/.test(mobile)) {
+                        showError('شماره موبایل معتبر وارد کنید (مثل 09123456789).');
+                        return;
+                    }
+
+                    var fd = new FormData();
+                    fd.append('product_id', modal.getAttribute('data-product'));
+                    channels.forEach(function (c) { fd.append('channels[]', c); });
+                    if (mobile) fd.append('mobile', mobile);
+                    if (name) fd.append('name', name);
+
+                    busy = true;
+                    submitBtn.classList.add('is-busy');
+                    errorBox.hidden = true;
+
+                    var csrf = document.querySelector('meta[name="csrf-token"]');
+
+                    fetch(modal.getAttribute('data-action'), {
+                        method: 'POST',
+                        body: fd,
+                        headers: {
+                            'X-CSRF-TOKEN': csrf ? csrf.getAttribute('content') : '',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    }).then(function (res) {
+                        return res.json().catch(function () {
+                            return { status: res.ok ? 'ok' : 'error', message: 'پاسخ نامعتبر از سرور؛ دوباره تلاش کنید.' };
+                        });
+                    }).then(function (res) {
+                        if (res && res.status === 'ok') {
+                            body.hidden = true;
+                            success.hidden = false;
+                            if (window.jQuery && window.showCustomToast) {
+                                showCustomToast('هشدار کاهش قیمت برای این محصول فعال شد.', 'success');
+                            }
+                            window.setTimeout(closeModal, 2400);
+                        } else {
+                            showError((res && res.message) || 'ثبت هشدار انجام نشد؛ دوباره تلاش کنید.');
+                        }
+                    }).catch(function () {
+                        showError('ارتباط با سرور برقرار نشد؛ اتصال اینترنت را بررسی کنید.');
+                    }).then(function () {
+                        busy = false;
+                        submitBtn.classList.remove('is-busy');
+                    });
+                });
+            })();
+        </script>
     @endif
+    <!-- End Modal price-alert (فاز ۸۳) -->
 
 @endsection
 
@@ -1154,6 +1421,6 @@
      <script src="{{theme_asset('js/theia-sticky-sidebar.min.js')}}"></script>
      <script src="{{ theme_asset('js/vendor/jquery.fancybox.min.js') }}"></script>
      <script src="{{ theme_asset('js/plugins/apexcharts/apexcharts.js') }}"></script>
-   <script src="{{ theme_asset('js/pages/products/show.js') }}?v=13"></script>
+   <script src="{{ theme_asset('js/pages/products/show.js') }}?v=14"></script>
    <script src="{{ theme_asset('js/pages/comments.js') }}"></script>
 @endpush

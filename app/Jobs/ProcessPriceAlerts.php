@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Admin;
+use App\Models\NotificationManage;
 use App\Models\Price;
 use App\Models\PriceAlert;
 use App\Models\Product;
@@ -86,7 +87,8 @@ class ProcessPriceAlerts implements ShouldQueue
         }
 
         foreach ($alerts as $alert) {
-            if ($patternConfigured) {
+            // فاز ۸۳ — کانال پیامک (فقط اگر مشتری پیامک را انتخاب کرده باشد)
+            if ($alert->notify_sms && $patternConfigured) {
                 try {
                     $alert->notify(new PriceAlertSms($product, $minPrice));
                 } catch (\Throwable $e) {
@@ -97,6 +99,21 @@ class ProcessPriceAlerts implements ShouldQueue
                 }
             }
 
+            // فاز ۸۳ — کانال اعلان پروفایل: رکورد NotificationManage + پیوت به کاربر؛
+            // در صفحهٔ «اعلان‌ها»ی پروفایل کاربر (front profile/notifications) دیده می‌شود
+            if ($alert->notify_profile && $alert->user_id) {
+                try {
+                    $this->sendProfileNotification($alert->user_id, $product, $minPrice);
+                } catch (\Throwable $e) {
+                    Log::error('خطای ثبت اعلان پروفایل هشدار کاهش قیمت', [
+                        'alert_id' => $alert->id,
+                        'error'    => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            // رفتار فاز ۷۸ حفظ شد: حتی اگر پیامک/اعلان ارسال نشد (مثلاً بدون الگو)
+            // هشدار بسته می‌شود تا حلقهٔ پردازش تکرار نیفتد؛ لاگ هشدار بالا مانده است.
             $alert->update([
                 'active'      => false,
                 'notified_at' => now(),
@@ -116,5 +133,35 @@ class ProcessPriceAlerts implements ShouldQueue
                 'error'      => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * فاز ۸۳ — اعلان پروفایل برای کاربر عضو.
+     * هم‌قرارداد با پنل «اعلان‌های کاربران» (UserNotifications): رکورد
+     * NotificationManage با private=user + پیوت notification_manage_users؛
+     * در front profile/notifications با userRecipients خوانده می‌شود.
+     */
+    private function sendProfileNotification(int $userId, Product $product, $price): void
+    {
+        $exists = NotificationManage::query()
+            ->where('title', 'like', 'کاهش قیمت%')
+            ->where('private', 'user')
+            ->whereHas('recipients', fn ($q) => $q->where('user_id', $userId))
+            ->whereDate('created_at', now()->toDateString())
+            ->exists();
+
+        if ($exists) {
+            return; // ضدتکرار: برای هر کاربر و هر محصول در یک روز یک اعلان کافی است
+        }
+
+        $notification = new NotificationManage();
+        $notification->title    = 'کاهش قیمت «'.$product->title.'»';
+        $notification->message  = 'قیمت «'.$product->title.'» به '.number_format((float) $price).' تومان کاهش یافت. همین حالا با قیمت جدید خرید کنید.';
+        $notification->private  = 'user';
+        $notification->priority = 'low';
+        $notification->popup    = 0;
+        $notification->save();
+
+        $notification->users()->attach($userId);
     }
 }

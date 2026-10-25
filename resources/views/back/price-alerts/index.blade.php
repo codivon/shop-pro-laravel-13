@@ -37,8 +37,9 @@
                                             <tr>
                                                 <th class="text-center">#</th>
                                                 <th>محصول</th>
-                                                <th>نام</th>
+                                                <th>مشتری</th>
                                                 <th>شماره موبایل</th>
+                                                <th>راه اطلاع‌رسانی</th>
                                                 <th>قیمت هدف</th>
                                                 <th class="text-center">وضعیت</th>
                                                 <th class="text-center">عملیات</th>
@@ -52,8 +53,21 @@
                                                     </td>
                                                     <td>{{ $priceAlert->product->title }} <a href="{{ Route::has('front.products.show') ? route('front.products.show', ['product' => $priceAlert->product]) : '' }}" target="_blank"><i class="feather icon-external-link"></i></a></td>
 
-                                                    <td>{{ $priceAlert->name }}</td>
+                                                    <td>
+                                                        {{-- فاز ۸۳ — نوع مشتری + نام --}}
+                                                        <span class="badge badge-light-{{ $priceAlert->user_id ? 'info' : 'secondary' }}">{{ $priceAlert->user_id ? 'کاربر عضو' : 'مهمان' }}</span>
+                                                        {{ $priceAlert->name }}
+                                                    </td>
                                                     <td>{{ $priceAlert->mobile }}</td>
+                                                    <td>
+                                                        {{-- فاز ۸۳ — کانال‌های انتخابی مشتری --}}
+                                                        @if($priceAlert->notify_sms || (!$priceAlert->notify_sms && !$priceAlert->notify_profile))
+                                                            <span class="badge badge-light-primary">پیامک</span>
+                                                        @endif
+                                                        @if($priceAlert->notify_profile)
+                                                            <span class="badge badge-light-warning">اعلان پروفایل</span>
+                                                        @endif
+                                                    </td>
                                                     <td>{{ $priceAlert->target_price !== null ? number_format($priceAlert->target_price) . ' تومان' : '—' }}</td>
                                                     <td class="text-center">
                                                         @if($priceAlert->active)

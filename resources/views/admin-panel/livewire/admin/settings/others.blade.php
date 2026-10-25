@@ -306,37 +306,9 @@
                 </div>
             </div>
 
-            {{-- ============ قابلیت‌های فروشگاه (فاز ۸۲ — از تنظیمات قالب به تنظیمات سایت منتقل شد) ============ --}}
+            {{-- ============ قابلیت‌های فروشگاه (فاز ۸۲/۸۳ — تنظیمات سایت + شخصی‌سازی کامل با پیش‌نمایش زنده) ============ --}}
             <div x-show="tab === 'features'" x-cloak class="animate-fade-in space-y-5 p-5 sm:p-6">
-                {{-- هشدار کاهش قیمت --}}
-                <section>
-                    <h3 class="mb-3 flex items-center gap-2 text-sm font-bold">
-                        <x-admin-panel::icon name="trending-down" class="size-4 text-brand-600 dark:text-brand-400" />
-                        هشدار کاهش قیمت
-                    </h3>
-                    @include('admin-panel::livewire.admin.settings.partials.setting-switch', [
-                        'name'  => 'dt_price_alert_status',
-                        'live'  => true,
-                        'icon'  => 'bell-ring',
-                        'title' => 'قابلیت هشدار کاهش قیمت',
-                        'desc'  => 'وقتی قیمت یک محصول کاهش پیدا کند، به مشتریانی که قبلاً برای آن درخواست هشدار ثبت کرده‌اند پیامک می‌شود؛ دکمه هشدار هم در صفحه محصول نمایش داده می‌شود.',
-                    ])
-                    <div @class([
-                        'mt-4 grid grid-cols-1 gap-4 rounded-xl border border-line p-4 transition-opacity sm:grid-cols-2 dark:border-night-line',
-                        'opacity-50 pointer-events-none select-none' => ! $dt_price_alert_status,
-                    ])>
-                        <div>
-                            <label class="mb-1.5 block text-xs font-semibold">متن دکمه هشدار کاهش قیمت</label>
-                            <input type="text" wire:model="dt_price_alert_button_text" class="ap-input" placeholder="هشدار کاهش قیمت">
-                            <p class="mt-1.5 text-[11px] text-ink-3 dark:text-night-ink-2">خالی بماند = پیش‌فرض «هشدار کاهش قیمت»</p>
-                        </div>
-                        <div>
-                            <label class="mb-1.5 block text-xs font-semibold">آیکون دکمه (کلاس MDI)</label>
-                            <input type="text" dir="ltr" wire:model="dt_price_alert_button_icon" class="ap-input font-mono" placeholder="mdi mdi-bell-ring-outline">
-                            <p class="mt-1.5 text-[11px] text-ink-3 dark:text-night-ink-2">خالی بماند = پیش‌فرض «mdi mdi-bell-ring-outline»</p>
-                        </div>
-                    </div>
-                </section>
+                @include('admin-panel::livewire.admin.settings.partials.price-alert-settings')
 
                 {{-- پیش‌فروش --}}
                 <section>

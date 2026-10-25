@@ -104,12 +104,49 @@ class Others extends Component
 
     /* ---------------- قابلیت‌های فروشگاه (فاز ۸۲ — از تنظیمات قالب به تنظیمات سایت منتقل شد) ---------------- */
 
+    // نقشهٔ رنگ دکمهٔ هشدار قیمت (فاز ۸۳) — هم‌قرارداد با تم (hex جفت [روشن، تیره])
+    public const PALETTE = [
+        'red'    => ['#ef394e', '#c8102e'],
+        'orange' => ['#f97316', '#ea580c'],
+        'green'  => ['#10b981', '#059669'],
+        'teal'   => ['#06b6d4', '#0891b2'],
+        'purple' => ['#8b5cf6', '#7c3aed'],
+        'dark'   => ['#334155', '#0f172a'],
+    ];
+
+    public const SIZES  = ['sm', 'md', 'lg'];
+
+    public const PLACEMENTS = ['below-cart', 'above-cart', 'under-price'];
+
+    public const PLACEMENT_LABELS = [
+        'below-cart'  => 'زیر دکمهٔ خرید',
+        'above-cart'  => 'بالای دکمهٔ خرید',
+        'under-price' => 'چسبیده به قیمت محصول',
+    ];
+
     // ذخیره‌سازی «1»/«0» (هسته با option(..., '1') == '1' چک می‌کند)
     public bool $dt_price_alert_status = true;
 
     public string $dt_price_alert_button_text = '';
 
     public string $dt_price_alert_button_icon = '';
+
+    // فاز ۸۳ — شخصی‌سازی کامل دکمه + مودال + کانال‌های اطلاع‌رسانی
+    public string $dt_price_alert_button_color = 'red';
+
+    public string $dt_price_alert_button_size = 'md';
+
+    public string $dt_price_alert_button_radius = '10';
+
+    public string $dt_price_alert_button_placement = 'below-cart';
+
+    public string $dt_price_alert_modal_title = '';
+
+    public string $dt_price_alert_modal_desc = '';
+
+    public bool $dt_price_alert_channel_sms = true;
+
+    public bool $dt_price_alert_channel_profile = true;
 
     public bool $dt_pre_order_status = true;
 
@@ -165,6 +202,20 @@ class Others extends Component
         $this->dt_price_alert_status = option('dt_price_alert_status', '1') == '1';
         $this->dt_price_alert_button_text = (string) (option('dt_price_alert_button_text') ?: 'هشدار کاهش قیمت');
         $this->dt_price_alert_button_icon = (string) (option('dt_price_alert_button_icon') ?: 'mdi mdi-bell-ring-outline');
+
+        // فاز ۸۳ — شخصی‌سازی دکمه/مودال/کانال‌ها (مقدار نامعتبر → پیش‌فرض)
+        $this->dt_price_alert_button_color = in_array(($c = (string) option('dt_price_alert_button_color', 'red')), array_keys(self::PALETTE), true) ? $c : 'red';
+        $this->dt_price_alert_button_size = in_array(($s = (string) option('dt_price_alert_button_size', 'md')), self::SIZES, true) ? $s : 'md';
+        $this->dt_price_alert_button_radius = (string) min(30, max(0, (int) (option('dt_price_alert_button_radius', '10') ?: 10)));
+        $this->dt_price_alert_button_placement = in_array(($p = (string) option('dt_price_alert_button_placement', 'below-cart')), self::PLACEMENTS, true) ? $p : 'below-cart';
+        $this->dt_price_alert_modal_title = (string) (option('dt_price_alert_modal_title') ?: '');
+        $this->dt_price_alert_modal_desc = (string) (option('dt_price_alert_modal_desc') ?: '');
+
+        $channels = collect(explode(',', (string) (option('dt_price_alert_channels', 'sms,profile') ?: 'sms,profile')))
+            ->map(fn ($c) => trim(strtolower($c)))->values()->all();
+        $this->dt_price_alert_channel_sms = in_array('sms', $channels, true);
+        $this->dt_price_alert_channel_profile = in_array('profile', $channels, true);
+
         $this->dt_pre_order_status = option('dt_pre_order_status', '1') == '1';
         $this->dt_pre_order_button_text = (string) (option('dt_pre_order_button_text') ?: 'ثبت پیش‌فروش');
         $this->dt_pre_order_badge_text = (string) (option('dt_pre_order_badge_text') ?: 'پیش‌فروش');
@@ -267,6 +318,8 @@ class Others extends Component
             'optimizeImage', 'changePhotoFormat', 'watermarkStatus', 'watermarkImagePosition',
             'transport', // quirk قدیمی: این فیلد در env_options نبود → به‌صورت option ذخیره می‌شد
             'dt_price_alert_status', 'dt_price_alert_button_text', 'dt_price_alert_button_icon',
+            'dt_price_alert_button_color', 'dt_price_alert_button_size', 'dt_price_alert_button_radius',
+            'dt_price_alert_button_placement', 'dt_price_alert_modal_title', 'dt_price_alert_modal_desc',
             'dt_pre_order_status', 'dt_pre_order_button_text', 'dt_pre_order_badge_text',
         ];
 
@@ -281,8 +334,8 @@ class Others extends Component
         $defaultOptionValues = [
             'dt_price_alert_button_text' => 'هشدار کاهش قیمت',
             'dt_price_alert_button_icon' => 'mdi mdi-bell-ring-outline',
-            'dt_pre_order_button_text' => 'ثبت پیش‌فروش',
-            'dt_pre_order_badge_text' => 'پیش‌فروش',
+            'dt_pre_order_button_text'   => 'ثبت پیش‌فروش',
+            'dt_pre_order_badge_text'    => 'پیش‌فروش',
         ];
 
         $optionChanges = [];
@@ -298,6 +351,15 @@ class Others extends Component
             if (isset($defaultOptionValues[$key]) && trim($value) === '') {
                 $value = $defaultOptionValues[$key];
             }
+
+            // فاز ۸۳ — وایت‌لیست رنگ/اندازه/موقعیت + بازهٔ گردی گوشه‌ها
+            $value = match ($key) {
+                'dt_price_alert_button_color'    => in_array($value, array_keys(self::PALETTE), true) ? $value : 'red',
+                'dt_price_alert_button_size'     => in_array($value, self::SIZES, true) ? $value : 'md',
+                'dt_price_alert_button_placement' => in_array($value, self::PLACEMENTS, true) ? $value : 'below-cart',
+                'dt_price_alert_button_radius'   => (string) min(30, max(0, (int) $value)),
+                default                          => $value,
+            };
 
             $oldValue = option($key);
 
@@ -319,6 +381,28 @@ class Others extends Component
 
             option_update($key, $value);
         }
+
+        // فاز ۸۳ — کانال‌های اطلاع‌رسانی هشدار قیمت (dt_price_alert_channels = 'sms,profile'|'sms'|'profile')
+        $channels = [];
+        if ($this->dt_price_alert_channel_sms) {
+            $channels[] = 'sms';
+        }
+        if ($this->dt_price_alert_channel_profile) {
+            $channels[] = 'profile';
+        }
+
+        // هیچ کانالی انتخاب نشده → پیش‌فرض «هر دو» (قابلیت بدون کانال بی‌معناست)
+        $channelsValue = $channels ? implode(',', $channels) : 'sms,profile';
+
+        if (option('dt_price_alert_channels') != $channelsValue) {
+            $optionChanges['dt_price_alert_channels'] = [
+                'old'   => $this->channelsLabel((string) option('dt_price_alert_channels')),
+                'new'   => $this->channelsLabel($channelsValue),
+                'title' => $this->getOthersFieldTitle('dt_price_alert_channels'),
+            ];
+        }
+
+        option_update('dt_price_alert_channels', $channelsValue);
 
         if (! empty($optionChanges)) {
             $allChanges['option_settings'] = $optionChanges;
@@ -400,12 +484,33 @@ class Others extends Component
             'dt_price_alert_status' => 'قابلیت هشدار کاهش قیمت',
             'dt_price_alert_button_text' => 'متن دکمه هشدار کاهش قیمت',
             'dt_price_alert_button_icon' => 'آیکون دکمه هشدار کاهش قیمت',
+            // فاز ۸۳ — شخصی‌سازی کامل
+            'dt_price_alert_button_color' => 'رنگ دکمه هشدار کاهش قیمت',
+            'dt_price_alert_button_size' => 'اندازه دکمه هشدار کاهش قیمت',
+            'dt_price_alert_button_radius' => 'گردی گوشه‌های دکمه هشدار کاهش قیمت',
+            'dt_price_alert_button_placement' => 'موقعیت دکمه هشدار کاهش قیمت',
+            'dt_price_alert_modal_title' => 'عنوان مودال هشدار کاهش قیمت',
+            'dt_price_alert_modal_desc' => 'توضیح مودال هشدار کاهش قیمت',
+            'dt_price_alert_channels' => 'راه‌های اطلاع‌رسانی هشدار کاهش قیمت',
             'dt_pre_order_status' => 'قابلیت پیش‌فروش محصولات',
             'dt_pre_order_button_text' => 'متن دکمه پیش‌فروش',
             'dt_pre_order_badge_text' => 'متن نشان پیش‌فروش',
         ];
 
         return $titles[$key] ?? $key;
+    }
+
+    /** فاز ۸۳ — برچسب فارسی کانال‌ها برای لاگ فعالیت */
+    private function channelsLabel(string $raw): string
+    {
+        $labels = [
+            'sms'     => 'پیامک',
+            'profile' => 'اعلان پروفایل',
+        ];
+
+        $channels = collect(explode(',', $raw))->map(fn ($c) => trim($c))->filter()->map(fn ($c) => $labels[$c] ?? $c);
+
+        return $channels->isNotEmpty() ? $channels->implode(' + ') : 'هر دو (پیامک + اعلان پروفایل)';
     }
 
     public function render()

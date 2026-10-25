@@ -122,6 +122,12 @@
                     if (!empty($item['creator_only'])) {
                         return $admin && ($admin->id === 1 || $admin->level === 'creator');
                     }
+                    /*
+                    | فاز ۸۳ — گیت تنظیماتی آیتم: کلید 'enabled' = نام option؛
+                    | آیتم فقط وقتی نمایش داده می‌شود که مقدار option == '1'
+                    | (مثل «هشدار کاهش قیمت» زیرمنوی اعلان‌ها — درخواست کاربر)
+                    */
+                    if (! empty($item['enabled']) && option($item['enabled'], '1') != '1') return false;
                     if (! empty($item['children'])) {
                         foreach ($item['children'] as $child) {
                             if ($checkMenuItem($child)) return true;

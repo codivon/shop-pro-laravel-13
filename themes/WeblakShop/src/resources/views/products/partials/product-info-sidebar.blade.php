@@ -139,6 +139,28 @@
                     </div>
 
 
+                    @php
+                        /*
+                        | فاز ۷۸/۸۱/۸۳ — هشدار کاهش قیمت
+                        | متن/آیکون/رنگ/اندازه/گردی/موقعیت همه از «تنظیمات دیگر» سایت
+                        | (تب قابلیت‌های فروشگاه) قابل شخصی‌سازی است. خود مودال + استایل + اسکریپت
+                        | در show.blade.php اینلاین است تا بدون وابستگی به کپی assetها روی هر هاستی کار کند.
+                        */
+                        $paEnabled    = option('dt_price_alert_status', '1') == '1';
+                        $paText       = option('dt_price_alert_button_text', 'هشدار کاهش قیمت') ?: 'هشدار کاهش قیمت';
+                        $paIcon       = option('dt_price_alert_button_icon', 'mdi mdi-bell-ring-outline') ?: 'mdi mdi-bell-ring-outline';
+                        $paColor      = option('dt_price_alert_button_color', 'red') ?: 'red';
+                        $paSize       = option('dt_price_alert_button_size', 'md') ?: 'md';
+                        $paRadius     = (int) (option('dt_price_alert_button_radius', '10') ?: 10);
+                        $paPlacement  = option('dt_price_alert_button_placement', 'below-cart') ?: 'below-cart';
+                        $paBtnHtml    = '<button type="button" id="dt_price_alert_btn" class="dt-pa-btn dt-pa-btn--'.e($paSize).' dt-pa-btn--'.e($paColor).'" style="--dt-pa-radius: '.e((string) $paRadius).'px">'
+                            .'<i class="'.e($paIcon).'" aria-hidden="true"></i><span>'.e($paText).'</span></button>';
+                    @endphp
+
+                    @if($paEnabled && $paPlacement === 'above-cart')
+                        {!! $paBtnHtml !!}
+                    @endif
+
                     <button data-price_id="{{ $selected_price->id }}"
                             data-action="{{ route('front.cart.store', ['product' => $product]) }}"
                             data-product="{{ $product->slug }}" type="button"
@@ -146,14 +168,12 @@
                         {{ $product->pre_order && option('dt_pre_order_status', '1') == '1' ? option('dt_pre_order_button_text', 'ثبت پیش‌فروش') : 'افزودن به سبد خرید' }}
                     </button>
 
-                    {{-- فاز ۷۸/۸۱ — هشدار کاهش قیمت (قابل غیرفعال‌سازی و شخصی‌سازی از تنظیمات تم) --}}
-                    @if(option('dt_price_alert_status', '1') == '1')
-                        <button id="price_alert_btn" data-user="{{ auth('web')->check() ? auth('web')->user()->id : '' }}"
-                                data-product="{{ $product->id }}" type="button"
-                                class="product-stock-action btn btn-secondary cart-not-available w-100 mt-2">
-                            <i class="{{ option('dt_price_alert_button_icon', 'mdi mdi-bell-ring-outline') }}"></i>
-                            {{ option('dt_price_alert_button_text', 'هشدار کاهش قیمت') }}
-                        </button>
+                    @if($paEnabled && $paPlacement !== 'above-cart')
+                        @if($paPlacement === 'under-price')
+                            <div class="dt-pa-under-price">{!! $paBtnHtml !!}</div>
+                        @else
+                            {!! $paBtnHtml !!}
+                        @endif
                     @endif
 
 

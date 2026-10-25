@@ -21,6 +21,9 @@ class PriceAlertIndex extends Component
 
     public int $perPage = 15;
 
+    /** فاز ۸۳ — فیلتر وضعیت: all | active | notified */
+    public string $filter = 'all';
+
     /* ---------------- مودال جزئیات ---------------- */
 
     public bool $showDetail = false;
@@ -42,15 +45,60 @@ class PriceAlertIndex extends Component
     public function priceAlerts()
     {
         return PriceAlert::query()
-            ->with('product')
+            ->with(['product', 'user'])
+            ->when($this->filter === 'active', fn ($q) => $q->where('active', true))
+            ->when($this->filter === 'notified', fn ($q) => $q->where('active', false))
             ->latest()
             ->paginate($this->perPage);
+    }
+
+    /** فاز ۸۳ — تغییر تب فیلتر + ریست صفحه‌بندی */
+    public function setFilter(string $filter): void
+    {
+        auth('adminPanel')->user()?->can('products.price-alert') ?: abort(403);
+
+        $this->filter = in_array($filter, ['all', 'active', 'notified'], true) ? $filter : 'all';
+        $this->resetPage();
+    }
+
+    /** فاز ۸۳ — برچسب کانال‌های انتخابی مشتری */
+    public function channelsLabel(PriceAlert $alert): array
+    {
+        $labels = [];
+
+        if ($alert->notify_sms) {
+            $labels[] = 'پیامک';
+        }
+
+        if ($alert->notify_profile) {
+            $labels[] = 'اعلان پروفایل';
+        }
+
+        // رکوردهای فاز ۷۸ (قبل از ستون‌ها): هر دو ستون صفر = پیامک (رفتار قدیمی)
+        if (! $alert->notify_sms && ! $alert->notify_profile) {
+            $labels[] = 'پیامک';
+        }
+
+        return $labels;
     }
 
     #[Computed(persist: true, seconds: 60)]
     public function totalCount(): int
     {
         return PriceAlert::count();
+    }
+
+    /** فاز ۸۳ — شمارندهٔ تب‌های فیلتر */
+    #[Computed]
+    public function activeCount(): int
+    {
+        return PriceAlert::where('active', true)->count();
+    }
+
+    #[Computed]
+    public function notifiedCount(): int
+    {
+        return PriceAlert::where('active', false)->count();
     }
 
     /* ---------------- مودال جزئیات ---------------- */
