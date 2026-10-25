@@ -19,7 +19,7 @@ use Tests\TestCase;
  *
  *  ۱) جدول «ماژول‌های نصب‌شده» عنوان ماژول را نشان دهد (نه نام فنی):
  *     زنجیرهٔ حل: title داخل module.json خود پکیج → نام کش بازار → نام فنی
- *  ۲) پکیج ادغامی درگاه‌ها اسم و عنوان جدید «پرداخت‌یار» دارد
+ *  ۲) پکیج ادغامی درگاه‌ها به‌عنوان پکیج جدید «PayYar (پرداخت‌یار)» ساخته شد (فاز ۸۷)
  *  ۳) توضیحات بازار HTML کارد-محور + تصویر شاخص برای پرداخت‌یار
  *  ۴) بازطراحی مدرن همهٔ صفحات ادمین مارکتینگ (دیزاین‌سیستم mm-)
  *  ۵) رفع ارور «Unclosed '(' does not match '}'» در create کمپین
@@ -58,9 +58,9 @@ class Phase86Test extends TestCase
         return is_dir($path.'/app') ? $path : null;
     }
 
-    private function dpDir(): ?string
+    private function pyDir(): ?string
     {
-        $path = base_path('Modules/DigiPay');
+        $path = base_path('Modules/PayYar');
 
         return is_dir($path.'/app') ? $path : null;
     }
@@ -76,12 +76,12 @@ class Phase86Test extends TestCase
         return $path;
     }
 
-    private function requireDigiPay(): string
+    private function requirePayYar(): string
     {
-        $path = $this->dpDir();
+        $path = $this->pyDir();
 
         if ($path === null) {
-            $this->markTestSkipped('ماژول DigiPay روی این میزبان نصب نیست — تست فاز ۸۶ رد شد.');
+            $this->markTestSkipped('ماژول PayYar روی این میزبان نصب نیست — تست فاز ۸۶ رد شد.');
         }
 
         return $path;
@@ -139,17 +139,17 @@ class Phase86Test extends TestCase
     /* ================= ۱) عنوان ماژول در جدول نصب‌شده‌ها ================= */
 
     #[Test]
-    #[TestDox('بند ۱ — زنجیرهٔ عنوان: module.json پکیج پرداخت‌یار → «پرداخت‌یار» (پیش از کش بازار)')]
+    #[TestDox('بند ۱ — زنجیرهٔ عنوان: module.json پکیج PayYar → «پرداخت‌یار» (پیش از کش بازار)')]
     public function display_name_prefers_module_json_title(): void
     {
-        $this->requireDigiPay();
+        $this->requirePayYar();
 
-        // روی میزبان واقعی رکورد digipay از قبل هست — firstOrCreate تا تست تخریب نکند
+        // رکورد نصب (همان کاری که نصب‌کنندهٔ بازار می‌کند) — firstOrCreate تا تست تخریب نکند
         $module = InstalledModule::firstOrCreate(
-            ['slug' => 'digipay'],
+            ['slug' => 'payyar'],
             [
-                'name'         => 'DigiPay',
-                'version'      => '1.5.0',
+                'name'         => 'PayYar',
+                'version'      => '1.0.0',
                 'installed_at' => now(),
                 'status'       => 'installed',
                 'is_active'    => true,
@@ -158,13 +158,13 @@ class Phase86Test extends TestCase
         );
 
         // کلید title داخل module.json پکیج = هویت رسمی داخل خود پکیج
-        $this->assertSame('پرداخت‌یار', InstalledModule::moduleJsonTitle('DigiPay'));
+        $this->assertSame('پرداخت‌یار', InstalledModule::moduleJsonTitle('PayYar'));
         $this->assertSame('پرداخت‌یار', $module->displayName());
 
         // حتی اگر کش بازار نام دیگری داشته باشد، عنوانِ داخل پکیج مقدم است
         $cache = PackageCache::updateOrCreate(
-            ['slug' => 'digipay'],
-            ['name' => 'دیجی‌پی (نام کهنهٔ بازار)', 'latest_version' => '1.5.0', 'fetched_at' => now()]
+            ['slug' => 'payyar'],
+            ['name' => 'نام کهنهٔ بازار', 'latest_version' => '1.0.0', 'fetched_at' => now()]
         );
 
         $this->assertSame('پرداخت‌یار', $module->fresh()->displayName());
@@ -377,21 +377,21 @@ class Phase86Test extends TestCase
     public function guide_route_view_and_menu_exist_in_both_packages(): void
     {
         $this->requireMM();
-        $this->requireDigiPay();
+        $this->requirePayYar();
 
         $this->assertTrue(Route::has('admin.marketing.guide'), 'روت راهنمای مارکتینگ ثبت نشده است.');
-        $this->assertTrue(Route::has('admin.digipay.guide'), 'روت راهنمای پرداخت‌یار ثبت نشده است.');
+        $this->assertTrue(Route::has('admin.payyar.guide'), 'روت راهنمای پرداخت‌یار ثبت نشده است.');
 
         $this->assertTrue(view()->exists('marketing-messaging::back.guide.index'));
-        $this->assertTrue(view()->exists('digipay::back.guide.index'));
+        $this->assertTrue(view()->exists('payyar::back.guide.index'));
 
         $mmMenu = (string) file_get_contents($this->mmDir().'/resources/views/back/partials/menu.blade.php');
-        $dpMenu = (string) file_get_contents($this->dpDir().'/resources/views/back/partials/menu.blade.php');
+        $pyMenu = (string) file_get_contents($this->pyDir().'/resources/views/back/partials/menu.blade.php');
 
         $this->assertStringContainsString('راهنما و آموزش', $mmMenu);
         $this->assertStringContainsString('admin.marketing.guide', $mmMenu);
-        $this->assertStringContainsString('راهنما و آموزش', $dpMenu);
-        $this->assertStringContainsString('admin.digipay.guide', $dpMenu);
+        $this->assertStringContainsString('راهنما و آموزش', $pyMenu);
+        $this->assertStringContainsString('admin.payyar.guide', $pyMenu);
     }
 
     #[Test]
@@ -414,14 +414,14 @@ class Phase86Test extends TestCase
     }
 
     #[Test]
-    #[TestDox('بند ۶ — صفحهٔ راهنمای پرداخت‌یار رندر می‌شود با برند جدید')]
-    public function digipay_guide_page_renders(): void
+    #[TestDox('بند ۶ — صفحهٔ راهنمای پرداخت‌یار (پکیج PayYar) رندر می‌شود با برند جدید')]
+    public function payyar_guide_page_renders(): void
     {
-        $this->requireDigiPay();
+        $this->requirePayYar();
 
         $this->actingAs($this->newCreator(), 'adminPanel');
 
-        $response = $this->get(route('admin.digipay.guide'));
+        $response = $this->get(route('admin.payyar.guide'));
 
         $response->assertOk();
         $response->assertSee('پرداخت‌یار');
@@ -431,16 +431,16 @@ class Phase86Test extends TestCase
     /* ================= ۲) نام و عنوان جدید پکیج ادغامی ================= */
 
     #[Test]
-    #[TestDox('بند ۲ — پرداخت‌یار: module.json (title + نسخهٔ ۱.۵) و برند در سربرگ‌ها و منو')]
+    #[TestDox('بند ۲ — پرداخت‌یار (پکیج جدید PayYar): module.json (title + نسخهٔ ۱.۰) و برند در سربرگ‌ها و منو')]
     public function payyar_brand_is_applied_across_digipay_package(): void
     {
-        $dir = $this->requireDigiPay();
+        $dir = $this->requirePayYar();
 
         $manifest = json_decode((string) file_get_contents($dir.'/module.json'), true);
         $this->assertSame('پرداخت‌یار', $manifest['title'] ?? null, 'کلید title در module.json.');
-        $this->assertSame('1.5.0', $manifest['version'] ?? null);
-        // نام فنی ماژول برای حفظ داده‌ها تغییر نمی‌کند
-        $this->assertSame('DigiPay', $manifest['name'] ?? null);
+        $this->assertSame('1.0.0', $manifest['version'] ?? null);
+        // نام فنی ماژول جدید = PayYar (بدون نام پکیج قدیمی)
+        $this->assertSame('PayYar', $manifest['name'] ?? null);
 
         $menu = (string) file_get_contents($dir.'/resources/views/back/partials/menu.blade.php');
         $this->assertStringContainsString('پرداخت‌یار | درگاه‌های پرداخت', $menu);
@@ -458,7 +458,7 @@ class Phase86Test extends TestCase
     #[TestDox('بند ۳ — توضیحات بازار HTML کارد-محور + تصویر شاخص پرداخت‌یار داخل پکیج')]
     public function payyar_market_description_and_featured_image_exist(): void
     {
-        $dir = $this->requireDigiPay();
+        $dir = $this->requirePayYar();
 
         $this->assertFileExists($dir.'/docs/market-description.html');
         $this->assertFileExists($dir.'/featured-payyar.png');

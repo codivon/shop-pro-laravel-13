@@ -965,9 +965,11 @@ class OrderController extends Controller
     protected function paymentModuleGateways(): array
     {
         return [
+            // فاز ۸۷ — پکیج جدید «پرداخت‌یار» (PayYar): درگاه مستقیم + اسنپ‌پی
+            'payyar'  => \Modules\PayYar\Http\Controllers\PayYarController::class,
+            'snappay' => \Modules\PayYar\Http\Controllers\SnappPayController::class,
+            // سازگاری نصب‌های قدیمی پکیج «درگاه‌های پرداخت و اقساطی» (DigiPay)
             'digipay' => \Modules\DigiPay\Http\Controllers\DigiPayController::class,
-            // فاز ۸۱ — اسنپ‌پی داخل پکیج «درگاه‌های پرداخت و اقساطی» (DigiPay) است
-            'snappay' => \Modules\DigiPay\Http\Controllers\SnappPayController::class,
         ];
     }
 

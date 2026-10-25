@@ -62,12 +62,15 @@ class StoreOrderRequest extends FormRequest
     protected function paymentModuleGateways(): array
     {
         $gateway=[];
-        if(function_exists('module_is_active') && module_is_active('DigiPay')){
-            $gateway[]='digipay';
-        }
-        // فاز ۸۱ — اسنپ‌پی داخل پکیج DigiPay است (درگاه اقساطی BNPL)
-        if(function_exists('module_is_active') && module_is_active('DigiPay')){
+        // فاز ۸۷ — پکیج جدید «پرداخت‌یار» (PayYar): درگاه مستقیم + اسنپ‌پی
+        if(function_exists('module_is_active') && module_is_active('PayYar')){
+            $gateway[]='payyar';
             $gateway[]='snappay';
+        }
+        // سازگاری نصب‌های قدیمی پکیج «درگاه‌های پرداخت و اقساطی» (DigiPay)
+        if(function_exists('module_is_active') && module_is_active('DigiPay')){
+            if(!in_array('payyar',$gateway)) $gateway[]='digipay';
+            if(!in_array('snappay',$gateway)) $gateway[]='snappay';
         }
         return $gateway;
     }
