@@ -81,6 +81,17 @@ class Sms extends Model
             'string' => 'هشدار کاهش قیمت محصول',
             'method' => 'priceAlert'
         ],
+        // فاز ۸۰ — پکیج مارکتینگ و پیام‌رسانی (MarketingMessaging)
+        'CART_RECOVERY' => [
+            'key'    => 'cart-recovery',
+            'string' => 'یادآور سبد خرید رهاشده',
+            'method' => 'cartRecovery'
+        ],
+        'MARKETING_CAMPAIGN' => [
+            'key'    => 'marketing-campaign',
+            'string' => 'کمپین پیامکی مارکتینگ',
+            'method' => 'marketingCampaign'
+        ],
     ];
 
     public function user()

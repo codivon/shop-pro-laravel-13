@@ -49,8 +49,14 @@
 4. ✅ **تست پایهٔ پکیج‌های پول‌محور**: `tests/Feature/Packages/MoneyPackagesTest.php` (۱۰ تست) — مانیفست/ساختار ادغام/قرارداد FinnotechService (۱۸ سرویس + شیم verifyIdentity)/ریاضی کارمزد و جریمه/ثبت wire-theme + سلامت CheckoutTurbo و DigiPay؛ روی میزبانی بدون پکیج Skip تمیز، روی میزبانِ نصب‌کرده راستی‌آزمایی کامل — در سندباکس با نصب موقت ماژول ۸ تست سبز + ۸۹ assertion و سپس ماژول و جداولش پاک‌سازی شد
 5. ⏳ باقی‌ماندهٔ جزئی: مستندسازی Story (ارزش مستقل) و حذف zipهای dist از توزیع‌های آینده (الگوی RackWidget)
 
-### فاز ۸۰ — پکیج جدید: «مارکتینگ و پیام‌رسانی»
+### فاز ۸۰ — پکیج جدید: «مارکتینگ و پیام‌رسانی» ✅ (انجام شد)
 سبد خرید رهاشده (یادآوری پیامکی خودکار) + کمپین پیامکی هدفمند + سگمنت‌بندی مشتریان + گزارش کمپین.
+
+**اقدامات:**
+- **هسته (پریسدنت فاز ۷۸):** دو نوع پیامک `CART_RECOVERY` و `MARKETING_CAMPAIGN` در `Sms::TYPES` + متد در هر ۵ درایور + پترن‌های UI تنظیمات پیامک (`cart_recovery_pattern_code` / `marketing_campaign_pattern_code`) + تسویهٔ بدهی فاز ۷۸ (افزودن `price_alert_pattern_code` به UI).
+- **پکیج `MarketingMessaging` v1.0.0** (مخزن مستقل): ۵ مایگریشن گارددار، سگمنت‌سازی با ۱۰ معیار، سبد رهاشدهٔ دومرحله‌ای با معیار `MAX(cart_product.updated_at)`، ضدتکرار با یگانگی‌های `(cart_id,stage)` و `(campaign_id,user_id)`، گزارش تبدیل با لیستنر `OrderPaid`، پنل دو-پنلی، ۴ کامند زمان‌بندی‌شده، قرارداد `InstallPermissionsCommand`.
+- تضمین رضایت: فقط کاربران با موبایل معتبر + `users.notification=1` — بدون استثنا.
+- تست: `tests/Feature/Packages/MarketingMessagingTest.php` (۱۶ تست، Skip تمیز بدون ماژول) + `tests/Unit/SmsMarketingTypesTest.php` (۶ تست) — روی سندباکس با MariaDB ۱۱.۴: **۲۲ سبز / ۱۰۹ assertion**.
 
 ### فاز ۸۱ — پکیج جدید: «باشگاه مشتریان»
 امتیاز وفاداری + کارت هدیه (اتصال به کیف پول هسته) + معرفی دوستان (توسعهٔ `Referral`).

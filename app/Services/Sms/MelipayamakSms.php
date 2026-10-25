@@ -210,4 +210,29 @@ class MelipayamakSms extends SmsService implements SmsContract, SmsNotificationC
             ],
         ];
     }
+
+    /** فاز ۸۰ — یادآور سبد خرید رهاشده (پکیج MarketingMessaging؛ الگو: cart_recovery_pattern_code با متغیرهای name، items و total) */
+    public function cartRecovery()
+    {
+        return [
+            'bodyId'       => option('cart_recovery_pattern_code'),
+            'input_data'   => [
+                '0' => $this->data['name'],
+                '1' => $this->data['items'],
+                '2' => $this->data['total'],
+            ],
+        ];
+    }
+
+    /** فاز ۸۰ — کمپین پیامکی مارکتینگ (پکیج MarketingMessaging؛ الگو: marketing_campaign_pattern_code با متغیرهای name و store) */
+    public function marketingCampaign()
+    {
+        return [
+            'bodyId'       => option('marketing_campaign_pattern_code'),
+            'input_data'   => [
+                '0' => $this->data['name'],
+                '1' => $this->data['store'],
+            ],
+        ];
+    }
 }

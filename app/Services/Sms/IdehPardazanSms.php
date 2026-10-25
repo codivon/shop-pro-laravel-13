@@ -254,4 +254,44 @@ class IdehPardazanSms extends SmsService implements SmsContract, SmsNotification
             ],
         ];
     }
+
+    /** فاز ۸۰ — یادآور سبد خرید رهاشده (پکیج MarketingMessaging؛ الگو: cart_recovery_pattern_code با متغیرهای name، items و total) */
+    public function cartRecovery()
+    {
+        return [
+            'TemplateId'     => option('cart_recovery_pattern_code'),
+            'ParameterArray' => [
+                [
+                    'Parameter'      => 'name',
+                    'ParameterValue' => $this->data['name'],
+                ],
+                [
+                    'Parameter'      => 'items',
+                    'ParameterValue' => $this->data['items'],
+                ],
+                [
+                    'Parameter'      => 'total',
+                    'ParameterValue' => $this->data['total'],
+                ],
+            ],
+        ];
+    }
+
+    /** فاز ۸۰ — کمپین پیامکی مارکتینگ (پکیج MarketingMessaging؛ الگو: marketing_campaign_pattern_code با متغیرهای name و store) */
+    public function marketingCampaign()
+    {
+        return [
+            'TemplateId'     => option('marketing_campaign_pattern_code'),
+            'ParameterArray' => [
+                [
+                    'Parameter'      => 'name',
+                    'ParameterValue' => $this->data['name'],
+                ],
+                [
+                    'Parameter'      => 'store',
+                    'ParameterValue' => $this->data['store'],
+                ],
+            ],
+        ];
+    }
 }

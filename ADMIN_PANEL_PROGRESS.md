@@ -2970,3 +2970,27 @@ php artisan optimize:clear
 - گام بعدی (فاز ۸۰): پکیج جدید «مارکتینگ و پیام‌رسانی» (سبد رهاشده + کمپین پیامکی + سگمنت‌بندی).
 
 **کامیت:** tests/Feature/Packages/MoneyPackagesTest.php + PACKAGES_ROADMAP.md + این فایل → docs/project-analysis
+
+---
+
+## فاز ۸۰ — پکیج جدید «مارکتینگ و پیام‌رسانی» (سبد رهاشده + کمپین پیامکی + سگمنت‌بندی + گزارش کمپین)
+
+### ۱) هسته — زیرساخت پیامک مارکتینگ (پریسدنت فاز ۷۸ برای PRICE_ALERT)
+- دو نوع پیامک جدید در `Sms::TYPES`: `CART_RECOVERY` (یادآور سبد؛ متغیرهای name/items/total) و `MARKETING_CAMPAIGN` (کمپین؛ متغیرهای name/store) — متد `cartRecovery()`/`marketingCampaign()` در هر ۵ درایور (`Ippanel/Kavenegar/Melipayamak/IdehPardazan/Faraz`).
+- UI پترن‌ها در `SmsSettings::patternDefinitions()` برای هر ۵ ارائه‌دهنده + **تسویهٔ بدهی فاز ۷۸**: `price_alert_pattern_code` که از UI جا مانده بود اضافه شد.
+- تغییری در جریان ارسال نشد — همان `SmsChannel → SmsService → لاگ خودکار جدول sms` هسته.
+
+### ۲) پکیج `MarketingMessaging` v1.0.0 (مخزن مستقل — الگوی DigiPay/CreditPay)
+- **۵ مایگریشن گارددار `hasTable`**: `marketing_settings`، `marketing_segments` (معیارهای JSON)، `marketing_campaigns`، `marketing_campaign_targets` (یگانگی `campaign_id+user_id`)، `marketing_abandoned_carts` (یگانگی `cart_id+stage`).
+- **سبد رهاشده**: کشف کلیدی — `attach/updateExistingPivot` فقط `updated_at` پارچ `cart_product` را عوض می‌کند → معیار رهاشدگی = `MAX(cart_product.updated_at)` نه `carts.updated_at`. کامند ساعتی `marketing:process-abandoned-carts` با دنبالهٔ دومرحله‌ای (۴ و ۲۴ ساعت، قابل‌تنظیم)، `--dry-run`، سقف batch، انقضای سبدِ خالی‌شده، بازیابی خودکار با `OrderPaid` (لیستنر `MarkCartRecovered`).
+- **کمپین**: سگمنت با ۱۰ معیار (خریدار/غیرخریدار، تعداد/مبلغ خرید، بازهٔ ثبت‌نام، خرید در N روز اخیر، مشتری غایب، خبرنامه)، ارسال فوری/زمان‌بندی‌شده (`marketing:send-campaign` هر ۵ دقیقه)، توقف امن بدون پترن، گزارش تبدیل: لیستنر `TrackCampaignConversion` روی `OrderPaid` سفارشِ تا ۳۰ روز پس از کمپین را به گیرندهٔ پیامک وصل می‌کند (نرخ تبدیل + فروش ناشی).
+- **تضمین رضایت (بدون استثنا)**: گیرنده = موبایل معتبر + `users.notification=1`؛ سبد مهمان/رزروشده/با سفارشِ پس از فعالیت مستثنی.
+- **پنل دو-پنلی**: ۸ ویو (کمپین‌ها/ساخت/گزارش، سگمنت‌ها/ساخت، سبد رهاشده، تنظیمات) + منوی دو-شاخه‌ای `ModuleMenuRegistry` (پریسدنت DigiPay) — پرمیژن‌های `marketing.*`.
+- **قرارداد نصب**: `marketing:install-permissions {--remove}` در مسیر ثابت `Modules\MarketingMessaging\Console\Commands` (قرارداد `PackageInstallerService`).
+
+### ۳) تست — ۲۲ سبز / ۱۰۹ assertion (MariaDB ۱۱.۴ سندباکس)
+- `tests/Unit/SmsMarketingTypesTest.php` (۶ تست): قرارداد TYPES + وجود متد در ۵ درایور + پترن‌های UI.
+- `tests/Feature/Packages/MarketingMessagingTest.php` (۱۶ تست، الگوی MoneyPackagesTest — Skip تمیز بدون ماژول): مانیفست v1، قرارداد نصب‌کننده، گارد hasTable مایگریشن‌ها، منوی دو-پنلی، سگمنت‌سازی (رضایت/موبایل/سابقهٔ خرید/مبلغ)، مستثنیات سبد رهاشده (رضایت/مهمان/رزرو/سفارشِ پس از فعالیت)، دنبالهٔ دومرحله‌ای + ضدتکرار + انقضا، بازیابی با OrderPaid، ارسال کمپین + ضدتکرار + تبدیل، توقف امن بدون پترن، قرارداد متغیرهای قالب.
+- نصب موقت ماژول در Modules/ + مایگریشن سبز (۵/۵) → تست → پاک‌سازی کامل (مخزن هسته تمیز می‌ماند).
+
+**کامیت:** هسته (Sms + ۵ درایور + SmsSettings + ۲ تست + ROADMAP + این فایل) + مخزن جدید `shop-pro-MarketingMessaging-module` → docs/project-analysis

@@ -257,4 +257,29 @@ class FarazSms extends SmsService implements SmsContract, SmsNotificationContrac
             ],
         ];
     }
+
+    /** فاز ۸۰ — یادآور سبد خرید رهاشده (پکیج MarketingMessaging؛ الگو: cart_recovery_pattern_code با متغیرهای name، items و total) */
+    public function cartRecovery()
+    {
+        return [
+            'pattern_code' => option('cart_recovery_pattern_code'),
+            'attributes'   => [
+                'name'  => $this->data['name'],
+                'items' => $this->data['items'],
+                'total' => $this->data['total'],
+            ],
+        ];
+    }
+
+    /** فاز ۸۰ — کمپین پیامکی مارکتینگ (پکیج MarketingMessaging؛ الگو: marketing_campaign_pattern_code با متغیرهای name و store) */
+    public function marketingCampaign()
+    {
+        return [
+            'pattern_code' => option('marketing_campaign_pattern_code'),
+            'attributes'   => [
+                'name'  => $this->data['name'],
+                'store' => $this->data['store'],
+            ],
+        ];
+    }
 }

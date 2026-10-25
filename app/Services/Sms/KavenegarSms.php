@@ -216,4 +216,29 @@ class KavenegarSms extends SmsService implements SmsContract, SmsNotificationCon
             ],
         ];
     }
+
+    /** فاز ۸۰ — یادآور سبد خرید رهاشده (پکیج MarketingMessaging؛ الگو: cart_recovery_pattern_code با متغیرهای name، items و total) */
+    public function cartRecovery()
+    {
+        return [
+            'template'     => option('cart_recovery_pattern_code'),
+            'input_data'   => [
+                'token'  => $this->data['name'],
+                'token2' => $this->data['items'],
+                'token3' => $this->data['total'],
+            ],
+        ];
+    }
+
+    /** فاز ۸۰ — کمپین پیامکی مارکتینگ (پکیج MarketingMessaging؛ الگو: marketing_campaign_pattern_code با متغیرهای name و store) */
+    public function marketingCampaign()
+    {
+        return [
+            'template'     => option('marketing_campaign_pattern_code'),
+            'input_data'   => [
+                'token'  => $this->data['name'],
+                'token2' => $this->data['store'],
+            ],
+        ];
+    }
 }
