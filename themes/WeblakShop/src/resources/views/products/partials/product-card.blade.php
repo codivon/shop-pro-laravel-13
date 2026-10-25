@@ -1,5 +1,10 @@
 <div class="product-card mb-2 mx-res-0">
-    @if($product->special)
+    @if($product->isPreOrder())
+        {{-- فاز ۸۱ — نشان پیش‌فروش در کارت محصول --}}
+        <div class="promotion-badge text-right">
+           <span>{{ option('dt_pre_order_badge_text', 'پیش‌فروش') }}</span>
+        </div>
+    @elseif($product->special)
         <div class="promotion-badge text-right">
            <span> فروش ویژه</span>
             @if ($product->isSpecial() && $product->special_end_date && $product->special_end_date->diffInHours(now()) <= 24)

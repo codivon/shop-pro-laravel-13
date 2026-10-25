@@ -143,7 +143,9 @@ $(document).on('click', '.add-to-cart', function () {
     });
 });
 
-$('#stock_notify_btn').click(function () {
+// فاز ۸۱ — binding های delegated: بعد از جایگزینی AJAX بلوک product-info (تغییر ویژگی/تنوع)
+// المنت‌ها از نو ساخته می‌شوند؛ binding مستقیم می‌میرد و دکمه کار نمی‌کند.
+$(document).on('click', '#stock_notify_btn', function () {
     var btn = this;
 
     if ($(btn).data('user')) {
@@ -188,10 +190,10 @@ function sendStockNotify() {
     });
 }
 
-$('#sendStockNotifyBtn').click(sendStockNotify);
+$(document).on('click', '#sendStockNotifyBtn', sendStockNotify);
 
-// ---------- فاز ۷۸: هشدار کاهش قیمت ----------
-$('#price_alert_btn').click(function () {
+// ---------- فاز ۷۸/۸۱: هشدار کاهش قیمت (binding delegated) ----------
+$(document).on('click', '#price_alert_btn', function () {
     var btn = this;
 
     if ($(btn).data('user')) {
@@ -237,7 +239,7 @@ function sendPriceAlert() {
     });
 }
 
-$('#sendPriceAlertBtn').click(sendPriceAlert);
+$(document).on('click', '#sendPriceAlertBtn', sendPriceAlert);
 
 // product prices js codes
 

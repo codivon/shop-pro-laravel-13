@@ -2994,3 +2994,30 @@ php artisan optimize:clear
 - نصب موقت ماژول در Modules/ + مایگریشن سبز (۵/۵) → تست → پاک‌سازی کامل (مخزن هسته تمیز می‌ماند).
 
 **کامیت:** هسته (Sms + ۵ درایور + SmsSettings + ۲ تست + ROADMAP + این فایل) + مخزن جدید `shop-pro-MarketingMessaging-module` → docs/project-analysis
+
+---
+
+## فاز ۸۱ — شخصی‌سازی/غیرفعال‌سازی هشدار کاهش قیمت + تکمیل پیش‌فروش + اسنپ‌پی
+
+**تاریخ**: ۱۴۰۴/۰۸/۰۳ | **شاخه**: docs/project-analysis | **تست**: ۲۵ سبز (۱۰ جدید + ۱۵ رگرسیون) + Unit ۲۳ سبز
+
+### گزارش‌های کاربر و ریشه‌یابی
+| گزارش کاربر | ریشه | رفع |
+|---|---|---|
+| «دکمه هشدار کاهش قیمت کار نمی‌کند» | binding مستقیم `$('#price_alert_btn').click()` بعد از جایگزینی AJAX بلوک product-info (تغییر تنوع/ویژگی) می‌میرد | ۴ binding → `$(document).on(...)` delegated |
+| «از تنظیمات غیرفعالش کنیم» | هیچ کلیدی وجود نداشت | `dt_price_alert_status` + گیت کامل (دکمه/مودال/endpoint/Observer/Job) |
+| «صفحهٔ ادمین داشته باشیم» | صفحه بود ولی آیتم منو نداشت | منوی پنل جدید config/admin-menu.php |
+| «نوتیف خود فروشگاه» | هیچ نوتیفی نبود | `PriceAlertsSent` database+WebPush به مدیران + رجیستری + بلید پنل قدیم |
+| «فیلد پترن در تنظیمات پیامک» | از فاز ۸۰ آماده بود | راستی‌آزمایی شد (۵ ارائه‌دهنده) |
+| «متن دکمه و آیکون قابل شخصی‌سازی» | هاردکد | ۳ فیلد تم + پیش‌فرض |
+| «پیش‌فروش در فرانت دیده نمی‌شود» | `$selected_price` فیلتر موجودی → null → شاخهٔ ناموجود | fallback قیمت منتشرشده + تنوع‌های پیش‌فروش‌آگاه + نشان کارت‌ها + سفارش‌ها |
+
+### فایل‌های هسته (۱۹ فایل)
+- مدل: `Product.php` (saleablePrices/isPreOrder/addableToCart/getLowestPrice/get_attributes/getPriceWithAttributes/hasAttributeStock)
+- کنترلرها: تم ProductController (show/prices)، تم CartController، API CartController، ProductResource
+- هشدار قیمت: ProcessPriceAlerts (گیت + نوتیف مدیران)، PriceObserver (گیت)، PriceAlertsSent (جدید)، AdminNotificationTypes، theme PriceAlertController (گیت)
+- UI: show.js (delegated)، product-info-sidebar، show، product-card، product-block×2، carts/index، user/orders/show، back/orders/show، helpers (cart_min/max)، admin-menu.php، تم general.php (۶ فیلد تنظیمات + CSRF اسنپ‌پی)
+- تست: `tests/Feature/Extra/Phase81Test.php` (۱۰ تست)
+
+### پکیج‌ها (سوییچ به گزارش PACKAGES_ROADMAP فاز ۸۱)
+DigiPay v1.3.0 (اسنپ‌پی + ری‌برندینگ) پوش شد؛ CreditPay/InstallmentPayment برگردانده شدند؛ InstallmentCredit آمادهٔ مخزن جدید؛ دو تصویر شاخص تولید شد.

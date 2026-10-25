@@ -20,6 +20,7 @@ class AdminNotificationTypes
             'SellerRequestDeposit'   => ['title' => 'درخواست تسویه فروشنده',            'icon' => 'icon-credit-card',     'c1' => '#FB923C', 'c2' => '#EA580C', 'can' => 'request_deposit'],
             'SellerProductCreated'   => ['title' => 'محصول جدید ثبت شد',                'icon' => 'icon-package',         'c1' => '#FBBF24', 'c2' => '#D97706', 'can' => 'sellers.products'],
             'SellerProductUpdate'    => ['title' => 'محصولی ویرایش شد',                 'icon' => 'icon-refresh-cw',      'c1' => '#FBBF24', 'c2' => '#D97706', 'can' => 'sellers.products'],
+            'PriceAlertsSent'        => ['title' => 'هشدار کاهش قیمت ارسال شد',         'icon' => 'icon-bell',            'c1' => '#F87171', 'c2' => '#DC2626', 'can' => 'products.price-alert'],
         ];
 
         return $map[$type] ?? [
@@ -86,6 +87,10 @@ class AdminNotificationTypes
 
                 case 'ContactCreated':
                     return route('np.contacts.index');
+
+                case 'PriceAlertsSent':
+                    // فاز ۸۱ — هشدار کاهش قیمت: لینک به صفحهٔ هشدارهای قیمت پنل
+                    return route('np.price-alerts.index');
             }
         } catch (\Throwable) {
             // روت فعلی در دسترس نیست — به صفحه اعلان‌های پنل برمی‌گردیم

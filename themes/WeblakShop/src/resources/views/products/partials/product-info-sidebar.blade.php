@@ -143,16 +143,18 @@
                             data-action="{{ route('front.cart.store', ['product' => $product]) }}"
                             data-product="{{ $product->slug }}" type="button"
                             class="btn-add-to-cart mt-4 w-100 btn-primary-cm cursor-pointer btn-with-icon add-to-cart btn-show-product">
-                        {{ $product->pre_order ? 'ثبت پیش‌فروش' : 'افزودن به سبد خرید' }}
+                        {{ $product->pre_order && option('dt_pre_order_status', '1') == '1' ? option('dt_pre_order_button_text', 'ثبت پیش‌فروش') : 'افزودن به سبد خرید' }}
                     </button>
 
-                    {{-- فاز ۷۸ — هشدار کاهش قیمت --}}
-                    <button id="price_alert_btn" data-user="{{ auth('web')->check() ? auth('web')->user()->id : '' }}"
-                            data-product="{{ $product->id }}" type="button"
-                            class="product-stock-action btn btn-secondary cart-not-available w-100 mt-2">
-                        <i class="mdi mdi-bell-ring-outline"></i>
-                        هشدار کاهش قیمت
-                    </button>
+                    {{-- فاز ۷۸/۸۱ — هشدار کاهش قیمت (قابل غیرفعال‌سازی و شخصی‌سازی از تنظیمات تم) --}}
+                    @if(option('dt_price_alert_status', '1') == '1')
+                        <button id="price_alert_btn" data-user="{{ auth('web')->check() ? auth('web')->user()->id : '' }}"
+                                data-product="{{ $product->id }}" type="button"
+                                class="product-stock-action btn btn-secondary cart-not-available w-100 mt-2">
+                            <i class="{{ option('dt_price_alert_button_icon', 'mdi mdi-bell-ring-outline') }}"></i>
+                            {{ option('dt_price_alert_button_text', 'هشدار کاهش قیمت') }}
+                        </button>
+                    @endif
 
 
                 </div>

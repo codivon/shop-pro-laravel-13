@@ -293,7 +293,9 @@ class ProductController extends Controller
 
         $questions = Comment::whereNull('comment_id')->latest()->where(['status' => 'accepted', 'commentable_id' => $product->id, 'commentable_type' => 'App\Models\Product'])->paginate(20);
 
-        $selected_price = $product->getPrices()->first();
+        // فاز ۸۱ — پیش‌فروش: اگر هیچ قیمت موجودی‌داری نیست، اولین قیمت منتشرشده (بدون فیلتر موجودی)
+        $selected_price = $product->getPrices()->first()
+            ?? ($product->isPreOrder() ? $product->saleablePrices(true)->first() : null);
 
         // FIX مقیاس: گروه‌های ویژگی تقریباً ثابت‌اند — ۱۰ دقیقه کش می‌شوند
         $attributeGroups = Cache::remember('front.attributeGroups', 600, function () {
@@ -325,7 +327,7 @@ class ProductController extends Controller
         $firstColorId = null;
 
         // پیدا کردن اولین رنگ انتخاب شده
-        $firstCheckedColor = $product->getPrices()->first()?->get_attributes()->where('attribute_group_id', $attributeGroups->where('type', 'color')->first()?->id)->first();
+        $firstCheckedColor = $selected_price?->get_attributes()->where('attribute_group_id', $attributeGroups->where('type', 'color')->first()?->id)->first();
         if ($firstCheckedColor) {
             $firstColorId = $firstCheckedColor->id;
             $priceIds = $product->prices()->pluck('id');
@@ -571,7 +573,8 @@ class ProductController extends Controller
             'groups.*' => 'required|exists:attributes,id'
         ]);
 
-        $query = $product->getPrices();
+        // فاز ۸۱ — پیش‌فروش: انتخاب تنوع‌های ناموجود هم ممکن است
+        $query = $product->saleablePrices($product->isPreOrder());
         $count = 0;
         $attributeGroups = AttributeGroup::orderBy('ordering')->get();
 

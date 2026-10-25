@@ -179,6 +179,20 @@
                         </div>
                     </a>
                     @endcan
+                {{-- فاز ۸۱ — هشدار کاهش قیمت --}}
+                @elseif($notification->type == 'PriceAlertsSent')
+                    @can('products.price-alert')
+                    <a class="d-flex justify-content-between" href="{{ route('admin.notifications') }}">
+                        <div class="media d-flex align-items-start">
+                            <div class="media-left"><i class="fa-solid fa-bell"></i></div>
+                            <div class="media-body">
+                                <h6 class="danger media-heading">هشدار کاهش قیمت ارسال شد</h6><small
+                                    class="notification-text">{{ $notification->data['message'] }}</small>
+                            </div><small>
+                                <time class="media-meta">{{ jdate($notification->created_at)->ago() }}</time></small>
+                        </div>
+                    </a>
+                    @endcan
                 @endif
             @endforeach
         </li>

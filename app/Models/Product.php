@@ -165,25 +165,51 @@ class Product extends Model
     }*/
     public function getPrices()
     {
+        return $this->saleablePrices();
+    }
+
+    /**
+     * فاز ۸۱ — قیمت‌های فروش‌پذیر محصول.
+     *
+     * در پیش‌فروش (ignoreStock = true) فیلتر «موجودی > 0» کنار گذاشته می‌شود
+     * تا تنوع‌های ناموجود هم برای پیش‌خرید قابل انتخاب باشند؛ قیمت‌های
+     * منتشرنشده در هیچ حالتی فروش نمی‌روند (محدودیت Price حفظ می‌شود).
+     */
+    public function saleablePrices(bool $ignoreStock = false)
+    {
         if (option('multi_vendor_system_status','false')=="false"){
-            return $this->hasMany(Price::class)
-                ->where('stock', '>', 0)->where('seller_id', null)
-                ->orderByRaw('if((discount_expire_at is null or date(discount_expire_at) > "' . now()->format('Y-m-d H:i:s') . '"), discount_price, regular_price)');
+            $query = $this->hasMany(Price::class)
+                ->where('seller_id', null);
+        } else {
+            $query = $this->hasMany(Price::class)
+                ->with('seller')
+                ->where(function ($query) {
+                    $query->whereNull('seller_id')  // قیمت‌های سیستمی
+                    ->orWhereExists(function ($q) {
+                        $q->select(DB::raw(1))
+                            ->from('sellers')
+                            ->whereColumn('sellers.id', 'prices.seller_id')
+                            ->whereIn('sellers.id', Seller::isFullActive()->pluck('id'));
+                    });
+                });
         }
 
-        return $this->hasMany(Price::class)
-            ->with('seller')
-            ->where('stock', '>', 0)
-            ->where(function ($query) {
-                $query->whereNull('seller_id')  // قیمت‌های سیستمی
-                ->orWhereExists(function ($q) {
-                    $q->select(DB::raw(1))
-                        ->from('sellers')
-                        ->whereColumn('sellers.id', 'prices.seller_id')
-                        ->whereIn('sellers.id', Seller::isFullActive()->pluck('id'));
-                });
-            })
-            ->orderByRaw('if((discount_expire_at is null or date(discount_expire_at) > "' . now()->format('Y-m-d H:i:s') . '"), discount_price, regular_price)');
+        if (! $ignoreStock) {
+            $query->where('stock', '>', 0);
+        }
+
+        return $query->orderByRaw('if((discount_expire_at is null or date(discount_expire_at) > "' . now()->format('Y-m-d H:i:s') . '"), discount_price, regular_price)');
+    }
+
+    /**
+     * فاز ۸۱ — آیا این محصول در وضعیت پیش‌فروش قابل پیش‌خرید است؟
+     * هم تیک خود محصول و هم کلید سراسری قابلیت (dt_pre_order_status) لازم است؛
+     * با غیرفعال‌کردن قابلیت از تنظیمات، همهٔ عبورهای کنترل‌شده از گیت موجودی هم
+     * به‌صورت خودکار بسته می‌شوند.
+     */
+    public function isPreOrder(): bool
+    {
+        return (bool) $this->pre_order && option('dt_pre_order_status', '1') == '1';
     }
 
 
@@ -282,9 +308,10 @@ class Product extends Model
             return true;
         }
 
-        // فاز ۷۸ — پیش‌فروش: حتی بدون موجودی، ثبت سفارش مجاز است
-        if ($this->pre_order) {
-            return true;
+        // فاز ۷۸/۸۱ — پیش‌فروش: حتی بدون موجودی، ثبت سفارش مجاز است؛
+        // ولی حداقل یک قیمت «منتشرشده» باید وجود داشته باشد (محدودیت Price)
+        if ($this->isPreOrder()) {
+            return $this->prices()->where('published', 1)->exists();
         }
 
         if ($this->price_type == "multiple-price" && !$this->prices()->where('stock', '>', 0)->where('published', 1)->first()) {
@@ -339,6 +366,13 @@ class Product extends Model
 
         if ($price && $price->stock) {
             return $numeric ? $price->discountPrice() : trans('messages.currency.prefix') . number_format($price->discountPrice()) . trans('messages.currency.suffix');
+        }
+
+        // فاز ۸۱ — پیش‌فروش: قیمت از ردیف‌های منتشرشده (بدون فیلتر موجودی) نمایش داده می‌شود
+        if ($this->isPreOrder() && ($preOrderPrice = $this->saleablePrices(true)->first())) {
+            return $numeric
+                ? $preOrderPrice->discountPrice()
+                : trans('messages.currency.prefix') . number_format($preOrderPrice->discountPrice()) . trans('messages.currency.suffix');
         }
 
         return $numeric ? null : 'ناموجود';
@@ -403,13 +437,14 @@ class Product extends Model
 
     public function get_attributes($attributeGroup, $prev_attribute, $groups, $attributes_id)
     {
-        $prices = $this->getPrices()->pluck('id');
+        // فاز ۸۱ — پیش‌فروش: تنوع‌های ناموجود هم در انتخاب‌گر دیده می‌شوند
+        $prices = $this->saleablePrices($this->isPreOrder())->pluck('id');
 
         $group_attributes = $attributeGroup->get_attributes()->pluck('id');
         $attributes       = DB::table('attribute_price')->whereIn('price_id', $prices)->whereIn('attribute_id', $group_attributes);
 
         if ($groups) {
-            $group_prices = $this->getPrices();
+            $group_prices = $this->saleablePrices($this->isPreOrder());
 
             foreach ($attributes_id as $att) {
                 $group_prices->whereHas('get_attributes', function ($q) use ($att) {
@@ -443,7 +478,8 @@ class Product extends Model
 
     public function getPriceWithAttributes($attributes_id)
     {
-        foreach ($this->getPrices as $price) {
+        // فاز ۸۱ — پیش‌فروش: رزولوشن قیمت از تنوع‌های ناموجود هم ممکن است
+        foreach ($this->saleablePrices($this->isPreOrder())->get() as $price) {
             $price_attributes = $price->get_attributes()->pluck('attributes.id')->toArray();
 
             sort($price_attributes);
@@ -722,11 +758,15 @@ class Product extends Model
 
     public function hasAttributeStock(Attribute $attribute, $attributes_id = null)
     {
-
-        $query = $this->getPrices()
+        // فاز ۸۱ — پیش‌فروش: موجودی صفر مانع انتخاب تنوع نیست
+        $query = $this->saleablePrices($this->isPreOrder())
             ->whereHas('get_attributes', function ($q) use ($attribute) {
                 $q->where('attribute_id', $attribute->id);
-            })->inStock();
+            });
+
+        if (! $this->isPreOrder()) {
+            $query->inStock();
+        }
 
         if ($attributes_id) {
             foreach ($attributes_id as $att) {

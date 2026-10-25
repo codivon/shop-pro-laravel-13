@@ -2,9 +2,11 @@
 
 namespace App\Jobs;
 
+use App\Models\Admin;
 use App\Models\Price;
 use App\Models\PriceAlert;
 use App\Models\Product;
+use App\Notifications\Product\PriceAlertsSent;
 use App\Notifications\Sms\PriceAlertSms;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -12,6 +14,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * فاز ۷۸ — پردازش هشدارهای کاهش قیمت یک محصول.
@@ -36,6 +39,11 @@ class ProcessPriceAlerts implements ShouldQueue
 
     public function handle(): void
     {
+        // فاز ۸۱ — قابلیت از تنظیمات تم غیرفعال شده؛ هیچ هشداری پردازش نمی‌شود
+        if (option('dt_price_alert_status', '1') != '1') {
+            return;
+        }
+
         $product = Product::find($this->productId);
 
         if (! $product) {
@@ -92,6 +100,20 @@ class ProcessPriceAlerts implements ShouldQueue
             $alert->update([
                 'active'      => false,
                 'notified_at' => now(),
+            ]);
+        }
+
+        // فاز ۸۱ — اطلاع‌رسانی به خود فروشگاه (مدیران) از طریق کانال database پنل
+        try {
+            $admins = Admin::whereIn('level', ['admin', 'creator'])->get();
+
+            if ($admins->isNotEmpty()) {
+                Notification::send($admins, new PriceAlertsSent($product, $alerts->count()));
+            }
+        } catch (\Throwable $e) {
+            Log::error('خطای ارسال نوتیفیکیشن فروشگاه برای هشدار کاهش قیمت', [
+                'product_id' => $product->id,
+                'error'      => $e->getMessage(),
             ]);
         }
     }

@@ -238,8 +238,12 @@ function check_cart_quantity()
     foreach ($cart->products as $product) {
         $price = $product->prices()->find($product->pivot->price_id);
 
-        // فاز ۷۸ — پیش‌فروش: بدون کنترل موجودی
-        if ($product->pre_order) {
+        // فاز ۷۸/۸۱ — پیش‌فروش: بدون کنترل موجودی (فقط سقف یک عدد)
+        if ($product->isPreOrder()) {
+            if ($product->pivot->quantity > 1) {
+                return false;
+            }
+
             continue;
         }
 
@@ -494,6 +498,11 @@ function datatable($request, $query)
 
 function cart_min($selected_price)
 {
+    // فاز ۸۱ — پیش‌فروش: حداقل ۱ عدد حتی با موجودی صفر (سقف پیش‌فروش = ۱)
+    if ($selected_price->product?->isPreOrder()) {
+        return 1;
+    }
+
     if ($selected_price->cart_min !== null) {
         return min($selected_price->cart_min, $selected_price->stock);
     }
@@ -503,6 +512,11 @@ function cart_min($selected_price)
 
 function cart_max($selected_price)
 {
+    // فاز ۸۱ — پیش‌فروش: سقف خرید هر کالای پیش‌فروشی ۱ عدد است
+    if ($selected_price->product?->isPreOrder()) {
+        return 1;
+    }
+
     if ($selected_price->cart_max !== null) {
         return min($selected_price->cart_max, $selected_price->stock);
     }

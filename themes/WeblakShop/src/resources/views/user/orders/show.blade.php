@@ -494,7 +494,12 @@
                                             @endif
                                         </div>
                                         <div class="flex-grow-1">
-                                            <h6 class="fw-bold mb-1 text-md-right"><a class=" text-black" href="{{route('front.products.show',$item->product)}}">{{ $item->title }}</a></h6>
+                                            <h6 class="fw-bold mb-1 text-md-right"><a class=" text-black" href="{{route('front.products.show',$item->product)}}">{{ $item->title }}</a>
+                                                @if($item->product && $item->product->isPreOrder())
+                                                    {{-- فاز ۸۱ — نشان پیش‌فروش در سفارش مشتری --}}
+                                                    <span class="badge badge-info align-middle ms-1" style="background-color: #17a2b8; color: #fff; padding: 3px 8px; border-radius: 12px; font-size: 0.65rem;">{{ option('dt_pre_order_badge_text', 'پیش‌فروش') }}</span>
+                                                @endif
+                                            </h6>
 
                                             {{-- نشان وضعیت مرجوعی --}}
                                             @if($itemReturnInfo)

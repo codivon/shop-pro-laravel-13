@@ -128,6 +128,13 @@ return [
                             'permission' => 'products.stock-notify',
                             'icon' => 'bell-ring',
                         ],
+                        // فاز ۸۱ — منوی هشدار کاهش قیمت (صفحه از قبل وجود داشت؛ آیتم منو جا افتاده بود)
+                        [
+                            'label' => 'هشدار کاهش قیمت',
+                            'route' => 'np.price-alerts.index',
+                            'permission' => 'products.price-alert',
+                            'icon' => 'trending-down',
+                        ],
                         [
                             'label' => 'قیمت‌ها',
                             'route' => 'np.products.prices',

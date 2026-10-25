@@ -966,7 +966,8 @@ class OrderController extends Controller
     {
         return [
             'digipay' => \Modules\DigiPay\Http\Controllers\DigiPayController::class,
-            'snappay' => \Modules\SnappPay\Http\Controllers\SnappPayController::class,
+            // فاز ۸۱ — اسنپ‌پی داخل پکیج «درگاه‌های پرداخت و اقساطی» (DigiPay) است
+            'snappay' => \Modules\DigiPay\Http\Controllers\SnappPayController::class,
         ];
     }
 

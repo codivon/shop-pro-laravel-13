@@ -27,13 +27,24 @@ class CartController extends Controller
         $request->request->add(['quantity' => '1']);
 
         if ($product->isSinglePrice()) {
-            $price = $product->getPrices()->first();
+            // فاز ۸۱ — پیش‌فروش: اگر هیچ قیمت موجودی‌داری نیست، اولین قیمت منتشرشده
+            $price = $product->getPrices()->first()
+                ?? ($product->isPreOrder() ? $product->saleablePrices(true)->first() : null);
         } else {
             $request->validate([
                 'price_id' => ['required', Rule::exists('prices', 'id')->where('product_id', $product->id)->where('deleted_at', null)]
             ]);
 
             $price = $product->prices()->find($request->price_id);
+
+            // فاز ۸۱ — پیش‌فروش: فقط قیمت «منتشرشده» قابل پیش‌خرید است (محدودیت Price)
+            if ($product->isPreOrder() && $price && ! $price->published) {
+                $price = null;
+            }
+        }
+
+        if (! $price) {
+            return response(['status' => 'error', 'message' => 'قیمتی برای این محصول یافت نشد']);
         }
 
 
@@ -59,8 +70,8 @@ class CartController extends Controller
 
         if (!$cart_product) {
 
-            // فاز ۷۸ — پیش‌فروش: عبور کنترل‌شده از گیت موجودی
-            $stock_status = $product->pre_order
+            // فاز ۷۸/۸۱ — پیش‌فروش: عبور کنترل‌شده از گیت موجودی
+            $stock_status = $product->isPreOrder()
                 ? ['status' => true]
                 : $price->hasStock($request->quantity);
 
@@ -85,8 +96,8 @@ class CartController extends Controller
                 ]);
             }
 
-            // فاز ۷۸ — پیش‌فروش: تنها یک عدد از کالای پیش‌فروش مجاز است
-            if ($product->pre_order) {
+            // فاز ۷۸/۸۱ — پیش‌فروش: تنها یک عدد از کالای پیش‌فروش مجاز است
+            if ($product->isPreOrder()) {
                 return response([
                     'status'  => 'error',
                     'message' => 'این کالا پیش‌فروش است و تنها یک عدد از آن قابل سفارش است'
@@ -120,8 +131,10 @@ class CartController extends Controller
 
             $price     = $product->prices()->find($product->pivot->price_id);
             $quantity  = $request->input('product-' . $product->pivot->id);
-            // فاز ۷۸ — پیش‌فروش: بدون کنترل موجودی
-            $has_stock = $product->pre_order ? ['status' => true] : $price->hasStock($quantity, true);
+            // فاز ۷۸/۸۱ — پیش‌فروش: بدون کنترل موجودی (فقط سقف یک عدد)
+            $has_stock = $product->isPreOrder()
+                ? ($product->pivot->quantity > 1 ? ['status' => false, 'message' => 'این کالا پیش‌فروش است و تنها یک عدد از آن قابل سفارش است'] : ['status' => true])
+                : $price->hasStock($quantity, true);
 
             if (!$has_stock['status']) {
                 $errors[] = $has_stock['message'];

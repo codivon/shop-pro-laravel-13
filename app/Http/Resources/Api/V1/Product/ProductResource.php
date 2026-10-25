@@ -38,6 +38,7 @@ class ProductResource extends JsonResource
             'specificationGroups'  => (new SpecificationGroupCollection($this->specificationGroups->unique()))->additional(['product' => $this]),
             'link'                 => $this->link(),
             'is_available'         => $this->addableToCart(),
+            'is_pre_order'         => $this->isPreOrder(), // فاز ۸۱
             'prices'               => new PriceCollection($this->prices)
         ];
     }

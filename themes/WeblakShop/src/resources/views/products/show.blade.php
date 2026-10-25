@@ -326,10 +326,10 @@
                                     نا موجود
                                 </div>
                             </div>
-                        @elseif($product->pre_order)
+                        @elseif($product->isPreOrder())
                             <div class="product-timeout position-relative pt-5 mb-4">
                                 <div class="promotion-badge text-center">
-                                    پیش‌فروش
+                                    {{ option('dt_pre_order_badge_text', 'پیش‌فروش') }}
                                 </div>
                             </div>
                         @elseif($product->isSpecial())
@@ -1076,7 +1076,8 @@
         <!-- End Modal stocknotify -->
     @endif
 
-    {{-- فاز ۷۸ — مودال هشدار کاهش قیمت برای مهمان‌ها --}}
+    {{-- فاز ۷۸/۸۱ — مودال هشدار کاهش قیمت برای مهمان‌ها (فقط وقتی قابلیت فعال است) --}}
+    @if(option('dt_price_alert_status', '1') == '1')
     <div class="modal fade" id="modal-price-alert" role="dialog"
          aria-labelledby="priceAlertModalTitle" aria-hidden="true">
         <div class="modal-dialog modal-md send-info modal-dialog-centered"
@@ -1084,8 +1085,8 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="priceAlertModalTitle">
-                        <i class="mdi mdi-bell-ring-outline"></i>
-                        هشدار کاهش قیمت
+                        <i class="{{ option('dt_price_alert_button_icon', 'mdi mdi-bell-ring-outline') }}"></i>
+                        {{ option('dt_price_alert_button_text', 'هشدار کاهش قیمت') }}
                     </h5>
                     <button type="button" class="close" data-dismiss="modal"
                             aria-label="Close">
@@ -1137,6 +1138,7 @@
         </div>
     </div>
     <!-- End Modal price-alert -->
+    @endif
 
 @endsection
 

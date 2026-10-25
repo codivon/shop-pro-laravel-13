@@ -230,7 +230,12 @@
                                     <img src="{{ $item->product?->image ? asset($item->product->image) : asset('empty.svg') }}" alt="">
                                 </span>
                                     <span class="ov-prod__body">
-                                    <span class="ov-prod__title">{{ $item->title }}</span>
+                                    <span class="ov-prod__title">{{ $item->title }}
+                                        @if($item->product && $item->product->isPreOrder())
+                                            {{-- فاز ۸۱ — نشان پیش‌فروش در سفارش پنل ادمین --}}
+                                            <span class="badge" style="background-color: #17a2b8; color: #fff; font-size: 0.65rem; border-radius: 8px; vertical-align: middle;">{{ option('dt_pre_order_badge_text', 'پیش‌فروش') }}</span>
+                                        @endif
+                                    </span>
                                     @if($item->product?->title_fa)
                                             <span class="ov-prod__fa">{{ $item->product->title_fa }}</span>
                                         @endif

@@ -33,6 +33,11 @@ class PriceObserver
      */
     protected function dispatchPriceAlertsOnDrop(Price $price): void
     {
+        // فاز ۸۱ — قابلیت از تنظیمات تم غیرفعال شده؛ هیچ Jobی رانده نمی‌شود
+        if (option('dt_price_alert_status', '1') != '1') {
+            return;
+        }
+
         if (! $price->product_id || $price->wasRecentlyCreated) {
             return;
         }

@@ -15,9 +15,10 @@
 | AIWriter | ۱.۰.۳ | 🟢 | ✅ بخش «تفکیک نقش» اضافه شد (مرز شفاف با AICatalog) |
 | AICatalog | ۱.۷.۴ | 🟢 | ✅ بخش «تفکیک نقش» اضافه شد (مرز شفاف با AIWriter) |
 | SeoAudit | ۱.۰.۳ | 🟢 | ✅ بازبینی شد — «مایگریشن تکراری» عمدی و مستند است (شیم تعمیری idempotent با گارد hasTable برای نصب‌های نیمه‌شکسته) — بدون تغییر |
-| DigiPay | ۱.۲.۰ | 🟢 | ✅ ثبت/حذف خودکار درگاه در فلوی نصب هاست (InstallPermissionsCommand) |
-| CreditPay | ۲.۰.۲ | 🟢 **پکیج واحد اقساطی+اعتباری** | ✅ ادغام کامل InstallmentPayment + wire-theme خودکار + رفع باگ مایگریشن ارثی + تست پایه |
-| InstallmentPayment | ۱.۰.۳ | ⛔ منسوخ | ✅ ادغام‌شده در CreditPay v2.0.2 — بنر توقف توسعه + راهنمای مهاجرت بدون ازدست‌دادن داده |
+| DigiPay | ۱.۳.۰ | 🟢 **درگاه‌های پرداخت و اقساطی** | ✅ دیجی‌پی (UPG) + اسنپ‌پی (BNPL) — نصب خودکار هر دو درگاه (فاز ۸۱) |
+| InstallmentCredit | ۲.۰.۲ | 🟢 **پرداخت قسطی و اعتباری (پکیج جدید)** | ✅ ادغام InstallmentPayment+CreditPay در مخزن مستقل جدید — مخزن‌های اصلی برگردانده شدند (فاز ۸۱) |
+| CreditPay | ۱.۰.۴ | 🟢 | ✅ پاکسازی مخازن — کد ادغام به مخزن جدید InstallmentCredit منتقل شد (فاز ۸۱) |
+| InstallmentPayment | ۱.۰.۳ | 🟢 | ✅ مخزن به وضعیت مستقل برگردانده شد؛ آیندهٔ پکیج در InstallmentCredit (فاز ۸۱) |
 | SmartAssembly | ۱.۰.۳ | 🟡 | مستندسازی موتور قواعد |
 | Story | ۱.۱.۳ | 🔴 نازک‌ترین | مستندسازی و تعیین تکلیف ارزش مستقل |
 | ~~SnappPay~~ | — | ❌ حذف شد | درایور اسنپ‌پی از قبل داخل multipay هسته موجود است |
@@ -84,3 +85,32 @@ API باربری‌ها (تیپاکس/ماهکس/پست) + بارنامه و پ�
 - [ ] متن‌های رابط با ترجمه (fa حداقل)
 - [ ] عدم پچ دستی فایل‌های هسته (اتصال با Event/Listener/Registries)
 - [ ] `vendor/` خودکفا مجاز است؛ فایل مرده و zip توزیع‌شده مجاز نیست
+
+---
+
+## فاز ۸۱ — اصلاح‌ها و بازسازی پکیج‌ها (تصمیم‌های نهایی کاربر)
+
+### ۱) هشدار کاهش قیمت (هستهٔ رایگان)
+- ریشهٔ «دکمه کار نمی‌کند»: binding مستقیم jQuery بعد از جایگزینی AJAX بلوک product-info می‌میرد → هر ۴ binding (`price_alert_btn`، `sendPriceAlertBtn`، `stock_notify_btn`، `sendStockNotifyBtn`) به delegated تبدیل شد.
+- غیرفعال‌سازی/شخصی‌سازی از تنظیمات تم: `dt_price_alert_status` (فعال/غیرفعال)، `dt_price_alert_button_text`، `dt_price_alert_button_icon` — دکمه/مودال/endpoint/Observer/Job همه به کلید گیت شدند.
+- پنل ادمین: آیتم منوی `np.price-alerts.index` به config/admin-menu.php اضافه شد (صفحه از فاز ۷۸ وجود داشت).
+- نوتیف فروشگاه: `PriceAlertsSent` (database + WebPush) به مدیران پس از اطلاع‌رسانی مشتری‌ها + رجیستری AdminNotificationTypes + بلید پنل قدیم.
+- پترن پیامک هر ۵ ارائه‌دهنده در تنظیمات پیامک (تسویه‌شده از فاز ۸۰: `price_alert_pattern_code`).
+
+### ۲) پیش‌فروش (هستهٔ رایگان) — سناریوی «۳ تنوع با موجودی صفر»
+- ریشه: `$selected_price` از کوئری فیلترشدهٔ موجودی → null → شاخهٔ «ناموجود» رندر می‌شد.
+- `Product::saleablePrices($ignoreStock)` + `Product::isPreOrder()` (گیت سراسری `dt_pre_order_status`)؛ fallback قیمت منتخب در show/prices/cart-store؛ تنوع‌ها با hasAttributeStock/get_attributes/getPriceWithAttributes پیش‌فروش‌آگاه.
+- کارت‌ها: نشان «پیش‌فروش» (قابل شخصی‌سازی `dt_pre_order_badge_text`) در product-card/product-block/product-block-2 + قیمت به‌جای «ناموجود» از getLowestPrice پیش‌فروش‌آگاه.
+- سفارش‌ها: نشان پیش‌فروش در سفارش مشتری (user/orders/show) و پنل ادمین (back/orders/show).
+- محدودیت‌های Price حفظ شد: فقط قیمت‌های published قابل پیش‌خرید (وب+API)، cart_min/cart_max = ۱ (رفع استپر خراب سبد)، سقف ۱ عدد در API.
+- شخصی‌سازی: `dt_pre_order_status` / `dt_pre_order_button_text` / `dt_pre_order_badge_text`.
+
+### ۳) بازسازی مخازن پکیج‌ها (تصمیم قاطع کاربر: «مخزن‌های اصلی تغییر نکند»)
+- برگرداندن force-push: CreditPay → `4101e63` (v1.0.4)، InstallmentPayment → `c39b1a2` (حذف کامیت‌های ادغام/آرشیو).
+- پکیج جدید **shop-pro-InstallmentCredit-module** («پرداخت قسطی و اعتباری») با تاریخچهٔ تازه — کد = نسخهٔ تست‌شدهٔ v2.0.2؛ در انتظار ساخت مخزن خالی در گیت‌هاب (توکن fine-grained اجازهٔ create-repo ندارد).
+- تصاویر شاخص جدید برای بازار پکیج‌ها (InstallmentCredit + درگاه‌ها) تولید شد — آپلود در سرور update.weblak.ir.
+
+### ۴) DigiPay v1.3.0 → «درگاه‌های پرداخت و اقساطی» + اسنپ‌پی
+- SnappPayService/SnappPayController (OAuth2 password grant، Payment Token با cartList، verify تک‌بار، settle، status، revert/cancel) — callback ایست‌مبرگنت POST با مستثنای CSRF در تم.
+- جدول تراکنش مشترک با provider='snappay' + مایگریشن گارددار payment_token.
+- چک‌اوت: هر دو درگاه + کارت تنظیمات اختصاصی + ثبت/حذف خودکار هر دو درگاه + رفع باگ ستون‌های ناموجود gateways.

@@ -15,6 +15,9 @@ class PriceAlertController extends Controller
 {
     public function store(Request $request)
     {
+        // فاز ۸۱ — قابلیت از تنظیمات تم غیرفعال شده است
+        abort_if(option('dt_price_alert_status', '1') != '1', 404);
+
         $this->validate($request, [
             'product_id' => [
                 'required',

@@ -9,6 +9,10 @@
             </a>
         </h2>
         <div class="price">
+            {{-- فاز ۸۱ — نشان پیش‌فروش --}}
+            @if($product->isPreOrder())
+                <span class="badge badge-info d-inline-block mb-1" style="background-color: #17a2b8; color: #fff; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem;">{{ option('dt_pre_order_badge_text', 'پیش‌فروش') }}</span>
+            @endif
             @if($product->getLowestDiscount())
                 <del>
                                                 <span>{{ $product->getLowestDiscount() }}

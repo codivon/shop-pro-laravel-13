@@ -65,7 +65,8 @@ class StoreOrderRequest extends FormRequest
         if(function_exists('module_is_active') && module_is_active('DigiPay')){
             $gateway[]='digipay';
         }
-        if(function_exists('module_is_active') && module_is_active('snappay')){
+        // فاز ۸۱ — اسنپ‌پی داخل پکیج DigiPay است (درگاه اقساطی BNPL)
+        if(function_exists('module_is_active') && module_is_active('DigiPay')){
             $gateway[]='snappay';
         }
         return $gateway;

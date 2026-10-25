@@ -63,6 +63,9 @@
                                                         {{ $product->title }}
                                                         @if (!$product->isPhysical())
                                                             <span class="badge badge-info" style="font-size: 0.7rem; background-color: #17a2b8; color: #fff; padding: 3px 8px; border-radius: 12px;">📥 دانلودی </span>
+                                                        @elseif ($product->isPreOrder())
+                                                            {{-- فاز ۸۱ — نشان پیش‌فروش در سبد خرید --}}
+                                                            <span class="badge badge-info" style="font-size: 0.7rem; background-color: #17a2b8; color: #fff; padding: 3px 8px; border-radius: 12px;">{{ option('dt_pre_order_badge_text', 'پیش‌فروش') }}</span>
                                                         @endif
                                                     </h3>
                                                 </a>
