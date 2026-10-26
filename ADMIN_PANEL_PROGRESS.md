@@ -3211,3 +3211,24 @@ DigiPay v1.3.0 (اسنپ‌پی + ری‌برندینگ) پوش شد؛ CreditPay
 - هسته: tests/Feature/Extra/Phase94Test.php (۱۱ تست) + tests/Feature/Security/AccountBanSessionTrustTest.php (رفع سازگاری) + PACKAGES_ROADMAP.md (بستن فاز ۸۴ + ردیف پکیج) + کارنامهٔ همین فایل
 - پکیج (مخزن مستقل — کامیت محلی ac3c174 + تصویر شاخص 59160b0؛ منتظر ساخت shop-pro-ArtificialIntelligence-module): Modules/ArtificialIntelligence — ۵۸ فایل + تصویر (۵ مایگریشن گارددار + ۵ مدل + ProviderRegistry/۳ درایور + ۴ سرویس زیرسیستم + LicenseGuard + ۳ پروایدر + کامند قراردادی + Permissions + CheckModuleLicense + ActivePanel + ۱۰ کنترلر + ۱۲ Blade + CSS اسکوپ ai- + docs چهارگانه + تصویر شاخص)
 - اقدام کاربر برای push پکیج: ساخت مخزن خالی shop-pro-ArtificialIntelligence-module در گیت‌هاب → `cd Modules/ArtificialIntelligence && git remote add origin <url> && git push -u origin main`
+
+## فاز ۹۵ — تکمیل API v1 «زیرساخت فروش» (بستن فاز ۸۵ نقشهٔ راه) + پوش دو پکیج منتظر + CI + دموی آمادهٔ نصب
+
+> **پیش‌زمینهٔ فاز:** کاربر دو مخزن خالی shop-pro-Logistics-module و shop-pro-ArtificialIntelligence-module را ساخت و هر دو پکیج منتظر push شدند (Logistics d5bfa35 / ArtificialIntelligence 59160b0 → هر دو تأیید شد). سپس فاز ۸۵ نقشه (زیرساخت فروش) بسته شد.
+
+| موضوع | شرح |
+|---|---|
+| تسویه‌حساب API | CheckoutService هسته (۱۲۶۵ خط) — آینهٔ کامل قواعد وب (فیزیکی/دانلودی، گروه‌بندی فروشنده، canUseCarrier + Tariff، تاریخ تحویل user_select با HolidayService، انتقال تخفیف، OrderCreated + CancelOrder)؛ GET /api/v1/checkout خلاصهٔ کامل چک‌اوت + POST ثبت سفارش و حل پرداخت |
+| پرداخت API | کیف پول: پرداخت آنی کامل با رزرو موجودی + OrderPaid + پاک‌سازی سبد (موجودی ناکافی = ۴۲۲ قبل از ساخت سفارش) — درگاه شتابی: خروجی url/method/inputs برای وب‌ویو + callbackUrl توکنی — درگاه ماژولی (payyar/snappay/digipay): url یا html — اقساطی/اعتباری: ۴۲۲ صریح (v1) |
+| پرداخت بدون نشست | GET/POST /api/v1/payments/verify/{token} — توکن یکتای ۶۴نویسه‌ای در ردیف تراکنش، استثنای هدر x-api-key، throttle ۲۰/دقیقه، idempotent (already_paid) |
+| جست‌وجو/فیلتر | GET /api/v1/search (محصولات+دسته‌ها+مقالات) — apiFilter: min_price + discount=1 واقعی (رفع ارث special) + حذف بلوک تکراری in_stock — GET /api/v1/products/filters (کف/سقف قیمت مؤثر + دسته‌ها + شمارها) |
+| مستندات | docs/API-DOCUMENTATION.md — فارسی کامل (پوشهٔ پاسخ، ۱۱ بخش، ماتریس مالکیت وب/API، جریان کلاینت) |
+| CI | .github/workflows/ci.yml هسته (PHP 8.4 + MariaDB 10.11 service + phpunit با exclude مستند Phase83/Phase9x/Scale/Packages) + قالب پکیج — کامیت محلی در ۴ مخزن پکیج (Logistics 842a101 / AI f21fb46 / Accounting 1bb9356 / CustomerClub d711a14) — **پوش بلاکر: توکن fine-grained مجوز Workflows ندارد** («refusing to allow a PAT to create or update workflow») |
+| دمو | `php artisan shoppro:demo` — ۱۰ محصول فارسی (فیزیکی/دانلودی با فایل/پیش‌فروش) + ۳ مقاله با نویسنده + ۲ صفحه + مدیر دمو (demo@shoppro.local) — گاردها: پرچم idempotent + فروشگاه واقعی دست نمی‌خورد + تأیید production + جایگزینی محصولات فیک سیدر |
+| رفع باگ واقعی | ①مقالهٔ بدون نویسنده → ۵۰۰ در articles/show.blade.php:55 (گارد نال) ②قیمت دانلودی بدون رکورد فایل → ۵۰۰ در Price::getAttributesName (گارد نال) — هر دو در جریان تست دمو کشف و رفع شد |
+| تست | Phase95Test — ۱۹ تست/۱۳۶ assertion سبز | رگرسیون: Phase90-94 + Cart + Checkout = ۱۰۴ تست/۸۰۸ assertion سبز = صفر رجسیون | runtime smoke: filters/search/checkout/verify + صفحات دمو (فیزیکی/دانلودی/پیش‌فروش/مقاله/صفحهٔ ثابت) همه ۲۰۰ |
+
+### فایل‌های فاز ۹۵
+- هسته: app/Services/Checkout/{CheckoutService,CheckoutException}.php + app/Http/Controllers/Api/V1/{CheckoutController,PaymentController,SearchController}.php + app/Http/Requests/Api/V1/Checkout/StoreCheckoutRequest.php + app/Http/Resources/Api/V1/Checkout/{CheckoutResource,CheckoutOrderResource}.php + routes/api/v1.php + app/Traits/ProductScopes.php + app/Http/Controllers/Api/V1/ProductController.php + app/Http/Middleware/EnsureApiHeaderIsSet.php + app/Console/Commands/ShopProDemoCommand.php + app/Models/Price.php (گارد نال) + themes/.../articles/show.blade.php (گارد نال) + tests/Feature/Extra/Phase95Test.php + docs/API-DOCUMENTATION.md + README.md (بخش دمو) + PACKAGES_ROADMAP.md (بستن فاز ۸۵) + .github/workflows/ci.yml (untracked تا رفع بلاکر توکن)
+- کامیت‌ها: هسته 529072d3 (API v1) + 5fd1bdd1 (دمو + باگ‌ها) → docs/project-analysis push شد
+- اقدام کاربر: افزودن مجوز «Workflows: Read and write» به توکن گیت‌هاب → سپس ۵ کامیت CI (هسته + ۴ پکیج) push می‌شود و CI برای ۶ مخزن دوردست دیگر (PayYar/DigiPay/CreditPay/InstallmentCredit/InstallmentPayment/MarketingMessaging) هم اضافه می‌گردد
