@@ -75,6 +75,14 @@ jobs:
           php artisan migrate --force
           php artisan db:seed --force
 
+      - name: نشانگر نصب‌بودن اپلیکیشن
+        # application_installed() = file_exists(storage/installed) — بدون این فایل،
+        # بوت اپ theme را ثبت نمیکند و روت‌های front.* (front.cart و …) وجود
+        # ندارند → دهها شکست تست در محیط CI (روی سندباکس واقعی این فایل هست).
+        run: |
+          mkdir -p storage/logs storage/framework/cache/data storage/framework/sessions storage/framework/views
+          touch storage/installed
+
       - name: اجرای تست‌ها
         # php صریح — vendor/bin/phpunit در این ریپو بیت اجرایی ندارد (exit 126)
         run: php vendor/bin/phpunit --exclude-filter 'Phase83Test|Phase90Test|Phase91Test|Phase92Test|Phase93Test|Phase94Test|ConcurrentUsersTest|MillionScaleTest|MarketingMessagingTest|MoneyPackagesTest'
