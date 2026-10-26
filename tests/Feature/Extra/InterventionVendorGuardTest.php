@@ -377,8 +377,12 @@ class InterventionVendorGuardTest extends TestCase
     #[Test]
     public function opcache_staleness_probe_reports_safely_without_opcache(): void
     {
-        if (function_exists('opcache_get_status') && is_array(@opcache_get_status(true))) {
-            $this->markTestSkipped('OPcache در این محیط فعال است — شاخهٔ null قابل بررسی نیست');
+        // «بدون OPcache» یعنی توابع opcache_* در باینری PHP هم نیستند (شاخهٔ null
+        // اول helper). اگر توابع موجودند — حتی با enable_cli=0 مثل رانرهای
+        // GitHub Actions — helper وارد شاخهٔ validate_timestamps می‌شود (false =
+        // خودترمیمی) و شاخهٔ null در این محیط قابل بررسی نیست → skip صادقانه.
+        if (function_exists('opcache_get_status')) {
+            $this->markTestSkipped('توابع OPcache در این محیط موجودند — شاخهٔ null قابل بررسی نیست');
         }
 
         $this->assertNull(
