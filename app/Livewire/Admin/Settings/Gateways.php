@@ -90,6 +90,10 @@ class Gateways extends Component
             'saman' => [
                 ['name' => 'merchantId', 'label' => 'کد پذیرنده', 'type' => 'text'],
             ],
+            'sep' => [
+                // فاز ۹۹ — سپ (سمان الکترونیک): درایور shetabit فقط terminalId می‌خواهد
+                ['name' => 'terminalId', 'label' => 'کد پایانه (Terminal ID)', 'type' => 'text'],
+            ],
             'sadad' => [
                 ['name' => 'terminalId', 'label' => 'شماره پذیرنده', 'type' => 'text'],
                 ['name' => 'merchantId', 'label' => 'کد پذیرنده', 'type' => 'text'],
@@ -118,6 +122,7 @@ class Gateways extends Component
             'payping'     => ['color' => '#F97316', 'bank' => 'پی‌پینگ'],
             'irankish'    => ['color' => '#DC2626', 'bank' => 'ایران کیش'],
             'saman'       => ['color' => '#0EA5A4', 'bank' => 'بانک سامان'],
+            'sep'         => ['color' => '#0F766E', 'bank' => 'سپ — بانک سامان'],
             'sepehr'      => ['color' => '#16A34A', 'bank' => 'بانک صادرات'],
             'idpay'       => ['color' => '#0EA5E9', 'bank' => 'idpay'],
             'sadad'       => ['color' => '#B91C1C', 'bank' => 'بانک ملی'],

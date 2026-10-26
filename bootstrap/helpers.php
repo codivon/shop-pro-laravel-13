@@ -929,6 +929,12 @@ function get_gateway_configs($gateway)
             $configs['merchantId'] = $gateway->config('merchantId');
             break;
 
+        case 'sep':
+            // فاز ۹۹ — سپ (سمان الکترونیک): درایور shetabit فقط terminalId + callbackUrl می‌خواهد
+            // (callbackUrl در جریان خرید با ->callbackUrl(route(...)) بازنویسی می‌شود)
+            $configs['terminalId'] = $gateway->config('terminalId');
+            break;
+
         case 'behpardakht':
             $configs['terminalId'] = $gateway->config('terminalId');
             $configs['username'] = $gateway->config('username');
