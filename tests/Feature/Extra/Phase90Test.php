@@ -146,7 +146,7 @@ class Phase90Test extends TestCase
         $this->assertSame('CustomerClub', $module['name']);
         $this->assertSame('customer-club', $module['alias']);
         $this->assertSame('باشگاه مشتریان', $module['title']);
-        $this->assertSame('1.0.0', $module['version']);
+        $this->assertSame('1.1.0', $module['version']); // فاز ۹۲ — موتور پاداش معرفی
         $this->assertStringContainsString('CustomerClubServiceProvider', $module['providers'][0]);
 
         $composer = json_decode((string) file_get_contents($dir.'/composer.json'), true);
