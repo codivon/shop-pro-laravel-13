@@ -295,4 +295,48 @@ class IdehPardazanSms extends SmsService implements SmsContract, SmsNotification
             ],
         ];
     }
+
+    /** فاز ۹۱ — پکیج لجستیک: ارسال مرسوله (shipment_sent_pattern_code با متغیرهای [name]، [order]، [code]) */
+    public function shipmentSent()
+    {
+        return [
+            'TemplateId'     => option('shipment_sent_pattern_code'),
+            'ParameterArray' => [
+                [
+                    'Parameter'      => 'name',
+                    'ParameterValue' => $this->data['name'],
+                ],
+                [
+                    'Parameter'      => 'order',
+                    'ParameterValue' => $this->data['order'],
+                ],
+                [
+                    'Parameter'      => 'code',
+                    'ParameterValue' => $this->data['code'],
+                ],
+            ],
+        ];
+    }
+
+    /** فاز ۹۱ — پکیج لجستیک: تحویل مرسوله (shipment_delivered_pattern_code با متغیرهای [name]، [order]، [code]) */
+    public function shipmentDelivered()
+    {
+        return [
+            'TemplateId'     => option('shipment_delivered_pattern_code'),
+            'ParameterArray' => [
+                [
+                    'Parameter'      => 'name',
+                    'ParameterValue' => $this->data['name'],
+                ],
+                [
+                    'Parameter'      => 'order',
+                    'ParameterValue' => $this->data['order'],
+                ],
+                [
+                    'Parameter'      => 'code',
+                    'ParameterValue' => $this->data['code'],
+                ],
+            ],
+        ];
+    }
 }

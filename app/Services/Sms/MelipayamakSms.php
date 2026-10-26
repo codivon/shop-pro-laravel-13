@@ -236,4 +236,30 @@ class MelipayamakSms extends SmsService implements SmsContract, SmsNotificationC
             ],
         ];
     }
+
+    /** فاز ۹۱ — پکیج لجستیک: ارسال مرسوله (shipment_sent_pattern_code با متغیرهای {0}name، {1}order، {2}code) */
+    public function shipmentSent()
+    {
+        return [
+            'bodyId'       => option('shipment_sent_pattern_code'),
+            'input_data'   => [
+                '0' => $this->data['name'],
+                '1' => $this->data['order'],
+                '2' => $this->data['code'],
+            ],
+        ];
+    }
+
+    /** فاز ۹۱ — پکیج لجستیک: تحویل مرسوله (shipment_delivered_pattern_code با متغیرهای {0}name، {1}order، {2}code) */
+    public function shipmentDelivered()
+    {
+        return [
+            'bodyId'       => option('shipment_delivered_pattern_code'),
+            'input_data'   => [
+                '0' => $this->data['name'],
+                '1' => $this->data['order'],
+                '2' => $this->data['code'],
+            ],
+        ];
+    }
 }

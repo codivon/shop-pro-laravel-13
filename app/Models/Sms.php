@@ -92,6 +92,17 @@ class Sms extends Model
             'string' => 'کمپین پیامکی مارکتینگ',
             'method' => 'marketingCampaign'
         ],
+        // فاز ۹۱ — پکیج «لجستیک و باربری»: اطلاع‌رسانی وضعیت مرسوله به مشتری
+        'LOGISTICS_SHIPMENT_SENT' => [
+            'key'    => 'shipment-sent',
+            'string' => 'اطلاع‌رسانی ارسال مرسوله (پکیج لجستیک)',
+            'method' => 'shipmentSent'
+        ],
+        'LOGISTICS_SHIPMENT_DELIVERED' => [
+            'key'    => 'shipment-delivered',
+            'string' => 'اطلاع‌رسانی تحویل مرسوله (پکیج لجستیک)',
+            'method' => 'shipmentDelivered'
+        ],
     ];
 
     public function user()

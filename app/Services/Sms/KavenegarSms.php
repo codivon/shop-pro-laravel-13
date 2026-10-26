@@ -242,4 +242,30 @@ class KavenegarSms extends SmsService implements SmsContract, SmsNotificationCon
             ],
         ];
     }
+
+    /** فاز ۹۱ — پکیج لجستیک: ارسال مرسوله (shipment_sent_pattern_code با token=name، token2=order، token3=code) */
+    public function shipmentSent()
+    {
+        return [
+            'template'     => option('shipment_sent_pattern_code'),
+            'input_data'   => [
+                'token'  => $this->data['name'],
+                'token2' => $this->data['order'],
+                'token3' => $this->data['code'],
+            ],
+        ];
+    }
+
+    /** فاز ۹۱ — پکیج لجستیک: تحویل مرسوله (shipment_delivered_pattern_code با token=name، token2=order، token3=code) */
+    public function shipmentDelivered()
+    {
+        return [
+            'template'     => option('shipment_delivered_pattern_code'),
+            'input_data'   => [
+                'token'  => $this->data['name'],
+                'token2' => $this->data['order'],
+                'token3' => $this->data['code'],
+            ],
+        ];
+    }
 }

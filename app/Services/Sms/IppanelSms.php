@@ -214,4 +214,30 @@ class IppanelSms extends SmsService implements SmsContract, SmsNotificationContr
             ],
         ];
     }
+
+    /** فاز ۹۱ — پکیج لجستیک: ارسال مرسوله (shipment_sent_pattern_code با متغیرهای name، order و code) */
+    public function shipmentSent()
+    {
+        return [
+            'pattern_code' => option('shipment_sent_pattern_code'),
+            'input_data'   => [
+                'name'  => $this->data['name'],
+                'order' => $this->data['order'],
+                'code'  => $this->data['code'],
+            ],
+        ];
+    }
+
+    /** فاز ۹۱ — پکیج لجستیک: تحویل مرسوله (shipment_delivered_pattern_code با متغیرهای name، order و code) */
+    public function shipmentDelivered()
+    {
+        return [
+            'pattern_code' => option('shipment_delivered_pattern_code'),
+            'input_data'   => [
+                'name'  => $this->data['name'],
+                'order' => $this->data['order'],
+                'code'  => $this->data['code'],
+            ],
+        ];
+    }
 }

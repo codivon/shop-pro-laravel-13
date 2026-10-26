@@ -163,6 +163,9 @@ class SmsSettings extends Component
                 'price_alert_pattern_code' => ['label' => 'کد پترن هشدار کاهش قیمت', 'toggle' => 'sms_on_price_alert', 'sample' => "قیمت محصول %title% به %price% تومان کاهش یافت.\r\n {site}"],
                 'cart_recovery_pattern_code' => ['label' => 'کد پترن یادآور سبد خرید رهاشده (پکیج مارکتینگ)', 'sample' => "%name% عزیز، سبد خرید شما (%items%) در انتظار شماست. مبلغ: %total% تومان.\r\n {site}"],
                 'marketing_campaign_pattern_code' => ['label' => 'کد پترن کمپین پیامکی (پکیج مارکتینگ)', 'sample' => "%name% عزیز، %store% برای شما پیشنهاد ویژه دارد!\r\n {site}"],
+                // فاز ۹۱ — پکیج لجستیک
+                'shipment_sent_pattern_code' => ['label' => 'کد پترن ارسال مرسوله (پکیج لجستیک)', 'sample' => "%name% عزیز، سفارش %order% شما ارسال شد. کد رهگیری: %code%\r\n {site}"],
+                'shipment_delivered_pattern_code' => ['label' => 'کد پترن تحویل مرسوله (پکیج لجستیک)', 'sample' => "%name% عزیز، سفارش %order% شما تحویل داده شد.\r\n {site}"],
             ],
             'kavenegar' => [
                 'seller_register_pattern_code_kavenegar' => ['label' => 'الگوی خوش آمدگویی فروشنده', 'toggle' => 'sms_on_seller_register', 'required' => true, 'sample' => "فروشنده عزیز با عنوان فروشگاه %token2، خوش آمدید.\r\n {site}"],
@@ -181,6 +184,9 @@ class SmsSettings extends Component
                 'price_alert_pattern_code' => ['label' => 'الگوی هشدار کاهش قیمت', 'toggle' => 'sms_on_price_alert', 'sample' => "قیمت محصول به %token2 تومان کاهش یافت.\r\n {site}"],
                 'cart_recovery_pattern_code' => ['label' => 'الگوی یادآور سبد خرید رهاشده (پکیج مارکتینگ)', 'sample' => "%token عزیز، سبد خرید شما (%token2) در انتظار شماست. مبلغ: %token3 تومان.\r\n {site}"],
                 'marketing_campaign_pattern_code' => ['label' => 'الگوی کمپین پیامکی (پکیج مارکتینگ)', 'sample' => "%token عزیز، %token2 برای شما پیشنهاد ویژه دارد!\r\n {site}"],
+                // فاز ۹۱ — پکیج لجستیک
+                'shipment_sent_pattern_code' => ['label' => 'الگوی ارسال مرسوله (پکیج لجستیک)', 'sample' => "%token عزیز، سفارش %token2 شما ارسال شد. کد رهگیری: %token3\r\n {site}"],
+                'shipment_delivered_pattern_code' => ['label' => 'الگوی تحویل مرسوله (پکیج لجستیک)', 'sample' => "%token عزیز، سفارش %token2 شما تحویل داده شد.\r\n {site}"],
             ],
             'melipayamak' => [
                 'seller_register_pattern_code_melipayamak' => ['label' => 'کد متن خوش آمدگویی فروشنده', 'toggle' => 'sms_on_seller_register', 'required' => true, 'sample' => "{0} فروشنده عزیز خوش آمدید. \r\n {site}"],
@@ -199,6 +205,9 @@ class SmsSettings extends Component
                 'price_alert_pattern_code' => ['label' => 'کد متن هشدار کاهش قیمت', 'toggle' => 'sms_on_price_alert', 'sample' => "قیمت محصول به {1} تومان کاهش یافت.\r\n {site}"],
                 'cart_recovery_pattern_code' => ['label' => 'کد متن یادآور سبد خرید رهاشده (پکیج مارکتینگ)', 'sample' => "{0} عزیز، سبد خرید شما ({1}) در انتظار شماست. مبلغ: {2} تومان.\r\n {site}"],
                 'marketing_campaign_pattern_code' => ['label' => 'کد متن کمپین پیامکی (پکیج مارکتینگ)', 'sample' => "{0} عزیز، {1} برای شما پیشنهاد ویژه دارد!\r\n {site}"],
+                // فاز ۹۱ — پکیج لجستیک
+                'shipment_sent_pattern_code' => ['label' => 'کد متن ارسال مرسوله (پکیج لجستیک)', 'sample' => "{0} عزیز، سفارش {1} شما ارسال شد. کد رهگیری: {2}\r\n {site}"],
+                'shipment_delivered_pattern_code' => ['label' => 'کد متن تحویل مرسوله (پکیج لجستیک)', 'sample' => "{0} عزیز، سفارش {1} شما تحویل داده شد.\r\n {site}"],
             ],
             'idehpardazan' => [
                 'user_register_pattern_code_idehpardazan' => ['label' => 'کد متن خوش آمدگویی', 'toggle' => 'sms_on_user_register', 'required' => true, 'sample' => "[fullname] عزیز خوش آمدید.\r\n {site}"],
@@ -216,6 +225,9 @@ class SmsSettings extends Component
                 'price_alert_pattern_code' => ['label' => 'کد متن هشدار کاهش قیمت', 'toggle' => 'sms_on_price_alert', 'sample' => "قیمت محصول به [price] تومان کاهش یافت.\r\n {site}"],
                 'cart_recovery_pattern_code' => ['label' => 'کد متن یادآور سبد خرید رهاشده (پکیج مارکتینگ)', 'sample' => "[name] عزیز، سبد خرید شما ([items]) در انتظار شماست. مبلغ: [total] تومان.\r\n {site}"],
                 'marketing_campaign_pattern_code' => ['label' => 'کد متن کمپین پیامکی (پکیج مارکتینگ)', 'sample' => "[name] عزیز، [store] برای شما پیشنهاد ویژه دارد!\r\n {site}"],
+                // فاز ۹۱ — پکیج لجستیک
+                'shipment_sent_pattern_code' => ['label' => 'کد متن ارسال مرسوله (پکیج لجستیک)', 'sample' => "[name] عزیز، سفارش [order] شما ارسال شد. کد رهگیری: [code]\r\n {site}"],
+                'shipment_delivered_pattern_code' => ['label' => 'کد متن تحویل مرسوله (پکیج لجستیک)', 'sample' => "[name] عزیز، سفارش [order] شما تحویل داده شد.\r\n {site}"],
             ],
             'farazsms' => [
                 'seller_register_pattern_code_farazsms' => ['label' => 'کد پترن خوش آمدگویی فروشنده', 'toggle' => 'sms_on_seller_register', 'sample' => "%fullname% فروشنده عزیز خوش آمدید.\r\n {site}"],
@@ -234,6 +246,9 @@ class SmsSettings extends Component
                 'price_alert_pattern_code' => ['label' => 'کد پترن هشدار کاهش قیمت', 'toggle' => 'sms_on_price_alert', 'sample' => "قیمت محصول به %price% تومان کاهش یافت.\r\n {site}"],
                 'cart_recovery_pattern_code' => ['label' => 'کد پترن یادآور سبد خرید رهاشده (پکیج مارکتینگ)', 'sample' => "%name% عزیز، سبد خرید شما (%items%) در انتظار شماست. مبلغ: %total% تومان.\r\n {site}"],
                 'marketing_campaign_pattern_code' => ['label' => 'کد پترن کمپین پیامکی (پکیج مارکتینگ)', 'sample' => "%name% عزیز، %store% برای شما پیشنهاد ویژه دارد!\r\n {site}"],
+                // فاز ۹۱ — پکیج لجستیک
+                'shipment_sent_pattern_code' => ['label' => 'کد پترن ارسال مرسوله (پکیج لجستیک)', 'sample' => "%name% عزیز، سفارش %order% شما ارسال شد. کد رهگیری: %code%\r\n {site}"],
+                'shipment_delivered_pattern_code' => ['label' => 'کد پترن تحویل مرسوله (پکیج لجستیک)', 'sample' => "%name% عزیز، سفارش %order% شما تحویل داده شد.\r\n {site}"],
             ],
         ];
     }
@@ -368,6 +383,8 @@ class SmsSettings extends Component
             'wallet_decrease_sms' => 'ارسال پیامک کاهش موجودی کیف پول',
             'wallet_refund_sms' => 'ارسال پیامک برگشت وجه به کیف پول',
             'sms_on_price_alert' => 'ارسال پیامک هشدار کاهش قیمت',
+            'shipment_sent_pattern_code' => 'کد پترن ارسال مرسوله (پکیج لجستیک)',
+            'shipment_delivered_pattern_code' => 'کد پترن تحویل مرسوله (پکیج لجستیک)',
             'ippanel_api_key' => 'API Key پنل ippanel',
             'ippanel_sender_number' => 'شماره فرستنده ippanel',
             'kavenegar_api_key' => 'API Key کاوه نگار',
