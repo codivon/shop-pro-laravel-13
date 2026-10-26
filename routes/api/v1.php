@@ -4,12 +4,15 @@ use App\Http\Controllers\Api\V1\AppController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CategoryController;
+use App\Http\Controllers\Api\V1\CheckoutController;
 use App\Http\Controllers\Api\V1\FavoriteController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PageController;
+use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\PostController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProvinceController;
+use App\Http\Controllers\Api\V1\SearchController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\TorobEmallsController;
@@ -48,6 +51,10 @@ Route::prefix('v1')->name('api.')->group(function () {
         // ------------------ user
         Route::apiResource('orders', OrderController::class)->only(['index', 'show']);
 
+        // ------------------ فاز ۹۵ — تسویه‌حساب (چک‌اوت)
+        Route::get('checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+        Route::post('checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+
         // ------------------ Favorites
         Route::get('favorites', [FavoriteController::class, 'index']);
         Route::post('favorites', [FavoriteController::class, 'store']);
@@ -70,7 +77,18 @@ Route::prefix('v1')->name('api.')->group(function () {
     Route::get('categories', [CategoryController::class, 'index']);
     Route::get('categories/{category}/filter', [CategoryController::class, 'filter']);
 
+    // ------------------ فاز ۹۵ — جست‌وجوی سراسری
+    Route::get('search', [SearchController::class, 'index'])->name('search.index');
+
+    // ------------------ فاز ۹۵ — تأیید پرداخت بدون نشست (callback درگاه)
+    // بدون auth — درگاه هدر x-api-key نمی‌فرستد (استثنا در EnsureApiHeaderIsSet)
+    Route::match(['get', 'post'], 'payments/verify/{token}', [PaymentController::class, 'verify'])
+        ->middleware('throttle:20,1')
+        ->name('payments.verify');
+
     // ------------------ Products
+    // فاز ۹۵ — فرادادهٔ فیلترها (قبل از apiResource تا با {product} تداخل نکند)
+    Route::get('products/filters', [ProductController::class, 'filters'])->name('products.filters');
     Route::apiResource('products', ProductController::class)->only(['index', 'show']);
     Route::get('products/{product}/comments', [ProductController::class, 'comments']);
     Route::get('products/{product}/relatedProducts', [ProductController::class, 'relatedProducts']);

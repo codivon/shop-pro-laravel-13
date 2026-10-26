@@ -439,10 +439,7 @@ trait ProductScopes
             }
         }
 
-        if ($request->in_stock) {
-            $query->available();
-        }
-
+        // فاز ۹۵ — بلوک تکراری in_stock حذف شد (قبلاً دوبار صدا زده می‌شد)
         if ($request->in_stock) {
             $query->available();
         }
@@ -451,13 +448,29 @@ trait ProductScopes
             $query->special();
         }
 
+        // فاز ۹۵ — discount=1 واقعاً محصولات تخفیف‌دار را فیلتر می‌کند
+        // (قبلاً اشتباهاً special() صدا زده می‌شد)؛ معیار = ستون discount فعال
+        // مطابق Price::hasDiscount()
         if ($request->discount == 1) {
-            $query->special();
+            $query->whereHas('prices', function ($q) {
+                $q->where('stock', '>', 0)
+                    ->where('discount', '>', 0)
+                    ->where(function ($q2) {
+                        $q2->whereNull('discount_expire_at')->orWhere('discount_expire_at', '>', now());
+                    });
+            });
         }
 
         if ($request->max_price) {
             $query->whereHas('prices', function ($q) use ($request) {
                 $q->where('stock', '>', 0)->where('price', '<=', $request->max_price);
+            });
+        }
+
+        // فاز ۹۵ — کف قیمت (آینهٔ max_price)
+        if ($request->min_price) {
+            $query->whereHas('prices', function ($q) use ($request) {
+                $q->where('stock', '>', 0)->where('price', '>=', $request->min_price);
             });
         }
 

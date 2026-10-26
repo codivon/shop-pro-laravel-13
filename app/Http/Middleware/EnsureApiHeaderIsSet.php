@@ -25,8 +25,15 @@ class EnsureApiHeaderIsSet
         $currentPath = $request->path();
         $exceptPaths = ['api/v1/torob/products', 'api/v1/emalls/products']; // مسیرهای کامل
 
-        if (in_array($currentPath, $exceptPaths)) {
-            return $next($request);
+        // فاز ۹۵ — تأیید پرداخت بدون نشست: این روت عیناً callbackUrl درگاه است و
+        // درگاه‌ها هدر سفارشی x-api-key نمی‌فرستند؛ امنیت از طریق توکن یکتای
+        // تراکنش (64 نویسهٔ تصادفی) تضمین می‌شود.
+        $exceptPaths[] = 'api/v1/payments/verify/*';
+
+        foreach ($exceptPaths as $exceptPath) {
+            if ($exceptPath === $currentPath || fnmatch($exceptPath, $currentPath)) {
+                return $next($request);
+            }
         }
 
         if ($api_key) {
