@@ -4,6 +4,7 @@ namespace App\Livewire\Admin\System;
 
 use App\Models\BotTrap;
 use App\Services\SecuritySettings;
+use App\Support\MarketplaceSettings;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
@@ -113,6 +114,22 @@ class Developer extends Component
 
     public string $adminTwoFactorChannel = 'email';
 
+    /* ---------------- بازارچه (فاز ۹۹) ---------------- */
+
+    public bool $marketEnabled = true;
+
+    public bool $marketAllowInstall = true;
+
+    public bool $marketAllowUninstall = true;
+
+    public bool $marketShowTemplates = true;
+
+    public bool $marketAutoCheckUpdates = false;
+
+    public int $marketItemsPerPage = MarketplaceSettings::DEFAULT_PER_PAGE;
+
+    public string $marketNoticeText = '';
+
     public function mount(): void
     {
         $this->ensureCreator();
@@ -169,6 +186,15 @@ class Developer extends Component
         $this->securityBotTrapEnabled        = SecuritySettings::botTrapEnabled();
         $this->adminTwoFactorEnabled         = SecuritySettings::twoFactorEnabled();
         $this->adminTwoFactorChannel         = SecuritySettings::twoFactorChannel();
+
+        // بازارچه (فاز ۹۹)
+        $this->marketEnabled           = MarketplaceSettings::marketEnabled();
+        $this->marketAllowInstall      = MarketplaceSettings::allowInstall();
+        $this->marketAllowUninstall    = MarketplaceSettings::allowUninstall();
+        $this->marketShowTemplates     = MarketplaceSettings::showTemplates();
+        $this->marketAutoCheckUpdates  = MarketplaceSettings::autoCheckUpdates();
+        $this->marketItemsPerPage      = MarketplaceSettings::itemsPerPage();
+        $this->marketNoticeText        = MarketplaceSettings::noticeText();
     }
 
     /* ================= گیت ================= */
@@ -279,6 +305,32 @@ class Developer extends Component
         option_update('admin_2fa_channel', $this->adminTwoFactorChannel);
 
         $this->dispatch('toast', message: 'تنظیمات امنیتی ذخیره شد.', type: 'success');
+    }
+
+    /* ================= بازارچه (فاز ۹۹) ================= */
+
+    public function saveMarketplace(): void
+    {
+        $this->ensureCreator();
+
+        $this->validate([
+            'marketItemsPerPage' => ['required', 'integer', 'between:1,'.MarketplaceSettings::MAX_PER_PAGE],
+            'marketNoticeText'   => ['nullable', 'string', 'max:500'],
+        ], [
+            'marketItemsPerPage.between' => 'تعداد آیتم هر صفحه باید بین ۱ تا '.MarketplaceSettings::MAX_PER_PAGE.' باشد.',
+            'marketNoticeText.max'       => 'متن بنر بازارچه حداکثر ۵۰۰ کاراکتر است.',
+        ]);
+
+        // کلید اصلی — گیت منو + صفحات packages/*
+        option_update(MarketplaceSettings::KEY_ENABLED,            $this->marketEnabled ? '1' : '0');
+        option_update('packages_market_allow_install',             $this->marketAllowInstall ? '1' : '0');
+        option_update('packages_market_allow_uninstall',           $this->marketAllowUninstall ? '1' : '0');
+        option_update('packages_market_show_templates',            $this->marketShowTemplates ? '1' : '0');
+        option_update('packages_market_auto_check_updates',        $this->marketAutoCheckUpdates ? '1' : '0');
+        option_update('packages_market_items_per_page',            (string) $this->marketItemsPerPage);
+        option_update('packages_market_notice_text',               trim((string) $this->marketNoticeText));
+
+        $this->dispatch('toast', message: 'تنظیمات بازارچه ذخیره شد.', type: 'success');
     }
 
     /* ================= تلهٔ ربات (فاز ۷۱) ================= */

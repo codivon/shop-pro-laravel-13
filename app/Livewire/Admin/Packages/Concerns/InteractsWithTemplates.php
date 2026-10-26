@@ -7,6 +7,7 @@ use App\Models\InstalledTheme;
 use App\Models\PackagePurchase;
 use App\Services\PackageApiService;
 use App\Services\PackageInstallerService;
+use App\Support\MarketplaceSettings;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
@@ -44,6 +45,16 @@ trait InteractsWithTemplates
         auth('adminPanel')->user()?->can('packages.index') ?: abort(403);
 
         if (empty($this->tDetail['slug'])) {
+            return;
+        }
+
+        /*
+         * فاز ۹۹ — گیت تنظیمات بازارچه (گارد سروری): خرید قالب به نصب منتهی می‌شود
+         * ⇒ زیرمجموعهٔ کلید allow_install (و کلید اصلی).
+         */
+        if (! MarketplaceSettings::marketEnabled() || ! MarketplaceSettings::allowInstall()) {
+            $this->dispatch('toast', message: MarketplaceSettings::installDisabledMessage(), type: 'error');
+
             return;
         }
 
@@ -431,6 +442,13 @@ trait InteractsWithTemplates
     {
         auth('adminPanel')->user()?->can('packages.index') ?: abort(403);
 
+        // فاز ۹۹ — گیت نصب: نصب مجدد قالب هم دانلود از سرور بازار است
+        if (! MarketplaceSettings::marketEnabled() || ! MarketplaceSettings::allowInstall()) {
+            $this->dispatch('toast', message: MarketplaceSettings::installDisabledMessage(), type: 'error');
+
+            return;
+        }
+
         if (InstalledTheme::where('slug', $slug)->where('status', InstalledTheme::STATUS_UPDATING)->exists()) {
             $this->dispatch('toast', message: 'نصب این قالب همچنان در جریان است.', type: 'error');
 
@@ -473,6 +491,13 @@ trait InteractsWithTemplates
     public function uninstallTemplate(string $slug): void
     {
         auth('adminPanel')->user()?->can('themes.delete') ?: abort(403);
+
+        // فاز ۹۹ — گیت حذف (گارد سروری، نه فقط UI)
+        if (! MarketplaceSettings::marketEnabled() || ! MarketplaceSettings::allowUninstall()) {
+            $this->dispatch('toast', message: MarketplaceSettings::uninstallDisabledMessage(), type: 'error');
+
+            return;
+        }
 
         try {
             app(PackageInstallerService::class)->uninstallTheme($slug);

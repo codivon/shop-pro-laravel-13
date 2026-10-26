@@ -11,6 +11,7 @@ use App\Models\ModuleInstallLog;
 use App\Models\PackageCache;
 use App\Models\PackagePurchase;
 use App\Services\PackageInstallerService;
+use App\Support\MarketplaceSettings;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -79,10 +80,13 @@ class PackageIndex extends Component
         return $this->type === '';
     }
 
-    /** آیا بخش قالب‌ها باید نمایش داده شود؟ (تب همه + تب قالب‌ها) */
+    /**
+     * آیا بخش قالب‌ها باید نمایش داده شود؟ (تب همه + تب قالب‌ها)
+     * فاز ۹۹ — گیت تنظیمات: packages_market_show_templates = خاموش ⇒ تب/بخش قالب‌ها مخفی.
+     */
     public function showsTemplates(): bool
     {
-        return in_array($this->type, ['', 'template'], true);
+        return MarketplaceSettings::showTemplates() && in_array($this->type, ['', 'template'], true);
     }
 
     /** آیا بخش پکیج‌ها باید نمایش داده شود؟ (تب همه + تب پکیج‌ها) */
@@ -211,10 +215,28 @@ class PackageIndex extends Component
     {
         auth('adminPanel')->user()?->can('packages.index') ?: abort(403);
 
+        // فاز ۹۹ — گیت کلید اصلی بازارچه: خاموش ⇒ هیچ خواندنی از بازار انجام نمی‌شود؛
+        // render() به‌جای لیست، ویوی پیام تمیز «بازارچه از تنظیمات غیرفعال شده است» را برمی‌گرداند.
+        if (! MarketplaceSettings::marketEnabled()) {
+            return;
+        }
+
+        // فاز ۹۹ — اگر تب قالب‌ها از تنظیمات بسته شده باشد، درخواستِ ?type=template
+        // (بوکمارک/URL دستی) به تب «همه» برمی‌گردد تا صفحه خالی نماند.
+        if (! MarketplaceSettings::showTemplates() && $this->type === 'template') {
+            $this->type = '';
+        }
+
         // نتیجه پرداخت از callback (پورت session('payment_result') در ویوی قدیمی)
         $this->paymentResult = session('payment_result');
 
         $this->loadMarket();
+
+        // فاز ۹۹ — چک خودکار به‌روزرسانی هنگام ورود به بازار (تنظیمات اختیاری؛
+        // پیش‌فرض خاموش = رفتار قبل از این فاز. دکمهٔ دستی «بررسی آپدیت‌ها» می‌ماند)
+        if (MarketplaceSettings::autoCheckUpdates() && $this->showsPackages()) {
+            $this->checkUpdates();
+        }
 
         // فاز ۶۴ — اگر نصبی در جریان باشد، مودال بلوکه‌شده دوباره باز می‌شود
         $this->resumeActiveInstall();
@@ -309,6 +331,11 @@ class PackageIndex extends Component
      */
     public function loadMarket(): void
     {
+        // فاز ۹۹ — گیت کلید اصلی: با خاموشی بازار هیچ تماسی با سرور بازار زده نمی‌شود
+        if (! MarketplaceSettings::marketEnabled()) {
+            return;
+        }
+
         if ($this->type === 'template') {
             $this->loadTemplates();
 
@@ -331,6 +358,16 @@ class PackageIndex extends Component
      */
     public function loadTemplates(): void
     {
+        // فاز ۹۹ — گیت تب قالب‌ها: خاموش ⇒ هیچ داده قالبی خوانده نمی‌شود (بخش ویو هم مخفی است)
+        if (! MarketplaceSettings::showTemplates()) {
+            $this->templateError = null;
+            $this->templates = [];
+            $this->templateMeta = [];
+            $this->installedThemesMap = [];
+
+            return;
+        }
+
         $this->templateError = null;
 
         if ($fuseMessage = $this->apiFuseError()) {
@@ -342,10 +379,11 @@ class PackageIndex extends Component
             return;
         }
 
+        // فاز ۹۹ — تعداد در صفحه از تنظیمات بازارچه (قبلاً hard-code 12 بود)
         $query = array_filter([
             'page' => $this->page,
             'search' => $this->search,
-            'per_page' => 12,
+            'per_page' => MarketplaceSettings::itemsPerPage(),
         ], fn ($v) => $v !== '' && $v !== null);
 
         $cacheKey = 'templates.list.'.md5(json_encode($query));
@@ -455,11 +493,13 @@ class PackageIndex extends Component
             return;
         }
 
+        // فاز ۹۹ — تعداد در صفحه از تنظیمات بازارچه (سرور بازار هم per_page می‌شناسد)
         $query = array_filter([
             'page' => $this->page,
             'search' => $this->search,
             'category' => $this->category,
             'sort' => $this->sort,
+            'per_page' => MarketplaceSettings::itemsPerPage(),
         ], fn ($v) => $v !== '' && $v !== null);
 
         $cacheKey = 'packages.list.'.md5(json_encode($query));
@@ -523,7 +563,8 @@ class PackageIndex extends Component
         }
 
         try {
-            $perPage = 12;
+            // فاز ۹۹ — تعداد در صفحه از تنظیمات بازارچه (صفحه‌بندی تجمیعی سمت پنل)
+            $perPage = MarketplaceSettings::itemsPerPage();
             $allPackages = [];
             $subscriptionSummary = null;
             $page = 1;
@@ -553,7 +594,7 @@ class PackageIndex extends Component
                 $lastPage = (int) ($pagination['last_page'] ?? $pagination['lastPage'] ?? 1);
                 $perPage = (int) ($pagination['per_page'] ?? $pagination['perPage'] ?? $perPage);
                 if ($perPage < 1) {
-                    $perPage = 12;
+                    $perPage = MarketplaceSettings::itemsPerPage();
                 }
 
                 $allPackages = array_merge($allPackages, $packages);
@@ -1298,6 +1339,13 @@ class PackageIndex extends Component
             return;
         }
 
+        // فاز ۹۹ — گیت نصب/به‌روزرسانی: آپدیت هم از سرور بازار دانلود می‌شود ⇒ زیرمجموعهٔ allow_install
+        if (! MarketplaceSettings::marketEnabled() || ! MarketplaceSettings::allowInstall()) {
+            $this->dispatch('toast', message: MarketplaceSettings::installDisabledMessage(), type: 'error');
+
+            return;
+        }
+
         // فاز ۶۴ — قفل نصب همزمان: اگر نصب دیگری (پکیج/قالب) در جریان است، آپدیت شروع نشود
         if ($this->hasOtherInstallationInProgress($slug)) {
             $this->dispatch('toast', message: $this->installationLockMessage(), type: 'error');
@@ -1358,6 +1406,13 @@ class PackageIndex extends Component
 
         $slug = $this->detail['slug'];
         $this->detailConfirmingUninstall = false;
+
+        // فاز ۹۹ — گیت حذف (گارد سروری، نه فقط UI)
+        if (! MarketplaceSettings::marketEnabled() || ! MarketplaceSettings::allowUninstall()) {
+            $this->dispatch('toast', message: MarketplaceSettings::uninstallDisabledMessage(), type: 'error');
+
+            return;
+        }
 
         try {
             app(PackageInstallerService::class)->uninstall($slug, auth('adminPanel')->id());
@@ -1512,6 +1567,16 @@ class PackageIndex extends Component
 
     public function render()
     {
+        /*
+         * فاز ۹۹ — گیت کلید اصلی بازارچه: با خاموشی packages_market_enabled،
+         * به‌جای لیست بازار، ویوی پیام تمیز «بازارچه از تنظیمات غیرفعال شده است»
+         * رندر می‌شود (نه کرش/۴۰۳ — خودِ کلید تصمیم می‌گیرد).
+         */
+        if (! MarketplaceSettings::marketEnabled()) {
+            return view('admin-panel::livewire.admin.packages.disabled')
+                ->layout('admin-panel::layout');
+        }
+
         return view('admin-panel::livewire.admin.packages.index')
             ->layout('admin-panel::layout');
     }

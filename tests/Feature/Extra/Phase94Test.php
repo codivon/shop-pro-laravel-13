@@ -234,7 +234,8 @@ class Phase94Test extends TestCase
         $this->assertSame('ArtificialIntelligence', $module['name']);
         $this->assertSame('artificial-intelligence', $module['alias']);
         $this->assertSame('هوش مصنوعی', $module['title']);
-        $this->assertSame('1.2.0', $module['version']);
+        // فاز ۹۹ — بامپ 1.2.1 در کامیت 725cb77 (فیکس شنوندهٔ RequestHandled) قرارداد تست را جا گذاشته بود
+        $this->assertSame('1.2.1', $module['version']);
         $this->assertStringContainsString('ArtificialIntelligenceServiceProvider', $module['providers'][0]);
 
         $composer = json_decode((string) file_get_contents(base_path('Modules/ArtificialIntelligence/composer.json')), true);

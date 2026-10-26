@@ -519,5 +519,14 @@ return [
         'dt_pre_order_status',
         'dt_pre_order_button_text',
         'dt_pre_order_badge_text',
+
+        // فاز ۹۹ — تنظیمات بازارچه (تب «بازارچه» تنظیمات برنامه‌نویس — گیت‌ها در App\Support\MarketplaceSettings)
+        'packages_market_enabled',
+        'packages_market_allow_install',
+        'packages_market_allow_uninstall',
+        'packages_market_show_templates',
+        'packages_market_auto_check_updates',
+        'packages_market_items_per_page',
+        'packages_market_notice_text',
     ]
 ];

@@ -24,12 +24,15 @@
                         <x-admin-panel::icon name="sparkles" class="me-1 inline size-4" />
                         همه
                     </button>
-                    <button type="button" wire:click="$set('type', 'template')"
-                            class="rounded-lg px-4 py-1.5 text-[13px] font-bold transition-all {{ $type === 'template' ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-2 hover:text-ink dark:text-night-ink-2 dark:hover:text-night-ink' }}"
-                            role="tab" aria-selected="{{ $type === 'template' ? 'true' : 'false' }}">
-                        <x-admin-panel::icon name="layout-template" class="me-1 inline size-4" />
-                        قالب‌ها
-                    </button>
+                    {{-- فاز ۹۹ — گیت تب قالب‌ها: packages_market_show_templates خاموش ⇒ تب مخفی --}}
+                    @if (\App\Support\MarketplaceSettings::showTemplates())
+                        <button type="button" wire:click="$set('type', 'template')"
+                                class="rounded-lg px-4 py-1.5 text-[13px] font-bold transition-all {{ $type === 'template' ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-2 hover:text-ink dark:text-night-ink-2 dark:hover:text-night-ink' }}"
+                                role="tab" aria-selected="{{ $type === 'template' ? 'true' : 'false' }}">
+                            <x-admin-panel::icon name="layout-template" class="me-1 inline size-4" />
+                            قالب‌ها
+                        </button>
+                    @endif
                     <button type="button" wire:click="$set('type', 'package')"
                             class="rounded-lg px-4 py-1.5 text-[13px] font-bold transition-all {{ $type === 'package' ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-2 hover:text-ink dark:text-night-ink-2 dark:hover:text-night-ink' }}"
                             role="tab" aria-selected="{{ $type === 'package' ? 'true' : 'false' }}">
@@ -60,6 +63,16 @@
             </div>
         </div>
     </div>
+
+    {{-- ============ فاز ۹۹ — بنر اختیاری بازارچه (تنظیمات ← تب «بازارچه») ============ --}}
+    @if (\App\Support\MarketplaceSettings::noticeText() !== '')
+        <div class="flex items-start gap-3 rounded-2xl border border-brand-200 bg-brand-50/70 p-4 dark:border-brand-500/25 dark:bg-brand-500/10">
+            <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-600/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
+                <x-admin-panel::icon name="info" class="size-4.5" />
+            </span>
+            <p class="text-[13px] leading-6 text-brand-900 dark:text-brand-100">{{ \App\Support\MarketplaceSettings::noticeText() }}</p>
+        </div>
+    @endif
 
     {{-- ============ بنر اشتراک (پورت pkg-sub-banner) ============
          فاز ۵۸ — رفع باگ «اشتراکم فعال است ولی می‌گوید اشتراک فعالی ندارید»:
@@ -1523,7 +1536,8 @@
 
                         {{-- عملیات --}}
                         <div class="flex flex-wrap items-center gap-2">
-                            @if (!$dInstalled)
+                            {{-- فاز ۹۹ — گیت نصب: با خاموشی allow_install پکیجِ نصب‌نشده فقط مرور می‌شود (بدون دکمهٔ نصب) --}}
+                            @if (!$dInstalled && \App\Support\MarketplaceSettings::allowInstall())
                                 <button type="button" wire:click="installFromDetail"
                                         class="ap-btn-primary min-w-32"
                                         @if ($detailMode === 'paid' && count($dPlans) && !$detailPlanId) disabled @endif>
@@ -1536,7 +1550,7 @@
                                     در حال نصب…
                                 </button>
                             @else
-                                @if ($detail['has_update'] ?? false)
+                                @if (($detail['has_update'] ?? false) && \App\Support\MarketplaceSettings::allowInstall())
                                     <button type="button" wire:click="updateFromDetail" class="ap-btn-primary min-w-32" @if ($dInstalled['is_expired']) disabled @endif>
                                         <x-admin-panel::icon name="arrow-up" class="size-4" />
                                         آپدیت به v{{ $detail['latestVersion'] }}
@@ -1550,7 +1564,7 @@
                                     </span>
                                 @endif
 
-                                @if ($detailConfirmingUninstall)
+                                @if ($detailConfirmingUninstall && \App\Support\MarketplaceSettings::allowUninstall())
                                     <span class="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-2.5 py-1.5 text-[12px] font-bold text-red-700 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-400">
                                         مطمئنید؟
                                         <button type="button" wire:click="uninstallFromDetail" class="rounded-lg bg-red-600 px-2 py-1 text-white hover:bg-red-700">بله، حذف شود</button>
@@ -1561,10 +1575,13 @@
                                         <x-admin-panel::icon name="{{ $dInstalled['is_active'] ? 'eye-off' : 'eye' }}" class="size-4" />
                                         {{ $dInstalled['is_active'] ? 'غیرفعال‌سازی' : 'فعال‌سازی' }}
                                     </button>
-                                    <button type="button" wire:click="confirmDetailUninstall" class="ap-btn-ghost !py-2 !text-red-600 hover:!bg-red-50 dark:hover:!bg-red-500/10">
-                                        <x-admin-panel::icon name="trash-2" class="size-4" />
-                                        حذف
-                                    </button>
+                                    {{-- فاز ۹۹ — گیت حذف: با خاموشی allow_uninstall دکمهٔ حذف مخفی --}}
+                                    @if (\App\Support\MarketplaceSettings::allowUninstall())
+                                        <button type="button" wire:click="confirmDetailUninstall" class="ap-btn-ghost !py-2 !text-red-600 hover:!bg-red-50 dark:hover:!bg-red-500/10">
+                                            <x-admin-panel::icon name="trash-2" class="size-4" />
+                                            حذف
+                                        </button>
+                                    @endif
                                 @endif
                             @endif
                         </div>
@@ -1853,7 +1870,7 @@
                                 @if ($tInstalled['version']) — نسخه <span class="font-mono" dir="ltr">v{{ $tInstalled['version'] }}</span>@endif
                             </span>
                             <div class="flex flex-wrap items-center gap-2">
-                                @if ($tDetail['has_update'] ?? false)
+                                @if (($tDetail['has_update'] ?? false) && \App\Support\MarketplaceSettings::allowInstall())
                                     <button type="button" wire:click="reinstallTemplate('{{ $tDetail['slug'] ?? '' }}')" wire:loading.attr="disabled" wire:target="reinstallTemplate"
                                             class="rounded-lg bg-amber-500 px-3 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-amber-600">
                                         <x-admin-panel::icon name="refresh-cw" class="me-1 inline size-3.5" />
@@ -1866,11 +1883,14 @@
                                         <x-admin-panel::icon name="check" class="me-1 inline size-3.5" />
                                         فعال‌سازی
                                     </button>
-                                    <button type="button" wire:click="uninstallTemplate('{{ $tDetail['slug'] ?? '' }}')" wire:confirm="این قالب حذف شود؟ این عمل قابل بازگشت نیست."
-                                            class="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-bold text-red-600 transition-colors hover:bg-red-100 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-400">
-                                        <x-admin-panel::icon name="trash-2" class="me-1 inline size-3.5" />
-                                        حذف
-                                    </button>
+                                    {{-- فاز ۹۹ — گیت حذف قالب --}}
+                                    @if (\App\Support\MarketplaceSettings::allowUninstall())
+                                        <button type="button" wire:click="uninstallTemplate('{{ $tDetail['slug'] ?? '' }}')" wire:confirm="این قالب حذف شود؟ این عمل قابل بازگشت نیست."
+                                                class="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-bold text-red-600 transition-colors hover:bg-red-100 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-400">
+                                            <x-admin-panel::icon name="trash-2" class="me-1 inline size-3.5" />
+                                            حذف
+                                        </button>
+                                    @endif
                                 @endif
                             </div>
                         </div>
@@ -2029,7 +2049,7 @@
                     <div class="flex items-center gap-2">
                         @if ($tSold || ($tInstalled && ($tInstalled['status'] ?? '') === 'installed'))
                             <button type="button" wire:click="closeTemplateDetail" class="ap-btn-outline !py-2.5">بستن</button>
-                        @elseif (! ($tInstalled && ($tInstalled['status'] ?? '') === 'updating'))
+                        @elseif (! ($tInstalled && ($tInstalled['status'] ?? '') === 'updating') && \App\Support\MarketplaceSettings::allowInstall())
                             <button type="button" wire:click="startTemplatePurchase" wire:loading.attr="disabled" wire:target="startTemplatePurchase"
                                     class="ap-btn-primary min-w-40 !py-2.5">
                                 <span wire:loading.remove wire:target="startTemplatePurchase" class="flex items-center justify-center gap-2">

@@ -85,18 +85,24 @@
                                             title="{{ $module->is_active ? 'غیرفعال‌سازی' : 'فعال‌سازی' }}">
                                         <x-admin-panel::icon name="{{ $module->is_active ? 'circle-check' : 'circle-x' }}" class="size-4.5" />
                                     </button>
-                                    <button type="button" wire:click="updateModule({{ \Illuminate\Support\Js::from($module->slug)->toHtml() }})"
-                                            wire:loading.attr="disabled" wire:target="updateModule"
-                                            class="rounded-lg p-1.5 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10"
-                                            title="آپدیت ماژول">
-                                        <x-admin-panel::icon name="refresh-cw" class="size-4.5" />
-                                    </button>
-                                    @can('packages.installed')
-                                        <button type="button" wire:click="confirmUninstall({{ \Illuminate\Support\Js::from($module->slug)->toHtml() }})"
-                                                class="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
-                                                title="حذف ماژول">
-                                            <x-admin-panel::icon name="trash-2" class="size-4.5" />
+                                    {{-- فاز ۹۹ — گیت آپدیت: با خاموشی کلید اصلی/allow_install دکمهٔ آپدیت مخفی --}}
+                                    @if (\App\Support\MarketplaceSettings::allowInstall())
+                                        <button type="button" wire:click="updateModule({{ \Illuminate\Support\Js::from($module->slug)->toHtml() }})"
+                                                wire:loading.attr="disabled" wire:target="updateModule"
+                                                class="rounded-lg p-1.5 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10"
+                                                title="آپدیت ماژول">
+                                            <x-admin-panel::icon name="refresh-cw" class="size-4.5" />
                                         </button>
+                                    @endif
+                                    @can('packages.installed')
+                                        {{-- فاز ۹۹ — گیت حذف: با خاموشی allow_uninstall دکمهٔ حذف مخفی --}}
+                                        @if (\App\Support\MarketplaceSettings::allowUninstall())
+                                            <button type="button" wire:click="confirmUninstall({{ \Illuminate\Support\Js::from($module->slug)->toHtml() }})"
+                                                    class="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
+                                                    title="حذف ماژول">
+                                                <x-admin-panel::icon name="trash-2" class="size-4.5" />
+                                            </button>
+                                        @endif
                                     @endcan
                                 </div>
                             </td>

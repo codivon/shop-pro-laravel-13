@@ -67,6 +67,8 @@ return [
                             'route' => 'np.packages.index',
                             'permission' => 'packages.index',
                             'icon' => 'package',
+                            // فاز ۹۹ — گیت تنظیماتی (الگوی فاز ۸۳): خاموشی کلید اصلی بازارچه ⇒ آیتم منو مخفی
+                            'enabled' => 'packages_market_enabled',
                         ],
                         [
                             'label' => 'پکیج‌های نصب‌شده',

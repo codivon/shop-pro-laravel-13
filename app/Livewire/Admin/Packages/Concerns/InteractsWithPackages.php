@@ -8,6 +8,7 @@ use App\Models\InstalledModule;
 use App\Models\PackageCache;
 use App\Models\PackagePurchase;
 use App\Services\PackageApiService;
+use App\Support\MarketplaceSettings;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
@@ -52,6 +53,16 @@ trait InteractsWithPackages
     public function startInstall(string $slug, ?int $pricingPlanId = null, bool $useSubscription = false, bool $useLicense = false): void
     {
         auth('adminPanel')->user()?->can('packages.index') ?: abort(403);
+
+        /*
+         * فاز ۹۹ — گیت تنظیمات بازارچه (گارد سروری، نه فقط UI):
+         * کلید اصلی خاموش یا allow_install خاموش ⇒ هیچ نصب/خریدی شروع نمی‌شود.
+         */
+        if (! MarketplaceSettings::marketEnabled() || ! MarketplaceSettings::allowInstall()) {
+            $this->dispatch('toast', message: MarketplaceSettings::installDisabledMessage(), type: 'error');
+
+            return;
+        }
 
         /*
          * فاز ۶۴ — قفل نصب همزمان: در هر لحظه فقط یک نصب (پکیج/قالب/آپدیت) مجاز است.

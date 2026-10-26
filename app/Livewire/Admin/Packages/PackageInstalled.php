@@ -7,6 +7,7 @@ use App\Livewire\Admin\Packages\Concerns\InteractsWithPackages;
 use App\Models\InstalledModule;
 use App\Models\InstalledTheme;
 use App\Services\PackageInstallerService;
+use App\Support\MarketplaceSettings;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -56,6 +57,15 @@ class PackageInstalled extends Component
         }
 
         /*
+         * فاز ۹۹ — گیت نصب/به‌روزرسانی (گارد سروری): آپدیت ماژول هم دانلود از
+         * سرور بازار است ⇒ با خاموشی کلید اصلی یا allow_install مسدود می‌شود.
+         */
+        if (! MarketplaceSettings::marketEnabled() || ! MarketplaceSettings::allowInstall()) {
+            $this->dispatch('toast', message: MarketplaceSettings::installDisabledMessage(), type: 'error');
+            return;
+        }
+
+        /*
          * فاز ۶۴ — قفل نصب همزمان: اگر نصب دیگری (پکیج/قالب) در جریان است، آپدیت شروع نشود.
          * پنجرهٔ تازگی ۱۰ دقیقه‌ای مثل PackageIndex::hasOtherInstallationInProgress.
          */
@@ -101,6 +111,16 @@ class PackageInstalled extends Component
         $this->confirmingUninstall = null;
 
         if ($slug === '') {
+            return;
+        }
+
+        /*
+         * فاز ۹۹ — گیت حذف (گارد سروری، نه فقط UI): با خاموشی allow_uninstall
+         * حذف ماژول از صفحهٔ نصب‌شده‌ها هم مسدود می‌شود (حذف تخریب‌کننده است؛
+         * فعال/غیرفعال‌سازی محلی بلاک نمی‌شود — حیاتی برای پکیج خراب).
+         */
+        if (! MarketplaceSettings::allowUninstall()) {
+            $this->dispatch('toast', message: MarketplaceSettings::uninstallDisabledMessage(), type: 'error');
             return;
         }
 

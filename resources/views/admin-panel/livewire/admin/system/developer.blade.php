@@ -48,6 +48,12 @@
                     <x-admin-panel::icon name="shield" class="size-4" />
                     امنیت
                 </button>
+                {{-- فاز ۹۹ — تنظیمات بازارچه --}}
+                <button type="button" class="ap-tab relative whitespace-nowrap" x-on:click="tab = 'marketplace'"
+                        x-bind:class="tab === 'marketplace' ? 'is-active' : ''">
+                    <x-admin-panel::icon name="store" class="size-4" />
+                    بازارچه
+                </button>
             </div>
 
             {{-- ============ تب کرون جاب ============ --}}
@@ -662,6 +668,136 @@
                         <button type="submit" class="ap-btn-primary !py-2.5">
                             <x-admin-panel::icon name="check-circle" class="size-4" />
                             ذخیره تنظیمات امنیتی
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            {{-- ============ تب بازارچه (فاز ۹۹ — ۷ کلید گیت‌دار App\Support\MarketplaceSettings) ============ --}}
+            <div x-show="tab === 'marketplace'" x-cloak class="animate-fade-in space-y-4 p-5 sm:p-6">
+                <form wire:submit="saveMarketplace" class="space-y-5">
+
+                    {{-- ───── کلید اصلی ───── --}}
+                    <section class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
+                        <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">
+                            <x-admin-panel::icon name="store" class="size-4.5 text-brand-600 dark:text-brand-400" />
+                            <h3 class="text-[13px] font-bold">کلید اصلی بازارچه</h3>
+                            <span class="ms-auto text-[10px] font-semibold text-ink-3 dark:text-night-ink-2">منو + صفحات پکیج‌ها و قالب‌ها</span>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex items-center justify-between gap-3 rounded-xl border border-brand-200 bg-gradient-to-l from-brand-50/90 via-brand-50/40 to-transparent p-3.5 dark:border-brand-500/20 dark:from-brand-500/10 dark:via-brand-500/5 dark:to-transparent">
+                                <span class="flex min-w-0 items-center gap-3">
+                                    <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-600/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
+                                        <x-admin-panel::icon name="key-round" class="size-4.5" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="flex flex-wrap items-center gap-1.5">
+                                            <span class="text-[13px] font-bold">فعال‌بودن بازارچه</span>
+                                            <span class="rounded-md bg-brand-600/10 px-1.5 py-0.5 text-[10px] font-bold text-brand-700 dark:bg-brand-500/15 dark:text-brand-400">کلید اصلی</span>
+                                        </span>
+                                        <span class="block text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">با خاموش‌کردن این کلید، آیتم منوی «پکیج‌ها و قالب‌ها» مخفی و صفحهٔ بازار با پیام غیرفعال رندر می‌شود — مدیریت «ماژول‌های نصب‌شده» سر جای خودش می‌ماند</span>
+                                    </span>
+                                </span>
+                                <x-admin-panel::toggle wire:model="marketEnabled" aria-label="کلید اصلی بازارچه" />
+                            </div>
+                        </div>
+                    </section>
+
+                    {{-- ───── عملیات نصب/حذف ───── --}}
+                    <section x-data="{ install: @js((bool) $marketAllowInstall), uninstall: @js((bool) $marketAllowUninstall) }" class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
+                        <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">
+                            <x-admin-panel::icon name="package" class="size-4.5 text-brand-600 dark:text-brand-400" />
+                            <h3 class="text-[13px] font-bold">نصب و حذف</h3>
+                            <span class="ms-auto text-[10px] font-semibold text-ink-3 dark:text-night-ink-2">گیت سروری + مخفی‌شدن دکمه‌ها</span>
+                        </div>
+                        <div class="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
+                            <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                                <span class="flex min-w-0 items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="download" class="size-4" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block truncate text-[13px] font-bold">اجازهٔ نصب و خرید</span>
+                                        <span class="block truncate text-[11px] text-ink-3 dark:text-night-ink-2">خاموش = فقط مرور (نصب/خرید/آپدیت مسدود)</span>
+                                    </span>
+                                </span>
+                                <x-admin-panel::toggle wire:model="marketAllowInstall" x-on:change="install = $event.target.checked" size="sm" aria-label="اجازهٔ نصب" />
+                            </div>
+                            <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                                <span class="flex min-w-0 items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="trash-2" class="size-4" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block truncate text-[13px] font-bold">اجازهٔ حذف پکیج/قالب</span>
+                                        <span class="block truncate text-[11px] text-ink-3 dark:text-night-ink-2">خاموش = دکمهٔ حذف مخفی + گارد سروری</span>
+                                    </span>
+                                </span>
+                                <x-admin-panel::toggle wire:model="marketAllowUninstall" x-on:change="uninstall = $event.target.checked" size="sm" aria-label="اجازهٔ حذف" />
+                            </div>
+
+                            {{-- قالب‌ها — با خاموشی اجازهٔ نصب هم کم‌رنگ نمی‌شود (مستقل است) --}}
+                            <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                                <span class="flex min-w-0 items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="layout-template" class="size-4" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block truncate text-[13px] font-bold">نمایش قالب‌ها</span>
+                                        <span class="block truncate text-[11px] text-ink-3 dark:text-night-ink-2">خاموش = تب «قالب‌ها» مخفی (حتی در تب «همه»)</span>
+                                    </span>
+                                </span>
+                                <x-admin-panel::toggle wire:model="marketShowTemplates" size="sm" aria-label="نمایش قالب‌ها" />
+                            </div>
+                            <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 transition-opacity duration-300 dark:border-night-line dark:bg-night-3" x-bind:class="!install ? 'pointer-events-none opacity-40' : ''">
+                                <span class="flex min-w-0 items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="refresh-cw" class="size-4" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block truncate text-[13px] font-bold">چک خودکار به‌روزرسانی</span>
+                                        <span class="block truncate text-[11px] text-ink-3 dark:text-night-ink-2">هنگام ورود به بازار؛ پیش‌فرض خاموش (دکمهٔ دستی می‌ماند)</span>
+                                    </span>
+                                </span>
+                                <x-admin-panel::toggle wire:model="marketAutoCheckUpdates" size="sm" aria-label="چک خودکار به‌روزرسانی" />
+                            </div>
+                        </div>
+                    </section>
+
+                    {{-- ───── نمایش ───── --}}
+                    <section class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
+                        <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">
+                            <x-admin-panel::icon name="sliders-horizontal" class="size-4.5 text-brand-600 dark:text-brand-400" />
+                            <h3 class="text-[13px] font-bold">نمایش</h3>
+                        </div>
+                        <div class="space-y-3 p-4">
+                            <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line p-3.5 dark:border-night-line">
+                                <span class="flex min-w-0 items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="list" class="size-4" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-[13px] font-bold">تعداد آیتم هر صفحهٔ بازار</span>
+                                        <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">برای پکیج‌ها و قالب‌ها (۱ تا ۶۰)</span>
+                                    </span>
+                                </span>
+                                <input type="number" min="1" max="60" wire:model="marketItemsPerPage" class="ap-input !w-24 !py-2 text-center" aria-label="تعداد آیتم هر صفحه">
+                            </div>
+                            <div class="rounded-xl border border-line p-3.5 dark:border-night-line">
+                                <label class="mb-1.5 block text-[13px] font-bold" for="market-notice-text">متن بنر بالای بازارچه (اختیاری)</label>
+                                <p class="mb-2 text-[11px] text-ink-3 dark:text-night-ink-2">خالی = بدون بنر؛ متن اطلاع‌رسانی (مثل «نگارش جدید بازار به‌زودی…») بالای لیست نمایش داده می‌شود.</p>
+                                <textarea id="market-notice-text" wire:model="marketNoticeText" rows="2" class="ap-input !py-2" placeholder="مثلاً: تخفیف نوروزی روی همهٔ قالب‌ها فعال است…">{{ $marketNoticeText }}</textarea>
+                                @error('marketNoticeText') <p class="mt-1 text-[11px] font-bold text-red-500">{{ $message }}</p> @enderror
+                                @error('marketItemsPerPage') <p class="mt-1 text-[11px] font-bold text-red-500">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+                    </section>
+
+                    {{-- ذخیره --}}
+                    <div class="flex items-center justify-end gap-3">
+                        <button type="submit" class="ap-btn-primary !py-2.5">
+                            <x-admin-panel::icon name="check-circle" class="size-4" />
+                            ذخیره تنظیمات بازارچه
                         </button>
                     </div>
                 </form>
