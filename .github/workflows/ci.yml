@@ -14,9 +14,12 @@ name: CI — هسته فروشگاه
 
 on:
   push:
-    branches: [master, main]
+    # docs/project-analysis = شاخهٔ کاری/همگام‌سازی توسعه — هر پوش CI اجرا می‌شود
+    # (workflow_dispatch فقط برای workflow ثبت‌شده روی شاخهٔ پیش‌فرض کار می‌کند؛
+    #  فایل CI روی master نیست، پس تریگر خودکار شاخهٔ کاری راه درست است)
+    branches: [master, main, docs/project-analysis]
   pull_request:
-    branches: [master, main]
+    branches: [master, main, docs/project-analysis]
   workflow_dispatch:
 
 jobs:
