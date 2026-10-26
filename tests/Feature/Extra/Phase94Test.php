@@ -759,4 +759,298 @@ class Phase94Test extends TestCase
             $this->assertSame(0, $this->compileAndLint($view), "بلید {$view} باید بدون خطای syntax کامپایل شود.");
         }
     }
+
+    /* ================= ۸) فاز ۹۶ — تزریق دستیار شناور + فرم مقاله ================= */
+
+    /** گاردهای تزریق — همهٔ کلیدها روشن + scope ادمین */
+    private function injectionDefaults(array $overrides = []): void
+    {
+        $this->aiDefaults([
+            'post_creator_enabled' => '1',
+            'assistant_enabled' => '1',
+            'assistant_generate_enabled' => '1',
+            'assistant_scope' => 'admin',
+            'assistant_position' => 'bottom-right',
+        ]);
+
+        foreach ($overrides as $key => $value) {
+            AiSetting::set($key, (string) $value);
+        }
+    }
+
+    #[Test]
+    #[TestDox('بند ۱۲ — تزریق: رندر صفحهٔ ایجاد مقاله (پنل جدید) شامل هر دو مارکر + config مشترک + خاموشی مستقل هر زیرسیستم')]
+    public function injection_markers_on_post_create_page_and_independent_guards(): void
+    {
+        $this->requireModule();
+        $this->injectionDefaults();
+
+        \Illuminate\Support\Facades\Gate::define('posts.create', fn ($user = null) => true);
+        $this->newCreator();
+
+        // ── ① صفحهٔ ایجاد مقاله: هر دو مارکر با هر دو لایهٔ تزریق (middleware + RequestHandled) ──
+        $page = $this->get(route('np.posts.create'));
+        $page->assertOk();
+
+        $html = (string) $page->getContent();
+
+        $this->assertStringContainsString('AI-post-creator', $html, 'مارکر فرم مقاله باید تزریق شود.');
+        $this->assertStringContainsString('AI-floating-assistant', $html, 'مارکر دستیار شناور باید تزریق شود.');
+
+        // ددآپ واقعی: هر دو لایه روی همین پاسخ اجرا شده‌اند → تنها یک مارکر
+        $this->assertSame(1, substr_count($html, '<!-- AI-post-creator -->'), 'تزریق دوباره نباید مارکر تکراری بسازد.');
+        $this->assertSame(1, substr_count($html, '<!-- AI-floating-assistant -->'), 'تزریق دوباره نباید مارکر تکراری بسازد.');
+
+        // config JSON مشترک — روت‌های JSON، موقعیت دستیار، i18n فارسی و provider
+        $this->assertStringContainsString('window.__AI_INJECT__', $html);
+        $this->assertStringContainsString('"postCreator":true', $html, 'پرچم config باید فرم مقاله را روشن نشان دهد (گارد post-creator.js).');
+        $this->assertStringContainsString('"assistant":true', $html);
+        $this->assertStringContainsString('"canGenerate":true', $html, 'ادمین واردشده باید مجاز به تولید با دستیار باشد.');
+        $this->assertStringContainsString('admin/ai/post-creator', $html, 'آدرس JSON روت post-creator باید در config باشد.');
+        $this->assertStringContainsString('admin/ai/assist', $html, 'آدرس JSON روت assist باید در config باشد.');
+        $this->assertStringContainsString('bottom-right', $html);
+        $this->assertStringContainsString('در حال تولید', $html, 'رشته‌های i18n فارسی باید تزریق شوند.');
+        $this->assertStringContainsString('openai', $html, 'نام provider فعال برای نمایش.');
+
+        // اسکریپت‌های دارایی با آدرس مستقیم modules/ (نه route())
+        $this->assertStringContainsString('modules/artificial-intelligence/js/post-creator.js', $html);
+        $this->assertStringContainsString('modules/artificial-intelligence/js/floating-assistant.js', $html);
+        $this->assertStringContainsString('modules/artificial-intelligence/css/ai-inject.css', $html);
+
+        // ── ② خاموشی post_creator_enabled → مارکر فرم غایب، دستیار حاضر ──
+        $this->injectionDefaults(['post_creator_enabled' => '0']);
+        $htmlNoPc = (string) $this->get(route('np.posts.create'))->getContent();
+
+        $this->assertStringNotContainsString('AI-post-creator', $htmlNoPc);
+        $this->assertStringContainsString('AI-floating-assistant', $htmlNoPc);
+
+        // ── ③ خاموشی assistant_enabled → مارکر دستیار غایب، فرم حاضر ──
+        $this->injectionDefaults(['assistant_enabled' => '0']);
+        $htmlNoAssistant = (string) $this->get(route('np.posts.create'))->getContent();
+
+        $this->assertStringContainsString('AI-post-creator', $htmlNoAssistant);
+        $this->assertStringNotContainsString('AI-floating-assistant', $htmlNoAssistant);
+
+        // ── ④ خاموشی کلید اصلی → هر دو مارکر غایب ──
+        $this->injectionDefaults(['ai_enabled' => '0']);
+        $htmlMasterOff = (string) $this->get(route('np.posts.create'))->getContent();
+
+        $this->assertStringNotContainsString('AI-post-creator', $htmlMasterOff);
+        $this->assertStringNotContainsString('AI-floating-assistant', $htmlMasterOff);
+    }
+
+    #[Test]
+    #[TestDox('بند ۱۲ — scope دستیار: admin → فرانت بدون مارکر؛ all → فرانت حاضر با canGenerate=false برای مهمان')]
+    public function assistant_scope_guards_admin_vs_front(): void
+    {
+        $this->requireModule();
+        $this->injectionDefaults(['assistant_scope' => 'admin']);
+
+        // مهمان فرانت (بدون لاگین ادمین) — صفحهٔ چت‌بات پکیج به‌عنوان مسیر فرانت
+        $frontAdmin = (string) $this->get('/ai/chat')->getContent();
+        $this->assertStringNotContainsString('AI-floating-assistant', $frontAdmin, 'با scope=admin نباید در فرانت تزریق شود.');
+
+        // scope=all → فرانت هم دستیار دارد؛ مهمان فقط تولتیپ می‌بیند (canGenerate=false)
+        $this->injectionDefaults(['assistant_scope' => 'all']);
+        $frontAll = (string) $this->get('/ai/chat')->getContent();
+
+        $this->assertStringContainsString('AI-floating-assistant', $frontAll, 'با scope=all فرانت هم باید دستیار داشته باشد.');
+        $this->assertStringContainsString('"canGenerate":false', $frontAll, 'مهمان فرانت باید فقط تولتیپ ببیند.');
+
+        // ادمین واردشده در فرانت با scope=all → تب تولید محتوا مجاز (canGenerate=true)
+        \Illuminate\Support\Facades\Gate::define('posts.create', fn ($user = null) => true);
+        $this->newCreator();
+
+        $frontAdminIn = (string) $this->get('/ai/chat')->getContent();
+        $this->assertStringContainsString('"canGenerate":true', $frontAdminIn, 'ادمین واردشده باید بتواند از تب تولید محتوا استفاده کند.');
+
+        // فرانت هرگز فرم مقاله ندارد — حتی با scope=all
+        $this->assertStringNotContainsString('AI-post-creator', $frontAll, 'فرم مقاله فقط در مسیرهای admin/{prefix}/posts/* تزریق می‌شود.');
+    }
+
+    #[Test]
+    #[TestDox('بند ۱۲ — ددآپ تزریق: اجرای دوبارهٔ هستهٔ AssetInjector روی همان پاسخ مارکر تکراری نمی‌سازد')]
+    public function injection_dedup_is_marker_based(): void
+    {
+        $this->requireModule();
+        $this->injectionDefaults();
+
+        $injector = app(\Modules\ArtificialIntelligence\Services\AssetInjector::class);
+        $request = \Illuminate\Http\Request::create('/admin/admin/posts/create', 'GET');
+
+        $response = new \Illuminate\Http\Response(
+            '<html><body><form id="post-create-form"><input name="title"></form></body></html>',
+            200,
+            ['Content-Type' => 'text/html; charset=UTF-8']
+        );
+
+        $injector->inject($request, $response);
+        $first = (string) $response->getContent();
+
+        $this->assertSame(1, substr_count($first, '<!-- AI-post-creator -->'));
+        $this->assertSame(1, substr_count($first, '<!-- AI-floating-assistant -->'));
+
+        // اجرای دوم (شبیه‌سازی لایهٔ دوم — listener) — نباید چیزی اضافه کند
+        $injector->inject($request, $response);
+        $second = (string) $response->getContent();
+
+        $this->assertSame($first, $second, 'تزریق دوباره نباید پاسخ را تغییر دهد (dedup با مارکر).');
+        $this->assertSame(1, substr_count($second, '<!-- AI-post-creator -->'));
+        $this->assertSame(1, substr_count($second, '<!-- AI-floating-assistant -->'));
+    }
+
+    #[Test]
+    #[TestDox('بند ۱۲ — گاردهای نهایی تزریق: POST/JSON/Livewire/غیر-2xx تزریق نمی‌شوند؛ فقط GET HTML موفق')]
+    public function injection_final_guards_skip_non_html_requests(): void
+    {
+        $this->requireModule();
+        $this->injectionDefaults();
+
+        $injector = app(\Modules\ArtificialIntelligence\Services\AssetInjector::class);
+
+        // ── POST — حتی مسیر مجاز ──
+        $postResponse = new \Illuminate\Http\Response(
+            '<html><body>فرم</body></html>', 200, ['Content-Type' => 'text/html; charset=UTF-8']
+        );
+        $injector->inject(
+            \Illuminate\Http\Request::create('/admin/admin/posts/create', 'POST'),
+            $postResponse
+        );
+        $this->assertStringNotContainsString('AI-post-creator', (string) $postResponse->getContent(), 'درخواست POST نباید تزریق شود.');
+
+        // ─️─ هدر x-livewire (آپدیت Livewire) ──
+        $livewireResponse = new \Illuminate\Http\Response(
+            '<html><body>فرم</body></html>', 200, ['Content-Type' => 'text/html; charset=UTF-8']
+        );
+        $livewireRequest = \Illuminate\Http\Request::create('/admin/admin/posts/create', 'GET');
+        $livewireRequest->headers->set('x-livewire', 'true');
+        $injector->inject($livewireRequest, $livewireResponse);
+        $this->assertStringNotContainsString('AI-post-creator', (string) $livewireResponse->getContent(), 'پاسخ آپدیت Livewire نباید تزریق شود.');
+
+        // ── JSON ──
+        $jsonResponse = new \Illuminate\Http\JsonResponse(['ok' => true]);
+        $injector->inject(
+            \Illuminate\Http\Request::create('/admin/admin/ai/assist', 'GET'),
+            $jsonResponse
+        );
+        $this->assertStringNotContainsString('AI-floating-assistant', (string) $jsonResponse->getContent(), 'پاسخ JSON نباید تزریق شود.');
+
+        // ── وضعیت غیر 2xx ──
+        $errorResponse = new \Illuminate\Http\Response(
+            '<html><body>خطا</body></html>', 500, ['Content-Type' => 'text/html; charset=UTF-8']
+        );
+        $injector->inject(
+            \Illuminate\Http\Request::create('/admin/admin/posts/create', 'GET'),
+            $errorResponse
+        );
+        $this->assertStringNotContainsString('AI-post-creator', (string) $errorResponse->getContent(), 'پاسخ غیر موفق نباید تزریق شود.');
+
+        // ── مسیر غیرمجاز (مثلاً لیست مقاله‌ها) ──
+        $indexResponse = new \Illuminate\Http\Response(
+            '<html><body>لیست مقاله‌ها</body></html>', 200, ['Content-Type' => 'text/html; charset=UTF-8']
+        );
+        $injector->inject(
+            \Illuminate\Http\Request::create('/admin/admin/posts', 'GET'),
+            $indexResponse
+        );
+        $indexHtml = (string) $indexResponse->getContent();
+        $this->assertStringNotContainsString('AI-post-creator', $indexHtml, 'فرم مقاله فقط در create/edit تزریق می‌شود.');
+        $this->assertStringContainsString('AI-floating-assistant', $indexHtml, 'دستیار در همهٔ صفحات ادمین حاضر است.');
+    }
+
+    #[Test]
+    #[TestDox('بند ۱۲ — قرارداد تزریق سه‌لایه + ensureAssets + دارایی‌های js/css (اسکن فایل)')]
+    public function injection_three_layer_contract_and_assets(): void
+    {
+        $this->requireModule();
+
+        // دارایی‌های پکیج
+        foreach ([
+            'Modules/ArtificialIntelligence/resources/assets/js/post-creator.js',
+            'Modules/ArtificialIntelligence/resources/assets/js/floating-assistant.js',
+            'Modules/ArtificialIntelligence/resources/assets/css/ai-inject.css',
+        ] as $asset) {
+            $this->assertFileExists(base_path($asset), "{$asset} باید موجود باشد.");
+        }
+
+        // لایهٔ ۱: میدل‌ور گروه web — ثبت در Provider boot
+        $provider = $this->read('Modules/ArtificialIntelligence/app/Providers/ArtificialIntelligenceServiceProvider.php');
+        $this->assertStringContainsString('pushMiddlewareToGroup(\'web\', InjectAdminAssets::class)', $provider);
+        $this->assertFileExists(base_path('Modules/ArtificialIntelligence/app/Http/Middlewares/InjectAdminAssets.php'));
+
+        // لایهٔ ۲: Listener رویداد هستهٔ RequestHandled — ثبت در EventServiceProvider
+        $events = $this->read('Modules/ArtificialIntelligence/app/Providers/EventServiceProvider.php');
+        $this->assertStringContainsString('RequestHandled', $events);
+        $this->assertStringContainsString('InjectAssetsOnRequestHandled', $events);
+        $this->assertFileExists(base_path('Modules/ArtificialIntelligence/app/Listeners/InjectAssetsOnRequestHandled.php'));
+
+        // هستهٔ مشترک — مارکرها، گاردها، ensureAssets و آدرس مستقیم دارایی‌ها
+        $core = $this->read('Modules/ArtificialIntelligence/app/Services/AssetInjector.php');
+        foreach ([
+            'AI-floating-assistant',
+            'AI-post-creator',
+            'ensureAssets',
+            "url('modules/artificial-intelligence/'",
+            'assistant_generate_enabled',
+            'admin/[^/]+/posts/(create|\d+/edit)$',
+            'x-livewire',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $core, "هستهٔ تزریق باید {$needle} داشته باشد.");
+        }
+
+        // JS فرم مقاله: فرم‌ها + ادیتورها + پرکردن فیلدهای هسته
+        $postCreatorJs = $this->read('Modules/ArtificialIntelligence/resources/assets/js/post-creator.js');
+        foreach (['#post-create-form', '#post-edit-form', 'CKEDITOR', 'tinymce', 'ApEditor',
+                     'input[name="meta_title"]', 'input[name="tags"]', 'سوالات متداول',
+                     'X-CSRF-TOKEN', 'X-Requested-With'] as $needle) {
+            $this->assertStringContainsString($needle, $postCreatorJs, "post-creator.js باید {$needle} داشته باشد.");
+        }
+
+        // JS دستیار: دکمه شناور + دو تب + تشخیص فیلدها + هدف‌ها
+        $assistantJs = $this->read('Modules/ArtificialIntelligence/resources/assets/js/floating-assistant.js');
+        foreach (['ai-fab-btn', 'data-ai-hint', 'canGenerate', 'درج در', 'assistUrl',
+                     "'post'", "'product'", "'comment'", "'page'", 'input[name="title"]', 'textarea[name="comment"]'] as $needle) {
+            $this->assertStringContainsString($needle, $assistantJs, "floating-assistant.js باید {$needle} داشته باشد.");
+        }
+
+        // CSS تزریقی: پالت پکیج، z-index بالا، موبایل
+        $css = $this->read('Modules/ArtificialIntelligence/resources/assets/css/ai-inject.css');
+        $this->assertStringContainsString('#7c3aed', $css);
+        $this->assertStringContainsString('z-index: 9999', $css);
+        $this->assertStringContainsString('@media (max-width: 480px)', $css);
+    }
+
+    #[Test]
+    #[TestDox('بند ۱۲ — تنظیمات: دکمهٔ بررسی تزریق + پیش‌نمایش موقعیت؛ راهنما: بخش‌های فاز ۹۶ + کامپایل blade')]
+    public function settings_injection_checker_and_guide_new_sections(): void
+    {
+        $this->requireModule();
+        $this->injectionDefaults();
+        $this->newCreator();
+
+        // ── تنظیمات: کارت دستیار با دکمهٔ بررسی تزریق + پیش‌نمایش زندهٔ موقعیت ──
+        $settings = $this->get(route('admin.ai.settings.edit'));
+        $settings->assertOk();
+        $settings->assertSee('بررسی تزریق خودکار', false);
+        $settings->assertSee('ai-pos-preview', false);
+        // خود صفحهٔ تنظیمات هم باید مارکر تزریق داشته باشد (مبنای دکمهٔ بررسی)
+        $settings->assertSee('AI-floating-assistant', false);
+
+        // ── راهنما: بخش‌های جدید فاز ۹۶ ──
+        $guide = $this->get(route('admin.ai.guide'));
+        $guide->assertOk();
+
+        foreach (['۹ سرویس', 'Fallback', 'دستیار شناور', 'بررسی تزریق خودکار',
+                     'تولید یک‌جای مقاله', 'ابزارها و سئو', 'قالب‌های پرامپت', 'اتوبلاگ + کرون', 'CSV'] as $needle) {
+            $guide->assertSee($needle, false);
+        }
+
+        // ── کامپایل blade ویوهای ویرایش‌شدهٔ این فاز ──
+        foreach ([
+            'artificial-intelligence::back.settings.index',
+            'artificial-intelligence::back.guide.index',
+        ] as $view) {
+            $this->assertSame(0, $this->compileAndLint($view), "بلید {$view} باید بدون خطای syntax کامپایل شود.");
+        }
+    }
 }
