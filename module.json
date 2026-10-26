@@ -1,0 +1,27 @@
+{
+    "name": "CustomerClub",
+    "alias": "customer-club",
+    "description": "پکیج باشگاه مشتریان: امتیاز وفاداری (لات‌محور FIFO + تبدیل به کیف پول هسته) + کارت هدیه (شارژ مستقیم کیف پول) + توسعهٔ معرفی دوستان (صفحهٔ فرود + سطوح پاداش) — همهٔ امکانات از تنظیمات قابل فعال/غیرفعال شدن",
+    "version": "1.0.0",
+    "keywords": [
+        "loyalty",
+        "points",
+        "gift-card",
+        "referral",
+        "customer-club",
+        "امتیاز",
+        "وفاداری",
+        "کارت هدیه",
+        "معرفی دوستان",
+        "باشگاه مشتریان"
+    ],
+    "active": 1,
+    "order": 0,
+    "providers": [
+        "Modules\\CustomerClub\\Providers\\CustomerClubServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": [],
+    "title": "باشگاه مشتریان"
+}

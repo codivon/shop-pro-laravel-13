@@ -1,0 +1,23 @@
+{
+    "name": "modules/customer-club",
+    "description": "پکیج باشگاه مشتریان: امتیاز وفاداری + کارت هدیه + توسعهٔ معرفی دوستان — متصل به کیف پول هسته",
+    "type": "nwidart-module",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Modules\\CustomerClub\\": "app/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\CustomerClub\\Providers\\CustomerClubServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
