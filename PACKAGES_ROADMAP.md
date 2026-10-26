@@ -94,8 +94,16 @@ API باربری‌ها (تیپاکس/ماهکس/پست) + بارنامه و پ�
 - **درس فنی جدید (تست‌ها)**: SessionGuardهای هسته کلید نشست مشترک دارند → در تست Feature، پیش از `actingAs(user, 'web')` باید از adminPanel خارج شد وگرنه گارد adminPanel با User نشست مشترک در `CheckBlockedDevice` تایپ‌ارور می‌دهد؛ تشخیص ثبت Listener با `ReflectionFunction::getClosureUsedVariables()['listener']` (Dispatcher کلاس را در Closure می‌پیچد)؛ و روت ثابت `guide` باید **قبل** از وایلدکارد `{shipment}` تعریف شود.
 - **تست**: `Phase91Test` — **۱۴ تست/۱۵۵ assertion** + رگرسیون کامل **۴۶۹ سبز/۶۴ skip** (۳ fail محیطی pre-existing Phase83Test — عین فاز ۹۰).
 
-### فاز ۸۳ — پکیج جدید: «حسابداری»
+### فاز ۸۳ — پکیج جدید: «حسابداری» ✅ (بسته شد در فاز ۹۳ — Accounting v1.0.0)
 همگام‌سازی حسابفا/سپیدار/هلو (سند فروش و موجودی).
+- **سند فروش**: با رویداد `OrderPaid` هسته (بدون پچ) سند فروش سفارش — اقلام با کد کالا (products.product_id) + تخفیف + ردیف اختیاری هزینهٔ ارسال — در نرم‌افزار حسابداری فعال ثبت می‌شود؛ idempotent با یگانهٔ `(order_id, provider)`؛ سندهای ناموفق با یک کلیک تلاش مجدد؛ ثبت دستی با شمارهٔ سفارش از پنل.
+- **موجودی انبار**: کشش (pull) از نرم‌افزار حسابداری و اعمال روی محصولات فروشگاه — تطبیق با کد کالا؛ فقط تک‌قیمت‌ها (چند‌متغیره رد می‌شود — هشدار لاگ)؛ خودکار ساعتی با فاصلهٔ حداقلی (`inventory_interval_minutes`) + دکمهٔ دستی.
+- **درایورها**: `AccountingDriver` + `BaseHttpDriver` (پارس tolerant) + سه درایور حسابفا (apiKey+loginToken در بدنه — `invoice/save` + `product/getstocks`)، سپیدار و هلو (Bearer با لاگین خودکار کش ۱۰ دقیقه‌ای + آدرس API قابل تنظیم از پنل) + `AccountingManager` با گارد کلیدهای `{provider}_enabled` + تست اتصال (ping).
+- **جدول‌ها (گارددار)**: accounting_settings / accounting_connections (سه نرم‌افزار با ensureSeeded self-heal + syncEnabledFlag الگوی CarrierConfig) / accounting_documents (یگانه order+provider) / accounting_sync_logs (منشأ خودکار/دستی + meta جزئیات).
+- **الزام شخصی‌سازی کاربر**: ۱۰ کلید مستقل (کلید اصلی + سند خودکار + موجودی + هزینهٔ ارسال + نرم‌افزار فعال + فعال/غیرفعال هر سه نرم‌افزار + فاصلهٔ موجودی + پیشوند سند) — همه از پنل.
+- **قرارداد فاز ۸۶+ کامل**: `title` فارسی («حسابداری») + منوی دو-پنلی ادمین + راهنمای ادمین + `InstallPermissionsCommand` (`accounting:install-permissions {--remove}`) + `seedDefaults` idempotent + `license_skip` + CSS اسکوپ `ac-` (پالت رز) + مستندات + تصویر شاخص + مخزن مستقل. **تصمیم طراحی مستند**: بدون فرانت/منوی مشتری (امکان مشتری‌رو ندارد) — روت web.php عمداً وجود ندارد و تست تضمین می‌کند.
+- **ایمنی تضمینی**: خطای حسابداری هرگز فلوی سفارش/پرداخت را نمی‌شکند (گاردها در SyncService؛ خطا فقط لاگ).
+- **تست**: `Phase93Test` — **۱۰ تست/۱۰۶ assertion** (هویت، seed idempotent، سند خودکار با درایور فیک + idempotency، گاردها + خطای درایور بدون شکست سفارش، موجودی سه سناریو، گاردهای موجودی + کامند، رندر ۶ صفحهٔ ادمین + POST، منو دو-پنلی، قرارداد ۸۶ + کامپایل ۸ blade، Manager) + رگرسیون کامل (در کارنامهٔ فاز ۹۳).
 
 ### فاز ۸۴ — پکیج واحد «هوش مصنوعی»
 ادغام AIWriter + AICatalog + توصیه‌گر محصول («بر اساس خریدهای شما») + چت‌بات پشتیبانی — با یک ProviderRegistry مشترک.
