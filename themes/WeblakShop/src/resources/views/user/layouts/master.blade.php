@@ -76,7 +76,8 @@
                                         <a href="{{ route('front.comments.index') }}" class="profile-menu-url @if(@$active=="comments")active-profile @endif"><span
                                                 class="mdi mdi-comment-multiple-outline"></span>نقد و نظرات</a>
                                     </li>
-                                    @if (option('user_referrals_enable', "false") == "true")
+                                    {{-- فاز ۹۲: «کد های تخفیف معرفی» به پکیج باشگاه مشتریان منتقل شد — بخش معرفی اکنون در صفحهٔ باشگاه مشتریان پنل مشتری است. --}}
+                                    @if(false)
                                     <li>
                                         <a href="{{ route('front.user.referrals.index') }}" class="profile-menu-url @if(@$active=="referrals")active-profile @endif"><span
                                                 class="mdi mdi-comment-multiple-outline"></span>
@@ -135,7 +136,8 @@
                         <a href="{{ route('front.comments.index') }}" class="profile-menu-url @if(@$active=="comments")active-profile @endif"><span
                                 class="mdi mdi-comment-multiple-outline"></span>نقد و نظرات</a>
                     </li>
-                    @if (option('user_referrals_enable', "false") == "true")
+                    {{-- فاز ۹۲: «کد های تخفیف معرفی» به پکیج باشگاه مشتریان منتقل شد — بخش معرفی اکنون در صفحهٔ باشگاه مشتریان پنل مشتری است. --}}
+                    @if(false)
                     <li>
                         <a href="{{ route('front.user.referrals.index') }}" class="profile-menu-url @if(@$active=="referrals")active-profile @endif"><span
                                 class="mdi mdi-lan"></span>   کد های تخفیف معرفی</a>

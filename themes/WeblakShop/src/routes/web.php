@@ -223,7 +223,11 @@ Route::group(['as' => 'front.'], function () {
         Route::get('profile/messages/show/{message}', [UserController::class, 'messages_show'])->name('messages.show');
 
 
-        Route::get('profile/referrals', [UserController::class, 'referrals'])->name('user.referrals.index');
+        // ─── فاز ۹۲: امکان «معرفی افراد» به پکیج باشگاه مشتریان منتقل شد ───
+        // لینک‌های قدیمی /profile/referrals به صفحهٔ معرفی دوستان پکیج هدایت می‌شوند
+        // (اگر پکیج/امکان خاموش باشد، خود صفحهٔ پکیج با پیام مناسب ریدایرکت می‌کند).
+        // Route::get('profile/referrals', [UserController::class, 'referrals'])->name('user.referrals.index');
+        Route::get('profile/referrals', fn () => redirect()->to('/profile/club/referrals'))->name('user.referrals.index');
 
         // ------------------ user
         Route::get('profile', [UserController::class, 'profile'])->name('user.profile');

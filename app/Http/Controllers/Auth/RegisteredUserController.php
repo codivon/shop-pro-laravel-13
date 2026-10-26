@@ -51,7 +51,14 @@ class RegisteredUserController extends Controller
         $data['password']      = Hash::make($data['password']);
         $data['referral_code'] = Referral::generateCode();
 
-        if ($request->referral_code && option('user_referrals_enable', 0) == 1) {
+        // ─── فاز ۹۲: گیت معرفی افراد — هسته یا پکیج باشگاه مشتریان ───
+        // امکان «معرفی افراد» به پکیج منتقل شده؛ اگر پکیج نصب باشد و امکانش
+        // روشن باشد، کد معرف ثبت‌نام پذیرفته می‌شود (تنظیمات: پکیج باشگاه مشتریان).
+        $referralProgramOn = option('user_referrals_enable', 0) == 1
+            || (class_exists(\Modules\CustomerClub\Models\ClubSetting::class)
+                && \Modules\CustomerClub\Models\ClubSetting::enabled('referral_program_enabled'));
+
+        if ($request->referral_code && $referralProgramOn) {
             $data['referral_id'] = User::where('referral_code', $request->referral_code)->first()->id;
         }
 

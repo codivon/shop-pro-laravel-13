@@ -23,7 +23,10 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             'App\Listeners\User\Registered',
             'App\Listeners\User\AddGiftCredit',
-            'App\Listeners\User\CreateReferralDiscounts',
+            // ─── فاز ۹۲: امکان «معرفی افراد» به پکیج باشگاه مشتریان منتقل شد ───
+            // Listener پکیج: Modules\CustomerClub\Listeners\CreateReferralRewards
+            // (تنظیماتش: پنل ادمین → باشگاه مشتریان → تنظیمات).
+            // 'App\Listeners\User\CreateReferralDiscounts',
         ],
 
         'App\Events\SendMessage' => [
