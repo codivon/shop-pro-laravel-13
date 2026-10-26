@@ -75,7 +75,8 @@ class Price extends Model
     public function getAttributesName()
     {
         if ($this->product->isDownload()) {
-            return $this->file->title;
+            // فاز ۹۵ — گارد نال: قیمت دانلودی بدون رکورد فایل نباید ۵۰۰ بدهد
+            return $this->file?->title ?? 'فایل دانلودی';
         }
 
         $title = '';

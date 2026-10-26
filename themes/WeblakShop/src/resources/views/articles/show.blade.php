@@ -52,11 +52,16 @@
                         <h1>{{ $post->title }}</h1>
                         <ul class="article--title-details mt-3 mb-0">
                             <li>
-                                <img src="{{$post->admin->imageUrl}}"
-                                     class="article--meta-avatar shadow-1 ml-2" height="32" width="32" loading="lazy">
-                                <a class="article--meta-username" href="{{ route('front.articles.index', ['profile' => $post->admin->username]) }}">
-                                    {{ $post->admin->full_name ?? 'ناشناس' }}
-                                </a>
+                                {{-- فاز ۹۵ — گارد نال: مقاله‌های بدون نویسنده (admin_id خالی) نباید ۵۰۰ بدهند --}}
+                                @if($post->admin)
+                                    <img src="{{$post->admin->imageUrl}}"
+                                         class="article--meta-avatar shadow-1 ml-2" height="32" width="32" loading="lazy">
+                                    <a class="article--meta-username" href="{{ route('front.articles.index', ['profile' => $post->admin->username]) }}">
+                                        {{ $post->admin->full_name ?? 'ناشناس' }}
+                                    </a>
+                                @else
+                                    <span class="article--meta-username">ناشناس</span>
+                                @endif
                             </li>
                             <li class="divider"></li>
                             <li><span class="date">{{ jdate($post->created_at)->format('d F Y') }}</span></li>
