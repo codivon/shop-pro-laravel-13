@@ -5,6 +5,7 @@ namespace Tests\Feature\Extra;
 use App\Models\Admin;
 use App\Models\Permission;
 use App\Models\Product;
+use App\Support\PackageSelfHeal;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
@@ -668,6 +669,30 @@ class Phase97Test extends TestCase
         $this->post(route('admin.ai.templates.destroy', $tpl))
             ->assertRedirect()->assertSessionHas('toast-success');
         $this->assertDatabaseMissing('ai_prompt_templates', ['id' => $tpl->id]);
+    }
+
+    /* ================= ۱۱) گیت self-heal بوت پکیج‌ها (بستن بدهی فاز قبل) ================= */
+
+    #[Test]
+    #[TestDox('بند ۱۱ — PackageSelfHeal: در تست‌ها همیشه اجرا (رفتار پیشین) + مارکر/فراموشی فایل سالم')]
+    public function package_self_heal_gate_behavior(): void
+    {
+        $this->requireModule();
+
+        // در محیط تست همیشه true — self-heal مثل قبل اجرا می‌شود
+        $this->assertTrue(PackageSelfHeal::shouldRun('phase97-probe'));
+        $this->assertTrue(PackageSelfHeal::shouldRun('phase97-probe'));
+
+        // در تست markDone مارکر نمی‌نویسد (تا رول‌بک تراکنش‌ها نزد تست‌ها نشکند)
+        PackageSelfHeal::markDone('phase97-probe');
+        $this->assertFalse(is_file(storage_path('framework/selfheal-phase97-probe.flag')));
+
+        // forget بدون مارکر هم بی‌خطر است
+        PackageSelfHeal::forget('phase97-probe');
+
+        // کلیدهای ناسالم پاکسازی می‌شوند (بدون خطا)
+        PackageSelfHeal::shouldRun('../weird key!');
+        $this->assertTrue(PackageSelfHeal::shouldRun('../weird key!'));
     }
 
     /* ================= ۷) سرویس: گاردها + حدس خودکار ================= */
