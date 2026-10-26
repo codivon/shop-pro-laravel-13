@@ -20,6 +20,9 @@ class ThemeAssetLinkerTest extends TestCase
 {
     protected string $tmpBase;
 
+    /** کش پروب symlink در سطح پروسه (یک‌بار در کل اجرای کلاس) */
+    private static ?bool $symlinkSupported = null;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -57,8 +60,41 @@ class ThemeAssetLinkerTest extends TestCase
         return $this->tmpBase.'/link';
     }
 
+    /**
+     * آیا این فایل‌سیستم اجازهٔ ساخت symlink می‌دهد؟
+     * (ویندوز بدون Developer Mode نه — symlink() فقط warning می‌دهد و false برمی‌گرداند؛
+     * سناریوهای symlink فقط روی هاست symlink-پذیر (لینوکس) قابل شبیه‌سازی‌اند؛
+     * تست‌های حالت copy روی هر پلتفرمی بدون گارد اجرا می‌شوند.)
+     */
+    private function requireSymlinkSupport(): void
+    {
+        if (self::$symlinkSupported === null) {
+            $probeTarget = $this->tmpBase.'/probe-target';
+            $probeLink = $this->tmpBase.'/probe-link';
+
+            if (! is_dir($probeTarget)) {
+                @mkdir($probeTarget, 0755, true);
+            }
+
+            @unlink($probeLink);
+
+            self::$symlinkSupported = @symlink($probeTarget, $probeLink) && is_link($probeLink);
+
+            @unlink($probeLink);
+        }
+
+        if (! self::$symlinkSupported) {
+            $this->markTestSkipped(
+                'این فایل‌سیستم اجازهٔ ساخت symlink نمی‌دهد (ویندوز بدون Developer Mode) — '
+                .'سناریوهای symlink فقط روی هاست symlink-پذیر (لینوکس) شبیه‌سازی می‌شوند.'
+            );
+        }
+    }
+
     public function test_creates_symlink_on_healthy_host(): void
     {
+        $this->requireSymlinkSupport();
+
         $mode = ThemeAssetLinker::linkOrCopy($this->target(), $this->link());
 
         $this->assertContains($mode, ['symlink', 'exec'], 'در محیط سالم باید symlink ساخته شود');
@@ -92,6 +128,8 @@ class ThemeAssetLinkerTest extends TestCase
 
     public function test_stale_copy_is_upgraded_to_symlink_when_host_allows(): void
     {
+        $this->requireSymlinkSupport();
+
         // هاست سخت‌گیرانه کپی ساخته؛ حالا هاست symlink را باز کرده است
         ThemeAssetLinker::linkOrCopy($this->target(), $this->link(), false, false);
         $this->assertFileExists($this->link().'/'.ThemeAssetLinker::COPY_MARKER);
@@ -105,6 +143,8 @@ class ThemeAssetLinkerTest extends TestCase
 
     public function test_existing_valid_symlink_is_left_untouched(): void
     {
+        $this->requireSymlinkSupport();
+
         symlink($this->target(), $this->link());
 
         $mode = ThemeAssetLinker::linkOrCopy($this->target(), $this->link(), false, false);
@@ -115,6 +155,8 @@ class ThemeAssetLinkerTest extends TestCase
 
     public function test_broken_symlink_is_recreated(): void
     {
+        $this->requireSymlinkSupport();
+
         symlink($this->tmpBase.'/target-nonexistent', $this->link());
 
         $mode = ThemeAssetLinker::linkOrCopy($this->target(), $this->link(), false, false);

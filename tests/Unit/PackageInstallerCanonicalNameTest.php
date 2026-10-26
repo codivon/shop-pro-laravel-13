@@ -40,6 +40,31 @@ class PackageInstallerCanonicalNameTest extends TestCase
         $this->extractZip->setAccessible(true);
     }
 
+    /**
+     * آیا فایل‌سیستم case-sensitive است؟
+     * (ویندوز/macOS نه — دو پوشه که فقط در بزرگی/کوچکی حروف فرق دارند
+     * نمی‌توانند هم‌زمان وجود داشته باشند؛ دو تستِ نام کانونی فقط روی
+     * فایل‌سیستم case-sensitive (لینوکس) قابل شبیه‌سازی‌اند. بقیهٔ تست‌ها
+     * — نصب مجدد/بایگانی/رد ZIP خراب — روی هر پلتفرمی بدون گارد اجرا می‌شوند.)
+     */
+    private function requireCaseSensitiveFilesystem(): void
+    {
+        $probe = $this->workspace.'/CaseProbe';
+        @rmdir($probe);
+        @mkdir($probe, 0777, true);
+
+        $caseInsensitive = is_dir($this->workspace.'/caseprobe');
+
+        @rmdir($probe);
+
+        if ($caseInsensitive) {
+            $this->markTestSkipped(
+                'فایل‌سیستم case-insensitive است (ویندوز) — وجود هم‌زمان دو پوشه با تفاوت فقط در حالت حروف '
+                .'قابل شبیه‌سازی نیست؛ این تست روی فایل‌سیستم case-sensitive (لینوکس) اجرا می‌شود.'
+            );
+        }
+    }
+
     protected function tearDown(): void
     {
         (new Filesystem)->deleteDirectory($this->workspace);
@@ -74,6 +99,8 @@ class PackageInstallerCanonicalNameTest extends TestCase
 
     public function test_zip_folder_lowercase_is_normalized_to_module_json_name(): void
     {
+        $this->requireCaseSensitiveFilesystem();
+
         $zipPath = $this->makeZip('seoAudit', 'SeoAudit');
 
         $result = $this->extractZip->invoke($this->installer, $zipPath, 'seo-audit');
@@ -88,6 +115,8 @@ class PackageInstallerCanonicalNameTest extends TestCase
 
     public function test_existing_legacy_differently_cased_directory_is_replaced(): void
     {
+        $this->requireCaseSensitiveFilesystem();
+
         // نصب قدیمی با نام پوشه نادرست
         $legacy = $this->workspace.'/Modules/seoAudit';
         mkdir($legacy, 0777, true);
