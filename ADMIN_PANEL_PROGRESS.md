@@ -3182,3 +3182,32 @@ DigiPay v1.3.0 (اسنپ‌پی + ری‌برندینگ) پوش شد؛ CreditPay
 ### فایل‌های فاز ۹۳
 - هسته: tests/Feature/Extra/Phase93Test.php (۱۰ تست) + modules_statuses.json (+Accounting) + PACKAGES_ROADMAP.md (بستن فاز ۸۳) + کارنامهٔ همین فایل
 - پکیج (مخزن مستقل shop-pro-Accounting-module): Modules/Accounting — ۵۱ فایل (۴ مایگریشن گارددار + ۴ مدل + قرارداد/پایه/۳ درایور + Manager + SyncService + LicenseGuard + CheckModuleLicense + ActivePanel + ۲ کامند + ۳ پروایدر + Listener + Permissions + ۶ کنترلر ادمین + ۸ Blade + CSS اسکوپ ac- + docs سه‌گانه + تصویر شاخص)
+
+---
+
+## فاز ۹۴ — پکیج جدید «هوش مصنوعی» (ArtificialIntelligence v1.0.0): ادغام AIWriter + AICatalog + توصیه‌گر + چت‌بات با ProviderRegistry مشترک (بستن فاز ۸۴ نقشهٔ راه) — بازآفرینی پس از ریست سندباکس
+
+> **پیش‌زمینهٔ فاز:** سندباکس ریست شد و کد هر دو پکیج Logistics (کامیت محلی 01306a8) و Accounting (693759e) که هرگز push نشده بودند ازدست رفت؛ هر دو از قرارداد تست محفوظشان بازآفرینی شدند (Logistics ۱۴/۱۴ سبز — محلی؛ Accounting ۱۰/۱۰ سبز — push به shop-pro-Accounting-module که کاربر ساخته بود، d810e4b). سپس این فاز انجام شد.
+
+| موضوع | شرح |
+|---|---|
+| تعریف نقشهٔ راه (فاز ۸۴) | «ادغام AIWriter + AICatalog + توصیه‌گر محصول + چت‌بات پشتیبانی با یک ProviderRegistry مشترک» — پکیج واحد ArtificialIntelligence v1.0.0؛ تست: `Phase94Test`. |
+| ProviderRegistry مشترک | `AiProvider` (key/title/isConfigured/chat/ping) + `BaseAiProvider` (پارس tolerant) + `OpenAiCompatibleDriver` (Chat Completions استاندارد — OpenAI/DeepSeek/OpenRouter + لوکال Ollama/LM Studio بدون کلید) + `AiProviderRegistry` (resolve با گارد `ai_enabled` + `{provider}_enabled` → RuntimeException فارسی؛ resolve از container → تست با bind فیک — الگوی AccountingManager فاز ۹۳). |
+| تولید محتوا (AIWriter) | صفحهٔ ادمین «تولید محتوا»: نوع خروجی (عنوان/مقالهٔ کامل/بازنویسی/توضیح کوتاه) × لحن × طول → خروجی + کپی + ذخیرهٔ پیش‌نویس دوگانه (posts هسته با published=0 + آرشیو `ai_writer_drafts`) + لاگ مصرف. |
+| کاتالوگ (AICatalog) | «توضیحات محصولات»: تولید از مشخصات محصول → پیش‌نمایش → اعمال (گارد `catalog_auto_apply_enabled`) + تولید گروهی تا سقف `catalog_bulk_limit`. |
+| توصیه‌گر «بر اساس خریدهای شما» | داده‌محور بدون Provider: co-purchase از order_items + دسته‌های خرید کاربر + fallback پرفروش‌ها؛ حذف خود محصول/خریدهای خود کاربر؛ Cache ساعتی؛ JSON فرانت + ویجت صفحهٔ اصلی با کلید `ai-recommended` در WidgetRegistry هسته (بدون پچ تم — الگوی قرارداد ویجت‌ها). |
+| چت‌بات پشتیبانی | صفحهٔ فرانت `/ai/chat` (UI RTL اسکوپ ai-) + `/ai/chat/send` JSON با throttle per-minute (RateLimiter per-session) + سقف روزانه per-session + RAG-lite (کلیدواژه→جست‌وجوی محصول→تزریق به system prompt) + نشست مهمان token/localStorage یا user_id + خطای Provider = پیام تمیز + گفتگوها در پنل (index/show). |
+| جدول‌ها (گارد hasTable) | ai_settings (KV) / ai_usage_logs (feature/provider/status/tokens/meta/ip) / ai_chat_sessions / ai_chat_messages / ai_writer_drafts — ۵ مایگریشن. |
+| پنل ادمین (۷ صفحه، دو-پنلی) | داشبورد (مصرف به تفکیک feature + وضعیت زیرسیستم‌ها) / تولید محتوا / توضیحات محصولات / گفتگوها+نمایش / گزارش مصرف / تنظیمات (۲۰ کلید + اعتبارنامهٔ provider + تست اتصال) / راهنما و آموزش. |
+| فرانت | ۳ روت (chat صفحه + chat/send JSON + recommendations JSON) + ویجت ثبت‌شده — همه با گارد کلیدها. |
+| الزام شخصی‌سازی کاربر | ۲۰ کلید مستقل (ai_enabled + ۴ زیرسیستم + provider/openai_enabled + اعتبارنامه + سقف‌ها + متن‌های چت‌بات + پارامترهای توصیه‌گر/کاتالوگ) — enforcement در سرویس‌ها/کنترلرها/روت‌ها/منو (تست بندهای ۴/۸/۹). |
+| قرارداد فاز ۸۶+ | title فارسی («هوش مصنوعی») + منوی دو-پنلی + راهنمای ادمین + `artificial-intelligence:install-permissions {--remove}` + seedDefaults idempotent + license_skip + LicenseGuard سرخودکفا + CSS اسکوپ `ai-` (پالت بنفش #7c3aed — متمایز از رز حسابداری/کهربایی لجستیک/فیروزه‌ای باشگاه) + docs چهارگانه + تصویر شاخص (AI — بدون متن، درس فاز ۹۳) + مخزن مستقل. |
+| تست | `Phase94Test` — **۱۱ تست/۱۹۲ assertion** (هویت، کامند قراردادی + seed idempotent، Registry فیک + گارد، گاردهای اصلی، چت‌بات موفق/سقف روزانه/سقف نرخ/خطای تمیز، توصیه‌گر co-purchase + حذف خود محصول + گارد، writer/catalog + سقف + اعمال، رندر ۷ صفحه + POST، منو دو-پنلی، قرارداد ۸۶ + کامپایل bladeها). |
+| رگرسیون کامل | ۵۵۶ تست/۲۰۲۹ assertion — ۳ fail محیطی pre-existing Phase83Test (عین فازهای ۹۰-۹۳) / ۶۴ skip / ConcurrentUsersTest ۲/۲ سبز (۵:۴۰ دقیقه) = صفر رجسیون. |
+| باگ‌های حین فاز | ①میدل‌ور Admin گارد پیش‌فرض را تغییر می‌داد و `$request->user()` فرانت Admin می‌داد → auth('web') صریح در ۳ کنترلر فرانت ②توصیگر خود محصول را پیشنهاد می‌داد → excludedIds در finalize ③تست هستهٔ AccountBanSessionTrustTest::profile_page_toggles با رفتار صحیح mount لاگین (ریدایرکت کاربر احرازهویت‌شده) ناسازگار بود → خروج قبل از تست ورود (کامیت هسته 14ea1d11). |
+| درس‌های فنی | ①پروب CLI بدون تراکنش → آلودگی DB (admin_2fa_enabled=on + شمارهٔ تست در admins) → هرگز پروب خام نزن؛ پاک‌سازی + cache:clear ②rebuild محیط: wrapper /home/z/php (حذف DATABASE_URL سراسری سندباکس) + /home/z/db-up.sh قبل از هر فراخوانی DB + بک‌گراندها بین فراخوانی‌ها کشته می‌شوند ③دانلود فایل حجیم در سندباکس: اتصال‌ها بعد ~۲۰MB قطع می‌شوند → دانلود chunked موازی ۲۴تکه با resume. |
+
+### فایل‌های فاز ۹۴
+- هسته: tests/Feature/Extra/Phase94Test.php (۱۱ تست) + tests/Feature/Security/AccountBanSessionTrustTest.php (رفع سازگاری) + PACKAGES_ROADMAP.md (بستن فاز ۸۴ + ردیف پکیج) + کارنامهٔ همین فایل
+- پکیج (مخزن مستقل — کامیت محلی ac3c174 + تصویر شاخص 59160b0؛ منتظر ساخت shop-pro-ArtificialIntelligence-module): Modules/ArtificialIntelligence — ۵۸ فایل + تصویر (۵ مایگریشن گارددار + ۵ مدل + ProviderRegistry/۳ درایور + ۴ سرویس زیرسیستم + LicenseGuard + ۳ پروایدر + کامند قراردادی + Permissions + CheckModuleLicense + ActivePanel + ۱۰ کنترلر + ۱۲ Blade + CSS اسکوپ ai- + docs چهارگانه + تصویر شاخص)
+- اقدام کاربر برای push پکیج: ساخت مخزن خالی shop-pro-ArtificialIntelligence-module در گیت‌هاب → `cd Modules/ArtificialIntelligence && git remote add origin <url> && git push -u origin main`
