@@ -493,6 +493,10 @@ class AccountBanSessionTrustTest extends TestCase
         option_update('admin_2fa_enabled', 'on');
         option_update('admin_2fa_channel', 'email');
 
+        //mount کامپوننت لاگین برای کاربر احرازهویت‌شده ریدایرکت می‌کند
+        // (رفتار صحیح پروداکشن) — سناریوی واقعی «ورود» در حالت مهمان است
+        auth('adminPanel')->logout();
+
         Livewire::test(Login::class)
             ->set('renderedAt', (string) now()->subSeconds(10)->getTimestamp())
             ->set('username', $creator->username)
