@@ -3117,3 +3117,22 @@ DigiPay v1.3.0 (اسنپ‌پی + ری‌برندینگ) پوش شد؛ CreditPay
 - هسته: app/Models/InstalledModule.php (displayName + moduleJsonTitle) + app/Services/ModuleMenuExtractor.php (فعال‌سازی سگمنت‌محور) + app/Services/PackageApiService.php (verifyLicense nullable) + دو جدول installed (پنل جدید/قدیمی)
 - تست: tests/Feature/Extra/Phase86Test.php (۱۷ تست/۹۲ assertion: زنجیرهٔ عنوان، مرز سگمنت، کامپایل php -l همهٔ ویوها، جهش الگوی معیوب، برند پرداخت‌یار، توضیحات/تصویر، راهنماها با رندر واقعی، دیزاین‌سیستم، SegmentBuilder، verifyLicense خالی) — رگرسیون کامل ۲۲۸ سبز
 - پکیج‌ها (در مخازن خودشان): MarketingMessaging v1.1.0 (۷ ویوی بازطراحی + mm-admin.css + compat/webfonts + GuideController + منو + روت + رفع blade + رفع SegmentBuilder + title) و DigiPay v1.5.0 (پرداخت‌یار + GuideController + منو + توضیحات بازار + تصویر شاخص)
+
+---
+
+## فاز ۹۱ — پکیج جدید «لجستیک و باربری» (Logistics v1.0.0): API باربری‌ها (تیپاکس/ماهکس/پست) + بارنامه و پیگیری خودکار + الزام شخصی‌سازی کاربر
+
+| موضوع | شرح |
+|---|---|
+| پکیج Logistics v1.0.0 | **اتصال به API باربری‌ها (تیپاکس/ماهکس/پست) + بارنامه و پیگیری خودکار.** چرخهٔ مرسوله: draft → registered → in_transit → delivered (+ returned/canceled). تایم‌لاین رویدادها با یگانهٔ `(shipment_id, code, happened_at)` — ضدرتکرار پیگیری‌های پیاپی. ساخت خودکار پس از پرداخت سفارش فیزیکی (Listener روی `OrderPaid` — گارد `auto_shipment_enabled`). ثبت بارنامه دستی (کد رهگیری آزاد — همیشه کار می‌کند) یا خودکار با API درایور. |
+| الزام شخصی‌سازی کاربر | **۱۰ کلید مستقل فعال/غیرفعال** (کلید اصلی + ساخت خودکار/پیگیری خودکار/همگام‌سازی رهگیری/همگام‌سازی وضعیت/پیامک/پنل مشتری + ۳ باربری) + فاصلهٔ پیگیری — همه از پنل «لجستیک و باربری ← تنظیمات». کلید اصلی خاموش = منوها پنهان، فرانت ریدایرکت، Listener/comandها no-op. |
+| بخش رایگان هسته | پیامک وضعیت مرسوله: دو تایپ جدید `LOGISTICS_SHIPMENT_SENT` / `LOGISTICS_SHIPMENT_DELIVERED` در `Sms::TYPES` + متد `shipmentSent/Delivered` در هر ۵ پرووایدر + فیلدهای پترن (`shipment_sent_pattern_code` / `shipment_delivered_pattern_code`) در تنظیمات پیامک هر ۵ پنل — عین الگوی فاز ۸۰ (پکیج + پترن‌هایش در هسته). |
+| همگام‌سازی با هسته | کد بارنامه → `orders.tracking_code` (کلید مستقل) + حرکت مرسوله → وضعیت ارسال «sent» (کلید مستقل) — بدون هیچ پچ دستی در هسته. |
+| قرارداد فاز ۸۶+ | `title` در module.json («لجستیک و باربری») + منوی دو-پنلی (۴ آیتم) + راهنمای ادمین + راهنمای مشتری درون‌صفحه‌ای (درس فاز ۸۹ — در منوی فرانت نیست) + `logistics:install-permissions {--remove}` + `seedDefaults` idempotent (تنظیمات + پیکربندی ۳ باربری) + `license_skip` + CSS اسکوپ `lg-` + docs/USAGE + docs/WORK-LOG + market-description.html + مخزن مستقل shop-pro-Logistics-module. |
+| درس‌های فنی ماندگار | ① SessionGuardهای هسته کلید نشست مشترک دارند → در تست Feature پیش از `actingAs(user, 'web')` از adminPanel خارج شوید وگرنه `CheckBlockedDevice` تایپ‌ارور می‌دهد ② تشخیص ثبت Listener: Dispatcher کلاس را در Closure می‌پیچد → `ReflectionFunction::getClosureUsedVariables()['listener']` ③ روت ثابت `guide` باید **قبل** از وایلدکارد `{shipment}` تعریف شود (404 کلاسیک ترتیب روت) ④ مدل‌های ماژول با نام تک‌کلمه‌ای (Shipment) باید `$table` صریح بگیرند — قرارداد خودکار به `shipments` می‌رسد نه `logistics_shipments`. |
+| تست | `Phase91Test` — **۱۴ تست/۱۵۵ assertion** (هویت، seed، ساخت مرسوله با گاردها، ثبت دستی+همگام، درایور فیک، پیگیری/گذار، گاردهای کلیدها، Listener، رندر دو پنل، POST، کامپایل ۱۲ Blade، قرارداد ۸۶، تایپ‌های پیامک) — رگرسیون کامل **۴۶۹ سبز/۶۴ skip** (۳ fail محیطی pre-existing Phase83Test — عین فاز ۹۰). |
+
+### فایل‌های فاز ۹۱
+- هسته: app/Models/Sms.php (۲ تایپ) + app/Services/Sms/*۵ پرووایدر* (shipmentSent/Delivered) + app/Livewire/Admin/Settings/SmsSettings.php (فیلدهای پترن + titles) + PACKAGES_ROADMAP.md (بستن فاز ۸۲)
+- تست: tests/Feature/Extra/Phase91Test.php (۱۴ تست)
+- پکیج (در مخزن مستقل shop-pro-Logistics-module): Modules/Logistics کامل — ۵۷ فایل (۴ مایگریشن گارددار + ۴ مدل + ۴ درایور/قرارداد + ۴ سرویس + ۲ کامند + ۳ پرووایدر + Listener + Notification + ۸ کنترلر + ۱۲ Blade + CSS اسکوپ + مستندات)
