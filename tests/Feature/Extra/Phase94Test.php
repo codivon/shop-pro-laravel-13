@@ -4,11 +4,20 @@ namespace Tests\Feature\Extra;
 
 use App\Models\Admin;
 use App\Models\Permission;
+use App\Models\Post;
 use App\Models\Product;
 use App\Models\Widget;
+use App\Services\ModuleMenuRegistry;
 use App\Services\WidgetRegistry;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Modules\ArtificialIntelligence\Models\AiChatMessage;
 use Modules\ArtificialIntelligence\Models\AiChatSession;
 use Modules\ArtificialIntelligence\Models\AiSetting;
@@ -17,10 +26,8 @@ use Modules\ArtificialIntelligence\Models\AiWriterDraft;
 use Modules\ArtificialIntelligence\Services\AiProviderRegistry;
 use Modules\ArtificialIntelligence\Services\AiProviders\AiProvider;
 use Modules\ArtificialIntelligence\Services\AiProviders\OpenAiCompatibleDriver;
+use Modules\ArtificialIntelligence\Services\AssetInjector;
 use Modules\ArtificialIntelligence\Services\CatalogService;
-use Modules\ArtificialIntelligence\Services\ChatbotService;
-use Modules\ArtificialIntelligence\Services\RecommendationService;
-use Modules\ArtificialIntelligence\Services\WriterService;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestDox;
 use Tests\Support\ShopTestSetup;
@@ -60,7 +67,7 @@ class Phase94Test extends TestCase
 
     private function requireModule(): void
     {
-        if (!is_dir(base_path('Modules/ArtificialIntelligence/app'))) {
+        if (! is_dir(base_path('Modules/ArtificialIntelligence/app'))) {
             $this->markTestSkipped('ماژول ArtificialIntelligence (هوش مصنوعی) روی این میزبان نصب نیست — تست فاز ۹۴ رد شد.');
         }
     }
@@ -99,15 +106,27 @@ class Phase94Test extends TestCase
     private function bindFakeProvider(?\Throwable $throw = null, string $content = 'این پاسخِ تولیدشدهٔ فیک هوش مصنوعی است.'): void
     {
         app()->bind(OpenAiCompatibleDriver::class, function () use ($throw, $content) {
-            return new class($throw, $content) implements AiProvider {
+            return new class($throw, $content) implements AiProvider
+            {
                 public function __construct(
                     protected ?\Throwable $throw,
                     protected string $content,
                 ) {}
 
-                public function key(): string { return 'openai'; }
-                public function title(): string { return 'سرویس OpenAI (فیک)'; }
-                public function isConfigured(): bool { return true; }
+                public function key(): string
+                {
+                    return 'openai';
+                }
+
+                public function title(): string
+                {
+                    return 'سرویس OpenAI (فیک)';
+                }
+
+                public function isConfigured(): bool
+                {
+                    return true;
+                }
 
                 public function chat(array $messages, array $options = []): array
                 {
@@ -137,23 +156,23 @@ class Phase94Test extends TestCase
     private function newCreator(): Admin
     {
         foreach (Permission::where('active', true)->with('roles')->get() as $permission) {
-            \Illuminate\Support\Facades\Gate::define($permission->name, function ($user = null) use ($permission) {
-                $admin = $user instanceof \App\Models\Admin
+            Gate::define($permission->name, function ($user = null) {
+                $admin = $user instanceof Admin
                     ? $user
-                    : \Illuminate\Support\Facades\Auth::guard('adminPanel')->user();
+                    : Auth::guard('adminPanel')->user();
 
-                return $admin instanceof \App\Models\Admin && $admin->level == 'creator';
+                return $admin instanceof Admin && $admin->level == 'creator';
             });
         }
 
         $creator = Admin::create([
             'first_name' => 'تست',
-            'last_name'  => 'فاز ۹۴',
-            'username'   => 'feat94-'.\Illuminate\Support\Str::random(6),
-            'email'      => 'feat94-'.\Illuminate\Support\Str::random(6).'@test.ir',
-            'password'   => \Illuminate\Support\Facades\Hash::make('secret1234'),
-            'level'      => 'creator',
-            'status'     => 'ACTIVE',
+            'last_name' => 'فاز ۹۴',
+            'username' => 'feat94-'.Str::random(6),
+            'email' => 'feat94-'.Str::random(6).'@test.ir',
+            'password' => Hash::make('secret1234'),
+            'level' => 'creator',
+            'status' => 'ACTIVE',
         ]);
 
         $this->actingAs($creator, 'adminPanel');
@@ -163,7 +182,7 @@ class Phase94Test extends TestCase
 
     private function compileAndLint(string $viewName): int
     {
-        $path     = view($viewName)->getPath();
+        $path = view($viewName)->getPath();
         $compiler = app('blade.compiler');
         $compiled = $compiler->compileString((string) file_get_contents($path));
 
@@ -190,12 +209,12 @@ class Phase94Test extends TestCase
 
         $order->items()->create([
             'product_id' => $b->id,
-            'title'      => $b->title,
-            'price'      => $priceB->salePrice(),
+            'title' => $b->title,
+            'price' => $priceB->salePrice(),
             'real_price' => $priceB->price,
-            'quantity'   => 1,
-            'discount'   => 0,
-            'price_id'   => $priceB->id,
+            'quantity' => 1,
+            'discount' => 0,
+            'price_id' => $priceB->id,
             'product_type' => $b->type,
             'shipping_status' => 'w-pending',
         ]);
@@ -215,7 +234,7 @@ class Phase94Test extends TestCase
         $this->assertSame('ArtificialIntelligence', $module['name']);
         $this->assertSame('artificial-intelligence', $module['alias']);
         $this->assertSame('هوش مصنوعی', $module['title']);
-        $this->assertSame('1.0.0', $module['version']);
+        $this->assertSame('1.2.0', $module['version']);
         $this->assertStringContainsString('ArtificialIntelligenceServiceProvider', $module['providers'][0]);
 
         $composer = json_decode((string) file_get_contents(base_path('Modules/ArtificialIntelligence/composer.json')), true);
@@ -278,7 +297,7 @@ class Phase94Test extends TestCase
         // idempotency: اجرای دوباره مقدار ادمین را بازنویسی نمی‌کند
         AiSetting::set('openai_model', 'my-custom-model');
         AiSetting::set('recommender_count', '9');
-        \Illuminate\Support\Facades\Artisan::call('artificial-intelligence:install-permissions');
+        Artisan::call('artificial-intelligence:install-permissions');
         $this->assertSame('my-custom-model', (string) AiSetting::get('openai_model'), 'اجرای مجدد نباید مقدار ادمین را بازنویسی کند.');
         $this->assertSame('9', (string) AiSetting::get('recommender_count'));
         AiSetting::set('openai_model', 'gpt-4o-mini');
@@ -492,9 +511,9 @@ class Phase94Test extends TestCase
         $this->requireModule();
         $this->aiDefaults();
 
-        $user   = $this->newUser();
-        $shoes  = $this->newProduct(['title' => 'کفش دویدن', 'sell' => 5]);
-        $socks  = $this->newProduct(['title' => 'جوراب ورزشی', 'sell' => 1]);
+        $user = $this->newUser();
+        $shoes = $this->newProduct(['title' => 'کفش دویدن', 'sell' => 5]);
+        $socks = $this->newProduct(['title' => 'جوراب ورزشی', 'sell' => 1]);
         $lonely = $this->newProduct(['title' => 'محصول بدون هم‌خرید', 'sell' => 0]);
 
         // سفارش واقعی: کفش + جوراب در یک سفارش پرداخت‌شده
@@ -559,7 +578,7 @@ class Phase94Test extends TestCase
 
         // ذخیرهٔ پیش‌نویس مقاله → posts هسته (published=0 + status=waiting) + آرشیو پکیج
         $this->post(route('admin.ai.writer.save-draft'), [
-            'title'   => 'پیش‌نویس تستی فاز ۹۴',
+            'title' => 'پیش‌نویس تستی فاز ۹۴',
             'content' => 'این متن پیش‌نویس تولیدشده توسط هوش مصنوعی است.',
         ])->assertRedirect();
 
@@ -567,7 +586,7 @@ class Phase94Test extends TestCase
         $this->assertNotNull($draft, 'آرشیو پکیج باید پر شود.');
         $this->assertNotNull($draft->post_id, 'رکورد پیش‌نویس باید در posts هسته ساخته شود.');
 
-        $post = \App\Models\Post::find($draft->post_id);
+        $post = Post::find($draft->post_id);
         $this->assertNotNull($post);
         $this->assertFalse((bool) $post->published, 'پیش‌نویس باید منتشرنشده باشد.');
         $this->assertSame('waiting', $post->status);
@@ -595,7 +614,7 @@ class Phase94Test extends TestCase
 
         $this->post(route('admin.ai.catalog.apply'), [
             'product_id' => $product->id,
-            'content'    => 'توضیح جدید تولیدشده برای هدفون.',
+            'content' => 'توضیح جدید تولیدشده برای هدفون.',
         ])->assertRedirect();
 
         $this->assertSame('توضیح جدید تولیدشده برای هدفون.', $product->fresh()->description, 'توضیح محصول باید با دکمهٔ تأیید به‌روزرسانی شود.');
@@ -706,7 +725,7 @@ class Phase94Test extends TestCase
         $this->assertSame('دستیار فروشگاه تست', (string) AiSetting::get('chatbot_title'));
 
         // منوی دو-پنلی — رجیستری
-        $menus = \App\Services\ModuleMenuRegistry::all();
+        $menus = ModuleMenuRegistry::all();
         $this->assertContains('artificial-intelligence::back.partials.menu', $menus, 'منوی ادمین هوش مصنوعی در رجیستری نیست.');
 
         // رندر پنل قدیم — با و بدون کلید اصلی
@@ -729,13 +748,13 @@ class Phase94Test extends TestCase
         // راهنمای ادمین روت دارد + روت‌های فرانت موجودند (این پکیج روت فرانت دارد)
         $adminRoutes = $this->read('Modules/ArtificialIntelligence/routes/admin.php');
         $this->assertStringContainsString("'guide'", $adminRoutes);
-        $this->assertStringContainsString("admin_route_prefix()", $adminRoutes);
+        $this->assertStringContainsString('admin_route_prefix()', $adminRoutes);
         $this->assertStringContainsString("'ai.license'", $adminRoutes);
 
         $webRoutes = $this->read('Modules/ArtificialIntelligence/routes/web.php');
-        $this->assertStringContainsString("front.artificial-intelligence.", $webRoutes);
-        $this->assertStringContainsString("chat/send", $webRoutes);
-        $this->assertStringContainsString("recommendations", $webRoutes);
+        $this->assertStringContainsString('front.artificial-intelligence.', $webRoutes);
+        $this->assertStringContainsString('chat/send', $webRoutes);
+        $this->assertStringContainsString('recommendations', $webRoutes);
 
         // پروایدر: روت فرانت لود می‌شود
         $rsp = $this->read('Modules/ArtificialIntelligence/app/Providers/RouteServiceProvider.php');
@@ -785,7 +804,7 @@ class Phase94Test extends TestCase
         $this->requireModule();
         $this->injectionDefaults();
 
-        \Illuminate\Support\Facades\Gate::define('posts.create', fn ($user = null) => true);
+        Gate::define('posts.create', fn ($user = null) => true);
         $this->newCreator();
 
         // ── ① صفحهٔ ایجاد مقاله: هر دو مارکر با هر دو لایهٔ تزریق (middleware + RequestHandled) ──
@@ -858,7 +877,7 @@ class Phase94Test extends TestCase
         $this->assertStringContainsString('"canGenerate":false', $frontAll, 'مهمان فرانت باید فقط تولتیپ ببیند.');
 
         // ادمین واردشده در فرانت با scope=all → تب تولید محتوا مجاز (canGenerate=true)
-        \Illuminate\Support\Facades\Gate::define('posts.create', fn ($user = null) => true);
+        Gate::define('posts.create', fn ($user = null) => true);
         $this->newCreator();
 
         $frontAdminIn = (string) $this->get('/ai/chat')->getContent();
@@ -875,10 +894,10 @@ class Phase94Test extends TestCase
         $this->requireModule();
         $this->injectionDefaults();
 
-        $injector = app(\Modules\ArtificialIntelligence\Services\AssetInjector::class);
-        $request = \Illuminate\Http\Request::create('/admin/admin/posts/create', 'GET');
+        $injector = app(AssetInjector::class);
+        $request = Request::create('/admin/admin/posts/create', 'GET');
 
-        $response = new \Illuminate\Http\Response(
+        $response = new Response(
             '<html><body><form id="post-create-form"><input name="title"></form></body></html>',
             200,
             ['Content-Type' => 'text/html; charset=UTF-8']
@@ -906,51 +925,51 @@ class Phase94Test extends TestCase
         $this->requireModule();
         $this->injectionDefaults();
 
-        $injector = app(\Modules\ArtificialIntelligence\Services\AssetInjector::class);
+        $injector = app(AssetInjector::class);
 
         // ── POST — حتی مسیر مجاز ──
-        $postResponse = new \Illuminate\Http\Response(
+        $postResponse = new Response(
             '<html><body>فرم</body></html>', 200, ['Content-Type' => 'text/html; charset=UTF-8']
         );
         $injector->inject(
-            \Illuminate\Http\Request::create('/admin/admin/posts/create', 'POST'),
+            Request::create('/admin/admin/posts/create', 'POST'),
             $postResponse
         );
         $this->assertStringNotContainsString('AI-post-creator', (string) $postResponse->getContent(), 'درخواست POST نباید تزریق شود.');
 
         // ─️─ هدر x-livewire (آپدیت Livewire) ──
-        $livewireResponse = new \Illuminate\Http\Response(
+        $livewireResponse = new Response(
             '<html><body>فرم</body></html>', 200, ['Content-Type' => 'text/html; charset=UTF-8']
         );
-        $livewireRequest = \Illuminate\Http\Request::create('/admin/admin/posts/create', 'GET');
+        $livewireRequest = Request::create('/admin/admin/posts/create', 'GET');
         $livewireRequest->headers->set('x-livewire', 'true');
         $injector->inject($livewireRequest, $livewireResponse);
         $this->assertStringNotContainsString('AI-post-creator', (string) $livewireResponse->getContent(), 'پاسخ آپدیت Livewire نباید تزریق شود.');
 
         // ── JSON ──
-        $jsonResponse = new \Illuminate\Http\JsonResponse(['ok' => true]);
+        $jsonResponse = new JsonResponse(['ok' => true]);
         $injector->inject(
-            \Illuminate\Http\Request::create('/admin/admin/ai/assist', 'GET'),
+            Request::create('/admin/admin/ai/assist', 'GET'),
             $jsonResponse
         );
         $this->assertStringNotContainsString('AI-floating-assistant', (string) $jsonResponse->getContent(), 'پاسخ JSON نباید تزریق شود.');
 
         // ── وضعیت غیر 2xx ──
-        $errorResponse = new \Illuminate\Http\Response(
+        $errorResponse = new Response(
             '<html><body>خطا</body></html>', 500, ['Content-Type' => 'text/html; charset=UTF-8']
         );
         $injector->inject(
-            \Illuminate\Http\Request::create('/admin/admin/posts/create', 'GET'),
+            Request::create('/admin/admin/posts/create', 'GET'),
             $errorResponse
         );
         $this->assertStringNotContainsString('AI-post-creator', (string) $errorResponse->getContent(), 'پاسخ غیر موفق نباید تزریق شود.');
 
         // ── مسیر غیرمجاز (مثلاً لیست مقاله‌ها) ──
-        $indexResponse = new \Illuminate\Http\Response(
+        $indexResponse = new Response(
             '<html><body>لیست مقاله‌ها</body></html>', 200, ['Content-Type' => 'text/html; charset=UTF-8']
         );
         $injector->inject(
-            \Illuminate\Http\Request::create('/admin/admin/posts', 'GET'),
+            Request::create('/admin/admin/posts', 'GET'),
             $indexResponse
         );
         $indexHtml = (string) $indexResponse->getContent();
@@ -1001,15 +1020,16 @@ class Phase94Test extends TestCase
         // JS فرم مقاله: فرم‌ها + ادیتورها + پرکردن فیلدهای هسته
         $postCreatorJs = $this->read('Modules/ArtificialIntelligence/resources/assets/js/post-creator.js');
         foreach (['#post-create-form', '#post-edit-form', 'CKEDITOR', 'tinymce', 'ApEditor',
-                     'input[name="meta_title"]', 'input[name="tags"]', 'سوالات متداول',
-                     'X-CSRF-TOKEN', 'X-Requested-With'] as $needle) {
+            'input[name="meta_title"]', 'input[name="tags"]', 'سوالات متداول',
+            'X-CSRF-TOKEN', 'X-Requested-With'] as $needle) {
             $this->assertStringContainsString($needle, $postCreatorJs, "post-creator.js باید {$needle} داشته باشد.");
         }
 
-        // JS دستیار: دکمه شناور + دو تب + تشخیص فیلدها + هدف‌ها
+        // JS دستیار (پورت کامل فاز ۹۷): پنل چهارتبی + تشخیص فیلد + قالب‌ها + سئوچک + تاریخچه
         $assistantJs = $this->read('Modules/ArtificialIntelligence/resources/assets/js/floating-assistant.js');
-        foreach (['ai-fab-btn', 'data-ai-hint', 'canGenerate', 'درج در', 'assistUrl',
-                     "'post'", "'product'", "'comment'", "'page'", 'input[name="title"]', 'textarea[name="comment"]'] as $needle) {
+        foreach (['ac-help-fab', 'ac-help-panel', 'data-ai-hint', 'canGenerate', 'assistUrl',
+            'templatesUrl', 'ac-gen-all', 'runSeoCheck', 'ac-hist-list', 'پاسخ هوشمند به کامنت',
+            'بازنویسی هوشمند', 'تولید همهٔ فیلدها', "'post'", "'product'", "'comment'", "'page'"] as $needle) {
             $this->assertStringContainsString($needle, $assistantJs, "floating-assistant.js باید {$needle} داشته باشد.");
         }
 
@@ -1041,7 +1061,7 @@ class Phase94Test extends TestCase
         $guide->assertOk();
 
         foreach (['۹ سرویس', 'Fallback', 'دستیار شناور', 'بررسی تزریق خودکار',
-                     'تولید یک‌جای مقاله', 'ابزارها و سئو', 'قالب‌های پرامپت', 'اتوبلاگ + کرون', 'CSV'] as $needle) {
+            'تولید یک‌جای مقاله', 'ابزارها و سئو', 'قالب‌های پرامپت', 'اتوبلاگ + کرون', 'CSV'] as $needle) {
             $guide->assertSee($needle, false);
         }
 
