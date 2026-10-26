@@ -26,3 +26,6 @@ yarn-error.log
 # hot file وییت پنل مدیریت (هرگز کامیت نشود)
 /admin-panel.hot
 .phpunit.cache/
+
+# فاز ۹۷ — مارکرهای گیت self-heal پکیج‌ها
+storage/framework/selfheal-*.flag
