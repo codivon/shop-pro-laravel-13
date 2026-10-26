@@ -76,4 +76,5 @@ jobs:
           php artisan db:seed --force
 
       - name: اجرای تست‌ها
-        run: vendor/bin/phpunit --exclude-filter 'Phase83Test|Phase90Test|Phase91Test|Phase92Test|Phase93Test|Phase94Test|ConcurrentUsersTest|MillionScaleTest|MarketingMessagingTest|MoneyPackagesTest'
+        # php صریح — vendor/bin/phpunit در این ریپو بیت اجرایی ندارد (exit 126)
+        run: php vendor/bin/phpunit --exclude-filter 'Phase83Test|Phase90Test|Phase91Test|Phase92Test|Phase93Test|Phase94Test|ConcurrentUsersTest|MillionScaleTest|MarketingMessagingTest|MoneyPackagesTest'
