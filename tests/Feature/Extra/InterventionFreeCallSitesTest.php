@@ -19,6 +19,12 @@ use Tests\TestCase;
  * این تست‌ها تضمین می‌کنند کد اپلیکیشن هرگز مستقیم به Intervention وابسته نشود
  * (همهٔ کار تصویر باید از لایهٔ سازگار shop_image_* / GD خالص helpers عبور کند) —
  * پس هیچ رگرسیونی نمی‌تواند کرش غیرقابل‌شکار «abstract methods» را دوباره زنده کند.
+ *
+ * فاز ۱۰۶ پیوست — استثنای پکیج خودکفا: ماژول‌هایی که intervention/image را
+ * وابستگیِ «خودشان» در composer.json دارند (مثل SeoAudit با vendor داخلی v2)
+ * لایهٔ سازگارِ خودشان را دارند (ImageOptimizerService با تشخیص v2/v3 در زمان
+ * اجرا) و طبق قاعدهٔ «vendor/ خودکفا مجاز است» از این گارد هسته مستثنا هستند؛
+ * کد ثالثِ زیر پوشهٔ vendor پکیج‌ها هم جزو «کد اپلیکیشن» نیست.
  */
 class InterventionFreeCallSitesTest extends TestCase
 {
@@ -73,6 +79,18 @@ class InterventionFreeCallSitesTest extends TestCase
     {
         $files = [];
 
+        // پکیج‌های خودکفایی که intervention/image را وابستگیِ خودشان دارند
+        // (لایهٔ سازگار خودشان را دارند — مستثنا از گارد هسته)
+        $excludedModules = [];
+
+        foreach (glob(base_path('Modules/*/composer.json')) ?: [] as $manifest) {
+            $json = (array) json_decode((string) file_get_contents($manifest), true);
+
+            if (isset($json['require']['intervention/image'])) {
+                $excludedModules[] = dirname($manifest).DIRECTORY_SEPARATOR;
+            }
+        }
+
         foreach (['app', 'Modules'] as $root) {
             $dir = base_path($root);
 
@@ -85,9 +103,24 @@ class InterventionFreeCallSitesTest extends TestCase
             );
 
             foreach ($it as $item) {
-                if ($item->isFile() && str_ends_with($item->getFilename(), '.php')) {
-                    $files[] = [$item->getPathname(), (string) file_get_contents($item->getPathname())];
+                if (! $item->isFile() || ! str_ends_with($item->getFilename(), '.php')) {
+                    continue;
                 }
+
+                $path = $item->getPathname();
+
+                // vendorهای خودکفای پکیج‌ها کدِ ثالث‌اند، نه کد اپلیکیشن
+                if (str_contains($path, DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR)) {
+                    continue;
+                }
+
+                foreach ($excludedModules as $prefix) {
+                    if (str_starts_with($path, $prefix)) {
+                        continue 2;
+                    }
+                }
+
+                $files[] = [$path, (string) file_get_contents($path)];
             }
         }
 
