@@ -181,6 +181,9 @@ class Developer extends Component
     /** پنل مدرن فروشندگان (فاز ۱۰۸ — لایوایر ۴ SPA مستقل از تم) */
     public bool $vendorModernPanel = true;
 
+    /** صفحهٔ فرود پیشرفتهٔ فروشندگان (فاز ۱۰۹ — لندینگ تک‌صفحه‌ای /seller) */
+    public bool $vendorLandingPage = true;
+
     /** حداقل مبلغ درخواست برداشت فروشنده (تومان) — ۰ یعنی بدون حد اضافه */
     public string $vendorMinWithdraw = '0';
 
@@ -267,6 +270,7 @@ class Developer extends Component
         $this->vendorProductsExport = MultiVendorSettings::productsExportEnabled();
         $this->vendorLeaderboard = MultiVendorSettings::leaderboardEnabled();
         $this->vendorModernPanel = MultiVendorSettings::modernPanelEnabled();
+        $this->vendorLandingPage = MultiVendorSettings::landingPageEnabled();
         $this->vendorDefaultCommission = (string) (MultiVendorSettings::defaultCommission() ?? '');
         $this->vendorMinWithdraw = (string) MultiVendorSettings::minWithdrawAmount();
     }
@@ -442,6 +446,7 @@ class Developer extends Component
         option_update('seller_products_export', $this->vendorProductsExport ? '1' : '0');
         option_update('multi_vendor_leaderboard', $this->vendorLeaderboard ? '1' : '0');
         option_update(MultiVendorSettings::KEY_MODERN_PANEL, $this->vendorModernPanel ? '1' : '0');
+        option_update(MultiVendorSettings::KEY_LANDING_PAGE, $this->vendorLandingPage ? '1' : '0');
         option_update('multi_vendor_default_commission', trim((string) $this->vendorDefaultCommission) === '' ? '' : (string) max(0, min(100, (int) $this->vendorDefaultCommission)));
         option_update('multi_vendor_withdraw_min_amount', (string) max(0, (int) $this->vendorMinWithdraw));
 

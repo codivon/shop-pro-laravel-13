@@ -498,6 +498,13 @@ return [
                             'icon' => 'sparkles',
                         ],
                         [
+                            // فاز ۱۰۹ — محتوای لندینگ تک‌صفحه‌ای /seller
+                            'label' => 'صفحهٔ فرود فروشندگان',
+                            'route' => 'np.settings.seller-landing',
+                            'permission' => 'sellers',
+                            'icon' => 'layout-template',
+                        ],
+                        [
                             'label' => 'نمایش میزان کمیسیون',
                             'route' => 'np.settings.seller-commission',
                             'permission' => 'sellers',

@@ -5,6 +5,7 @@ namespace App\Livewire\Seller\Wallet;
 use App\Models\Seller;
 use App\Models\WalletHistory;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -15,6 +16,7 @@ use Livewire\Component;
  * گارد مالکیت: تاریخچه باید متعلق به کیف پول خودِ فروشندهٔ فعلی باشد
  * (پنل قدیم این گارد را نداشت — طبق قرارداد فاز ۱۰۸ اضافه شد).
  */
+#[Layout('sellers.layouts.panel')]
 #[Title('جزئیات تراکنش')]
 class Show extends Component
 {

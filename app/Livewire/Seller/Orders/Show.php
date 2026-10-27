@@ -4,6 +4,7 @@ namespace App\Livewire\Seller\Orders;
 
 use App\Models\Order;
 use Illuminate\Support\Carbon;
+use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -17,6 +18,7 @@ use Livewire\Component;
  * با همان فیلدهای اسکریپت قدیم: shipping_status / cancel_reason / canceled_refund_amount.
  * دکمهٔ پرینت: لینک کلاسیک به seller.orders.print (کنترلر قدیمی).
  */
+#[Layout('sellers.layouts.panel')]
 #[Title('جزئیات سفارش')]
 class Show extends Component
 {

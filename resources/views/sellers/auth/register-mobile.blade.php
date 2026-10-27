@@ -3,7 +3,29 @@
         busy: false,
         code: '',
         seconds: {{ $resendTime }},
-        tick() { if (this.seconds > 0) { this.seconds--; setTimeout(() => this.tick(), 1000); } }
+        tick() { if (this.seconds > 0) { this.seconds--; setTimeout(() => this.tick(), 1000); } },
+        async submit() {
+            this.busy = true;
+            let fd = new FormData();
+            fd.append('mobile', '{{ $seller['mobile'] }}');
+            fd.append('verify_code', this.code);
+            try {
+                let data = await spPost('{{ route('seller.registration_mobile_check') }}', fd);
+                if (data.redirect) { window.location.href = data.redirect; }
+                else { spToast(data.message || 'کد وارد شده اشتباه است', 'error'); this.busy = false; }
+            } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); this.busy = false; }
+        },
+        async resend() {
+            let fd = new FormData();
+            fd.append('mobile', '{{ $seller['mobile'] }}');
+            try {
+                let data = await spPost('{{ route('seller.get-new-code-for-seller') }}', fd);
+                if (data.status === 'success') { spToast('کد جدید پیامک شد', 'success'); this.seconds = 120; this.tick(); }
+                else if (data.status === 'errorTime') { spToast('کمی صبر کنید و دوباره تلاش کنید', 'error'); }
+                else if (data.redirect) { window.location.href = data.redirect; }
+                else { spToast(data.message || 'ارسال مجدد ناموفق بود', 'error'); }
+            } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); }
+        }
     }" x-init="tick()">
     @include('sellers.auth.partials.sp-fetch')
     @include('sellers.auth.partials.steps', ['active' => 2])
@@ -19,28 +41,18 @@
             </p>
         </div>
 
-        <form class="mt-6 space-y-4" x-on:submit.prevent="
-            busy = true;
-            var fd = new FormData();
-            fd.append('mobile', '{{ $seller['mobile'] }}');
-            fd.append('verify_code', code);
-            try {
-                var data = await spPost('{{ route('seller.registration_mobile_check') }}', fd);
-                if (data.redirect) { window.location.href = data.redirect; }
-                else { spToast(data.message || 'کد وارد شده اشتباه است', 'error'); busy = false; }
-            } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); busy = false; }
-        ">
+        <form class="mt-6 space-y-4" x-on:submit.prevent="submit()">
             <input type="hidden" name="mobile" value="{{ $seller['mobile'] }}">
 
             <div>
                 <label class="mb-1.5 block text-center text-xs font-bold" for="sp-otp">کد تأیید ۵ رقمی</label>
                 <input id="sp-otp" type="text" dir="ltr" inputmode="numeric" maxlength="5" required x-ref="otp"
                        x-model="code"
-                       class="ap-input !py-3 text-center font-mono fa-digits tracking-[0.6em]"
+                       class="ap-input py-3! text-center font-mono fa-digits tracking-[0.6em]"
                        placeholder="- - - - -" autocomplete="one-time-code">
             </div>
 
-            <button type="submit" class="ap-btn-primary w-full !py-3" :disabled="busy || code.length < 5" x-bind:class="busy ? 'opacity-60' : ''">
+            <button type="submit" class="ap-btn-primary w-full py-3!" :disabled="busy || code.length < 5" x-bind:class="busy ? 'opacity-60' : ''">
                 <span x-show="!busy" class="flex items-center justify-center gap-2">
                     تأیید و ادامه
                     <x-admin-panel::icon name="chevron-left" class="size-4" />
@@ -58,15 +70,7 @@
                 <span x-show="seconds > 0" class="fa-digits">ارسال مجدد کد تا <b x-text="Math.ceil(seconds)"></b> ثانیه دیگر</span>
             @endif
             <button type="button" x-show="seconds <= 0" x-cloak
-                    x-on:click="
-                        var fd = new FormData();
-                        fd.append('mobile', '{{ $seller['mobile'] }}');
-                        var data = await spPost('{{ route('seller.get-new-code-for-seller') }}', fd);
-                        if (data.status === 'success') { spToast('کد جدید پیامک شد', 'success'); seconds = 120; tick(); }
-                        else if (data.status === 'errorTime') { spToast('کمی صبر کنید و دوباره تلاش کنید', 'error'); }
-                        else if (data.redirect) { window.location.href = data.redirect; }
-                        else { spToast(data.message || 'ارسال مجدد ناموفق بود', 'error'); }
-                    "
+                    x-on:click="resend()"
                     class="text-brand-600 transition-colors hover:underline dark:text-brand-400">
                 ارسال مجدد کد
             </button>

@@ -6,6 +6,7 @@ use App\Models\Gateway;
 use App\Models\Seller;
 use App\Support\MultiVendorSettings;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -19,6 +20,7 @@ use Livewire\WithPagination;
  *  • برداشت از کیف پول → فرم کلاسیک POST به seller.wallet.withdraw (فیلد amount)
  *    — کنترلر قدیمی با session toast + redirect back پاسخ می‌دهد.
  */
+#[Layout('sellers.layouts.panel')]
 #[Title('کیف پول')]
 class Index extends Component
 {

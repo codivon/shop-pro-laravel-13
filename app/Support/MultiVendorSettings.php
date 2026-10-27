@@ -183,6 +183,19 @@ class MultiVendorSettings
         return option(self::KEY_MODERN_PANEL, '1') === '1';
     }
 
+    /**
+     * صفحهٔ فرود پیشرفتهٔ فروشندگان (فاز ۱۰۹): لندینگ تک‌صفحه‌ای /seller
+     * (hero + پلن‌ها + آمار + چرا ما + مراحل + تجربهٔ فروشندگان + CTA + سوالات)
+     * با محتوای ادیت‌شدنی از «فروشندگان ← تنظیمات فروشندگان ← صفحهٔ فرود».
+     * خاموش ⇒ نسخهٔ سادهٔ فاز ۱۰۸ (landing-simple) سرو می‌شود. پیش‌فرض روشن.
+     */
+    public const KEY_LANDING_PAGE = 'seller_landing_page';
+
+    public static function landingPageEnabled(): bool
+    {
+        return option(self::KEY_LANDING_PAGE, '1') === '1';
+    }
+
     /** حداقل مبلغ درخواست برداشت فروشنده (تومان) — ۰ یعنی بدون حد اضافه
      * (حداقل قدیمی ۱۰٬۰۰۰ تومانی فرم برداشت همیشه معتبر است).
      */

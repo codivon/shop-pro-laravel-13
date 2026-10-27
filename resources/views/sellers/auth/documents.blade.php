@@ -103,7 +103,7 @@
                     <div class="mt-3 flex items-center gap-3">
                         <img x-show="images['{{ $doc['field'] }}']" x-bind:src="images['{{ $doc['field'] }}']"
                              alt="{{ $doc['title'] }}" class="size-16 rounded-xl border border-line object-cover dark:border-night-line">
-                        <label class="ap-btn-outline relative min-h-11 cursor-pointer !py-2.5"
+                        <label class="ap-btn-outline relative min-h-11 cursor-pointer py-2.5!"
                                x-bind:class="uploading === '{{ $doc['field'] }}' ? 'pointer-events-none opacity-60' : ''">
                             <x-admin-panel::icon name="upload" class="size-4" />
                             بارگذاری تصویر
@@ -122,7 +122,7 @@
             @endforeach
         </div>
 
-        <button type="button" class="ap-btn-primary mt-6 w-full !py-3" x-on:click="finish()" :disabled="busy" x-bind:class="busy ? 'opacity-60' : ''">
+        <button type="button" class="ap-btn-primary mt-6 w-full py-3!" x-on:click="finish()" :disabled="busy" x-bind:class="busy ? 'opacity-60' : ''">
             <span x-show="!busy" class="flex items-center justify-center gap-2">
                 بررسی و ادامه
                 <x-admin-panel::icon name="chevron-left" class="size-4" />

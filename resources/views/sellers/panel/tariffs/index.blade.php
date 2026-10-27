@@ -13,11 +13,11 @@
                 </div>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <a href="{{ route('seller.carriers.index') }}" wire:navigate class="ap-btn-outline !py-2 !text-xs">
+                <a href="{{ route('seller.carriers.index') }}" wire:navigate class="ap-btn-outline py-2! text-xs!">
                     <x-admin-panel::icon name="arrow-right" class="size-4" />
                     شرکت‌های حمل
                 </a>
-                <a href="{{ route('seller.tariffs.create', ['carrier' => $carrier->id]) }}" wire:navigate class="ap-btn-primary !py-2 !text-xs">
+                <a href="{{ route('seller.tariffs.create', ['carrier' => $carrier->id]) }}" wire:navigate class="ap-btn-primary py-2! text-xs!">
                     <x-admin-panel::icon name="plus" class="size-4" />
                     تعرفهٔ جدید
                 </a>
@@ -71,7 +71,7 @@
                                     <x-admin-panel::icon name="receipt-percent" class="size-6" />
                                 </span>
                                 <p class="mt-2 text-[13px] font-bold text-ink-2 dark:text-night-ink-2">هنوز تعرفه‌ای برای این شرکت حمل ثبت نکرده‌اید</p>
-                                <a href="{{ route('seller.tariffs.create', ['carrier' => $carrier->id]) }}" wire:navigate class="ap-btn-primary mt-3 !py-2 !text-xs">افزودن اولین تعرفه</a>
+                                <a href="{{ route('seller.tariffs.create', ['carrier' => $carrier->id]) }}" wire:navigate class="ap-btn-primary mt-3 py-2! text-xs!">افزودن اولین تعرفه</a>
                             </td>
                         </tr>
                     @endforelse

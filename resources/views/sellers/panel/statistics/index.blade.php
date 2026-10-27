@@ -182,7 +182,7 @@
     @endif
 
     <div class="flex flex-wrap items-center gap-2">
-        <a href="{{ route('seller.statistics.viewCounts') }}" wire:navigate class="ap-btn-outline !py-2 !text-xs">آمار بازدیدها</a>
-        <a href="{{ route('seller.statistics.viewerCounts') }}" wire:navigate class="ap-btn-outline !py-2 !text-xs">بازدیدکنندگان یکتا</a>
+        <a href="{{ route('seller.statistics.viewCounts') }}" wire:navigate class="ap-btn-outline py-2! text-xs!">آمار بازدیدها</a>
+        <a href="{{ route('seller.statistics.viewerCounts') }}" wire:navigate class="ap-btn-outline py-2! text-xs!">بازدیدکنندگان یکتا</a>
     </div>
 </div>

@@ -18,6 +18,15 @@
                 }
             } catch (e) {}
             this.cities = [];
+        },
+        async submit() {
+            this.busy = true;
+            let fd = new FormData(this.$refs.form);
+            try {
+                let data = await spPost('{{ route('seller.registration_business_details_store') }}', fd);
+                if (data.redirect) { window.location.href = data.redirect; }
+                else { spToast(data.message || 'ثبت اطلاعات ناموفق بود', 'error'); this.busy = false; }
+            } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); this.busy = false; }
         }
     }">
     @include('sellers.auth.partials.sp-fetch')
@@ -27,15 +36,7 @@
         <h1 class="text-lg font-extrabold text-ink dark:text-night-ink">اطلاعات کسب‌وکار</h1>
         <p class="mt-1 text-xs font-semibold text-ink-3 dark:text-night-ink-2">اطلاعات هویتی و کسب‌وکار خود را دقیق وارد کنید</p>
 
-        <form class="mt-6 space-y-6" x-on:submit.prevent="
-            busy = true;
-            var fd = new FormData($refs.form);
-            try {
-                var data = await spPost('{{ route('seller.registration_business_details_store') }}', fd);
-                if (data.redirect) { window.location.href = data.redirect; }
-                else { spToast(data.message || 'ثبت اطلاعات ناموفق بود', 'error'); busy = false; }
-            } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); busy = false; }
-        " x-ref="form">
+        <form class="mt-6 space-y-6" x-on:submit.prevent="submit()" x-ref="form">
             <input type="hidden" name="lat_and_long" value="">
             <input type="hidden" name="location" value="">
 
@@ -66,17 +67,17 @@
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-first">نام</label>
-                        <input id="bd-first" type="text" name="first_name" required class="ap-input !py-3" placeholder="نام خود را وارد کنید">
+                        <input id="bd-first" type="text" name="first_name" required class="ap-input py-3!" placeholder="نام خود را وارد کنید">
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-last">نام خانوادگی</label>
-                        <input id="bd-last" type="text" name="last_name" required class="ap-input !py-3" placeholder="نام خانوادگی خود را وارد کنید">
+                        <input id="bd-last" type="text" name="last_name" required class="ap-input py-3!" placeholder="نام خانوادگی خود را وارد کنید">
                     </div>
                 </div>
                 <div class="grid grid-cols-3 gap-3">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-by">سال تولد</label>
-                        <select id="bd-by" name="birth_year" class="ap-input !py-3">
+                        <select id="bd-by" name="birth_year" class="ap-input py-3!">
                             @for ($y = 1380; $y >= 1320; $y--)
                                 <option value="{{ $y }}">{{ $y }}</option>
                             @endfor
@@ -84,7 +85,7 @@
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-bm">ماه</label>
-                        <select id="bd-bm" name="birth_month" class="ap-input !py-3">
+                        <select id="bd-bm" name="birth_month" class="ap-input py-3!">
                             @for ($m = 1; $m <= 12; $m++)
                                 <option value="{{ $m }}">{{ $m }}</option>
                             @endfor
@@ -92,7 +93,7 @@
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-bd">روز</label>
-                        <select id="bd-bd" name="birth_day" class="ap-input !py-3">
+                        <select id="bd-bd" name="birth_day" class="ap-input py-3!">
                             @for ($d = 1; $d <= 31; $d++)
                                 <option value="{{ $d }}">{{ $d }}</option>
                             @endfor
@@ -112,11 +113,11 @@
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-idcard">شمارهٔ کارت ملی</label>
-                        <input id="bd-idcard" type="number" name="identity_card_number" class="ap-input !py-3 fa-digits" placeholder="۱۲۳۴۵">
+                        <input id="bd-idcard" type="number" name="identity_card_number" class="ap-input py-3! fa-digits" placeholder="۱۲۳۴۵">
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-nin">کد ملی</label>
-                        <input id="bd-nin" type="number" name="national_identity_number" class="ap-input !py-3 fa-digits" placeholder="۱۲۳۴۵۶۷۸۹۰">
+                        <input id="bd-nin" type="number" name="national_identity_number" class="ap-input py-3! fa-digits" placeholder="۱۲۳۴۵۶۷۸۹۰">
                     </div>
                 </div>
             </section>
@@ -130,11 +131,11 @@
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-company">نام شرکت</label>
-                        <input id="bd-company" type="text" name="company_name" class="ap-input !py-3" placeholder="نام شرکت را وارد کنید">
+                        <input id="bd-company" type="text" name="company_name" class="ap-input py-3!" placeholder="نام شرکت را وارد کنید">
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-ctype">نوع شرکت</label>
-                        <select id="bd-ctype" name="company_type" class="ap-input !py-3">
+                        <select id="bd-ctype" name="company_type" class="ap-input py-3!">
                             <option value="سهامی خاص">سهامی خاص</option>
                             <option value="سهامی عام">سهامی عام</option>
                             <option value="مسئولیت محدود">مسئولیت محدود</option>
@@ -145,15 +146,15 @@
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-crn">شمارهٔ ثبت</label>
-                        <input id="bd-crn" type="number" name="company_registration_number" class="ap-input !py-3 fa-digits">
+                        <input id="bd-crn" type="number" name="company_registration_number" class="ap-input py-3! fa-digits">
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-cnin">شناسهٔ ملی شرکت</label>
-                        <input id="bd-cnin" type="number" name="company_national_identity_number" class="ap-input !py-3 fa-digits">
+                        <input id="bd-cnin" type="number" name="company_national_identity_number" class="ap-input py-3! fa-digits">
                     </div>
                     <div class="sm:col-span-2">
                         <label class="mb-1.5 block text-xs font-bold" for="bd-cen">شمارهٔ اقتصادی</label>
-                        <input id="bd-cen" type="number" name="company_economic_number" class="ap-input !py-3 fa-digits">
+                        <input id="bd-cen" type="number" name="company_economic_number" class="ap-input py-3! fa-digits">
                     </div>
                 </div>
             </section>
@@ -168,7 +169,7 @@
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-state">استان</label>
                         <select id="bd-state" name="state_id" x-ref="province" required
-                                x-on:change="loadCities()" class="ap-input !py-3">
+                                x-on:change="loadCities()" class="ap-input py-3!">
                             <option value="">انتخاب استان…</option>
                             @foreach ($provinces as $province)
                                 <option value="{{ $province->id }}">{{ $province->name }}</option>
@@ -177,7 +178,7 @@
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-city">شهر</label>
-                        <select id="bd-city" name="city_id" class="ap-input !py-3" required>
+                        <select id="bd-city" name="city_id" class="ap-input py-3!" required>
                             <option value="">ابتدا استان را انتخاب کنید</option>
                             <template x-for="city in cities" :key="city.id">
                                 <option x-text="city.name" x-bind:value="city.id"></option>
@@ -187,23 +188,23 @@
                 </div>
                 <div>
                     <label class="mb-1.5 block text-xs font-bold" for="bd-address">آدرس کامل</label>
-                    <input id="bd-address" type="text" name="address" required class="ap-input !py-3"
+                    <input id="bd-address" type="text" name="address" required class="ap-input py-3!"
                            placeholder="محله - خیابان اصلی - کوچه - پلاک - واحد">
                 </div>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-post">کد پستی</label>
-                        <input id="bd-post" type="number" name="post_code" class="ap-input !py-3 fa-digits" placeholder="۱۲۳۴۵-۶۷۸۹۰">
+                        <input id="bd-post" type="number" name="post_code" class="ap-input py-3! fa-digits" placeholder="۱۲۳۴۵-۶۷۸۹۰">
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-phone">تلفن ثابت</label>
-                        <input id="bd-phone" type="number" name="phone" class="ap-input !py-3 fa-digits" placeholder="021-56000000">
+                        <input id="bd-phone" type="number" name="phone" class="ap-input py-3! fa-digits" placeholder="021-56000000">
                     </div>
                 </div>
                 <div>
                     <label class="mb-1.5 block text-xs font-bold" for="bd-mob">شمارهٔ موبایل (تأیید شده)</label>
                     <input id="bd-mob" type="tel" dir="ltr" disabled value="{{ $seller['mobile'] }}"
-                           class="ap-input !py-3 cursor-not-allowed bg-surface-2 opacity-70 fa-digits text-start">
+                           class="ap-input py-3! cursor-not-allowed bg-surface-2 opacity-70 fa-digits text-start">
                 </div>
             </section>
 
@@ -215,17 +216,18 @@
                 </h2>
                 <div>
                     <label class="mb-1.5 block text-xs font-bold" for="bd-bname">نام فروشگاه</label>
-                    <input id="bd-bname" type="text" name="business_name" required class="ap-input !py-3"
+                    <input id="bd-bname" type="text" name="business_name" required class="ap-input py-3!"
+                           x-init="if (! $el.value) $el.value = sessionStorage.getItem('sp_shop_name') || ''"
                            placeholder="نام فروشگاه شما در سایت {{ option('info_site_title', 'او پی شاپ') }}">
                 </div>
                 <div>
                     <label class="mb-1.5 block text-xs font-bold" for="bd-shaba">شمارهٔ شبا (برای تسویه)</label>
-                    <input id="bd-shaba" type="text" dir="ltr" name="shaba_number" required class="ap-input !py-3 font-mono text-start" placeholder="IR______________________________">
+                    <input id="bd-shaba" type="text" dir="ltr" name="shaba_number" required class="ap-input py-3! font-mono text-start" placeholder="IR______________________________">
                 </div>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-cat">دستهٔ اصلی تأمین کالا</label>
-                        <select id="bd-cat" name="main_supply_category_id" class="ap-input !py-3" required>
+                        <select id="bd-cat" name="main_supply_category_id" class="ap-input py-3!" required>
                             <option value="">انتخاب کنید…</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}">{{ $category->name }}</option>
@@ -234,7 +236,7 @@
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-count">تعداد محصولات قابل ارائه</label>
-                        <select id="bd-count" name="number_of_products" class="ap-input !py-3">
+                        <select id="bd-count" name="number_of_products" class="ap-input py-3!">
                             <option value="1-10">۱ تا ۱۰</option>
                             <option value="10-50">۱۰ تا ۵۰</option>
                             <option value="50-100">۵۰ تا ۱۰۰</option>
@@ -259,7 +261,7 @@
                 @endif
             </section>
 
-            <button type="submit" class="ap-btn-primary w-full !py-3" :disabled="busy" x-bind:class="busy ? 'opacity-60' : ''">
+            <button type="submit" class="ap-btn-primary w-full py-3!" :disabled="busy" x-bind:class="busy ? 'opacity-60' : ''">
                 <span x-show="!busy" class="flex items-center justify-center gap-2">
                     ثبت و ادامه
                     <x-admin-panel::icon name="chevron-left" class="size-4" />

@@ -19,5 +19,8 @@ class EncryptCookies extends Middleware
         // صفحات/منوهای پکیج‌ها (ActivePanel ماژول‌ها) سمت سرور آن را می‌خوانند —
         // کوکی خام JS است و اگر رمزنگاری‌شده انتظار برود، از درخواست حذف می‌شود.
         'ap_panel',
+        // فاز ۱۰۹ — تم پنل/صفحات فروشندگان مدرن: سمت کلاینت با document.cookie
+        // ست می‌شود و sellers/layouts (guest/panel) سمت سرور می‌خوانند.
+        'seller-theme',
     ];
 }

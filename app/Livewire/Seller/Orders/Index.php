@@ -5,6 +5,7 @@ namespace App\Livewire\Seller\Orders;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Support\Carbon;
+use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -24,6 +25,7 @@ use Morilog\Jalali\Jalalian;
  * دکمه‌های پرینت/اکسل لینک‌های کلاسیک به همان کنترلرهای قدیمی هستند
  * (seller.orders.export / seller.orders.printAll / seller.orders.printAllShippingForms…).
  */
+#[Layout('sellers.layouts.panel')]
 #[Title('سفارش‌ها')]
 class Index extends Component
 {

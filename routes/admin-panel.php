@@ -92,6 +92,7 @@ use App\Livewire\Admin\Sellers\SellerViews;
 use App\Livewire\Admin\Sellers\Settings\SellerCommission;
 use App\Livewire\Admin\Sellers\Settings\SellerEcontract;
 use App\Livewire\Admin\Sellers\Settings\SellerHero;
+use App\Livewire\Admin\Sellers\Settings\SellerLanding;
 use App\Livewire\Admin\Sellers\Settings\SellerQuestion;
 use App\Livewire\Admin\Settings\Apikeys;
 use App\Livewire\Admin\Settings\FloatingWidget;
@@ -272,6 +273,8 @@ Route::prefix('admin/'.admin_route_prefix())->name('np.')->group(function () {
         |----------------------
         */
         Route::get('settings/seller-hero', SellerHero::class)->name('settings.seller-hero');
+        // فاز ۱۰۹ — محتوای لندینگ تک‌صفحه‌ای /seller
+        Route::get('settings/seller-landing', SellerLanding::class)->name('settings.seller-landing');
         Route::get('settings/seller-commission', SellerCommission::class)->name('settings.seller-commission');
         Route::get('settings/seller-question', SellerQuestion::class)->name('settings.seller-question');
         Route::get('settings/seller-econtract', SellerEcontract::class)->name('settings.seller-econtract');

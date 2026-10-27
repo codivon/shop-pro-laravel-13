@@ -3,6 +3,7 @@
 namespace App\Livewire\Seller\Orders;
 
 use App\Models\Price;
+use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -13,6 +14,7 @@ use Livewire\WithPagination;
  * همان کوئری قدیم: تنوع‌هایی از فروشندهٔ فعلی که سفارشِ notCompleted دارند
  * و محصول‌شان فیزیکی است — با تعداد در انتظار ارسال هر تنوع (pendingToSend).
  */
+#[Layout('sellers.layouts.panel')]
 #[Title('محصولات منتظر ارسال')]
 class NotCompleted extends Component
 {

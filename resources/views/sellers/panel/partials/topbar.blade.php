@@ -20,14 +20,17 @@
         {{ $title ?? 'پنل فروشنده' }}
     </h1>
 
-    {{-- تغییر پوستهٔ روشن/تاریک (کوکی seller-theme — مثل پنل مدیریت) --}}
+    {{-- تغییر پوستهٔ روشن/تاریک (کوکی seller-theme — فاز ۱۰۹: متد به‌جای عبارت var-دار) --}}
     <button type="button"
             class="flex size-10 items-center justify-center rounded-xl text-ink-2 transition-colors hover:bg-surface-2 dark:text-night-ink-2 dark:hover:bg-night-3"
-            x-data x-on:click="
-                var dark = document.documentElement.classList.toggle('dark');
-                document.cookie = 'seller-theme=' + (dark ? 'dark' : 'light') + '; path=/; max-age=31536000; SameSite=Lax';
-                setTimeout(function () { window.location.reload(); }, 60);
-            "
+            x-data="{
+                toggleTheme() {
+                    let dark = document.documentElement.classList.toggle('dark');
+                    document.cookie = 'seller-theme=' + (dark ? 'dark' : 'light') + '; path=/; max-age=31536000; SameSite=Lax';
+                    setTimeout(function () { window.location.reload(); }, 60);
+                }
+            }"
+            x-on:click="toggleTheme()"
             :aria-label="document.documentElement.classList.contains('dark') ? 'پوستهٔ روشن' : 'پوستهٔ تاریک'">
         <x-admin-panel::icon name="moon-star" class="size-5 dark:hidden" />
         <x-admin-panel::icon name="sun" class="hidden size-5 dark:block" />

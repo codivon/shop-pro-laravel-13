@@ -30,7 +30,7 @@
                     </p>
                 </div>
             </div>
-            <a href="{{ route('seller.products.index') }}" wire:navigate class="ap-btn-outline !py-2 !text-xs">
+            <a href="{{ route('seller.products.index') }}" wire:navigate class="ap-btn-outline py-2! text-xs!">
                 <x-admin-panel::icon name="arrow-right" class="size-4" />
                 بازگشت به محصولات
             </a>
@@ -60,7 +60,7 @@
                         @foreach ($attributeGroups as $group)
                             <div>
                                 <label class="mb-1.5 block text-xs font-bold" x-text="{{ \Illuminate\Support\Js::from($group->name) }}"></label>
-                                <select class="ap-input !py-2.5" x-bind:name="'prices[' + i + '][attributes][]'">
+                                <select class="ap-input py-2.5!" x-bind:name="'prices[' + i + '][attributes][]'">
                                     <option value="">انتخاب کنید</option>
                                     @foreach ($group->get_attributes as $attribute)
                                         <option value="{{ $attribute->id }}"
@@ -76,27 +76,27 @@
                 <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold">قیمت (تومان) <span class="text-red-500">*</span></label>
-                        <input type="number" min="0" required class="ap-input !py-2.5 fa-digits" x-model="row.price" x-bind:name="'prices[' + i + '][price]'">
+                        <input type="number" min="0" required class="ap-input py-2.5! fa-digits" x-model="row.price" x-bind:name="'prices[' + i + '][price]'">
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold">تخفیف (٪)</label>
-                        <input type="number" min="0" max="100" class="ap-input !py-2.5 fa-digits" x-model="row.discount" x-bind:name="'prices[' + i + '][discount]'">
+                        <input type="number" min="0" max="100" class="ap-input py-2.5! fa-digits" x-model="row.discount" x-bind:name="'prices[' + i + '][discount]'">
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold">حداکثر در سبد</label>
-                        <input type="number" min="1" class="ap-input !py-2.5 fa-digits" x-model="row.cart_max" x-bind:name="'prices[' + i + '][cart_max]'">
+                        <input type="number" min="1" class="ap-input py-2.5! fa-digits" x-model="row.cart_max" x-bind:name="'prices[' + i + '][cart_max]'">
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold">حداقل در سبد</label>
-                        <input type="number" min="1" class="ap-input !py-2.5 fa-digits" x-model="row.cart_min" x-bind:name="'prices[' + i + '][cart_min]'">
+                        <input type="number" min="1" class="ap-input py-2.5! fa-digits" x-model="row.cart_min" x-bind:name="'prices[' + i + '][cart_min]'">
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold">موجودی <span class="text-red-500">*</span></label>
-                        <input type="number" min="0" required class="ap-input !py-2.5 fa-digits" x-model="row.stock" x-bind:name="'prices[' + i + '][stock]'">
+                        <input type="number" min="0" required class="ap-input py-2.5! fa-digits" x-model="row.stock" x-bind:name="'prices[' + i + '][stock]'">
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold">وضعیت انتشار</label>
-                        <select class="ap-input !py-2.5" x-model="row.published" x-bind:name="'prices[' + i + '][published]'">
+                        <select class="ap-input py-2.5!" x-model="row.published" x-bind:name="'prices[' + i + '][published]'">
                             <option value="1">منتشر شود</option>
                             <option value="0">پیش‌نویس</option>
                         </select>
@@ -105,13 +105,13 @@
             </div>
         </template>
 
-        <button type="button" class="ap-btn-outline w-full !py-3 !border-dashed" x-on:click="addRow()">
+        <button type="button" class="ap-btn-outline w-full py-3! border-dashed!" x-on:click="addRow()">
             <x-admin-panel::icon name="plus" class="size-4" />
             افزودن تنوع
         </button>
 
         <div class="mt-5 flex flex-wrap items-center gap-2">
-            <button type="submit" class="ap-btn-primary !py-2.5">
+            <button type="submit" class="ap-btn-primary py-2.5!">
                 <x-admin-panel::icon name="save" class="size-4" />
                 ذخیرهٔ تنوع‌ها
             </button>

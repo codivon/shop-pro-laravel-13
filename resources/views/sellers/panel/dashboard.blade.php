@@ -139,7 +139,7 @@
                     <p class="text-[11px] text-ink-3 dark:text-night-ink-2">بازدید صفحات فروشگاه شما در /store</p>
                 </div>
             </div>
-            <a href="{{ route('seller.statistics.index') }}" wire:navigate class="ap-btn-outline !py-2 !text-xs">
+            <a href="{{ route('seller.statistics.index') }}" wire:navigate class="ap-btn-outline py-2! text-xs!">
                 گزارش کامل آمار
                 <x-admin-panel::icon name="chevron-left" class="size-3.5" />
             </a>
@@ -188,7 +188,7 @@
                 </div>
             </div>
             @if (\App\Support\MultiVendorSettings::inventoryCenterEnabled())
-                <a href="{{ route('seller.inventory.index') }}" wire:navigate class="ap-btn-outline !py-2 !text-xs">مرکز موجودی</a>
+                <a href="{{ route('seller.inventory.index') }}" wire:navigate class="ap-btn-outline py-2! text-xs!">مرکز موجودی</a>
             @endif
         </div>
         <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -218,7 +218,7 @@
                 <p class="fa-digits text-lg font-extrabold text-ink dark:text-night-ink">{{ number_format($paidOrdersValue) }} تومان</p>
             </div>
         </div>
-        <a href="{{ route('seller.orders.index') }}" wire:navigate class="ap-btn-outline !py-2 !text-xs">
+        <a href="{{ route('seller.orders.index') }}" wire:navigate class="ap-btn-outline py-2! text-xs!">
             مشاهده سفارش‌ها
             <x-admin-panel::icon name="chevron-left" class="size-3.5" />
         </a>

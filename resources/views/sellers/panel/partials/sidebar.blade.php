@@ -19,7 +19,9 @@
 <aside
     class="fixed inset-y-0 start-0 z-50 flex w-[17rem] flex-col border-l border-slate-800 bg-slate-900 text-slate-100 transition-transform duration-300
            dark:border-night-line dark:bg-night-2"
-    x-bind:class="open ? 'translate-x-0' : 'translate-x-full'"
+    {{-- فاز ۱۰۹ — فیکس: کشوی موبایل فقط زیر lg جابه‌جا می‌شود؛ در دسکتاپ سایدبار همیشه پیداست
+         (قبلاً translate-x-full بدون lg:translate-x-0 بود و سایدبار دسکتاپ بیرون صفحه می‌ماند) --}}
+    x-bind:class="open ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'"
     aria-label="منوی اصلی پنل فروشنده">
 
     {{-- برند --}}

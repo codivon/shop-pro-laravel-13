@@ -19,7 +19,7 @@
 
             <div>
                 <label class="mb-1.5 block text-xs font-bold" for="tf-type">نوع ارسال</label>
-                <select id="tf-type" name="type" required class="ap-input !py-3">
+                <select id="tf-type" name="type" required class="ap-input py-3!">
                     <option value="within_province">داخل استان</option>
                     <option value="extra_province">خارج استان</option>
                 </select>
@@ -28,25 +28,25 @@
 
             <div>
                 <label class="mb-1.5 block text-xs font-bold" for="tf-weight">حداکثر وزن (گرم)</label>
-                <input id="tf-weight" type="number" name="max_weight" required min="1" class="ap-input !py-3 fa-digits" placeholder="مثلاً 1000">
+                <input id="tf-weight" type="number" name="max_weight" required min="1" class="ap-input py-3! fa-digits" placeholder="مثلاً 1000">
                 <p class="mt-1 text-[11px] font-semibold text-ink-3 dark:text-night-ink-2">برای هر شرکت حمل و نوع، بازه‌های وزنی نباید تکراری باشند</p>
                 @error('max_weight') <p class="mt-1 text-[11px] font-bold text-red-500">{{ $message }}</p> @enderror
             </div>
 
             <div>
                 <label class="mb-1.5 block text-xs font-bold" for="tf-cost">هزینهٔ ارسال (تومان)</label>
-                <input id="tf-cost" type="number" name="shipping_cost" required min="0" class="ap-input !py-3 fa-digits" placeholder="مثلاً 45000">
+                <input id="tf-cost" type="number" name="shipping_cost" required min="0" class="ap-input py-3! fa-digits" placeholder="مثلاً 45000">
                 @error('shipping_cost') <p class="mt-1 text-[11px] font-bold text-red-500">{{ $message }}</p> @enderror
             </div>
 
             @error('carrier_id') <p class="text-[11px] font-bold text-red-500">{{ $message }}</p> @enderror
 
             <div class="flex flex-wrap items-center gap-2 pt-2">
-                <button type="submit" class="ap-btn-primary !py-2.5">
+                <button type="submit" class="ap-btn-primary py-2.5!">
                     <x-admin-panel::icon name="check" class="size-4" />
                     ثبت تعرفه
                 </button>
-                <a href="{{ route('seller.tariffs.index', ['carrier' => $carrier->id]) }}" wire:navigate class="ap-btn-outline !py-2.5">انصراف</a>
+                <a href="{{ route('seller.tariffs.index', ['carrier' => $carrier->id]) }}" wire:navigate class="ap-btn-outline py-2.5!">انصراف</a>
             </div>
         </form>
     </div>

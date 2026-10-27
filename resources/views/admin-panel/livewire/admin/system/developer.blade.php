@@ -988,6 +988,19 @@
                                 </span>
                                 <x-admin-panel::toggle wire:model="vendorModernPanel" size="sm" aria-label="پنل مدرن فروشندگان" />
                             </div>
+                            {{-- فاز ۱۰۹ — صفحهٔ فرود پیشرفتهٔ فروشندگان (لندینگ تک‌صفحه‌ای) --}}
+                            <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                                <span class="flex min-w-0 items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="layout-template" class="size-4" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-[13px] font-bold">صفحهٔ فرود پیشرفتهٔ فروشندگان (لندینگ تک‌صفحه‌ای)</span>
+                                        <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">لندینگ کامل /seller با محتوای قابل شخصی‌سازی از «فروشندگان ← تنظیمات فروشندگان ← صفحهٔ فرود فروشندگان» — خاموش ⇒ نسخهٔ ساده</span>
+                                    </span>
+                                </span>
+                                <x-admin-panel::toggle wire:model="vendorLandingPage" size="sm" aria-label="صفحهٔ فرود پیشرفتهٔ فروشندگان" />
+                            </div>
                             <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line p-3.5 dark:border-night-line">
                                 <span class="flex min-w-0 items-center gap-2.5">
                                     <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">

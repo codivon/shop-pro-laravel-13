@@ -43,9 +43,10 @@
     @endif
 </div>
 
-<div class="flex min-h-screen flex-col lg:flex-row">
+<div class="flex min-h-screen flex-col @if (! ($sellerGuestHideAside ?? false)) lg:flex-row @endif">
 
-    {{-- ستون برند (فقط دسکتاپ) --}}
+    {{-- ستون برند (فقط دسکتاپ — لندینگ فاز ۱۰۹ بدون آن تمام‌عرض می‌شود) --}}
+    @if (! ($sellerGuestHideAside ?? false))
     <aside class="relative hidden w-[42%] overflow-hidden bg-gradient-to-br from-brand-600 to-emerald-700 lg:flex lg:flex-col lg:justify-between" aria-hidden="true">
         <div class="pointer-events-none absolute -end-24 -top-24 size-96 rounded-full bg-white/10 blur-3xl"></div>
         <div class="pointer-events-none absolute -bottom-32 -start-24 size-96 rounded-full bg-emerald-400/20 blur-3xl"></div>
@@ -89,6 +90,7 @@
             © {{ date('Y') }} {{ option('info_site_title', 'او پی شاپ') }} — پنل مدرن فروشندگان (Livewire 4)
         </div>
     </aside>
+    @endif
 
     {{-- ستون محتوا --}}
     <main class="flex flex-1 flex-col">
@@ -102,14 +104,17 @@
             </a>
             <span class="hidden lg:block"></span>
 
-            {{-- تغییر پوسته --}}
+            {{-- تغییر پوسته (فاز ۱۰۹ — متد به‌جای عبارت var-دار که در evaluator جدید می‌شکند) --}}
             <button type="button"
                     class="flex size-10 items-center justify-center rounded-xl text-ink-2 transition-colors hover:bg-surface-2 dark:text-night-ink-2 dark:hover:bg-night-3"
-                    x-data x-on:click="
-                        var dark = document.documentElement.classList.toggle('dark');
-                        document.cookie = 'seller-theme=' + (dark ? 'dark' : 'light') + '; path=/; max-age=31536000; SameSite=Lax';
-                        setTimeout(function () { window.location.reload(); }, 60);
-                    "
+                    x-data="{
+                        toggleTheme() {
+                            let dark = document.documentElement.classList.toggle('dark');
+                            document.cookie = 'seller-theme=' + (dark ? 'dark' : 'light') + '; path=/; max-age=31536000; SameSite=Lax';
+                            setTimeout(function () { window.location.reload(); }, 60);
+                        }
+                    }"
+                    x-on:click="toggleTheme()"
                     aria-label="تغییر پوسته روشن/تاریک">
                 <x-admin-panel::icon name="moon-star" class="size-5 dark:hidden" />
                 <x-admin-panel::icon name="sun" class="hidden size-5 dark:block" />
@@ -117,7 +122,8 @@
         </div>
 
         <div class="flex flex-1 items-start justify-center px-4 pb-16 sm:px-8">
-            <div class="w-full max-w-xl">
+            {{-- فاز ۱۰۹ — لندینگ عریض می‌شود (sellerGuestMaxWidth از کامپوننت share می‌شود) --}}
+            <div class="w-full {{ $sellerGuestMaxWidth ?? 'max-w-xl' }}">
                 {{ $slot }}
             </div>
         </div>

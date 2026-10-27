@@ -45,7 +45,7 @@
         </div>
     </div>
 
-    <a href="{{ route('seller.statistics.index') }}" wire:navigate class="ap-btn-outline !py-2 !text-xs">
+    <a href="{{ route('seller.statistics.index') }}" wire:navigate class="ap-btn-outline py-2! text-xs!">
         <x-admin-panel::icon name="arrow-right" class="size-4" />
         بازگشت به آمار کامل
     </a>

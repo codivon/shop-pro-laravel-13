@@ -1,6 +1,19 @@
 {{-- گام ۵ ثبت‌نام — پایان و ورود به پنل (فاز ۱۰۸). فرم عین قدیمی:
      POST seller.registration_checkout_store با فیلد register[back_to_training] + نمایش جدول کمیسیون --}}
-<div class="space-y-5" x-data="{ busy: false, showCommissions: false }">
+<div class="space-y-5" x-data="{
+        busy: false,
+        showCommissions: false,
+        async finish() {
+            this.busy = true;
+            let fd = new FormData();
+            fd.append('register[back_to_training]', '1');
+            try {
+                let data = await spPost('{{ route('seller.registration_checkout_store') }}', fd);
+                if (data.redirect) { window.location.href = data.redirect; }
+                else { spToast(data.message || 'تکمیل ثبت‌نام ناموفق بود', 'error'); this.busy = false; }
+            } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); this.busy = false; }
+        }
+    }">
     @include('sellers.auth.partials.sp-fetch')
     @include('sellers.auth.partials.steps', ['active' => 5])
 
@@ -18,17 +31,8 @@
             و اطلاعات تجاری خود را مشاهده کنید. نیازی به چاپ و ارسال قرارداد نیست.
         </p>
 
-        <button type="button" class="ap-btn-primary mt-6 w-full !py-3"
-                x-on:click="
-                    busy = true;
-                    var fd = new FormData();
-                    fd.append('register[back_to_training]', '1');
-                    try {
-                        var data = await spPost('{{ route('seller.registration_checkout_store') }}', fd);
-                        if (data.redirect) { window.location.href = data.redirect; }
-                        else { spToast(data.message || 'تکمیل ثبت‌نام ناموفق بود', 'error'); busy = false; }
-                    } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); busy = false; }
-                "
+        <button type="button" class="ap-btn-primary mt-6 w-full py-3!"
+                x-on:click="finish()"
                 :disabled="busy" x-bind:class="busy ? 'opacity-60' : ''">
             <span x-show="!busy" class="flex items-center justify-center gap-2">
                 <x-admin-panel::icon name="layout-dashboard" class="size-4.5" />
