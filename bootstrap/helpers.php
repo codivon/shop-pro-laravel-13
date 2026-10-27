@@ -56,7 +56,8 @@ function update_url()
         return '';
     }*/
 
-    $url = 'https://update.weblak.ir/api/v1/check-update?token='.env('SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN', config('self-update.updater_token'));
+    // فاز ۱۰۶ — سرور بروزرسانی به update.opashop.ir منتقل شد (قبلاً update.weblak.ir روی هاست آلمان).
+    $url = 'https://update.opashop.ir/api/v1/check-update?token='.env('SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN', config('self-update.updater_token'));
     $headers_url = @get_headers($url);
     if ($headers_url && strpos($headers_url[0], '200')) {
         /* return $url . '/'; */

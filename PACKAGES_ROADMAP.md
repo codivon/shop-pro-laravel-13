@@ -301,7 +301,7 @@ API باربری‌ها (تیپاکس/ماهکس/پست) + بارنامه و پ�
 ### ۳) بازسازی مخازن پکیج‌ها (تصمیم قاطع کاربر: «مخزن‌های اصلی تغییر نکند»)
 - برگرداندن force-push: CreditPay → `4101e63` (v1.0.4)، InstallmentPayment → `c39b1a2` (حذف کامیت‌های ادغام/آرشیو).
 - پکیج جدید **shop-pro-InstallmentCredit-module** («پرداخت قسطی و اعتباری») با تاریخچهٔ تازه — کد = نسخهٔ تست‌شدهٔ v2.0.2؛ در انتظار ساخت مخزن خالی در گیت‌هاب (توکن fine-grained اجازهٔ create-repo ندارد).
-- تصاویر شاخص جدید برای بازار پکیج‌ها (InstallmentCredit + درگاه‌ها) تولید شد — آپلود در سرور update.weblak.ir.
+- تصاویر شاخص جدید برای بازار پکیج‌ها (InstallmentCredit + درگاه‌ها) تولید شد — آپلود در سرور update.opashop.ir.
 
 ### ۴) DigiPay v1.3.0 → «درگاه‌های پرداخت و اقساطی» + اسنپ‌پی
 - SnappPayService/SnappPayController (OAuth2 password grant، Payment Token با cartList، verify تک‌بار، settle، status، revert/cancel) — callback ایست‌مبرگنت POST با مستثنای CSRF در تم.

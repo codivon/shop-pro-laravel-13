@@ -5,27 +5,27 @@ namespace App\Http\Controllers\Back;
 use App\Http\Controllers\Controller;
 use App\Jobs\ProcessUpdateJob;
 use Carbon\Carbon;
-use Codedge\Updater\UpdaterManager;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Cache;
-use ZipArchive;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 
 class DeveloperController extends Controller
 {
     private $panelUrl;
+
     private $updateCode;
 
     public function __construct()
     {
         // این مقادیر را از تنظیمات یا .env بخوانید
-        $this->panelUrl ='https://update.weblak.ir/api/v1/check-update';
-        $this->updateCode =env('SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN',config('self-update.updater_token'));
+        // فاز ۱۰۶ — سرور بروزرسانی به update.opashop.ir منتقل شد (قبلاً update.weblak.ir).
+        $this->panelUrl = 'https://update.opashop.ir/api/v1/check-update';
+        $this->updateCode = env('SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN', config('self-update.updater_token'));
     }
+
     public function showSettings()
     {
         // Get last schedule run time
@@ -34,7 +34,7 @@ class DeveloperController extends Controller
         $random_str = str_random(15);
 
         if ($schedule_last_work) {
-            if (!is_object($schedule_last_work)) {
+            if (! is_object($schedule_last_work)) {
                 $schedule_last_work = Carbon::createFromDate($schedule_last_work);
             }
 
@@ -50,6 +50,7 @@ class DeveloperController extends Controller
             'shared_hosting_cron_enabled'
         ));
     }
+
     public function updateSettings(Request $request)
     {
         $scope = $request->input('settings_scope');
@@ -83,15 +84,17 @@ class DeveloperController extends Controller
             $oldUpdates = $request->input('enable_old_updates') === 'true' ? 'true' : 'false';
             option_update('enable_old_updates', $oldUpdates);
             Artisan::call('config:clear');
+
             return response('success');
         }
 
         return response('Invalid Settings Scope', 400);
     }
+
     public function downApplication(Request $request)
     {
         $request->validate([
-            'secret' => 'required|string'
+            'secret' => 'required|string',
         ]);
 
         $down_options = $request->except(['secret']);
@@ -107,7 +110,7 @@ class DeveloperController extends Controller
 
     public function upApplication()
     {
-        Artisan::call("up");
+        Artisan::call('up');
 
         return response('success');
     }
@@ -123,17 +126,18 @@ class DeveloperController extends Controller
     {
         $token = config('self-update.updater_token');
 
-        if (!$token) {
+        if (! $token) {
             toastr()->error('برای بروزرسانی نرم افزار لطفا شماره سفارش راست چین را وارد کنید.');
+
             return redirect()->route('admin.developer.settings');
         }
 
-        $errors=null;
+        $errors = null;
 
         // خواندن نسخه از فایل
         $currentVersion = $this->getVersion();
         $versionInstalled = $currentVersion;
-        $description=null;
+        $description = null;
         // دریافت وضعیت آپدیت
         $isProcessing = Cache::get('update_processing', false);
         $updateStatus = Cache::get('update_status');
@@ -147,28 +151,28 @@ class DeveloperController extends Controller
         try {
             $response = Http::timeout(30)->get($this->panelUrl, [
                 'token' => $this->updateCode,
-                'version' => $currentVersion
+                'version' => $currentVersion,
             ]);
             $data = $response->json();
             if ($response->successful()) {
                 if ($data['update_available'] ?? false) {
                     $isNewVersionAvailable = true;
-                    $description=$data['description'];
+                    $description = $data['description'];
                     $versionAvailable = $data['version'];
                 }
             }
 
-            if (isset($data['error'])){
+            if (isset($data['error'])) {
                 $errors = $data['error'];
             }
         } catch (Exception $e) {
             $message = $e->getMessage();
-            $translated = __('errors.' . $message);
+            $translated = __('errors.'.$message);
 
             // اگر ترجمه پیدا نشد، خود پیام را نشان بده
-            $errors = 'خطا رخ داده: ' . (
-                $translated != 'errors.' . $message ? $translated : $message
-                );
+            $errors = 'خطا رخ داده: '.(
+                $translated != 'errors.'.$message ? $translated : $message
+            );
         }
 
         return view('back.developer.updater', compact(
@@ -190,10 +194,10 @@ class DeveloperController extends Controller
         // استفاده از Lock اتمیک — فقط یک درخواست می‌تواند وارد شود
         $lock = Cache::lock('update_in_progress', 1200); // 20 دقیقه
 
-        if (!$lock->get()) {
+        if (! $lock->get()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'آپدیت دیگری در حال اجراست. لطفاً صبر کنید.'
+                'message' => 'آپدیت دیگری در حال اجراست. لطفاً صبر کنید.',
             ], 429);
         }
 
@@ -203,9 +207,10 @@ class DeveloperController extends Controller
             // بررسی وضعیت موفقیت قبلی
             if (Cache::get('update_status') === 'success') {
                 $lock->release();
+
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'آپدیت قبلاً با موفقیت انجام شده است.'
+                    'message' => 'آپدیت قبلاً با موفقیت انجام شده است.',
                 ], 400);
             }
 
@@ -215,11 +220,12 @@ class DeveloperController extends Controller
                 'version' => $currentVersion,
             ]);
 
-            if (!$response->successful() || !$response->json('update_available')) {
+            if (! $response->successful() || ! $response->json('update_available')) {
                 $lock->release();
+
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'نسخه جدیدی یافت نشد یا دسترسی غیرمجاز است.'
+                    'message' => 'نسخه جدیدی یافت نشد یا دسترسی غیرمجاز است.',
                 ], 403);
             }
 
@@ -245,14 +251,15 @@ class DeveloperController extends Controller
             return response()->json([
                 'status' => 'queued',
                 'message' => 'درخواست بروزرسانی در صف قرار گرفت.',
-                'version' => $newVersion
+                'version' => $newVersion,
             ]);
 
         } catch (Exception $e) {
             $lock->release();
+
             return response()->json([
                 'status' => 'error',
-                'message' => 'خطا در ارسال درخواست: ' . $e->getMessage()
+                'message' => 'خطا در ارسال درخواست: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -274,7 +281,7 @@ class DeveloperController extends Controller
                 'version' => $version,
                 'message' => 'بروزرسانی با موفقیت انجام شد',
                 'step' => 'کامل شد ✅',
-                'progress' => 100
+                'progress' => 100,
             ]);
         }
 
@@ -285,7 +292,7 @@ class DeveloperController extends Controller
                 'message' => $error ?? 'خطای ناشناخته',
                 'details' => Cache::get('update_error_details'),
                 'step' => 'خطا ❌',
-                'progress' => $progress
+                'progress' => $progress,
             ]);
         }
 
@@ -296,7 +303,7 @@ class DeveloperController extends Controller
                 'progress' => $progress,
                 'message' => $step ?? 'در حال بروزرسانی...',
                 'step' => $step ?? 'در حال بروزرسانی...',
-                'job_id' => $jobId
+                'job_id' => $jobId,
             ]);
         }
 
@@ -307,12 +314,12 @@ class DeveloperController extends Controller
                 'message' => 'در انتظار شروع بروزرسانی...',
                 'step' => 'در انتظار شروع',
                 'progress' => 0,
-                'job_id' => $jobId
+                'job_id' => $jobId,
             ]);
         }
 
         return response()->json([
-            'status' => 'idle'
+            'status' => 'idle',
         ]);
     }
 
@@ -325,37 +332,37 @@ class DeveloperController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'دستورات پس از بروزرسانی با موفقیت اجرا شدند.'
+                'message' => 'دستورات پس از بروزرسانی با موفقیت اجرا شدند.',
             ]);
         } catch (Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'خطا در اجرای دستورات: ' . $e->getMessage()
+                'message' => 'خطا در اجرای دستورات: '.$e->getMessage(),
             ], 500);
         }
     }
-/*    public function updaterAfter()
-    {
-        try {
-            // کش‌ها را پاک کنید
-            Artisan::call('cache:clear');
-            Artisan::call('config:clear');
-            Artisan::call('view:clear');
+    /*    public function updaterAfter()
+        {
+            try {
+                // کش‌ها را پاک کنید
+                Artisan::call('cache:clear');
+                Artisan::call('config:clear');
+                Artisan::call('view:clear');
 
-            // اگر مایگریشن جدیدی دارید اجرا کنید
-            // Artisan::call('migrate', ['--force' => true]);
+                // اگر مایگریشن جدیدی دارید اجرا کنید
+                // Artisan::call('migrate', ['--force' => true]);
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'دستورات پس از بروزرسانی با موفقیت اجرا شدند.'
-            ]);
-        } catch (Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'خطا در اجرای دستورات: ' . $e->getMessage()
-            ], 500);
-        }
-    }*/
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'دستورات پس از بروزرسانی با موفقیت اجرا شدند.'
+                ]);
+            } catch (Exception $e) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'خطا در اجرای دستورات: ' . $e->getMessage()
+                ], 500);
+            }
+        }*/
 
     // متدهای کمکی
     private function getVersion()
@@ -363,8 +370,10 @@ class DeveloperController extends Controller
         $versionFile = storage_path('app/version.json');
         if (File::exists($versionFile)) {
             $content = json_decode(File::get($versionFile), true);
+
             return $content['version'] ?? config('app.version', '1.0.0');
         }
+
         return config('app.version', '1.0.0');
     }
 
@@ -389,18 +398,18 @@ class DeveloperController extends Controller
             $relativePath = $files->getSubPathName();
 
             foreach ($excluded as $ex) {
-                if ($relativePath === $ex || str_starts_with($relativePath, $ex . DIRECTORY_SEPARATOR)) {
+                if ($relativePath === $ex || str_starts_with($relativePath, $ex.DIRECTORY_SEPARATOR)) {
                     continue 2;
                 }
             }
 
-            $targetPath = $destination . DIRECTORY_SEPARATOR . $relativePath;
+            $targetPath = $destination.DIRECTORY_SEPARATOR.$relativePath;
 
             if ($file->isDir()) {
                 File::ensureDirectoryExists($targetPath, 0755);
             } else {
                 if ($backupPath && File::exists($targetPath)) {
-                    $backupTarget = $backupPath . DIRECTORY_SEPARATOR . $relativePath;
+                    $backupTarget = $backupPath.DIRECTORY_SEPARATOR.$relativePath;
                     File::ensureDirectoryExists(dirname($backupTarget), 0755);
                     File::copy($targetPath, $backupTarget);
                 }
@@ -419,7 +428,6 @@ class DeveloperController extends Controller
         );
     }
 
-
     public function checkUpdate()
     {
         $currentVersion = $this->getVersion();
@@ -427,15 +435,16 @@ class DeveloperController extends Controller
         try {
             $response = Http::timeout(30)->get($this->panelUrl, [
                 'token' => $this->updateCode,
-                'version' => $currentVersion
+                'version' => $currentVersion,
             ]);
 
             if ($response->successful()) {
                 $data = $response->json();
+
                 return response()->json([
                     'update_available' => $data['update_available'] ?? false,
                     'version' => $data['version'] ?? null,
-                    'changelog' => $data['changelog'] ?? null
+                    'changelog' => $data['changelog'] ?? null,
                 ]);
             }
         } catch (Exception $e) {
@@ -444,7 +453,7 @@ class DeveloperController extends Controller
 
         return response()->json([
             'update_available' => false,
-            'error' => 'خطا در ارتباط با سرور'
+            'error' => 'خطا در ارتباط با سرور',
         ]);
     }
 
@@ -463,7 +472,7 @@ class DeveloperController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'وضعیت بروزرسانی با موفقیت ریست شد.'
+            'message' => 'وضعیت بروزرسانی با موفقیت ریست شد.',
         ]);
     }
 

@@ -17,7 +17,7 @@
 - سیستم چندفروشندگی کامل: ثبت‌نام ۴ مرحله‌ای فروشنده، احراز اسناد، قرارداد الکترونیک، تنوع قیمت فروشندگان (Price rows با seller_id)، محاسبه کمیسیون دسته‌ای، کیف پول فروشنده و تسویه حساب
 - سیستم قیمت‌گذاری پیشرفته: هر محصول چندین `Price` (variant) با ویژگی‌های رنگ/گارانتی، رزرو موجودی، گرد کردن قیمت، چندارزی (Currency)
 - ۱۱ درگاه پرداخت ایرانی (Zarinpal، به‌پرداخت ملت، سامان، سپهر، ای‌دی‌پی، سداد، زibal، ...) از طریق پکیج inline شده shetabit/multipay
-- فروشگاه ماژول/پکیج متصل به `https://update.weblak.ir` (خرید، لایسنس، نصب خودکار ماژول در `Modules/`)
+- فروشگاه ماژول/پکیج متصل به `https://update.opashop.ir` (خرید، لایسنس، نصب خودکار ماژول در `Modules/`)
 - سیستم تم (Theme) مستقل: فروشگاه در `themes/WeblakShop` با کنترلر، روت، ویو و ترجمه خودش
 - نصب‌کننده وب (Web Installer) + خودبه‌روزرسانی‌کننده (Self-Updater)
 - پیامک با ۵ سرویس‌دهنده (ای‌پی‌پنل، کاوه‌نگار، ملی‌پیامک، ایده‌پردازان، فراز)، WebPush، ایمیل
@@ -103,7 +103,7 @@ Panels:
 Runtime-added systems:
   ├─ Theme system: AppServiceProvider::loadTheme() registers Themes\{Name}\src\ThemeServiceProvider
   ├─ Module system: Modules/{Name} via nwidart + custom spl_autoload in bootstrap/app.php
-  ├─ Packages marketplace: PackageApiService ⇄ https://update.weblak.ir
+  ├─ Packages marketplace: PackageApiService ⇄ https://update.opashop.ir
   └─ Installer: /install wizard (rachidlaasri) gated by storage/installed marker
 ```
 
@@ -405,14 +405,14 @@ Shared-hosting mode (`option('shared_hosting_cron_enabled')=on`) replaces comman
 - **Engine**: inlined `packages/shetabit/multipay` + `payment` (PSR-4 via composer). `config/payment.php` maps **33 drivers**; the package ships 47 (extra unused: Jibit, SnappPay, Stripe, Toman, ...). `default = 'zarinpal'`.
 - **Runtime config is DB-driven**: `gateways` (key, is_active) + `gateway_configs` (per-gateway key/value). Admin UI: `admin/settings/gateways`. Helper `get_gateway_configs($gateway)` builds driver config; `gateway_key($driver)` maps **behpardakht ↔ mellat**. `Gateway::active()` scope limited to `config('general.supported_gateways')` (11: behpardakht, payir, zarinpal, toman, payping, irankish, saman, sepehr, idpay, sadad, zibal).
 - **Flow**: order → reserve stock → wallet or shetabit purchase (transactions row morphed to Order) → callback `front.orders.verify/{gateway}` (CSRF-exempt via theme config `exceptVerifyCsrfToken`) → verify → `orderPaid()`. Wallet recharge: `front.wallet.verify` (+ seller panel twin).
-- **Marketplace payments bypass shetabit entirely** (checkout happens on update.weblak.ir; local `packages/payment/callback` verifies via API).
+- **Marketplace payments bypass shetabit entirely** (checkout happens on update.opashop.ir; local `packages/payment/callback` verifies via API).
 - ⚠️ `paypal` driver is misconfigured (points to zarinpal URLs). `local` driver = test gateway with Persian pay/cancel buttons.
 
 ---
 
 ## 16. Packages Marketplace / Modules / License / Installer / Self-Update
 
-### Marketplace (connected to `https://update.weblak.ir`)
+### Marketplace (connected to `https://update.opashop.ir`)
 - `config/packages.php`: api.base_url, token = `SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN` (doubles as project_key), headers `Authorization` + `X-Project-Key` + `X-Project-Url`, cache 5–10 min, `security.verify_signature` (SHA-256 zip signature), queue config.
 - `PackageApiService`: listPackages, getPackage, createPurchase (external payment_url), verifyPayment (soft-4xx = not paid), verifyLicense, checkUpdate, getDownloadUrl.
 - Install flow: Back `PackageController` (index/installed/check-updates/install...) → free/subscription/license/paid paths → `PackagePurchase(pending)` → external payment → `PackagePaymentController@callback` (route `packages/payment/callback`, **no auth middleware**) → verifyPayment → markAsPaid (license) → `InstalledModule::markPending` → **`InstallPackageJob`** → `PackageInstallerService` (1280 ln): verify license → download → **SHA-256 verify** → extract to `Modules/{Name}` → temp PSR-4 autoloader → run module migrations individually (rollback on failure) → install module permissions → seeders → publish assets → cleanup → markAsInstalled → caches → queue restart. Plus `update`, `uninstall` (removes permissions/assets), `toggleActivation`, `ModuleInstallLog` step logging.
@@ -428,7 +428,7 @@ Shared-hosting mode (`option('shared_hosting_cron_enabled')=on`) replaces comman
 ### Installer & self-update (THREE coexisting systems — the used one is #3)
 1. `rachidlaasri/laravel-installer` web wizard (`/install`, updaterEnabled=true legacy `/update`).
 2. `codedge/laravel-selfupdater` (inlined) + `updater:update` / `updater:after` commands.
-3. **Production updater**: creator-only `Back\DeveloperController` (`admin/developer/updater*`) → `Cache::lock('update_in_progress')` → API `https://update.weblak.ir/api/v1/check-update` (token+version) → **`ProcessUpdateJob`** (download w/ progress → verify → backup to `storage/app/backups/backup-{ver}-{time}` → extract → replace → clear caches → set `update_status/version`); progress polled via `developer/update-status` (cache keys). Post-update: web `updaterAfter` clears caches; CLI `updater:after` runs the full chain.
+3. **Production updater**: creator-only `Back\DeveloperController` (`admin/developer/updater*`) → `Cache::lock('update_in_progress')` → API `https://update.opashop.ir/api/v1/check-update` (token+version) → **`ProcessUpdateJob`** (download w/ progress → verify → backup to `storage/app/backups/backup-{ver}-{time}` → extract → replace → clear caches → set `update_status/version`); progress polled via `developer/update-status` (cache keys). Post-update: web `updaterAfter` clears caches; CLI `updater:after` runs the full chain.
 - InstallController (Back) = first-run admin registration + app config (writes ADMIN_ROUTE_PREFIX to .env, loadTheme, shop:link, **phones home to `webtpro.ir/api/v1/shop/installed`**).
 
 ---
@@ -519,7 +519,7 @@ Most important (an agent MUST know these exist):
 | File | Highlights |
 |---|---|
 | `general.php` | api_url `http://webtpro.ir/api/v1`; admin_route_prefix env; current_theme env; **permissions map (all admin permission names — source for seeder + gates)**; static_menus; **supported_gateways** (11); non_language_options |
-| `packages.php` | marketplace base URL `https://update.weblak.ir`, token/project-key from `SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN`, signature verification on, queue conn/queue, download temp `packages/temp`, chunk 1MB, retries 3 |
+| `packages.php` | marketplace base URL `https://update.opashop.ir`, token/project-key from `SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN`, signature verification on, queue conn/queue, download temp `packages/temp`, chunk 1MB, retries 3 |
 | `payment.php` | shetabit: default zarinpal; 33 driver configs + map; sandbox modes (zarinpal, idpay, sadad, zibal) |
 | `installer.php` | rachidlaasri; minPhp 7.3 (stale); perms 745; updaterEnabled true |
 | `self-update.php` | codedge: source github/http, version from env, exclude folders |
@@ -597,7 +597,7 @@ Present: APP_NAME/ENV/DEBUG/KEY (**committed!**)/URL, DEBUGBAR_ENABLED, LOG_CHAN
 10. **API needs `x-api-key`** header (apikeys table) — Postman tests fail without it (except torob/emalls).
 11. **`option()` caches forever** — direct DB edits to `options` are invisible until cache clear; `option_update()` clears properly.
 12. **web.php loaded 3×** (locales) — every route exists 3×; don't define stateful things in routes; route:list output will triple.
-13. **Three updater systems coexist**; only DeveloperController+ProcessUpdateJob (vs update.weblak.ir) is real; `updater:after` is mandatory post-update.
+13. **Three updater systems coexist**; only DeveloperController+ProcessUpdateJob (vs update.opashop.ir) is real; `updater:after` is mandatory post-update.
 14. **Marketplace payment callback has no auth middleware** (`packages/payment/callback`).
 15. **Gates are DB-driven & console-skipped** — artisan context has no gates; tests/seeders can behave differently.
 16. **GlobalActivityObserver attaches to ~all models** — schema churn writes activity rows; exclusion lists matter for performance.

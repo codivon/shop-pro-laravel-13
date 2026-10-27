@@ -31,8 +31,8 @@ use Livewire\Component;
 #[Title('تنظیمات توسعه‌دهنده')]
 class Developer extends Component
 {
-    /** آدرس پنل بروزرسانی (پورت constructor قدیمی) */
-    protected string $panelUrl = 'https://update.weblak.ir/api/v1/check-update';
+    /** آدرس پنل بروزرسانی (پورت constructor قدیمی) — فاز ۱۰۶: منتقل‌شده به update.opashop.ir */
+    protected string $panelUrl = 'https://update.opashop.ir/api/v1/check-update';
 
     /* ---------------- کرون جاب ---------------- */
 
