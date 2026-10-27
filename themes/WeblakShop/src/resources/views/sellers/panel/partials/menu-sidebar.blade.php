@@ -63,6 +63,12 @@
                                 <a href="{{ route('seller.wallet.index') }}"><i class="feather icon-circle"></i><span class="menu-item">کیف پول، واریزی ها</span></a>
                             </li>
 
+                            @if(\App\Support\MultiVendorSettings::settlementStatementEnabled())
+                                <li class="{{ active_class('seller.wallet.settlements') }}">
+                                    <a href="{{ route('seller.wallet.settlements') }}"><i class="feather icon-circle"></i><span class="menu-item">صورت‌حساب تسویه</span></a>
+                                </li>
+                            @endif
+
                             <li class="{{ active_class('seller.commission') }}">
                                 <a href="{{ route('seller.commission') }}"><i class="feather icon-circle"></i><span class="menu-item">کمیسیون و هزینه‌ها</span></a>
                             </li>

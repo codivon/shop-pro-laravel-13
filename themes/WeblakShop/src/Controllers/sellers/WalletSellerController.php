@@ -5,12 +5,14 @@ namespace Themes\WeblakShop\src\Controllers\sellers;
 use App\Events\OrderPaid;
 use App\Events\WalletAmountDecreased;
 use App\Events\WalletAmountIncreased;
+use App\Exports\SellerSettlementsExport;
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\Category;
 use App\Models\Gateway;
 use App\Models\Seller;
 use App\Models\SellerCommission;
+use App\Models\SellerDeposit;
 use App\Models\Transaction;
 use App\Models\WalletHistory;
 use App\Notifications\Seller\SellerRequestDeposit;
@@ -18,9 +20,11 @@ use App\Support\MultiVendorSettings;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Maatwebsite\Excel\Facades\Excel;
 use Shetabit\Multipay\Invoice;
 use Shetabit\Payment\Facade\Payment;
 
@@ -204,6 +208,80 @@ class WalletSellerController extends Controller
         }
 
         return redirect()->back();
+    }
+
+    /**
+     * فاز ۱۰۶-۱ — صورت‌حساب تسویهٔ فروشنده (شفافیت مالی).
+     *
+     * داده‌ها از فاز ۱۰۳ موجودند و فقط UI نداشتند:
+     *  • seller_deposits: ردیف کمیسیونِ سایت به‌ازای هر سفارش (مبلغ/درصد/وضعیت)
+     *  • WalletHistory (type=deposit, source=seller): سهم واریزشده به کیف پول
+     * گیت قانون طلایی: سوییچ multi_vendor_settlement_statement در تب
+     * «چندفروشندگی» تنظیمات برنامه‌نویس.
+     */
+    public function settlements()
+    {
+        if (! MultiVendorSettings::settlementStatementEnabled()) {
+            session()->put('toast-error', 'صورت‌حساب تسویه از تنظیمات غیرفعال شده است.');
+
+            return redirect()->route('seller.wallet.index');
+        }
+
+        $sellerId = (int) sellerID();
+
+        $deposits = SellerDeposit::where('seller_id', $sellerId)
+            ->with('order:id,price,status,created_at')
+            ->latest()
+            ->paginate(20);
+
+        [$stats, $netByOrder] = $this->settlementStats($sellerId);
+
+        return view('front::sellers.panel.wallet.settlements', compact('deposits', 'stats', 'netByOrder'));
+    }
+
+    /** خروجی اکسل صورت‌حساب — همان الگوی SellerOrdersExport */
+    public function settlementsExport()
+    {
+        if (! MultiVendorSettings::settlementStatementEnabled()) {
+            session()->put('toast-error', 'صورت‌حساب تسویه از تنظیمات غیرفعال شده است.');
+
+            return redirect()->route('seller.wallet.index');
+        }
+
+        return Excel::download(new SellerSettlementsExport((int) sellerID()), 'settlements.xlsx');
+    }
+
+    /**
+     * جمع‌های صورت‌حساب + نقشهٔ سهم واریزشده به‌ازای هر سفارش.
+     *
+     * @return array{0: array<string, int>, 1: Collection}
+     */
+    private function settlementStats(int $sellerId): array
+    {
+        $history = WalletHistory::whereHas('wallet', fn ($q) => $q->where('seller_id', $sellerId))
+            ->where(['type' => 'deposit', 'source' => 'seller', 'status' => 'success'])
+            ->get(['id', 'order_id', 'amount']);
+
+        $stats = [
+            // تعداد تسویه‌های انجام‌شده (هر سفارش حداکثر یک بار — ایدمپوتنس فاز ۱۰۳)
+            'settled_orders' => $history->pluck('order_id')->filter()->unique()->count(),
+            // جمع سهمِ واریزشده به کیف پول (تسویه‌شده)
+            'total_net' => (int) $history->sum('amount'),
+            // جمع کمیسیونِ کسرشدهٔ سایت
+            'total_commission' => (int) SellerDeposit::where('seller_id', $sellerId)
+                ->where('status', 'success')
+                ->sum('amount'),
+            // درخواست‌های برداشت در انتظار پرداخت
+            'waiting_withdraw_amount' => (int) WalletHistory::whereHas('wallet', fn ($q) => $q->where('seller_id', $sellerId))
+                ->where(['withdraw' => 1, 'type' => 'withdraw'])
+                ->where('status_pay', 'waiting')
+                ->sum('amount'),
+        ];
+
+        // سهم واریزشدهٔ هر سفارش — برای ستون «سهم شما» در جدول
+        $netByOrder = $history->groupBy('order_id')->map->sum('amount');
+
+        return [$stats, $netByOrder];
     }
 
     public function commission()

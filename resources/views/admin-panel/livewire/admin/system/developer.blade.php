@@ -891,6 +891,18 @@
                                 </span>
                                 <x-admin-panel::toggle wire:model="vendorDashboardStats" size="sm" aria-label="آمار تسویه داشبورد" />
                             </div>
+                            <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                                <span class="flex min-w-0 items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="file-text" class="size-4" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-[13px] font-bold">صورت‌حساب تسویهٔ فروشنده</span>
+                                        <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">صفحهٔ ردیف‌به‌ردیفِ کمیسیون و سهم هر سفارش در پنل فروشنده + خروجی اکسل (منبع: دفتر واریزهای فاز ۱۰۳)</span>
+                                    </span>
+                                </span>
+                                <x-admin-panel::toggle wire:model="vendorSettlementStatement" size="sm" aria-label="صورت‌حساب تسویه" />
+                            </div>
                             <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line p-3.5 dark:border-night-line">
                                 <span class="flex min-w-0 items-center gap-2.5">
                                     <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">

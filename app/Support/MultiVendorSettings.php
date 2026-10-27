@@ -95,6 +95,16 @@ class MultiVendorSettings
     }
 
     /**
+     * صورت‌حساب تسویهٔ فروشنده (فاز ۱۰۶ — شفافیت مالی): صفحهٔ ردیف‌به‌ردیفِ
+     * کمیسیون/سهم هر سفارش در پنل فروشنده + خروجی اکسل. داده (seller_deposits
+     * + WalletHistory) از فاز ۱۰۳ موجود است؛ این کلید فقط نمایشش را کنترل می‌کند.
+     */
+    public static function settlementStatementEnabled(): bool
+    {
+        return option('multi_vendor_settlement_statement', '1') === '1';
+    }
+
+    /**
      * حداقل مبلغ درخواست برداشت فروشنده (تومان) — ۰ یعنی بدون حد اضافه
      * (حداقل قدیمی ۱۰٬۰۰۰ تومانی فرم برداشت همیشه معتبر است).
      */

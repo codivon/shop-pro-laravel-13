@@ -2,12 +2,18 @@
 
 namespace Tests\Feature\Extra;
 
+use App\Livewire\Admin\System\Developer;
+use App\Models\Admin;
 use App\Models\Seller;
+use App\Models\SellerDeposit;
 use App\Models\SellerInfo;
 use App\Support\MultiVendorSettings;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestDox;
 use Tests\Support\ShopTestSetup;
@@ -78,6 +84,26 @@ class Phase106Test extends TestCase
         ]);
 
         return $seller;
+    }
+
+    /** ادمین creator با همهٔ گیت‌ها (الگوی فاز ۱۰۳) — برای تب تنظیمات Developer */
+    private function newCreator(): void
+    {
+        $creator = Admin::create([
+            'first_name' => 'تست',
+            'last_name' => 'فاز ۱۰۶',
+            'username' => 'feat106-'.Str::random(6),
+            'email' => 'feat106-'.Str::random(6).'@test.ir',
+            'password' => Hash::make('secret1234'),
+            'level' => 'creator',
+            'status' => 'ACTIVE',
+        ]);
+
+        Gate::before(function ($user = null) {
+            return $user instanceof Admin && $user->level === 'creator' ? true : null;
+        });
+
+        Auth::guard('adminPanel')->setUser($creator);
     }
 
     /* ================= 1) راهنمای کمیسیون ================= */
@@ -193,5 +219,119 @@ class Phase106Test extends TestCase
 
         $this->assertStringContainsString(route('seller.notifications.index'), $html);
         $this->assertStringNotContainsString(route('admin.notifications'), $html);
+    }
+
+    /* ================= فاز ۱۰۶-۱) صورت‌حساب تسویهٔ فروشنده ================= */
+
+    #[Test]
+    #[TestDox('تب چندفروشندگی Developer سوییچ صورت‌حساب تسویه را ذخیره می‌کند')]
+    public function developer_tab_saves_settlement_statement_toggle(): void
+    {
+        $this->newCreator();
+
+        Livewire::test(Developer::class)
+            ->set('vendorEnabled', true)
+            ->set('vendorSettlementStatement', false)
+            ->call('saveMultiVendor')
+            ->assertDispatched('toast');
+
+        $this->assertSame('0', option('multi_vendor_settlement_statement', '1'));
+        $this->assertFalse(MultiVendorSettings::settlementStatementEnabled());
+
+        Livewire::test(Developer::class)
+            ->set('vendorSettlementStatement', true)
+            ->call('saveMultiVendor');
+
+        $this->assertSame('1', option('multi_vendor_settlement_statement', '1'));
+    }
+
+    /** ردیف کمیسیون + سهم واریزشدهٔ یک سفارش تسویه‌شدهٔ واقعی (شکل دقیق VendorSettlementService) */
+    private function newSettledOrder(Seller $seller, int $price = 100000, int $commission = 23000): array
+    {
+        [$order, $item] = $this->newSellerPaidOrder($seller, $price);
+
+        SellerDeposit::create([
+            'seller_id' => $seller->id,
+            'order_id' => $order->id,
+            'amount' => $commission,
+            'percent' => 23,
+            'description' => 'کمیسیون فروش سفارش #'.$order->id,
+            'status' => 'success',
+        ]);
+
+        $seller->getWallet()->histories()->create([
+            'type' => 'deposit',
+            'amount' => $price - $commission,
+            'description' => 'تسویهٔ خودکار فروش سفارش #'.$order->id,
+            'source' => 'seller',
+            'status' => 'success',
+            'order_id' => $order->id,
+        ]);
+
+        return [$order, $item];
+    }
+
+    #[Test]
+    #[TestDox('صفحهٔ صورت‌حساب تسویه ردیف‌به‌ردیف کمیسیون و جمع‌ها را نشان می‌دهد')]
+    public function settlement_statement_page_shows_rows_and_totals(): void
+    {
+        $seller = $this->newSeller();
+        $this->newSettledOrder($seller, 100000, 23000);
+        $this->actingAs($seller, 'seller');
+
+        $response = $this->get(route('seller.wallet.settlements'));
+
+        $response->assertOk();
+        $response->assertSee('صورت‌حساب تسویه', false);
+        $response->assertSee('23,000', false);          // کمیسیون کسرشده
+        $response->assertSee('77,000', false);          // سهم واریزشده (۱۰۰٬۰۰۰ − ۲۳٬۰۰۰)
+        $response->assertSee('تسویه‌شده', false);
+        $response->assertSee(route('seller.wallet.settlements.export'), false);
+
+        // آیتم منوی سایدبار هم دیده شود (سوییچ روشن) — سنجش URL (نام قابلیت در toastها هم هست)
+        $this->get(route('seller.dashboard'))->assertSee(route('seller.wallet.settlements'), false);
+    }
+
+    #[Test]
+    #[TestDox('سوییچ خاموش صورت‌حساب: صفحه به کیف پول برمی‌گردد و منو هم مخفی می‌شود')]
+    public function settlement_statement_respects_toggle(): void
+    {
+        $seller = $this->newSeller();
+        $this->newSettledOrder($seller);
+        $this->actingAs($seller, 'seller');
+
+        option_update('multi_vendor_settlement_statement', '0');
+        Cache::flush();
+
+        $response = $this->get(route('seller.wallet.settlements'));
+        $response->assertRedirect(route('seller.wallet.index'));
+
+        $response = $this->get(route('seller.wallet.settlements.export'));
+        $response->assertRedirect(route('seller.wallet.index'));
+
+        // آیتم منو با سوییچ خاموش حذف شود — سنجش URL (پیام toast حاوی نام قابلیت است)
+        $this->get(route('seller.dashboard'))->assertDontSee(route('seller.wallet.settlements'), false);
+    }
+
+    #[Test]
+    #[TestDox('خروجی اکسل صورت‌حساب دانلود می‌شود و شامل ردیف‌هاست')]
+    public function settlement_statement_export_downloads_xlsx(): void
+    {
+        $seller = $this->newSeller();
+        $this->newSettledOrder($seller, 100000, 23000);
+        $this->actingAs($seller, 'seller');
+
+        $response = $this->get(route('seller.wallet.settlements.export'));
+
+        $response->assertOk();
+        $this->assertStringContainsString('spreadsheet', (string) $response->headers->get('Content-Type'));
+
+        // BinaryFileResponse — محتوا از فایل واقعی خوانده می‌شود (getContent برای stream برمی‌گرداند false)
+        $file = $response->getFile();
+        $this->assertTrue($file->isFile());
+        $bytes = (string) file_get_contents($file->getPathname());
+        $this->assertNotEmpty($bytes);
+        // xlsx = بستهٔ ZIP → امضای PK
+        $this->assertSame('PK', substr($bytes, 0, 2));
     }
 }

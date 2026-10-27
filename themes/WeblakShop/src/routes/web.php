@@ -369,6 +369,10 @@ Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
 
         Route::prefix('wallet')->name('wallet.')->group(function () {
             Route::get('/', [WalletSellerController::class, 'index'])->name('index');
+            // فاز ۱۰۶-۱ — صورت‌حساب تسویه (گیت از تنظیمات چندفروشندگی) —
+            // قبل از وایلدکارد {wallet} تا مسیرش بلعیده نشود (درس فاز ۹۱: روت ثابت قبل از وایلدکارد)
+            Route::get('settlements', [WalletSellerController::class, 'settlements'])->name('settlements');
+            Route::get('settlements/export', [WalletSellerController::class, 'settlementsExport'])->name('settlements.export');
             Route::get('{wallet}', [WalletSellerController::class, 'show'])->name('show');
             Route::post('store', [WalletSellerController::class, 'store'])->name('store');
             Route::post('withdraw', [WalletSellerController::class, 'withdraw'])->name('withdraw');
