@@ -32,6 +32,7 @@ use Themes\WeblakShop\src\Controllers\sellers\ProfileSellerController;
 use Themes\WeblakShop\src\Controllers\sellers\QuestionSellerController;
 use Themes\WeblakShop\src\Controllers\sellers\SellerCarrierController;
 use Themes\WeblakShop\src\Controllers\sellers\SellerDemandController;
+use Themes\WeblakShop\src\Controllers\sellers\SellerInventoryController;
 use Themes\WeblakShop\src\Controllers\sellers\SellerReviewController;
 use Themes\WeblakShop\src\Controllers\sellers\SellerStatisticsController;
 use Themes\WeblakShop\src\Controllers\sellers\SellerTariffController;
@@ -482,6 +483,9 @@ Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
 
         // فاز ۱۰۶-۴ — نظرات محصولات از نگاه فروشنده (فقط-خواندنی؛ تأیید/رد با ادمین)
         Route::get('reviews', [SellerReviewController::class, 'index'])->name('reviews.index');
+
+        // فاز ۱۰۶-۵ — مرکز موجودی (ناموجود/کم‌موجود + تاریخچهٔ حرکت انبار — فقط-خواندنی)
+        Route::get('inventory', [SellerInventoryController::class, 'index'])->name('inventory.index');
     });
 });
 

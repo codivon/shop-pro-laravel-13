@@ -308,6 +308,10 @@
                 <div class="c-card">
                     <div class="c-card__header">
                         <h2 class="c-card__title">مدیریت موجودی انبار</h2>
+                        {{-- فاز ۱۰۶-۵ — پل به مرکز موجودی (گیت سوییچ seller_inventory_center) --}}
+                        @if(\App\Support\MultiVendorSettings::inventoryCenterEnabled())
+                            <a class="btn btn-sm btn-outline-primary float-left" href="{{ route('seller.inventory.index') }}">مرکز موجودی</a>
+                        @endif
                     </div>
                     <div class="c-card__body">
                         <div class="c-rating-chart c-rating-chart--condensed">

@@ -48,6 +48,13 @@
                                 </li>
                             @endif
 
+                            {{-- فاز ۱۰۶-۵ — مرکز موجودی؛ گیت سوییچ seller_inventory_center (قانون طلایی) --}}
+                            @if(\App\Support\MultiVendorSettings::inventoryCenterEnabled())
+                                <li class="{{ active_class('seller.inventory.index') }}">
+                                    <a href="{{ route('seller.inventory.index') }}"><i class="feather icon-circle"></i><span class="menu-item">مرکز موجودی</span></a>
+                                </li>
+                            @endif
+
                     </ul>
                 </li>
 

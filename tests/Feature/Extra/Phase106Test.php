@@ -9,6 +9,7 @@ use App\Models\Review;
 use App\Models\Seller;
 use App\Models\SellerDeposit;
 use App\Models\SellerInfo;
+use App\Models\StockMovement;
 use App\Models\StockNotify;
 use App\Models\Viewer;
 use App\Support\MultiVendorSettings;
@@ -704,5 +705,126 @@ class Phase106Test extends TestCase
 
         // آیتم منو با سوییچ خاموش حذف شود
         $this->get(route('seller.dashboard'))->assertDontSee(route('seller.reviews.index'), false);
+    }
+
+    /* ================= فاز ۱۰۶-۵) مرکز موجودی ================= */
+
+    #[Test]
+    #[TestDox('تب چندفروشندگی Developer سوییچ مرکز موجودی را ذخیره می‌کند')]
+    public function developer_tab_saves_inventory_center_toggle(): void
+    {
+        $this->newCreator();
+
+        Livewire::test(Developer::class)
+            ->set('vendorEnabled', true)
+            ->set('vendorInventoryCenter', false)
+            ->call('saveMultiVendor')
+            ->assertDispatched('toast');
+
+        $this->assertSame('0', option('seller_inventory_center', '1'));
+        $this->assertFalse(MultiVendorSettings::inventoryCenterEnabled());
+
+        Livewire::test(Developer::class)
+            ->set('vendorInventoryCenter', true)
+            ->call('saveMultiVendor');
+
+        $this->assertSame('1', option('seller_inventory_center', '1'));
+    }
+
+    #[Test]
+    #[TestDox('مرکز موجودی: وضعیت ناموجود/کم‌موجود ردیف‌به‌ردیف + تاریخچهٔ حرکت انبار')]
+    public function inventory_center_shows_stock_status_and_movements(): void
+    {
+        $seller = $this->newSeller();
+
+        // سه تنوع با عنوان یکتا: ناموجود (۰)، کم‌موجود (۲)، سالم (۷) — مرتب بحرانی‌اول
+        $productOut = $this->newProduct(['seller_id' => $seller->id, 'title' => 'محصول بحرانی فاز ۱۰۶']);
+        $this->newPrice($productOut, ['stock' => 0]);
+
+        $productLow = $this->newProduct(['seller_id' => $seller->id, 'title' => 'محصول در حال اتمام فاز ۱۰۶']);
+        $this->newPrice($productLow, ['stock' => 2]);
+
+        $productOk = $this->newProduct(['seller_id' => $seller->id, 'title' => 'محصول سالم فاز ۱۰۶']);
+        $priceOk = $this->newPrice($productOk, ['stock' => 7]);
+
+        // حرکت انبار واقعی (خروج ۵ عدد — سرویس فاز ۹۳ همین شکل می‌نویسد)
+        StockMovement::create([
+            'product_id' => $productOk->id,
+            'price_id' => $priceOk->id,
+            'type' => 'out',
+            'quantity' => 5,
+            'before_stock' => 12,
+            'after_stock' => 7,
+            'description' => 'خروج برای سفارش تست',
+        ]);
+
+        // تنوع و حرکت فروشندهٔ دیگر — نباید دیده شود
+        $otherProduct = $this->newProduct(['seller_id' => $this->newSeller()->id, 'title' => 'محصول محرمانهٔ فروشندهٔ دیگر']);
+        $this->newPrice($otherProduct, ['stock' => 0]);
+        StockMovement::create([
+            'product_id' => $otherProduct->id,
+            'type' => 'out',
+            'quantity' => 3,
+            'before_stock' => 3,
+            'after_stock' => 0,
+            'description' => 'حرکت محرمانهٔ فروشندهٔ دیگر',
+        ]);
+
+        $this->actingAs($seller, 'seller');
+        $response = $this->get(route('seller.inventory.index'));
+
+        $response->assertOk();
+        $response->assertSee('مرکز موجودی', false);
+
+        // کارت‌ها: ۳ تنوع، ۱ ناموجود، ۱ کم‌موجود، ۱ حرکت ۳۰ روز
+        $response->assertSee('کل تنوع‌های قیمت', false);
+        $response->assertSee('ناموجود', false);
+        $response->assertSee('کم‌موجود (۱ تا ۲ عدد)', false);
+        $response->assertSee('حرکت انبار ۳۰ روز اخیر', false);
+
+        // جدول وضعیت: هر سه محصول فروشنده دیده می‌شوند
+        $response->assertSee('وضعیت موجودی تنوع‌ها', false);
+        $response->assertSee('محصول بحرانی فاز ۱۰۶', false);
+        $response->assertSee('محصول در حال اتمام فاز ۱۰۶', false);
+        $response->assertSee('محصول سالم فاز ۱۰۶', false);
+
+        // مرتب بحرانی‌تر-اول: ردیف ناموجود قبل از ردیف سالم (عنوان‌های یکتا — مقاوم)
+        $this->assertLessThan(
+            mb_strpos($response->getContent(), 'محصول سالم فاز ۱۰۶'),
+            mb_strpos($response->getContent(), 'محصول بحرانی فاز ۱۰۶')
+        );
+
+        // تاریخچهٔ حرکت انبار: نوع + موجودی پس از حرکت
+        $response->assertSee('آخرین حرکت‌های انبار', false);
+        $response->assertSee('خروج از انبار', false);
+        $response->assertSee('خروج برای سفارش تست', false);
+
+        // انزوا: تنوع ناموجود و حرکت فروشندهٔ دیگر نشت نمی‌کند
+        $response->assertDontSee('محصول محرمانهٔ فروشندهٔ دیگر', false);
+        $response->assertDontSee('حرکت محرمانهٔ فروشندهٔ دیگر', false);
+
+        // آیتم منوی سایدبار (سوییچ روشن)
+        $this->get(route('seller.dashboard'))->assertSee(route('seller.inventory.index'), false);
+    }
+
+    #[Test]
+    #[TestDox('سوییچ خاموش مرکز موجودی: صفحه به داشبورد برمی‌گردد و منو مخفی می‌شود')]
+    public function inventory_center_respects_toggle(): void
+    {
+        $seller = $this->newSeller();
+
+        $product = $this->newProduct(['seller_id' => $seller->id]);
+        $this->newPrice($product, ['stock' => 0]);
+
+        $this->actingAs($seller, 'seller');
+
+        option_update('seller_inventory_center', '0');
+        Cache::flush();
+
+        $response = $this->get(route('seller.inventory.index'));
+        $response->assertRedirect(route('seller.dashboard'));
+
+        // آیتم منو با سوییچ خاموش حذف شود
+        $this->get(route('seller.dashboard'))->assertDontSee(route('seller.inventory.index'), false);
     }
 }
