@@ -4,9 +4,9 @@ namespace Shetabit\Multipay\Drivers\SEP;
 
 use GuzzleHttp\Client;
 use Shetabit\Multipay\Abstracts\Driver;
+use Shetabit\Multipay\Contracts\ReceiptInterface;
 use Shetabit\Multipay\Exceptions\InvalidPaymentException;
 use Shetabit\Multipay\Exceptions\PurchaseFailedException;
-use Shetabit\Multipay\Contracts\ReceiptInterface;
 use Shetabit\Multipay\Invoice;
 use Shetabit\Multipay\Receipt;
 use Shetabit\Multipay\RedirectionForm;
@@ -19,7 +19,7 @@ class SEP extends Driver
      *
      * @var object
      */
-    protected \GuzzleHttp\Client $client;
+    protected Client $client;
 
     /**
      * Invoice
@@ -38,13 +38,11 @@ class SEP extends Driver
     /**
      * SEP constructor.
      * Construct the class with the relevant settings.
-     *
-     * @param $settings
      */
     public function __construct(Invoice $invoice, $settings)
     {
         $this->invoice($invoice);
-        $this->settings = (object)$settings;
+        $this->settings = (object) $settings;
         $this->client = new Client([
             'curl' => [CURLOPT_SSL_CIPHER_LIST => 'DEFAULT@SECLEVEL=1'],
         ]);
@@ -63,7 +61,8 @@ class SEP extends Driver
         $data = [
             'action' => 'token',
             'TerminalId' => $this->settings->terminalId,
-            'Amount' => $this->invoice->getAmount() * ($this->settings->currency == 'T' ? 10 : 1), // convert to rial
+            // فاز ۱۰۰ — فالبک امن: اگر کلید currency در کانفیگ نبود، مبلغ به ریال تبدیل شود (قرارداد سپ)
+            'Amount' => $this->invoice->getAmount() * (($this->settings->currency ?? 'T') == 'T' ? 10 : 1), // convert to rial
             'ResNum' => $this->invoice->getUuid(),
             'RedirectUrl' => $this->settings->callbackUrl,
             'CellNumber' => $this->invoice->getDetail('mobile') ?? '',
@@ -126,7 +125,9 @@ class SEP extends Driver
      */
     public function verify(): ReceiptInterface
     {
-        $status = (int)Request::input('Status');
+        // فاز ۱۰۰ — وضعیت موفق در کال‌بک سپ: «Status» (قرارداد upstream) با فالبک «StateCode»
+        // (مستند رسمی OnlinePG سامان کد ۲ را با فیلد StateCode برمی‌گرداند)
+        $status = (int) (Request::input('Status') ?? Request::input('StateCode') ?? 0);
         if ($status != 2) {
             $this->purchaseFailed($status);
         }
@@ -136,7 +137,11 @@ class SEP extends Driver
             'TerminalNumber' => $this->settings->terminalId,
         ];
 
-        if ($this->invoice->getTransactionId() !== Request::input('ResNum')) {
+        // فاز ۱۰۰ — باگ تأیید: transactionIdِ فاکتور همان «توکن درگاه» است که در purchase ذخیره
+        // شده و در کال‌بک با فیلد Token برمی‌گردد. نسخهٔ قبلی با ResNum مقایسه می‌کرد (شناسهٔ
+        // فاکتور) که هرگز با توکن برابر نیست → تأیید هر پرداخت موفق سپ با خطای 108- رد می‌شد.
+        // (هم‌سو با فیکس upstream shetabit/multipay)
+        if ((string) $this->invoice->getTransactionId() !== (string) Request::input('Token')) {
             $this->notVerified(-108);
         }
 
@@ -160,8 +165,10 @@ class SEP extends Driver
 
         $transactionDetail = $responseData['TransactionDetail'];
 
-        $verifiedAmount = $this->invoice->getAmount() * ($this->settings->currency == 'T' ? 10 : 1);
-        if ($verifiedAmount !== $transactionDetail['AffectiveAmount']) {
+        // فاز ۱۰۰ — کست عددی: شاپرک ممکن است مبلغ را رشته برگرداند؛ مقایسهٔ سخت‌گیرانه !==
+        // بین int و string باعث ردِ نادرست تأیید می‌شد.
+        $verifiedAmount = (int) ($this->invoice->getAmount() * (($this->settings->currency ?? 'T') == 'T' ? 10 : 1));
+        if ($verifiedAmount !== (int) $transactionDetail['AffectiveAmount']) {
             $this->notVerified(-107);
         }
 
@@ -184,16 +191,14 @@ class SEP extends Driver
             // between variable name in docs and actual returned values.
             'Amount' => $transactionDetail['OrginalAmount'],
         ]);
-        
+
         return $receipt;
     }
 
     /**
      * Generate the payment's receipt
-     *
-     * @param $referenceId
      */
-    protected function createReceipt($referenceId): \Shetabit\Multipay\Receipt
+    protected function createReceipt($referenceId): Receipt
     {
         return new Receipt('saman', $referenceId);
     }
@@ -201,7 +206,6 @@ class SEP extends Driver
     /**
      * Trigger an exception
      *
-     * @param $status
      *
      * @throws PurchaseFailedException
      */
@@ -229,7 +233,6 @@ class SEP extends Driver
     /**
      * Trigger an exception
      *
-     * @param $status
      *
      * @throws InvalidPaymentException
      */
@@ -247,8 +250,8 @@ class SEP extends Driver
         ];
 
         if (array_key_exists($status, $translations)) {
-            throw new InvalidPaymentException($translations[$status], (int)$status);
+            throw new InvalidPaymentException($translations[$status], (int) $status);
         }
-        throw new InvalidPaymentException('خطای ناشناخته ای رخ داده است.', (int)$status);
+        throw new InvalidPaymentException('خطای ناشناخته ای رخ داده است.', (int) $status);
     }
 }

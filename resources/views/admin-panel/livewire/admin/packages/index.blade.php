@@ -94,9 +94,34 @@
                 <p class="mt-0.5 text-xs text-ink-2 dark:text-night-ink-2">پکیج‌های مشمول اشتراک، بدون پرداخت نصب می‌شوند</p>
             </div>
             <div class="relative rounded-2xl border border-emerald-200 bg-white/70 px-4 py-2 text-center dark:border-emerald-500/25 dark:bg-emerald-950/30">
-                <span class="fa-digits block text-xl font-extrabold leading-6 text-emerald-600 dark:text-emerald-400">{{ $subscriptionSummary['days_remaining'] ?? 0 }}</span>
-                <span class="text-[10px] font-semibold text-emerald-700/70 dark:text-emerald-400/70">روز باقی‌مانده</span>
+                @if (!empty($subscriptionSummary['less_than_one_day']))
+                    {{-- فاز ۱۰۰ — به‌جای «۰ روز» عبارت «کمتر از ۱ روز» (اشتراک فعال ولی کمتر از ۲۴ ساعت مانده) --}}
+                    <span class="block text-sm font-extrabold leading-6 text-emerald-600 dark:text-emerald-400">کمتر از ۱ روز</span>
+                    <span class="text-[10px] font-semibold text-emerald-700/70 dark:text-emerald-400/70">باقی‌مانده</span>
+                @else
+                    <span class="fa-digits block text-xl font-extrabold leading-6 text-emerald-600 dark:text-emerald-400">{{ $subscriptionSummary['days_remaining'] ?? 0 }}</span>
+                    <span class="text-[10px] font-semibold text-emerald-700/70 dark:text-emerald-400/70">روز باقی‌مانده</span>
+                @endif
             </div>
+        </div>
+    @elseif ($this->showsPackages() && !empty($subscriptionSummary) && ($subscriptionSummary['is_expired'] ?? false))
+        {{-- فاز ۱۰۰ — اشتراک قبلاً وجود داشته ولی منقضی شده (تفکیک از «اصلاً اشتراک ندارید») --}}
+        <div class="relative flex flex-wrap items-center gap-4 overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-l from-amber-50 to-orange-50 p-4 dark:border-amber-500/25 dark:from-amber-500/10 dark:to-orange-500/10 sm:p-5">
+            <div class="pointer-events-none absolute -end-10 -top-10 size-32 rounded-full bg-amber-400/20 blur-2xl" aria-hidden="true"></div>
+            <span class="relative flex size-11 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-lg shadow-amber-500/30">
+                <x-admin-panel::icon name="clock" class="size-5.5" />
+            </span>
+            <div class="relative min-w-0 flex-1">
+                <p class="flex items-center gap-1.5 text-sm font-bold text-amber-700 dark:text-amber-400">
+                    <x-admin-panel::icon name="alert-triangle" class="size-4" />
+                    اشتراک شما منقضی شده است
+                </p>
+                <p class="mt-0.5 text-xs text-ink-2 dark:text-night-ink-2">به دلیل انقضای اشتراک، پکیج‌های مشمول اشتراک نمایش داده نمی‌شوند؛ برای دسترسی مجدد اشتراک را تمدید کنید</p>
+            </div>
+            <a href="{{ config('packages.api.base_url') }}" target="_blank" rel="noopener" class="ap-btn-primary relative !py-2">
+                <x-admin-panel::icon name="refresh-cw" class="size-4" />
+                تمدید اشتراک
+            </a>
         </div>
     @elseif ($this->showsPackages())
         <div class="relative flex flex-wrap items-center gap-4 overflow-hidden rounded-2xl border border-line bg-surface p-4 dark:border-night-line dark:bg-night-2 sm:p-5">
@@ -679,7 +704,9 @@
                                         <x-admin-panel::icon name="award" class="size-4" />
                                         رایگان با اشتراک
                                     </span>
-                                    @if (!empty($pkg['subscription']['days_remaining']))
+                                    @if (!empty($pkg['subscription']['less_than_one_day']))
+                                        <small class="block text-[10px] text-ink-3 dark:text-night-ink-2">کمتر از ۱ روز باقی‌مانده</small>
+                                    @elseif (!empty($pkg['subscription']['days_remaining']))
                                         <small class="fa-digits block text-[10px] text-ink-3 dark:text-night-ink-2">{{ $pkg['subscription']['days_remaining'] }} روز باقی‌مانده</small>
                                     @endif
                                 @else
@@ -743,8 +770,18 @@
                     <p class="text-sm font-bold">پکیج پولی یافت نشد</p>
                     <p class="text-xs text-ink-3 dark:text-night-ink-2">پکیج‌های این بخش رایگان هستند یا فیلترها را تغییر دهید.</p>
                 @else
-                    <p class="text-sm font-bold">پکیجی برای نمایش وجود ندارد</p>
-                    <p class="text-xs text-ink-3 dark:text-night-ink-2">فیلترها را تغییر دهید یا اتصال به سرور پکیج‌ها را بررسی کنید.</p>
+                    @if (!empty($subscriptionSummary) && ! ($subscriptionSummary['has_active_subscription'] ?? false))
+                        {{-- فاز ۱۰۰ — لیست خالی به‌خاطر نبود اشتراک فعال است، نه نبود پکیج؛ کاربر باید علت را بداند --}}
+                        <p class="text-sm font-bold">نمایش پکیج‌ها به اشتراک فعال نیاز دارد</p>
+                        <p class="text-xs text-ink-3 dark:text-night-ink-2">به دلیل نداشتن اشتراک فعال، پکیج‌های مشمول اشتراک نمایش داده نمی‌شوند. برای مشاهدهٔ پکیج‌ها، اشتراک خود را خریداری یا تمدید کنید.</p>
+                        <a href="{{ config('packages.api.base_url') }}" target="_blank" rel="noopener" class="ap-btn-primary mt-2 !py-2">
+                            <x-admin-panel::icon name="shopping-cart" class="size-4" />
+                            خرید یا تمدید اشتراک
+                        </a>
+                    @else
+                        <p class="text-sm font-bold">پکیجی برای نمایش وجود ندارد</p>
+                        <p class="text-xs text-ink-3 dark:text-night-ink-2">فیلترها را تغییر دهید یا اتصال به سرور پکیج‌ها را بررسی کنید.</p>
+                    @endif
                 @endif
                 @if ($free !== '' || $search !== '' || $category !== '' || $sort !== '')
                     <button type="button" wire:click="resetFilters" class="ap-btn-outline mt-1 !py-2">
@@ -816,8 +853,18 @@
                 <p class="text-sm font-bold">پکیج پولی یافت نشد</p>
                 <p class="text-xs text-ink-3 dark:text-night-ink-2">پکیج‌های این بخش رایگان هستند یا فیلترها را تغییر دهید.</p>
             @else
-                <p class="text-sm font-bold">پکیجی برای نمایش وجود ندارد</p>
-                <p class="text-xs text-ink-3 dark:text-night-ink-2">فیلترها را تغییر دهید یا اتصال به سرور پکیج‌ها را بررسی کنید.</p>
+                @if (!empty($subscriptionSummary) && ! ($subscriptionSummary['has_active_subscription'] ?? false))
+                    {{-- فاز ۱۰۰ — لیست خالی به‌خاطر نبود اشتراک فعال است، نه نبود پکیج؛ کاربر باید علت را بداند --}}
+                    <p class="text-sm font-bold">نمایش پکیج‌ها به اشتراک فعال نیاز دارد</p>
+                    <p class="text-xs text-ink-3 dark:text-night-ink-2">به دلیل نداشتن اشتراک فعال، پکیج‌های مشمول اشتراک نمایش داده نمی‌شوند. برای مشاهدهٔ پکیج‌ها، اشتراک خود را خریداری یا تمدید کنید.</p>
+                    <a href="{{ config('packages.api.base_url') }}" target="_blank" rel="noopener" class="ap-btn-primary mt-2 !py-2">
+                        <x-admin-panel::icon name="shopping-cart" class="size-4" />
+                        خرید یا تمدید اشتراک
+                    </a>
+                @else
+                    <p class="text-sm font-bold">پکیجی برای نمایش وجود ندارد</p>
+                    <p class="text-xs text-ink-3 dark:text-night-ink-2">فیلترها را تغییر دهید یا اتصال به سرور پکیج‌ها را بررسی کنید.</p>
+                @endif
             @endif
             @if ($free !== '' || $search !== '' || $category !== '' || $sort !== '')
                 <button type="button" wire:click="resetFilters" class="ap-btn-outline mt-1 !py-2">
@@ -1230,7 +1277,9 @@
                                     </p>
                                     <p class="mt-1 text-violet-700/80 dark:text-violet-400/80">
                                         طرح: <strong>{{ $detail['subscription']['plan_name'] ?? 'اشتراک' }}</strong>
-                                        @if (!empty($detail['subscription']['days_remaining']))
+                                        @if (!empty($detail['subscription']['less_than_one_day']))
+                                            — <span>کمتر از ۱ روز باقی‌مانده</span>
+                                        @elseif (!empty($detail['subscription']['days_remaining']))
                                             — <span class="fa-digits">{{ $detail['subscription']['days_remaining'] }}</span> روز باقی‌مانده
                                         @endif
                                     </p>

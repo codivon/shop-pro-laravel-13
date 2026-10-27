@@ -781,11 +781,18 @@
 
         let expiryText = 'نامحدود';
         if (sub.subscription_expires_at) {
-            const days = (sub.days_remaining !== undefined && sub.days_remaining !== null)
+            let days = (sub.days_remaining !== undefined && sub.days_remaining !== null)
                 ? parseInt(sub.days_remaining)
                 : daysRemaining(sub.subscription_expires_at);
-            expiryText = toJalali(sub.subscription_expires_at) +
-                (days !== null && !isNaN(days) ? ' — ' + number_format(Math.max(days, 0)) + ' روز باقی‌مانده' : '');
+            /* فاز ۱۰۰ — به‌جای «۰ روز» عبارت «کمتر از ۱ روز» (اشتراک فعال ولی کمتر از ۲۴ ساعت مانده) */
+            const expDate = new Date(sub.subscription_expires_at);
+            const stillActive = !isNaN(expDate.getTime()) && expDate.getTime() > Date.now();
+            if (stillActive && days !== null && !isNaN(days) && Math.max(days, 0) === 0) {
+                expiryText = toJalali(sub.subscription_expires_at) + ' — کمتر از ۱ روز باقی‌مانده';
+            } else {
+                expiryText = toJalali(sub.subscription_expires_at) +
+                    (days !== null && !isNaN(days) ? ' — ' + number_format(Math.max(days, 0)) + ' روز باقی‌مانده' : '');
+            }
         }
 
         const box =

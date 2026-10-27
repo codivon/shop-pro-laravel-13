@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Extra;
 
+use App\Livewire\Admin\Settings\Gateways;
 use App\Models\Admin;
 use App\Models\Gateway;
 use App\Models\Permission;
@@ -12,8 +13,10 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
+use Modules\ArtificialIntelligence\Listeners\InjectAssetsOnRequestHandled;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestDox;
+use Shetabit\Multipay\Drivers\SEP\SEP;
 use Tests\Support\ShopTestSetup;
 use Tests\TestCase;
 
@@ -61,12 +64,12 @@ class Phase99Test extends TestCase
 
         $creator = Admin::create([
             'first_name' => 'تست',
-            'last_name'  => 'فاز ۹۹',
-            'username'   => 'feat99-'.Str::random(6),
-            'email'      => 'feat99-'.Str::random(6).'@test.ir',
-            'password'   => Hash::make('secret1234'),
-            'level'      => 'creator',
-            'status'     => 'ACTIVE',
+            'last_name' => 'فاز ۹۹',
+            'username' => 'feat99-'.Str::random(6),
+            'email' => 'feat99-'.Str::random(6).'@test.ir',
+            'password' => Hash::make('secret1234'),
+            'level' => 'creator',
+            'status' => 'ACTIVE',
         ]);
 
         $this->actingAs($creator, 'adminPanel');
@@ -93,7 +96,7 @@ class Phase99Test extends TestCase
         $this->assertArrayHasKey('callbackUrl', $driver);
 
         $map = config('payment.map');
-        $this->assertSame(\Shetabit\Multipay\Drivers\SEP\SEP::class, $map['sep'] ?? null);
+        $this->assertSame(SEP::class, $map['sep'] ?? null);
         $this->assertTrue(class_exists($map['sep']), 'کلاس درایور SEP باید در vendor موجود باشد (درایور آمادهٔ shetabit).');
     }
 
@@ -101,13 +104,13 @@ class Phase99Test extends TestCase
     #[TestDox('بند ۲ — فیلد پایانه و برندینگ سپ در صفحهٔ تنظیمات درگاه‌ها')]
     public function sep_gateway_settings_fields_and_branding(): void
     {
-        $fields = \App\Livewire\Admin\Settings\Gateways::gatewayFields('sep');
+        $fields = Gateways::gatewayFields('sep');
 
         $names = array_column($fields, 'name');
         $this->assertContains('terminalId', $names, 'سپ باید فیلد «کد پایانه» داشته باشد.');
         $this->assertContains('logo', $names, 'همهٔ درگاه‌ها فیلد لوگو دارند.');
 
-        $branding = \App\Livewire\Admin\Settings\Gateways::gatewayBranding('sep');
+        $branding = Gateways::gatewayBranding('sep');
         $this->assertSame('سپ — بانک سامان', $branding['bank']);
         $this->assertNotEmpty($branding['color']);
     }
@@ -116,6 +119,9 @@ class Phase99Test extends TestCase
     #[TestDox('بند ۳ — get_gateway_configs سپ، کد پایانه را از جدول gateways برمی‌گرداند')]
     public function sep_configs_flow_from_database(): void
     {
+        // فاز ۱۰۰ — روی میزبان‌هایی که درگاه سپ از قبل (تنظیم ادمین) موجود است، create نباید کرش کند
+        Gateway::where('key', 'sep')->delete();
+
         $gateway = Gateway::create(['key' => 'sep', 'name' => 'درگاه سپ (سمان الکترونیک)', 'is_active' => true]);
         $gateway->configs()->create(['key' => 'terminalId', 'value' => '25740569']);
 
@@ -133,7 +139,7 @@ class Phase99Test extends TestCase
 
         Gateway::where('key', 'sep')->delete();
 
-        Livewire::test(\App\Livewire\Admin\Settings\Gateways::class)
+        Livewire::test(Gateways::class)
             ->assertSet('form', function (array $form) {
                 // فرم باید برای درگاه سپ ساخته شده باشد (firstOrCreate از supported_gateways)
                 $ids = Gateway::where('key', 'sep')->pluck('id')->all();
@@ -167,7 +173,7 @@ class Phase99Test extends TestCase
 
         foreach ($raw as $listener) {
             $this->assertNotSame(
-                \Modules\ArtificialIntelligence\Listeners\InjectAssetsOnRequestHandled::class,
+                InjectAssetsOnRequestHandled::class,
                 $listener,
                 'شنونده نباید class-string باشد — روش قدیمی $listen در حذف همزمان ماژول کرش می‌کند.'
             );

@@ -5,13 +5,14 @@ namespace App\Livewire\Admin\Packages;
 use App\Jobs\UpdatePackageJob;
 use App\Livewire\Admin\Packages\Concerns\InteractsWithPackages;
 use App\Livewire\Admin\Packages\Concerns\InteractsWithTemplates;
-use App\Models\InstalledTheme;
 use App\Models\InstalledModule;
+use App\Models\InstalledTheme;
 use App\Models\ModuleInstallLog;
 use App\Models\PackageCache;
 use App\Models\PackagePurchase;
 use App\Services\PackageInstallerService;
 use App\Support\MarketplaceSettings;
+use App\Support\SubscriptionDisplay;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -412,9 +413,9 @@ class PackageIndex extends Component
         $this->installedThemesMap = InstalledTheme::query()
             ->get()
             ->mapWithKeys(fn (InstalledTheme $t) => [$t->slug => [
-                'name'      => $t->name,
-                'version'   => $t->version,
-                'status'    => $t->status,
+                'name' => $t->name,
+                'version' => $t->version,
+                'status' => $t->status,
                 'is_active' => $t->isActive(),
             ]])
             ->all();
@@ -717,10 +718,10 @@ class PackageIndex extends Component
             $pkg['plans'] = $plans;
             $pkg['has_free_plan'] = $minPrice === 0;
 
+            // فاز ۱۰۰ — نمایش «کمتر از ۱ روز» به‌جای ۰ روز (با SubscriptionDisplay)
             if (! empty($pkg['subscription']['subscription_expires_at'])) {
-                $exp = Carbon::parse($pkg['subscription']['subscription_expires_at']);
-                $pkg['subscription']['days_remaining'] = max(0, (int) round(now()->diffInDays($exp)));
-                if ($exp->isPast()) {
+                $pkg['subscription'] = SubscriptionDisplay::annotate($pkg['subscription'], 'subscription_expires_at');
+                if (Carbon::parse($pkg['subscription']['subscription_expires_at'])->isPast()) {
                     $pkg['subscription']['is_free_with_subscription'] = false;
                 }
             }
@@ -745,7 +746,8 @@ class PackageIndex extends Component
 
         if (! empty($subscriptionSummary['expires_at'])) {
             $exp = Carbon::parse($subscriptionSummary['expires_at']);
-            $subscriptionSummary['days_remaining'] = max(0, (int) round(now()->diffInDays($exp)));
+            // فاز ۱۰۰ — کلیدهای نمایشی «کمتر از ۱ روز» + «منقضی‌شده» برای بنر و حالت خالی
+            $subscriptionSummary = SubscriptionDisplay::annotate($subscriptionSummary, 'expires_at');
             $subscriptionSummary['has_active_subscription'] =
                 $flag === null ? $exp->isFuture() : (bool) $flag && $exp->isFuture();
         } elseif ($flag === null) {
@@ -910,10 +912,10 @@ class PackageIndex extends Component
         $freshAfter = now()->subMinutes(10);
 
         return InstalledModule::query()
-                ->where('slug', $slug)
-                ->where('status', InstalledModule::STATUS_UPDATING)
-                ->where('updated_at', '>', $freshAfter)
-                ->exists()
+            ->where('slug', $slug)
+            ->where('status', InstalledModule::STATUS_UPDATING)
+            ->where('updated_at', '>', $freshAfter)
+            ->exists()
             || InstalledTheme::query()
                 ->where('slug', $slug)
                 ->where('status', InstalledTheme::STATUS_UPDATING)
@@ -1178,10 +1180,10 @@ class PackageIndex extends Component
             $package['is_free'] = self::normalizeIsFree($package['is_free'] ?? null);
 
             // اصلاح اعتبار اشتراک (به دلیل کش شدن detail — پورت show قدیمی)
+            // فاز ۱۰۰ — کلیدهای نمایشی «کمتر از ۱ روز» با SubscriptionDisplay
             if (! empty($package['subscription']['subscription_expires_at'])) {
-                $exp = Carbon::parse($package['subscription']['subscription_expires_at']);
-                $package['subscription']['days_remaining'] = max(0, (int) round(now()->diffInDays($exp)));
-                if ($exp->isPast()) {
+                $package['subscription'] = SubscriptionDisplay::annotate($package['subscription'], 'subscription_expires_at');
+                if (Carbon::parse($package['subscription']['subscription_expires_at'])->isPast()) {
                     $package['subscription']['is_free_with_subscription'] = false;
                 }
             }

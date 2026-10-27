@@ -5,17 +5,17 @@ namespace Shetabit\Multipay;
 use Shetabit\Multipay\Contracts\DriverInterface;
 use Shetabit\Multipay\Contracts\ReceiptInterface;
 use Shetabit\Multipay\Exceptions\DriverNotFoundException;
-use Shetabit\Multipay\Exceptions\PreviouslyVerifiedException;
-use Shetabit\Multipay\Exceptions\TimeoutException;
 use Shetabit\Multipay\Exceptions\InvoiceNotFoundException;
+use Shetabit\Multipay\Exceptions\PreviouslyVerifiedException;
 use Shetabit\Multipay\Exceptions\PurchaseFailedException;
+use Shetabit\Multipay\Exceptions\TimeoutException;
 use Shetabit\Multipay\Traits\HasPaymentEvents;
 use Shetabit\Multipay\Traits\InteractsWithRedirectionForm;
 
 class Payment
 {
-    use InteractsWithRedirectionForm;
     use HasPaymentEvents;
+    use InteractsWithRedirectionForm;
 
     /**
      * Payment Configuration.
@@ -63,15 +63,22 @@ class Payment
      */
     public function __construct(array $config = [])
     {
-        $this->config = $config === [] ? $this->loadDefaultConfig() : $config;
-        $this->invoice(new Invoice());
+        // فاز ۱۰۰ — merge کانفیگ پیش‌فرض پکیج زیر کانفیگ اپ:
+        // اگر کانفیگ اپ کهنه/کش‌شده باشد و درایور جدیدی (مثل «سپ») در آن نباشد،
+        // به‌جای کرشِ «Driver not found in config file»، تنظیمات پیش‌فرض پکیج
+        // (endpointها + map + currency) استفاده می‌شود؛ مقادیر runtime (terminalId و …)
+        // هم از جدول gateways با ->config() تزریق می‌شود.
+        $this->config = $config === []
+            ? $this->loadDefaultConfig()
+            : array_replace_recursive($this->loadDefaultConfig(), $config);
+        $this->invoice(new Invoice);
         $this->via($this->config['default']);
     }
 
     /**
      * Retrieve Default config's path.
      */
-    public static function getDefaultConfigPath() : string
+    public static function getDefaultConfigPath(): string
     {
         return dirname(__DIR__).'/config/payment.php';
     }
@@ -80,8 +87,6 @@ class Payment
      * Set custom configs
      * we can use this method when we want to use dynamic configs
      *
-     * @param $key
-     * @param $value|null
      *
      * @return $this
      */
@@ -103,7 +108,6 @@ class Payment
     /**
      * Set callbackUrl.
      *
-     * @param $url|null
      * @return $this
      */
     public function callbackUrl($url = null): static
@@ -128,8 +132,8 @@ class Payment
     /**
      * Set payment amount.
      *
-     * @param $amount
      * @return $this
+     *
      * @throws \Exception
      */
     public function amount($amount): static
@@ -142,9 +146,7 @@ class Payment
     /**
      * Set a piece of data to the details.
      *
-     * @param $key
      *
-     * @param $value|null
      *
      * @return $this
      */
@@ -158,7 +160,6 @@ class Payment
     /**
      * Set transaction's id
      *
-     * @param $id
      *
      * @return $this
      */
@@ -172,7 +173,6 @@ class Payment
     /**
      * Change the driver on the fly.
      *
-     * @param $driver
      *
      * @return $this
      *
@@ -191,8 +191,6 @@ class Payment
     /**
      * Purchase the invoice
      *
-     * @param Invoice $invoice|null
-     * @param $finalizeCallback|null
      *
      * @return $this
      *
@@ -200,13 +198,13 @@ class Payment
      */
     public function purchase(?Invoice $invoice = null, $finalizeCallback = null): static
     {
-        if ($invoice instanceof \Shetabit\Multipay\Invoice) { // create new invoice
+        if ($invoice instanceof Invoice) { // create new invoice
             $this->invoice($invoice);
         }
 
         $this->driverInstance = $this->getFreshDriverInstance();
 
-        //purchase the invoice
+        // purchase the invoice
         $transactionId = $this->driverInstance->purchase();
         if ($finalizeCallback) {
             call_user_func_array($finalizeCallback, [$this->driverInstance, $transactionId]);
@@ -225,7 +223,6 @@ class Payment
     /**
      * Pay the purchased invoice.
      *
-     * @param $initializeCallback|null
      *
      * @return mixed
      *
@@ -254,7 +251,6 @@ class Payment
     /**
      * Verifies the payment
      *
-     * @param $finalizeCallback|null
      *
      *
      * @throws InvoiceNotFoundException
@@ -262,13 +258,13 @@ class Payment
      * @throws PreviouslyVerifiedException
      * @throws TimeoutException
      */
-    public function verify($finalizeCallback = null) : ReceiptInterface
+    public function verify($finalizeCallback = null): ReceiptInterface
     {
         $this->driverInstance = $this->getDriverInstance();
         $this->validateInvoice();
         $receipt = $this->driverInstance->verify();
 
-        if (!empty($finalizeCallback)) {
+        if (! empty($finalizeCallback)) {
             call_user_func($finalizeCallback, $receipt, $this->driverInstance);
         }
 
@@ -286,15 +282,13 @@ class Payment
     /**
      * Retrieve default config.
      */
-    protected function loadDefaultConfig() : array
+    protected function loadDefaultConfig(): array
     {
-        return require(static::getDefaultConfigPath());
+        return require static::getDefaultConfigPath();
     }
 
     /**
      * Set invoice instance.
-     *
-     *
      */
     protected function invoice(Invoice $invoice): static
     {
@@ -307,11 +301,12 @@ class Payment
      * Retrieve current driver instance or generate new one.
      *
      * @return mixed
+     *
      * @throws \Exception
      */
     protected function getDriverInstance()
     {
-        if (!empty($this->driverInstance)) {
+        if (! empty($this->driverInstance)) {
             return $this->driverInstance;
         }
 
@@ -322,6 +317,7 @@ class Payment
      * Get new driver instance
      *
      * @return mixed
+     *
      * @throws \Exception
      */
     protected function getFreshDriverInstance()
@@ -329,7 +325,7 @@ class Payment
         $this->validateDriver();
         $class = $this->config['map'][$this->driver];
 
-        if (!empty($this->callbackUrl)) { // use custom callbackUrl if exists
+        if (! empty($this->callbackUrl)) { // use custom callbackUrl if exists
             $this->settings['callbackUrl'] = $this->callbackUrl;
         }
 
@@ -356,21 +352,22 @@ class Payment
     protected function validateDriver()
     {
         if (empty($this->driver)) {
-            throw new DriverNotFoundException('Driver not selected or default driver does not exist.');
+            throw new DriverNotFoundException('درگاه پرداخت انتخاب نشده است.');
         }
 
         if (empty($this->config['drivers'][$this->driver]) || empty($this->config['map'][$this->driver])) {
-            throw new DriverNotFoundException('Driver not found in config file. Try updating the package.');
+            // فاز ۱۰۰ — پیام فارسی و قابل‌اقدام: این خطا تقریباً همیشه یعنی کش کانفیگ کهنه است
+            throw new DriverNotFoundException('تنظیمات درایور «'.$this->driver.'» در کانفیگ پرداخت یافت نشد؛ کش کانفیگ قدیمی است. دستور php artisan optimize:clear را اجرا کنید.');
         }
 
-        if (!class_exists($this->config['map'][$this->driver])) {
-            throw new DriverNotFoundException('Driver source not found. Please update the package.');
+        if (! class_exists($this->config['map'][$this->driver])) {
+            throw new DriverNotFoundException('کلاس درایور «'.$this->driver.'» یافت نشد؛ لطفاً فایل‌های پکیج پرداخت را به‌روز کنید.');
         }
 
         $reflect = new \ReflectionClass($this->config['map'][$this->driver]);
 
-        if (!$reflect->implementsInterface(DriverInterface::class)) {
-            throw new \Exception("Driver must be an instance of Contracts\DriverInterface.");
+        if (! $reflect->implementsInterface(DriverInterface::class)) {
+            throw new \Exception("درایور «{$this->driver}» باید از DriverInterface پیروی کند.");
         }
     }
 }

@@ -12,6 +12,8 @@ use App\Models\PackagePurchase;
 use App\Services\LicenseVerifier;
 use App\Services\PackageApiService;
 use App\Services\PackageInstallerService;
+use App\Support\SubscriptionDisplay;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -32,9 +34,9 @@ class PackageController extends Controller
     public function index(Request $request)
     {
         $query = $request->only(['page', 'search', 'category', 'sort']);
-        $cacheKey = 'packages.list.' . md5(json_encode($query));
-        $errors=null;
-        $purchasedSlugs=null;
+        $cacheKey = 'packages.list.'.md5(json_encode($query));
+        $errors = null;
+        $purchasedSlugs = null;
         $pendingSlugs = [];
         try {
             $data = Cache::remember($cacheKey, now()->addMinutes(config('packages.cache.list_ttl')), function () use ($query) {
@@ -61,7 +63,6 @@ class PackageController extends Controller
                     $minPrice = min($planPrices);
                 }
 
-
                 // is_free فقط اگر خود API گفته باشه (پکیج کاملاً رایگان)
                 // has_free_plan: اگر حداقل یک پلن رایگان وجود داره
                 $pkg['min_price'] = $minPrice;
@@ -69,10 +70,10 @@ class PackageController extends Controller
                 $pkg['has_free_plan'] = $minPrice === 0;
                 // is_free از API حفظ می‌شه (اگه API گفته false، همون false می‌مونه)
 
-                if (!empty($pkg['subscription']['subscription_expires_at'])) {
-                    $exp = \Carbon\Carbon::parse($pkg['subscription']['subscription_expires_at']);
-                    $pkg['subscription']['days_remaining'] = max(0, (int) round(now()->diffInDays($exp)));
-                    if ($exp->isPast()) {
+                // فاز ۱۰۰ — کلیدهای نمایشی «کمتر از ۱ روز» با SubscriptionDisplay
+                if (! empty($pkg['subscription']['subscription_expires_at'])) {
+                    $pkg['subscription'] = SubscriptionDisplay::annotate($pkg['subscription'], 'subscription_expires_at');
+                    if (Carbon::parse($pkg['subscription']['subscription_expires_at'])->isPast()) {
                         $pkg['subscription']['is_free_with_subscription'] = false;
                     }
                 }
@@ -83,9 +84,10 @@ class PackageController extends Controller
             // ★ خلاصه اشتراک فعال پروژه (برای بنر صفحه ایندکس)
             $subscriptionSummary = $data['subscription_summary'] ?? null;
             if (is_array($subscriptionSummary)) {
-                if (!empty($subscriptionSummary['expires_at'])) {
-                    $exp = \Carbon\Carbon::parse($subscriptionSummary['expires_at']);
-                    $subscriptionSummary['days_remaining'] = max(0, (int) round(now()->diffInDays($exp)));
+                if (! empty($subscriptionSummary['expires_at'])) {
+                    // فاز ۱۰۰ — کلیدهای نمایشی «کمتر از ۱ روز» + «منقضی‌شده»
+                    $subscriptionSummary = SubscriptionDisplay::annotate($subscriptionSummary, 'expires_at');
+                    $exp = Carbon::parse($subscriptionSummary['expires_at']);
                     $subscriptionSummary['has_active_subscription'] =
                         ($subscriptionSummary['has_active_subscription'] ?? false) && $exp->isFuture();
                 }
@@ -130,7 +132,8 @@ class PackageController extends Controller
             $errors = $e->getMessage();
             session()->flash('error', $e->getMessage());
         }
-        return view('back.packages.index', compact('packages', 'pagination', 'purchasedSlugs', 'installedMap', 'errors', 'subscriptionSummary','pendingSlugs'));
+
+        return view('back.packages.index', compact('packages', 'pagination', 'purchasedSlugs', 'installedMap', 'errors', 'subscriptionSummary', 'pendingSlugs'));
     }
 
     /* ===================================================================
@@ -138,7 +141,7 @@ class PackageController extends Controller
      * =================================================================== */
     public function show(Request $request, string $slug): JsonResponse
     {
-        $cacheKey = 'packages.detail.' . $slug;
+        $cacheKey = 'packages.detail.'.$slug;
 
         try {
             $data = Cache::remember($cacheKey, now()->addMinutes(config('packages.cache.detail_ttl')), function () use ($slug) {
@@ -146,10 +149,10 @@ class PackageController extends Controller
             });
             $package = $data['data'] ?? $data;
             // ★ اشتراک — اصلاح اعتبار و روزها (به دلیل کش شدن detail)
-            if (!empty($package['subscription']['subscription_expires_at'])) {
-                $exp = \Carbon\Carbon::parse($package['subscription']['subscription_expires_at']);
-                $package['subscription']['days_remaining'] = max(0, (int) round(now()->diffInDays($exp)));
-                if ($exp->isPast()) {
+            // فاز ۱۰۰ — کلیدهای نمایشی «کمتر از ۱ روز» با SubscriptionDisplay
+            if (! empty($package['subscription']['subscription_expires_at'])) {
+                $package['subscription'] = SubscriptionDisplay::annotate($package['subscription'], 'subscription_expires_at');
+                if (Carbon::parse($package['subscription']['subscription_expires_at'])->isPast()) {
                     $package['subscription']['is_free_with_subscription'] = false;
                 }
             }
@@ -161,9 +164,9 @@ class PackageController extends Controller
             $installed = InstalledModule::where('slug', $slug)->first();
             $activeVersions = $package['active_versions'] ?? [];
 
-            if (!empty($activeVersions)) {
+            if (! empty($activeVersions)) {
                 // مرتب‌سازی بر اساس نسخه به صورت نزولی
-                usort($activeVersions, function($a, $b) {
+                usort($activeVersions, function ($a, $b) {
                     return version_compare($b['version'], $a['version']);
                 });
 
@@ -174,13 +177,13 @@ class PackageController extends Controller
             $hasUpdate = $installed && version_compare($latestVersion, $installed->version, '>');
 
             $package['installed'] = $installed ? [
-                'version'              => $installed->version,
-                'status'               => $installed->status,
-                'is_active'            => $installed->is_active,
-                'is_expired'           => $installed->isExpired(),
-                'license_expires_at'   => $installed->license_expires_at?->toDateTimeString(),
-                'license_expires_human'=> $installed->license_expires_at?->diffForHumans(),
-                'last_error'           => $installed->last_error,
+                'version' => $installed->version,
+                'status' => $installed->status,
+                'is_active' => $installed->is_active,
+                'is_expired' => $installed->isExpired(),
+                'license_expires_at' => $installed->license_expires_at?->toDateTimeString(),
+                'license_expires_human' => $installed->license_expires_at?->diffForHumans(),
+                'last_error' => $installed->last_error,
             ] : null;
             $package['has_update'] = $hasUpdate;
             $package['latestVersion'] = $latestVersion;
@@ -191,19 +194,19 @@ class PackageController extends Controller
                 ->limit(10)
                 ->get()
                 ->map(fn ($log) => [
-                    'id'          => $log->id,
-                    'action'      => $log->action,
-                    'from_version'=> $log->from_version,
-                    'to_version'  => $log->to_version,
-                    'status'      => $log->status,
-                    'message'     => $log->message,
-                    'created_at'  => $log->created_at->diffForHumans(),
+                    'id' => $log->id,
+                    'action' => $log->action,
+                    'from_version' => $log->from_version,
+                    'to_version' => $log->to_version,
+                    'status' => $log->status,
+                    'message' => $log->message,
+                    'created_at' => $log->created_at->diffForHumans(),
                 ]);
 
             return response()->json([
                 'success' => true,
-                'data'    => $package,
-                'logs'    => $logs,
+                'data' => $package,
+                'logs' => $logs,
             ]);
         } catch (RuntimeException $e) {
             return response()->json([
@@ -233,7 +236,7 @@ class PackageController extends Controller
     public function startInstall(Request $request, string $slug)
     {
         $request->validate([
-            'version'         => 'nullable|string|max:50',
+            'version' => 'nullable|string|max:50',
             'pricing_plan_id' => 'nullable|integer',
         ]);
 
@@ -252,7 +255,7 @@ class PackageController extends Controller
                 $isFree = (bool) ($package['is_free'] ?? false);
             }
 
-// ★ نصب با اشتراک فعال (بدون پرداخت)
+            // ★ نصب با اشتراک فعال (بدون پرداخت)
             if ($request->boolean('use_subscription')) {
                 return $this->installWithSubscription($slug, $request);
             }
@@ -266,7 +269,7 @@ class PackageController extends Controller
             }
             if ($isFree) {
                 // پکیج رایگان: مستقیم به job
-                return $this->dispatchInstall($slug, $version, null,$pricingPlanId);
+                return $this->dispatchInstall($slug, $version, null, $pricingPlanId);
             }
 
             // ★ نصب مجدد با لایسنس قبلی (خریداری‌شده — بدون پرداخت)
@@ -275,28 +278,28 @@ class PackageController extends Controller
             }
 
             // پکیج پولی: ایجاد درخواست خرید با pricing_plan_id
-            $callbackUrl = route(config('packages.payment.callback_route',route('admin.packages.payment.callback')));
+            $callbackUrl = route(config('packages.payment.callback_route', route('admin.packages.payment.callback')));
 
             $purchase = $this->api->createPurchase($slug, $callbackUrl, $request->user('adminPanel')->id ?? null, $pricingPlanId);
 
             // ذخیره رکورد خرید
-            $purchaseRecord = \App\Models\PackagePurchase::create([
-                'admin_id'      => $request->user('adminPanel')->id ?? null,
-                'package_slug'  => $slug,
-                'package_name'  => $package['name'] ?? $slug,
-                'version'       => $version,
-                'amount'        => $purchase['amount'] ?? ($package['price'] ?? 0),
-                'gateway'       => $purchase['gateway'] ?? null,
+            $purchaseRecord = PackagePurchase::create([
+                'admin_id' => $request->user('adminPanel')->id ?? null,
+                'package_slug' => $slug,
+                'package_name' => $package['name'] ?? $slug,
+                'version' => $version,
+                'amount' => $purchase['amount'] ?? ($package['price'] ?? 0),
+                'gateway' => $purchase['gateway'] ?? null,
                 'transaction_id' => $purchase['transaction_id'] ?? null,
-                'payment_url'   => isset($purchase['payment_url']) ? $purchase['payment_url'] : null,
-                'status'        => \App\Models\PackagePurchase::STATUS_PENDING,
-                'meta'          => $purchase,
+                'payment_url' => isset($purchase['payment_url']) ? $purchase['payment_url'] : null,
+                'status' => PackagePurchase::STATUS_PENDING,
+                'meta' => $purchase,
             ]);
 
             return response()->json([
-                'success'      => true,
+                'success' => true,
                 'redirect_url' => isset($purchase['payment_url']) ? $purchase['payment_url'] : null,
-                'purchase_id'  => $purchaseRecord->id,
+                'purchase_id' => $purchaseRecord->id,
             ]);
 
         } catch (RuntimeException $e) {
@@ -314,7 +317,7 @@ class PackageController extends Controller
     {
         $installed = InstalledModule::where('slug', $slug)->first();
 
-        if (!$installed) {
+        if (! $installed) {
             return response()->json([
                 'success' => false,
                 'message' => 'ماژول نصب نشده است.',
@@ -360,7 +363,7 @@ class PackageController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'حذف ناموفق بود: ' . $e->getMessage(),
+                'message' => 'حذف ناموفق بود: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -372,10 +375,11 @@ class PackageController extends Controller
     {
         try {
             $installed = app(PackageInstallerService::class)->toggleActivation($slug);
+
             return response()->json([
-                'success'  => true,
+                'success' => true,
                 'is_active' => $installed->is_active,
-                'message'  => $installed->is_active
+                'message' => $installed->is_active
                     ? 'ماژول فعال شد.'
                     : 'ماژول غیرفعال شد.',
             ]);
@@ -406,20 +410,20 @@ class PackageController extends Controller
         }
 
         return response()->json([
-            'phase'      => $phase,
-            'installed'  => $installed ? [
-                'version'    => $installed->version,
-                'status'     => $installed->status,
-                'is_active'  => $installed->is_active,
-                'error'      => $installed->last_error,
+            'phase' => $phase,
+            'installed' => $installed ? [
+                'version' => $installed->version,
+                'status' => $installed->status,
+                'is_active' => $installed->is_active,
+                'error' => $installed->last_error,
                 'updated_at' => $installed->updated_at?->diffForHumans(),
             ] : null,
             'last_log' => $latestLog ? [
-                'action'      => $latestLog->action,
-                'status'      => $latestLog->status,
-                'message'     => $latestLog->message,
-                'created_at'  => $latestLog->created_at->diffForHumans(),
-                'details'     => $latestLog->details,
+                'action' => $latestLog->action,
+                'status' => $latestLog->status,
+                'message' => $latestLog->message,
+                'created_at' => $latestLog->created_at->diffForHumans(),
+                'details' => $latestLog->details,
             ] : null,
         ]);
     }
@@ -437,22 +441,22 @@ class PackageController extends Controller
                 $result = $this->api->checkUpdate($module->slug, $module->version);
                 if ($result['has_update'] ?? false) {
                     $updates[] = [
-                        'slug'           => $module->slug,
-                        'name'           => $module->name,
-                        'current'        => $module->version,
-                        'latest'         => $result['latest_version'],
-                        'changelog'      => $result['changelog'] ?? null,
+                        'slug' => $module->slug,
+                        'name' => $module->name,
+                        'current' => $module->version,
+                        'latest' => $result['latest_version'],
+                        'changelog' => $result['changelog'] ?? null,
                     ];
                 }
             } catch (\Exception $e) {
-                Log::warning("Update check failed for {$module->slug}: " . $e->getMessage());
+                Log::warning("Update check failed for {$module->slug}: ".$e->getMessage());
             }
         }
 
         return response()->json([
-            'success'      => true,
-            'updates'      => $updates,
-            'total'        => $modules->count(),
+            'success' => true,
+            'updates' => $updates,
+            'total' => $modules->count(),
             'update_count' => count($updates),
         ]);
     }
@@ -460,17 +464,17 @@ class PackageController extends Controller
     /* ===================================================================
      *  Private Helpers
      * =================================================================== */
-    private function dispatchInstall(string $slug, ?string $version, ?string $licenseKey,?int $pricingPlanId): JsonResponse
+    private function dispatchInstall(string $slug, ?string $version, ?string $licenseKey, ?int $pricingPlanId): JsonResponse
     {
         // برای پکیج رایگان، licenseKey برابر null است و download_token مستقیم از API گرفته می‌شود
         $callbackUrl = route(config('packages.payment.callback_route'));
-        $purchase = $this->api->createPurchase($slug, $callbackUrl, auth('adminPanel')->id(),$pricingPlanId);
+        $purchase = $this->api->createPurchase($slug, $callbackUrl, auth('adminPanel')->id(), $pricingPlanId);
         $licenseKey = $purchase['license_key'] ?? null;
         try {
             // برای پکیج رایگان، ابتدا یک درخواست "purchase" آزاد به API می‌زنیم
-            if (!$licenseKey) {
+            if (! $licenseKey) {
                 $callbackUrl = route(config('packages.payment.callback_route'));
-                $purchase = $this->api->createPurchase($slug, $callbackUrl, auth('adminPanel')->id(),$pricingPlanId);
+                $purchase = $this->api->createPurchase($slug, $callbackUrl, auth('adminPanel')->id(), $pricingPlanId);
                 $licenseKey = $purchase['license_key'] ?? null;
             }
 
@@ -504,17 +508,17 @@ class PackageController extends Controller
                     PackageCache::updateOrCreate(
                         ['slug' => $pkg['slug']],
                         [
-                            'name'           => $pkg['name'] ?? $pkg['slug'],
-                            'description'    => $pkg['description'] ?? null,
+                            'name' => $pkg['name'] ?? $pkg['slug'],
+                            'description' => $pkg['description'] ?? null,
                             'latest_version' => $pkg['latest_version'] ? $pkg['latest_version']['version'] : ($pkg['version'] ?? ''),
-                            'author'         => $pkg['author'] ?? null,
-                            'category'       => $pkg['category'] ?? null,
-                            'thumbnail'      => $pkg['thumbnail'] ?? null,
-                            'price'          => $pkg['price'] ?? 0,
-                            'is_free'        => $pkg['is_free'] ?? false,
-                            'meta'           => $pkg,
-                            'versions'       => $pkg['versions'] ?? null,
-                            'fetched_at'     => now(),
+                            'author' => $pkg['author'] ?? null,
+                            'category' => $pkg['category'] ?? null,
+                            'thumbnail' => $pkg['thumbnail'] ?? null,
+                            'price' => $pkg['price'] ?? 0,
+                            'is_free' => $pkg['is_free'] ?? false,
+                            'meta' => $pkg,
+                            'versions' => $pkg['versions'] ?? null,
+                            'fetched_at' => now(),
                         ]
                     );
                 }
@@ -540,21 +544,24 @@ class PackageController extends Controller
             if ($subscription && ($subscription['is_free_with_subscription'] ?? false)) {
                 $expiresAt = $subscription['subscription_expires_at'] ?? null;
                 $active = true;
-                if (!empty($expiresAt)) {
-                    try { $active = \Carbon\Carbon::parse($expiresAt)->isFuture(); }
-                    catch (\Throwable $e) { $active = false; }
+                if (! empty($expiresAt)) {
+                    try {
+                        $active = Carbon::parse($expiresAt)->isFuture();
+                    } catch (\Throwable $e) {
+                        $active = false;
+                    }
                 }
 
                 if ($active) {
                     return response()->json([
-                        'purchased'      => true,   // برای سازگاری با JS فعلی
-                        'valid'          => true,
-                        'mode'           => 'subscription',
-                        'plan_name'      => $subscription['plan_name'] ?? null,
-                        'plan_slug'      => $subscription['plan_slug'] ?? null,
-                        'expires_at'     => $expiresAt,
+                        'purchased' => true,   // برای سازگاری با JS فعلی
+                        'valid' => true,
+                        'mode' => 'subscription',
+                        'plan_name' => $subscription['plan_name'] ?? null,
+                        'plan_slug' => $subscription['plan_slug'] ?? null,
+                        'expires_at' => $expiresAt,
                         'days_remaining' => $subscription['days_remaining'] ?? null,
-                        'license_key'    => $subscription['license_key'] ?? null,
+                        'license_key' => $subscription['license_key'] ?? null,
                     ]);
                 }
                 $subscriptionNotice = 'اشتراک شما منقضی شده است؛ برای نصب، پلن موردنظر را انتخاب کنید.';
@@ -571,7 +578,7 @@ class PackageController extends Controller
             ->orderByDesc('paid_at')
             ->first();
 
-        if (!$purchase) {
+        if (! $purchase) {
             return response()->json(['purchased' => false]);
         }
 
@@ -580,28 +587,28 @@ class PackageController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'purchased' => true,
-                'valid'     => false,
-                'message'   => 'بررسی آنلاین لایسنس ناموفق بود. لطفاً مجدد تلاش کنید.',
+                'valid' => false,
+                'message' => 'بررسی آنلاین لایسنس ناموفق بود. لطفاً مجدد تلاش کنید.',
             ]);
         }
 
-        if (!($verify['valid'] ?? false) ||
-            !$this->licenseHasTime($verify['expires_at'] ?? null, $purchase->license_expires_at)) {
+        if (! ($verify['valid'] ?? false) ||
+            ! $this->licenseHasTime($verify['expires_at'] ?? null, $purchase->license_expires_at)) {
             return response()->json([
                 'purchased' => true,
-                'valid'     => false,
-                'mode'      => 'purchase',
-                'message'   => $verify['message']
+                'valid' => false,
+                'mode' => 'purchase',
+                'message' => $verify['message']
                     ?? ($subscriptionNotice ?? 'لایسنس قبلی شما منقضی شده است. برای نصب مجدد، ابتدا پلن را انتخاب و تمدید کنید.'),
             ]);
         }
 
         return response()->json([
-            'purchased'  => true,
-            'valid'      => true,
-            'mode'       => 'purchase',
+            'purchased' => true,
+            'valid' => true,
+            'mode' => 'purchase',
             'expires_at' => $verify['expires_at'] ?? optional($purchase->license_expires_at)->toDateString(),
-            'version'    => $verify['version'] ?? null,
+            'version' => $verify['version'] ?? null,
         ]);
     }
 
@@ -617,11 +624,11 @@ class PackageController extends Controller
             ->orderByDesc('paid_at')
             ->first();
 
-        if (!$purchase) {
+        if (! $purchase) {
             return response()->json([
-                'success'       => false,
+                'success' => false,
                 'needs_payment' => true,
-                'message'       => 'خرید معتبری برای این پکیج یافت نشد.',
+                'message' => 'خرید معتبری برای این پکیج یافت نشد.',
             ]);
         }
 
@@ -630,15 +637,15 @@ class PackageController extends Controller
         } catch (Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'بررسی لایسنس ناموفق بود: ' . $e->getMessage(),
+                'message' => 'بررسی لایسنس ناموفق بود: '.$e->getMessage(),
             ]);
         }
 
-        if (!($verify['valid'] ?? false)) {
+        if (! ($verify['valid'] ?? false)) {
             return response()->json([
-                'success'       => false,
+                'success' => false,
                 'needs_payment' => true,
-                'message'       => $verify['message'] ?? 'لایسنس شما منقضی شده است. برای ادامه، یکی از پلن‌ها را انتخاب کنید.',
+                'message' => $verify['message'] ?? 'لایسنس شما منقضی شده است. برای ادامه، یکی از پلن‌ها را انتخاب کنید.',
             ]);
         }
 
@@ -651,7 +658,7 @@ class PackageController extends Controller
         );
 
         Log::info('Package reinstall with existing license', [
-            'slug'        => $slug,
+            'slug' => $slug,
             'purchase_id' => $purchase->id,
         ]);
 
@@ -671,7 +678,7 @@ class PackageController extends Controller
         }
 
         try {
-            return \Carbon\Carbon::parse($date)->isFuture();
+            return Carbon::parse($date)->isFuture();
         } catch (\Throwable $e) {
             return false;
         }
@@ -688,32 +695,35 @@ class PackageController extends Controller
         } catch (RuntimeException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'بررسی اشتراک ناموفق بود: ' . $e->getMessage(),
+                'message' => 'بررسی اشتراک ناموفق بود: '.$e->getMessage(),
             ], 500);
         }
 
         $subscription = $package['subscription'] ?? null;
-        $eligible     = false;
+        $eligible = false;
 
         if ($subscription && ($subscription['is_free_with_subscription'] ?? false)) {
             $expiresAt = $subscription['subscription_expires_at'] ?? null;
             if (empty($expiresAt)) {
                 $eligible = true; // اشتراک نامحدود
             } else {
-                try { $eligible = \Carbon\Carbon::parse($expiresAt)->isFuture(); }
-                catch (\Throwable $e) { $eligible = false; }
+                try {
+                    $eligible = Carbon::parse($expiresAt)->isFuture();
+                } catch (\Throwable $e) {
+                    $eligible = false;
+                }
             }
         }
 
-        if (!$eligible) {
+        if (! $eligible) {
             return response()->json([
-                'success'       => false,
+                'success' => false,
                 'needs_payment' => true,
-                'message'       => 'اشتراک فعال شما این پکیج را پوشش نمی‌دهد یا منقضی شده است. برای نصب، پلن را انتخاب کنید.',
+                'message' => 'اشتراک فعال شما این پکیج را پوشش نمی‌دهد یا منقضی شده است. برای نصب، پلن را انتخاب کنید.',
             ]);
         }
 
-        $licenseKey    = $subscription['license_key'] ?? null;
+        $licenseKey = $subscription['license_key'] ?? null;
         $downloadToken = null;
 
         // ★★★ لایسنس صادرنشده (مشتری پکیج را جداگانه نخریده، فقط اشتراک دارد)
@@ -730,20 +740,20 @@ class PackageController extends Controller
             } catch (RuntimeException $e) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'صدور لایسنس از اشتراک ناموفق بود: ' . $e->getMessage(),
+                    'message' => 'صدور لایسنس از اشتراک ناموفق بود: '.$e->getMessage(),
                 ], 500);
             }
 
             // اطمینان: پاسخ واقعاً از مسیر اشتراک باشد، نه شروع یک خرید پولی
             if (empty($purchase['via_subscription']) || empty($purchase['license_key'])) {
                 return response()->json([
-                    'success'       => false,
+                    'success' => false,
                     'needs_payment' => true,
-                    'message'       => 'دسترسی به این پکیج از طریق اشتراک ممکن نشد. لطفاً پلن موردنظر را خریداری کنید.',
+                    'message' => 'دسترسی به این پکیج از طریق اشتراک ممکن نشد. لطفاً پلن موردنظر را خریداری کنید.',
                 ]);
             }
 
-            $licenseKey    = $purchase['license_key'];
+            $licenseKey = $purchase['license_key'];
             $downloadToken = $purchase['download_token'] ?? null;
         }
         $version = $package['latest_version']['version']
@@ -765,9 +775,9 @@ class PackageController extends Controller
         );
 
         Log::info('Package install via subscription', [
-            'slug'          => $slug,
-            'had_license'   => !empty($subscription['license_key']),
-            'issued_new'    => $downloadToken !== null || !empty($purchase['license_key'] ?? null),
+            'slug' => $slug,
+            'had_license' => ! empty($subscription['license_key']),
+            'issued_new' => $downloadToken !== null || ! empty($purchase['license_key'] ?? null),
         ]);
 
         return response()->json(['success' => true]);

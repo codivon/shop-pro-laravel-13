@@ -4,8 +4,19 @@ namespace Tests\Feature\Extra;
 
 use App\Models\Admin;
 use App\Models\InstalledModule;
+use App\Services\ModuleMenuExtractor;
+use App\Services\ModuleMenuRegistry;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use Modules\PayYar\Models\PayYarSetting;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestDox;
 use Tests\Support\ShopTestSetup;
@@ -65,12 +76,12 @@ class Phase87Test extends TestCase
     {
         return Admin::create([
             'first_name' => 'تست',
-            'last_name'  => 'فاز ۸۷',
-            'username'   => 'feat87-'.\Illuminate\Support\Str::random(6),
-            'email'      => 'feat87-'.\Illuminate\Support\Str::random(6).'@test.ir',
-            'password'   => \Illuminate\Support\Facades\Hash::make('secret1234'),
-            'level'      => 'creator',
-            'status'     => 'ACTIVE',
+            'last_name' => 'فاز ۸۷',
+            'username' => 'feat87-'.Str::random(6),
+            'email' => 'feat87-'.Str::random(6).'@test.ir',
+            'password' => Hash::make('secret1234'),
+            'level' => 'creator',
+            'status' => 'ACTIVE',
         ]);
     }
 
@@ -118,8 +129,8 @@ class Phase87Test extends TestCase
                 continue;
             }
 
-            $path  = $file->getPathname();
-            $ext   = strtolower($file->getExtension());
+            $path = $file->getPathname();
+            $ext = strtolower($file->getExtension());
             $human = ['featured-', '.png', '.woff2'];
 
             // فایل‌های باینری/تصویر بررسی نمی‌شوند
@@ -206,10 +217,10 @@ class Phase87Test extends TestCase
     {
         $this->requirePayYar();
 
-        $routes = collect(\Illuminate\Support\Facades\Route::getRoutes())
+        $routes = collect(Route::getRoutes())
             ->filter(fn ($r) => str_contains($r->getName() ?? '', 'payyar'));
         $this->assertSame(14, $routes->count(), 'روت‌های پکیج PayYar کامل ثبت نشده‌اند.');
-        $this->assertTrue(\Illuminate\Support\Facades\Route::has('admin.payyar.guide'));
+        $this->assertTrue(Route::has('admin.payyar.guide'));
 
         $this->assertSame('PayYar', config('payyar.name'));
         $this->assertTrue(view()->exists('payyar::back.settings.index'));
@@ -217,7 +228,7 @@ class Phase87Test extends TestCase
         $this->assertTrue(view()->exists('payyar::back.guide.index'));
 
         // منو در رجیستری سراسری ثبت شده باشد
-        $this->assertContains('payyar::back.partials.menu', \App\Services\ModuleMenuRegistry::all());
+        $this->assertContains('payyar::back.partials.menu', ModuleMenuRegistry::all());
     }
 
     /* ================= ۲) مهاجرت دادهٔ گاردشده از پکیج قدیمی ================= */
@@ -228,76 +239,76 @@ class Phase87Test extends TestCase
     {
         $this->requirePayYar();
 
-        if (! \Illuminate\Support\Facades\Schema::hasTable('payyar_settings')) {
+        if (! Schema::hasTable('payyar_settings')) {
             $this->markTestSkipped('جدول payyar_settings ساخته نشده — مایگریشن‌ها اجرا نشده‌اند.');
         }
 
         // شبیه‌سازی نصب قدیمی: جدول‌های digipay_* با داده
-        \Illuminate\Support\Facades\DB::statement('DROP TABLE IF EXISTS digipay_settings');
-        \Illuminate\Support\Facades\DB::statement(
+        DB::statement('DROP TABLE IF EXISTS digipay_settings');
+        DB::statement(
             'CREATE TABLE digipay_settings (id INT AUTO_INCREMENT PRIMARY KEY, `key` VARCHAR(191) NOT NULL, `value` TEXT NULL, created_at TIMESTAMP NULL, updated_at TIMESTAMP NULL)'
         );
-        \Illuminate\Support\Facades\DB::table('digipay_settings')->insert([
+        DB::table('digipay_settings')->insert([
             ['key' => 'client_id', 'value' => 'legacy-cid-87', 'created_at' => now(), 'updated_at' => now()],
         ]);
 
-        if (\Illuminate\Support\Facades\Schema::hasTable('payyar_transactions')) {
-            \Illuminate\Support\Facades\DB::statement('DROP TABLE IF EXISTS digipay_transactions');
-            \Illuminate\Support\Facades\DB::statement('CREATE TABLE digipay_transactions LIKE payyar_transactions');
-            \Illuminate\Support\Facades\DB::table('digipay_transactions')->insert([
-                'track_id'   => 'TRK-87-LEGACY',
-                'amount'     => 123000,
-                'status'     => 'success',
+        if (Schema::hasTable('payyar_transactions')) {
+            DB::statement('DROP TABLE IF EXISTS digipay_transactions');
+            DB::statement('CREATE TABLE digipay_transactions LIKE payyar_transactions');
+            DB::table('digipay_transactions')->insert([
+                'track_id' => 'TRK-87-LEGACY',
+                'amount' => 123000,
+                'status' => 'success',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
         }
 
         // پاک‌سازی مقصد + رکورد مایگریشن تا دوباره اجرا شود
-        \Illuminate\Support\Facades\DB::table('payyar_settings')->where('key', 'client_id')->delete();
-        \Illuminate\Support\Facades\DB::table('payyar_transactions')->where('track_id', 'TRK-87-LEGACY')->delete();
-        \Illuminate\Support\Facades\DB::table('migrations')->where('migration', 'like', '%migrate_legacy%')->delete();
+        DB::table('payyar_settings')->where('key', 'client_id')->delete();
+        DB::table('payyar_transactions')->where('track_id', 'TRK-87-LEGACY')->delete();
+        DB::table('migrations')->where('migration', 'like', '%migrate_legacy%')->delete();
 
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        Artisan::call('migrate', ['--force' => true]);
 
         // ۱) کپی شده
         $this->assertSame(
             'legacy-cid-87',
-            \Modules\PayYar\Models\PayYarSetting::get('client_id'),
+            PayYarSetting::get('client_id'),
             'تنظیمات پکیج قدیمی باید به payyar_settings منتقل شده باشد.'
         );
 
-        if (\Illuminate\Support\Facades\Schema::hasTable('payyar_transactions')) {
+        if (Schema::hasTable('payyar_transactions')) {
             $this->assertSame(
                 1,
-                \Illuminate\Support\Facades\DB::table('payyar_transactions')->where('track_id', 'TRK-87-LEGACY')->count(),
+                DB::table('payyar_transactions')->where('track_id', 'TRK-87-LEGACY')->count(),
                 'تراکنش قدیمی باید کپی شده باشد.'
             );
         }
 
         // ۲) idempotent — اجرای مجدد دوباره‌کاری نمی‌کند
-        \Illuminate\Support\Facades\DB::table('migrations')->where('migration', 'like', '%migrate_legacy%')->delete();
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        DB::table('migrations')->where('migration', 'like', '%migrate_legacy%')->delete();
+        Artisan::call('migrate', ['--force' => true]);
 
         $this->assertSame(
             1,
-            \Illuminate\Support\Facades\DB::table('payyar_settings')->where('key', 'client_id')->count(),
+            DB::table('payyar_settings')->where('key', 'client_id')->count(),
             'اجرای مجدد مایگریشن نباید ردیف تکراری بسازد.'
         );
 
         // پاک‌سازی (توجه: DDL در MySQL باعث implicit commit می‌شود؛ رکوردهای
         // مایگریشن جدول‌های قدیمی هم حذف می‌شوند تا migrate بعدی دوباره بسازد)
-        \Illuminate\Support\Facades\DB::table('payyar_settings')->where('key', 'client_id')->delete();
-        \Illuminate\Support\Facades\DB::table('payyar_transactions')->where('track_id', 'TRK-87-LEGACY')->delete();
-        \Illuminate\Support\Facades\DB::statement('DROP TABLE IF EXISTS digipay_settings');
-        \Illuminate\Support\Facades\DB::statement('DROP TABLE IF EXISTS digipay_transactions');
-        \Illuminate\Support\Facades\DB::table('migrations')->where('migration', 'like', '%create_digipay_%')->delete();
-        \Illuminate\Support\Facades\DB::table('migrations')->where('migration', 'like', '%digipay_transactions_table%')->delete();
+        DB::table('payyar_settings')->where('key', 'client_id')->delete();
+        DB::table('payyar_transactions')->where('track_id', 'TRK-87-LEGACY')->delete();
+        DB::statement('DROP TABLE IF EXISTS digipay_settings');
+        DB::statement('DROP TABLE IF EXISTS digipay_transactions');
+        DB::table('migrations')->where('migration', 'like', '%create_digipay_%')->delete();
+        DB::table('migrations')->where('migration', 'like', '%digipay_transactions_table%')->delete();
 
         // فاز ۸۸ — بازسازی فوری جدول‌های digipay_*: چون DDL داخل DatabaseTransactions
         // implicit-commit می‌شود، اگر همین‌جا migrate نکنیم، تست‌های «بعدی» در اجرای
         // کامل سوت با جدول حذف‌شدهٔ digipay_settings مواجه می‌شوند (خطای 42S02).
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        Artisan::call('migrate', ['--force' => true]);
     }
 
     /* ================= ۳) صفحات ادمین + منو ================= */
@@ -311,9 +322,9 @@ class Phase87Test extends TestCase
         $this->actingAs($this->newCreator(), 'adminPanel');
 
         // در تست (runningInConsole=true) گیت‌های پرمیژن از DB تعریف نمی‌شوند — مثل الگوی Phase85 باز می‌شوند
-        \Illuminate\Support\Facades\Gate::define('payyar', fn ($user = null) => true);
-        \Illuminate\Support\Facades\Gate::define('payyar.settings', fn ($user = null) => true);
-        \Illuminate\Support\Facades\Gate::define('payyar.transactions', fn ($user = null) => true);
+        Gate::define('payyar', fn ($user = null) => true);
+        Gate::define('payyar.settings', fn ($user = null) => true);
+        Gate::define('payyar.transactions', fn ($user = null) => true);
 
         $response = $this->get(route('admin.payyar.settings'));
         $response->assertOk();
@@ -339,11 +350,11 @@ class Phase87Test extends TestCase
         InstalledModule::firstOrCreate(
             ['slug' => 'payyar'],
             [
-                'name'         => 'PayYar',
-                'version'      => '1.0.0',
+                'name' => 'PayYar',
+                'version' => '1.0.0',
                 'installed_at' => now(),
-                'status'       => 'installed',
-                'is_active'    => true,
+                'status' => 'installed',
+                'is_active' => true,
                 'license_expires_at' => null,
             ]
         );
@@ -351,10 +362,10 @@ class Phase87Test extends TestCase
         $this->actingAs($this->newCreator(), 'adminPanel');
 
         // در تست گیت‌ها از DB تعریف نمی‌شوند (runningInConsole) — مثل الگوی Phase85 باز می‌شوند
-        \Illuminate\Support\Facades\Gate::define('packages', fn ($user = null) => true);
-        \Illuminate\Support\Facades\Gate::define('payyar', fn ($user = null) => true);
-        \Illuminate\Support\Facades\Gate::define('payyar.settings', fn ($user = null) => true);
-        \Illuminate\Support\Facades\Gate::define('payyar.transactions', fn ($user = null) => true);
+        Gate::define('packages', fn ($user = null) => true);
+        Gate::define('payyar', fn ($user = null) => true);
+        Gate::define('payyar.settings', fn ($user = null) => true);
+        Gate::define('payyar.transactions', fn ($user = null) => true);
 
         $response = $this->get(route('np.dashboard'));
         $html = (string) $response->getContent();
@@ -371,22 +382,22 @@ class Phase87Test extends TestCase
     {
         $this->requirePayYar();
 
-        $method = new \ReflectionMethod(\App\Services\ModuleMenuExtractor::class, 'urlIsActive');
+        $method = new \ReflectionMethod(ModuleMenuExtractor::class, 'urlIsActive');
         $method->setAccessible(true);
 
         // زیرصفحهٔ create/ویرایش — آیتم والد باید فعال بماند (درخواست فاز ۸۶)
-        app()->instance('request', \Illuminate\Http\Request::create('/admin/admin/payyar/settings/create', 'GET'));
+        app()->instance('request', Request::create('/admin/admin/payyar/settings/create', 'GET'));
         $this->assertTrue(
             $method->invoke(null, 'http://x.test/admin/admin/payyar/settings'),
             'آیتم منو در زیرصفحهٔ create باید فعال بماند.'
         );
 
         // عینِ مسیر
-        app()->instance('request', \Illuminate\Http\Request::create('/admin/admin/payyar/settings', 'GET'));
+        app()->instance('request', Request::create('/admin/admin/payyar/settings', 'GET'));
         $this->assertTrue($method->invoke(null, 'http://x.test/admin/admin/payyar/settings'));
 
         // مرز سگمنت: صفحهٔ پکیج دیگر آیتم پرداخت‌یار را روشن نمی‌کند
-        app()->instance('request', \Illuminate\Http\Request::create('/admin/admin/marketing/campaigns/create', 'GET'));
+        app()->instance('request', Request::create('/admin/admin/marketing/campaigns/create', 'GET'));
         $this->assertFalse($method->invoke(null, 'http://x.test/admin/admin/payyar/settings'));
     }
 
@@ -423,8 +434,10 @@ class Phase87Test extends TestCase
         );
 
         $this->assertStringContainsString("'payyar'", $controller);
-        $this->assertStringContainsString("\Modules\PayYar\Http\Controllers\PayYarController::class", $controller);
-        $this->assertStringContainsString("\Modules\PayYar\Http\Controllers\SnappPayController::class", $controller);
+        // فاز ۱۰۰ — pint نام‌های کاملاً‌صلاحیت‌دار را به use import تبدیل می‌کند؛
+        // هر دو سبک را می‌پذیریم (مهم بودن نگاشت درگاه‌هاست، نه سبک نگارش)
+        $this->assertStringContainsString('PayYarController::class', $controller);
+        $this->assertStringContainsString('SnappPayController::class', $controller);
         // سازگاری قدیمی‌ها حفظ شده
         $this->assertStringContainsString("'digipay' =>", $controller);
 

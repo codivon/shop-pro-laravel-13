@@ -7,14 +7,17 @@ use App\Events\OrderCreated;
 use App\Events\OrderPaid as OrderPaidEvent;
 use App\Http\Controllers\Controller;
 use App\Jobs\CancelOrder;
+use App\Mail\DownloadLinkMail;
 use App\Models\Address;
+use App\Models\Admin;
 use App\Models\Carrier;
 use App\Models\City;
+use App\Models\DownloadLink;
 use App\Models\Gateway;
 use App\Models\Order;
 use App\Models\Price;
+use App\Models\ReturnRequest;
 use App\Models\Seller;
-use App\Models\SellerVariant;
 use App\Models\Sms;
 use App\Models\Tariff;
 use App\Models\Transaction;
@@ -29,22 +32,33 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
-use Shetabit\Payment\Facade\Payment;
+use Illuminate\Support\Str;
+use Modules\CreditPay\Models\CreditInstallment;
+use Modules\CreditPay\Models\CreditOrder;
+use Modules\CreditPay\Models\CreditSetting;
+use Modules\CreditPay\Services\CreditService;
+use Modules\CreditPay\Services\InstallmentService;
+use Modules\DigiPay\Http\Controllers\DigiPayController;
+use Modules\PayYar\Http\Controllers\PayYarController;
+use Modules\PayYar\Http\Controllers\SnappPayController;
+use Morilog\Jalali\Jalalian;
 use Shetabit\Multipay\Invoice;
+use Shetabit\Payment\Facade\Payment;
 use Themes\WeblakShop\src\Requests\StoreOrderRequest;
 
 class OrderController extends Controller
 {
     protected $holidayService;
+
     protected StockMovementService $stockService;
 
-    public function __construct(HolidayService $holidayService,StockMovementService $stockService)
+    public function __construct(HolidayService $holidayService, StockMovementService $stockService)
     {
         $this->holidayService = $holidayService;
         $this->stockService = $stockService;
     }
+
     public function index()
     {
         $query = auth()->user()->orders()->latest();
@@ -55,8 +69,8 @@ class OrderController extends Controller
             $query->where('status', 'unpaid');
         } elseif (request('status') === 'cancelled') {
             $query->whereIn('status', ['cancelled', 'failed']);
-        }elseif (request('status') === 'returned') {
-            $returnedOrderIds = \App\Models\ReturnRequest::where('user_id', auth()->id())
+        } elseif (request('status') === 'returned') {
+            $returnedOrderIds = ReturnRequest::where('user_id', auth()->id())
                 ->whereNotIn('status', ['cancelled'])
                 ->pluck('order_id')
                 ->unique()
@@ -65,7 +79,8 @@ class OrderController extends Controller
         }
 
         $orders = $query->paginate(10);
-        $active = "orders";
+        $active = 'orders';
+
         return view('front::user.orders.index', compact('orders', 'active'));
     }
 
@@ -75,7 +90,7 @@ class OrderController extends Controller
             abort(404);
         }
 
-        $active = "orders";
+        $active = 'orders';
         $gateways = Gateway::active()->get();
         $wallet = auth()->user()->getWallet();
 
@@ -87,7 +102,7 @@ class OrderController extends Controller
             'items.get_price.attributes',
             'items.get_price.attributes.group',
             'transactions',
-            'user'
+            'user',
         ]);
 
         return view('front::user.orders.show', compact(
@@ -104,17 +119,17 @@ class OrderController extends Controller
         $cart = $user->cart;
         $address = Address::find($request->address);
 
-        if (!$cart || !$cart->products->count() || !check_cart_quantity()) {
+        if (! $cart || ! $cart->products->count() || ! check_cart_quantity()) {
             return redirect()->route('front.cart');
         }
 
-        if (!check_cart_discount()['status']) {
+        if (! check_cart_discount()['status']) {
             return redirect()->route('front.checkout');
         }
 
         // ========== جدا کردن محصولات فیزیکی و دانلودی ==========
-        $physicalProducts = $cart->products->filter(fn($p) => $p->type === 'physical');
-        $downloadProducts = $cart->products->filter(fn($p) => $p->type === 'download');
+        $physicalProducts = $cart->products->filter(fn ($p) => $p->type === 'physical');
+        $downloadProducts = $cart->products->filter(fn ($p) => $p->type === 'download');
 
         // اگر فقط محصول دانلودی در سبد است، نیازی به آدرس نیست
         if ($physicalProducts->isEmpty() && $downloadProducts->isNotEmpty()) {
@@ -127,12 +142,14 @@ class OrderController extends Controller
 
         foreach ($physicalProducts as $product) {
             $price = Price::with(['seller'])->find($product->pivot->price_id);
-            if (!$price) continue;
+            if (! $price) {
+                continue;
+            }
 
             $sellerId = $price->seller_id;
-            $groupId = $sellerId ? 'seller_' . $sellerId : 'store';
+            $groupId = $sellerId ? 'seller_'.$sellerId : 'store';
 
-            if (!isset($sellerGroups[$groupId])) {
+            if (! isset($sellerGroups[$groupId])) {
                 if ($sellerId) {
                     $seller = Seller::find($sellerId);
                     $sellerInfo = $seller ? [
@@ -158,7 +175,7 @@ class OrderController extends Controller
                     'total_price' => 0,    // قیمت نهایی با تخفیف محصول
                     'carrier_id' => $selectedCarrierId,
                     'delivery_date' => $selectedDeliveryDate,
-                    'shipping_cost' => 0
+                    'shipping_cost' => 0,
                 ];
             }
 
@@ -169,7 +186,7 @@ class OrderController extends Controller
                 'price' => $price,
                 'quantity' => $product->pivot->quantity,
                 'weight' => ($product->weight ?? 0) * $product->pivot->quantity,
-                'final_price' => $finalPrice
+                'final_price' => $finalPrice,
             ];
             $sellerGroups[$groupId]['total_weight'] += ($product->weight ?? 0) * $product->pivot->quantity;
             $sellerGroups[$groupId]['price'] += ($price->price) * $product->pivot->quantity;
@@ -185,7 +202,9 @@ class OrderController extends Controller
 
         foreach ($downloadProducts as $product) {
             $price = Price::with(['seller'])->find($product->pivot->price_id);
-            if (!$price) continue;
+            if (! $price) {
+                continue;
+            }
 
             $finalPrice = $price->discount_price ?? $price->price;
             $downloadTotalPrice += $finalPrice * $product->pivot->quantity;
@@ -194,7 +213,7 @@ class OrderController extends Controller
                 'product' => $product,
                 'price' => $price,
                 'quantity' => $product->pivot->quantity,
-                'final_price' => $finalPrice
+                'final_price' => $finalPrice,
             ];
         }
 
@@ -204,21 +223,24 @@ class OrderController extends Controller
 
         foreach ($sellerGroups as $groupId => &$group) {
             // 1. بررسی وجود روش ارسال
-            if (!$group['carrier_id']) {
+            if (! $group['carrier_id']) {
                 $errors[] = "روش ارسال برای مرسوله {$group['name']} انتخاب نشده است";
+
                 continue;
             }
 
             $carrier = Carrier::find($group['carrier_id']);
-            if (!$carrier) {
+            if (! $carrier) {
                 $errors[] = "روش ارسال نامعتبر برای مرسوله {$group['name']}";
+
                 continue;
             }
 
             // 2. بررسی امکان استفاده از روش ارسال
             $carrierResult = $cart->canUseCarrier($carrier->id, $address->city_id);
-            if (!$carrierResult['status']) {
+            if (! $carrierResult['status']) {
                 $errors[] = "روش ارسال {$carrier->title} برای مرسوله {$group['name']} قابل استفاده نیست: {$carrierResult['message']}";
+
                 continue;
             }
 
@@ -226,6 +248,7 @@ class OrderController extends Controller
             $shippingCost = $this->calculateCarrierCost($carrier, $group['total_weight'], $address->city_id);
             if ($shippingCost === false) {
                 $errors[] = "محاسبه هزینه ارسال برای مرسوله {$group['name']} امکان پذیر نیست";
+
                 continue;
             }
 
@@ -234,8 +257,9 @@ class OrderController extends Controller
 
             // 4. اعتبارسنجی تاریخ تحویل برای روش‌های user_select
             if ($carrier->delivery_time_type == 'user_select') {
-                if (!$group['delivery_date']) {
+                if (! $group['delivery_date']) {
                     $errors[] = "لطفاً تاریخ تحویل برای مرسوله {$group['name']} را انتخاب کنید";
+
                     continue;
                 }
 
@@ -248,8 +272,9 @@ class OrderController extends Controller
                     }
                 }
 
-                if (!$isValidDate) {
+                if (! $isValidDate) {
                     $errors[] = "تاریخ تحویل انتخاب شده برای مرسوله {$group['name']} معتبر نیست";
+
                     continue;
                 }
             }
@@ -259,10 +284,10 @@ class OrderController extends Controller
         if ($physicalProducts->isEmpty() && $downloadProducts->isNotEmpty()) {
             // بدون خطای ارسال
         } elseif ($physicalProducts->isNotEmpty() && empty($sellerGroups)) {
-            $errors[] = "محصولات فیزیکی یافت نشد";
+            $errors[] = 'محصولات فیزیکی یافت نشد';
         }
 
-        if (!empty($errors)) {
+        if (! empty($errors)) {
             return redirect()->back()->withInput()->withErrors($errors);
         }
 
@@ -282,7 +307,7 @@ class OrderController extends Controller
         $data['discount_id'] = $cart->discount_id;
 
         if ($cart->discount) {
-            if ($cart->discount->type == "percent") {
+            if ($cart->discount->type == 'percent') {
                 $data['discount_percent'] = $cart->discount->amount;
             } else {
                 $data['discount_price'] = $cart->discount->amount;
@@ -299,7 +324,7 @@ class OrderController extends Controller
             $data['city_id'] = $address->city_id;
             $data['postal_code'] = $address->postal_code;
             $data['address'] = $address->address;
-            $data['location'] = $address->lat . ',' . $address->lng;
+            $data['location'] = $address->lat.','.$address->lng;
         } else {
             // برای محصولات دانلودی، آدرس را خالی می‌گذاریم یا از اطلاعات کاربر استفاده می‌کنیم
             $data['name'] = $user->name ?? '';
@@ -323,10 +348,12 @@ class OrderController extends Controller
         // -- محصولات فیزیکی --
         foreach ($physicalProducts as $product) {
             $price = Price::with(['seller'])->find($product->pivot->price_id);
-            if (!$price) continue;
+            if (! $price) {
+                continue;
+            }
 
             $sellerId = $price->seller_id;
-            $groupId = $sellerId ? 'seller_' . $sellerId : 'store';
+            $groupId = $sellerId ? 'seller_'.$sellerId : 'store';
             $group = $sellerGroups[$groupId] ?? null;
 
             // دریافت اطلاعات ارسال از گروه
@@ -401,29 +428,27 @@ class OrderController extends Controller
         $isCredit = $request->filled('credit_enabled') && $request->input('credit_enabled') == '1';
 
         if ($isInstallment) {
-            $installmentService = app(\Modules\CreditPay\Services\InstallmentService::class);
+            $installmentService = app(InstallmentService::class);
             // ۱. بررسی اعتبار کاربر برای گرفتن اقساط
-            $canApply = $installmentService->canUserApplyForInstallment($user->id,$price->discount_price ?? $price->price);
-            if (!$canApply['can']) {
+            $canApply = $installmentService->canUserApplyForInstallment($user->id, $price->discount_price ?? $price->price);
+            if (! $canApply['can']) {
                 return redirect()->back()->with('error', $canApply['reason'])->withInput();
             }
-        }
-
-        elseif ($isCredit) {
+        } elseif ($isCredit) {
 
             // ۱. بررسی فعال بودن ماژول
-            if (!function_exists('module_is_active') || !module_is_active('CreditPay')) {
+            if (! function_exists('module_is_active') || ! module_is_active('CreditPay')) {
                 return redirect()->back()->with('error', 'ماژول خرید اعتباری فعال نیست.')->withInput();
             }
 
             // فاز ۸۸ — این بلاک فقط «اعتبارسنجی قبل از حذف سبد» است؛ سفارش اعتباری فقط یک‌بار و در
             // بلاک «مدیریت خرید اعتباری (CreditPay)» بعد از ایجاد سفارش ساخته می‌شود
             // (نسخهٔ قبلی همین‌جا هم سفارش می‌ساخت و هر خرید اعتباری «دو بار» ثبت می‌شد).
-            $creditService = app(\Modules\CreditPay\Services\CreditService::class);
+            $creditService = app(CreditService::class);
 
             // ۲. جمع‌آوری اطلاعات سبد
             $productIds = $cart->products->pluck('id')->toArray();
-            $cartTotal  = (int) $cart->finalPrice();
+            $cartTotal = (int) $cart->finalPrice();
 
             // ۳. بررسی شرط‌های خرید اعتباری
             $canUseCredit = $creditService->canUserUseCredit(
@@ -432,15 +457,13 @@ class OrderController extends Controller
                 $productIds
             );
 
-            if (!$canUseCredit['can']) {
+            if (! $canUseCredit['can']) {
                 return redirect()->back()->with('error', $canUseCredit['reason'])->withInput();
             }
         }
         // ==========  برسی پرداخت اعتباری قبل از حذف سبد ==========
 
-
-
-       // $cart->delete();
+        // $cart->delete();
 
         $hour = option('order_cancel', 1);
         CancelOrder::dispatch($order)->delay(now()->addHours($hour));
@@ -466,18 +489,18 @@ class OrderController extends Controller
         if ($isInstallment) {
 
             // بررسی فعال بودن ماژول
-            if (!function_exists('module_is_active') || !module_is_active('CreditPay')) {
+            if (! function_exists('module_is_active') || ! module_is_active('CreditPay')) {
                 return redirect()->back()->with('error', 'ماژول پرداخت اقساطی فعال نیست.')->withInput();
             }
 
-            $installmentService = app(\Modules\CreditPay\Services\InstallmentService::class);
+            $installmentService = app(InstallmentService::class);
 
             // ===== تحلیل سبد: تفکیک آیتم‌های قابل خرید اقساطی از نقدی =====
             $cartItems = $installmentService->prepareCartItems($cart);
             $cartAnalysis = $installmentService->analyzeCart($cartItems);
 
             // اگه هیچ آیتم قابل خرید اقساطی وجود نداره → ارور
-            if (!$cartAnalysis['has_credit_items']) {
+            if (! $cartAnalysis['has_credit_items']) {
                 return redirect()->back()
                     ->with('error', 'هیچ محصولی در سبد شما قابل خرید اقساطی نیست.')
                     ->withInput();
@@ -490,7 +513,7 @@ class OrderController extends Controller
 
             // بررسی اعتبار کاربر برای گرفتن اقساط (برای مبلغ قابل خرید اقساطی)
             $canApply = $installmentService->canUserApplyForInstallment($user->id, $installmentEligibleTotal);
-            if (!$canApply['can']) {
+            if (! $canApply['can']) {
                 return redirect()->back()->with('error', $canApply['reason'])->withInput();
             }
 
@@ -518,8 +541,8 @@ class OrderController extends Controller
                     $installmentCount,
                     $downPaymentPercent
                 );
-            } catch (\Exception $e) {
-                return redirect()->back()->with('error', 'خطا در ایجاد طرح اقساطی: ' . $e->getMessage())->withInput();
+            } catch (Exception $e) {
+                return redirect()->back()->with('error', 'خطا در ایجاد طرح اقساطی: '.$e->getMessage())->withInput();
             }
 
             // مبلغ پیش‌پرداخت (فقط روی مبلغ قابل خرید اقساطی)
@@ -547,17 +570,17 @@ class OrderController extends Controller
             }
 
             \Log::info('Installment plan created', [
-                'plan_id'              => $plan->id,
-                'order_id'             => $order->id,
-                'user_id'              => $user->id,
-                'installment_total'    => $totalForInstallment,
-                'cash_items_total'     => $cashItemsTotal,
-                'shipping_cost'        => $totalShippingCost,
-                'down_payment'         => $downPayment,
-                'pay_now'              => $payNowAmount,
-                'markup_amount'        => $markupAmount,
-                'cash_items_count'     => count($cartAnalysis['cash_items']),
-                'credit_items_count'   => count($cartAnalysis['credit_items']),
+                'plan_id' => $plan->id,
+                'order_id' => $order->id,
+                'user_id' => $user->id,
+                'installment_total' => $totalForInstallment,
+                'cash_items_total' => $cashItemsTotal,
+                'shipping_cost' => $totalShippingCost,
+                'down_payment' => $downPayment,
+                'pay_now' => $payNowAmount,
+                'markup_amount' => $markupAmount,
+                'cash_items_count' => count($cartAnalysis['cash_items']),
+                'credit_items_count' => count($cartAnalysis['credit_items']),
             ]);
         }
 
@@ -565,15 +588,15 @@ class OrderController extends Controller
         elseif ($isCredit) {
 
             // ۱. بررسی فعال بودن ماژول
-            if (!function_exists('module_is_active') || !module_is_active('CreditPay')) {
+            if (! function_exists('module_is_active') || ! module_is_active('CreditPay')) {
                 return redirect()->back()->with('error', 'ماژول خرید اعتباری فعال نیست.')->withInput();
             }
 
-            $creditService = app(\Modules\CreditPay\Services\CreditService::class);
+            $creditService = app(CreditService::class);
 
             // ۲. جمع‌آوری اطلاعات سبد
             $productIds = $cart->products->pluck('id')->toArray();
-            $cartTotal  = (int) $cart->finalPrice();
+            $cartTotal = (int) $cart->finalPrice();
 
             // ۳. بررسی شرط‌ها
             $canUseCredit = $creditService->canUserUseCredit(
@@ -582,7 +605,7 @@ class OrderController extends Controller
                 $productIds
             );
 
-            if (!$canUseCredit['can']) {
+            if (! $canUseCredit['can']) {
                 return redirect()->back()->with('error', $canUseCredit['reason'])->withInput();
             }
 
@@ -594,7 +617,7 @@ class OrderController extends Controller
             $cartAnalysis = $creditService->analyzeCart($cartItems);
 
             // اگه هیچ آیتم اعتباری وجود نداره → ارور
-            if (!$cartAnalysis['has_credit_items']) {
+            if (! $cartAnalysis['has_credit_items']) {
                 return redirect()->back()
                     ->with('error', 'هیچ محصولی در سبد شما قابل خرید اعتباری نیست.')
                     ->withInput();
@@ -610,6 +633,7 @@ class OrderController extends Controller
                     'cartItems' => $cartItems,
                     'cartAnalysis' => $cartAnalysis,
                 ]);
+
                 return redirect()->back()
                     ->with('error', 'خطا در محاسبه مبلغ سبد. لطفاً با پشتیبانی تماس بگیرید.')
                     ->withInput();
@@ -618,7 +642,7 @@ class OrderController extends Controller
             $creditUsed = min($availableCredit, $creditEligibleTotal);
 
             // ۶. محاسبه markup فقط روی مبلغ اعتبار استفاده‌شده
-            $markupData  = $creditService->calculateMarkup($cartAnalysis['credit_items']);
+            $markupData = $creditService->calculateMarkup($cartAnalysis['credit_items']);
             $markupAmount = $markupData['markup_amount'];
             // اگه اعتبار کمتر از کل اقساطی است، markup را متناسب کاهش بده
             if ($creditUsed < $creditEligibleTotal && $creditEligibleTotal > 0) {
@@ -629,7 +653,7 @@ class OrderController extends Controller
             // ۷. محاسبه مبالغ نهایی
             $creditTotalWithMarkup = $creditUsed + $markupAmount;
             $creditShortfall = max(0, $creditEligibleTotal - $creditUsed);
-            $cashItemsTotal  = $cartAnalysis['cash_total'];
+            $cashItemsTotal = $cartAnalysis['cash_total'];
 
             // مبلغ نقدی که کاربر باید بده:
             // - آیتم‌های نقدی (فروشنده/مستثنی)
@@ -638,9 +662,9 @@ class OrderController extends Controller
             $cashPaid = $cashItemsTotal + $creditShortfall;
 
             // ۸. تنظیمات اقساط (فقط روی مبلغ اعتباری استفاده‌شده محاسبه می‌شه)
-            $installmentsCount       = (int) \Modules\CreditPay\Models\CreditSetting::get('default_installments', 4);
-            $firstInstallmentPercent = (float) \Modules\CreditPay\Models\CreditSetting::get('first_installment_percent', 25);
-            $firstInstallmentAmount  = (int) round($creditTotalWithMarkup * $firstInstallmentPercent / 100);
+            $installmentsCount = (int) CreditSetting::get('default_installments', 4);
+            $firstInstallmentPercent = (float) CreditSetting::get('first_installment_percent', 25);
+            $firstInstallmentAmount = (int) round($creditTotalWithMarkup * $firstInstallmentPercent / 100);
 
             // ۹. مبلغ قابل پرداخت الان
             //    نقدی (مابقی + ارسال) + قسط اول
@@ -664,54 +688,55 @@ class OrderController extends Controller
 
             // ۱۱. ساخت سفارش اعتباری (بدون کسر اعتبار - کسر در orderPaid انجام می‌شه)
             try {
-                $creditOrder = \Modules\CreditPay\Models\CreditOrder::create([
-                    'order_id'                  => $order->id,
-                    'account_id'                => $account->id,
-                    'original_amount'           => $creditUsed,
-                    'markup_amount'             => $markupAmount,
-                    'total_amount'              => $creditTotalWithMarkup,
-                    'credit_used'               => $creditUsed,
-                    'cash_paid'                 => $cashPaid,
-                    'installments_count'        => $installmentsCount,
+                $creditOrder = CreditOrder::create([
+                    'order_id' => $order->id,
+                    'account_id' => $account->id,
+                    'original_amount' => $creditUsed,
+                    'markup_amount' => $markupAmount,
+                    'total_amount' => $creditTotalWithMarkup,
+                    'credit_used' => $creditUsed,
+                    'cash_paid' => $cashPaid,
+                    'installments_count' => $installmentsCount,
                     'first_installment_percent' => $firstInstallmentPercent,
-                    'first_installment_amount'  => $firstInstallmentAmount,
-                    'first_installment_paid'    => false,
-                    'status'                    => \Modules\CreditPay\Models\CreditOrder::STATUS_ACTIVE,
+                    'first_installment_amount' => $firstInstallmentAmount,
+                    'first_installment_paid' => false,
+                    'status' => CreditOrder::STATUS_ACTIVE,
                 ]);
 
                 // ۱۲. ساخت اقساط (همگی در حالت pending) - فقط روی مبلغ اعتباری
                 $remainingAmount = $creditTotalWithMarkup - $firstInstallmentAmount;
-                $monthlyAmount   = $installmentsCount > 1 ? (int) round($remainingAmount / ($installmentsCount - 1)) : 0;
+                $monthlyAmount = $installmentsCount > 1 ? (int) round($remainingAmount / ($installmentsCount - 1)) : 0;
 
                 // قسط اول (سررسید = امروز، برای پرداخت آنی)
-                \Modules\CreditPay\Models\CreditInstallment::create([
-                    'credit_order_id'    => $creditOrder->id,
+                CreditInstallment::create([
+                    'credit_order_id' => $creditOrder->id,
                     'installment_number' => 1,
-                    'amount'             => $firstInstallmentAmount,
-                    'total_amount'       => $firstInstallmentAmount,
-                    'due_date'           => now()->toDateString(),
-                    'status'             => \Modules\CreditPay\Models\CreditInstallment::STATUS_PENDING,
+                    'amount' => $firstInstallmentAmount,
+                    'total_amount' => $firstInstallmentAmount,
+                    'due_date' => now()->toDateString(),
+                    'status' => CreditInstallment::STATUS_PENDING,
                 ]);
 
                 // اقساط ماهانه بعدی
                 for ($i = 2; $i <= $installmentsCount; $i++) {
-                    \Modules\CreditPay\Models\CreditInstallment::create([
-                        'credit_order_id'    => $creditOrder->id,
+                    CreditInstallment::create([
+                        'credit_order_id' => $creditOrder->id,
                         'installment_number' => $i,
-                        'amount'             => $monthlyAmount,
-                        'total_amount'       => $monthlyAmount,
-                        'due_date'           => now()->addMonths($i - 1)->toDateString(),
-                        'status'             => \Modules\CreditPay\Models\CreditInstallment::STATUS_PENDING,
+                        'amount' => $monthlyAmount,
+                        'total_amount' => $monthlyAmount,
+                        'due_date' => now()->addMonths($i - 1)->toDateString(),
+                        'status' => CreditInstallment::STATUS_PENDING,
                     ]);
                 }
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 \Log::error('Credit order creation failed', [
-                    'user_id'  => $user->id,
+                    'user_id' => $user->id,
                     'order_id' => $order->id,
-                    'error'    => $e->getMessage(),
+                    'error' => $e->getMessage(),
                 ]);
-                return redirect()->back()->with('error', 'خطا در ثبت خرید اعتباری: ' . $e->getMessage())->withInput();
+
+                return redirect()->back()->with('error', 'خطا در ثبت خرید اعتباری: '.$e->getMessage())->withInput();
             }
 
             // ۱۳. تغییر مبلغ سفارش به مبلغ نقدی + قسط اول + هزینه ارسال
@@ -738,30 +763,28 @@ class OrderController extends Controller
                     number_format($totalShippingCost)
                 );
             }
-            if (!empty($messages)) {
+            if (! empty($messages)) {
                 session()->flash('credit_cash_items_info', implode(' ', $messages));
             }
 
             \Log::info('Credit order created (pending payment)', [
-                'credit_order_id'      => $creditOrder->id,
-                'order_id'             => $order->id,
-                'user_id'              => $user->id,
+                'credit_order_id' => $creditOrder->id,
+                'order_id' => $order->id,
+                'user_id' => $user->id,
                 'credit_eligible_total' => $creditEligibleTotal,
-                'credit_used'           => $creditUsed,
-                'markup_amount'         => $markupAmount,
+                'credit_used' => $creditUsed,
+                'markup_amount' => $markupAmount,
                 'credit_total_with_markup' => $creditTotalWithMarkup,
-                'credit_shortfall'      => $creditShortfall,
-                'cash_items_total'      => $cashItemsTotal,
-                'shipping_cost'         => $totalShippingCost,
-                'first_installment'     => $firstInstallmentAmount,
-                'pay_now'               => $payNowAmount,
+                'credit_shortfall' => $creditShortfall,
+                'cash_items_total' => $cashItemsTotal,
+                'shipping_cost' => $totalShippingCost,
+                'first_installment' => $firstInstallmentAmount,
+                'pay_now' => $payNowAmount,
             ]);
         }
 
-
-
         return $this->resolvePaymentGateway($request, $order);
-       // return $this->pay($order, $request);
+        // return $this->pay($order, $request);
 
     }
 
@@ -769,10 +792,10 @@ class OrderController extends Controller
     {
         return [
             // فاز ۸۷ — پکیج جدید «پرداخت‌یار» (PayYar): درگاه مستقیم + اسنپ‌پی
-            'payyar'  => \Modules\PayYar\Http\Controllers\PayYarController::class,
-            'snappay' => \Modules\PayYar\Http\Controllers\SnappPayController::class,
+            'payyar' => PayYarController::class,
+            'snappay' => SnappPayController::class,
             // سازگاری نصب‌های قدیمی پکیج «درگاه‌های پرداخت و اقساطی» (DigiPay)
-            'digipay' => \Modules\DigiPay\Http\Controllers\DigiPayController::class,
+            'digipay' => DigiPayController::class,
         ];
     }
 
@@ -809,7 +832,7 @@ class OrderController extends Controller
             $moduleName = $this->extractModuleName($controllerClass);
 
             // بررسی فعال بودن ماژول
-            if (!function_exists('module_is_active') || !module_is_active($moduleName)) {
+            if (! function_exists('module_is_active') || ! module_is_active($moduleName)) {
                 return redirect()->back()
                     ->with('error', "ماژول {$moduleName} فعال نیست.")
                     ->withInput();
@@ -818,17 +841,18 @@ class OrderController extends Controller
             // فراخوانی initiatePayment از کنترلر ماژول
             try {
                 $controller = app($controllerClass);
+
                 return $controller->initiatePayment($request, $order);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::error("OrderController: Error in module gateway {$gatewayKey}", [
-                    'order_id'   => $order->id,
-                    'gateway'    => $gatewayKey,
-                    'module'     => $moduleName,
-                    'error'      => $e->getMessage(),
+                    'order_id' => $order->id,
+                    'gateway' => $gatewayKey,
+                    'module' => $moduleName,
+                    'error' => $e->getMessage(),
                 ]);
 
                 return redirect()->back()
-                    ->with('error', "خطا در اتصال به درگاه {$moduleName}: " . $e->getMessage())
+                    ->with('error', "خطا در اتصال به درگاه {$moduleName}: ".$e->getMessage())
                     ->withInput();
             }
         }
@@ -848,9 +872,9 @@ class OrderController extends Controller
         if (preg_match('/^Modules\\\\([^\\\\]+)\\\\/', $controllerClass, $matches)) {
             return $matches[1];
         }
+
         return '';
     }
-
 
     /**
      * استخراج ویژگی‌های محصول
@@ -863,7 +887,7 @@ class OrderController extends Controller
         foreach ($get_attributes as $attribute) {
             $attribute_groups_name = $attribute->group->name;
 
-            if (!isset($allAttributes[$attribute_groups_name])) {
+            if (! isset($allAttributes[$attribute_groups_name])) {
                 $allAttributes[$attribute_groups_name] = [];
             }
 
@@ -875,6 +899,7 @@ class OrderController extends Controller
 
         return json_encode($allAttributes);
     }
+
     private function calculateCarrierCost($carrier, $weight, $cityId)
     {
         if ($carrier->free_shipping_weight && $weight >= $carrier->free_shipping_weight) {
@@ -882,7 +907,7 @@ class OrderController extends Controller
         }
 
         $destinationCity = City::find($cityId);
-        if (!$destinationCity) {
+        if (! $destinationCity) {
             return false;
         }
 
@@ -911,7 +936,7 @@ class OrderController extends Controller
     private function getDeliveryDates($carrier)
     {
         $rangeDays = (int) $carrier->user_select_ranges;
-        if (!$rangeDays || $rangeDays <= 0) {
+        if (! $rangeDays || $rangeDays <= 0) {
             $rangeDays = 7;
         }
 
@@ -922,13 +947,17 @@ class OrderController extends Controller
             $currentDate = clone $startDate;
             $currentDate->addDays($i);
 
-            $jalali = \Morilog\Jalali\Jalalian::fromDateTime($currentDate);
+            $jalali = Jalalian::fromDateTime($currentDate);
             $isFriday = $currentDate->dayOfWeek == 5;
             $isHoliday = $this->isHoliday($currentDate);
 
             $isSelectable = true;
-            if ($carrier->disable_fridays && $isFriday) $isSelectable = false;
-            if ($carrier->disable_holidays && $isHoliday) $isSelectable = false;
+            if ($carrier->disable_fridays && $isFriday) {
+                $isSelectable = false;
+            }
+            if ($carrier->disable_holidays && $isHoliday) {
+                $isSelectable = false;
+            }
 
             $dates[] = [
                 'date' => $currentDate->format('Y-m-d'),
@@ -938,7 +967,7 @@ class OrderController extends Controller
                 'day_name' => $jalali->format('l'),
                 'is_friday' => $isFriday,
                 'is_holiday' => $isHoliday,
-                'is_selectable' => $isSelectable
+                'is_selectable' => $isSelectable,
             ];
         }
 
@@ -947,14 +976,12 @@ class OrderController extends Controller
 
     private function isHoliday($date)
     {
-        $jalali = \Morilog\Jalali\Jalalian::fromDateTime($date);
+        $jalali = Jalalian::fromDateTime($date);
         $jalaliDate = $jalali->format('Y/m/d');
 
         // استفاده از HolidayService
         return $this->holidayService->isHoliday($jalaliDate);
     }
-
-
 
     public function pay(Order $order, Request $request)
     {
@@ -971,13 +998,13 @@ class OrderController extends Controller
                 foreach ($order->items as $item) {
                     // فقط برای محصولات فیزیکی موجودی رزرو شود
                     // فاز ۷۸ — آیتم‌های پیش‌فروش رزرو نمی‌شوند (کالا هنوز تولید/تأمین نشده)
-                    if ($item->product->isPhysical() && !$item->product->pre_order) {
+                    if ($item->product->isPhysical() && ! $item->product->pre_order) {
                         $price = $item->get_price;
 
                         if ($price) {
                             $availableStock = $price->stock - $price->reserved_stock;
                             if ($availableStock < $item->quantity) {
-                                throw new \Exception("موجودی کافی برای محصول {$item->product->title} وجود ندارد");
+                                throw new Exception("موجودی کافی برای محصول {$item->product->title} وجود ندارد");
                             }
 
                             $this->stockService->reserve(
@@ -990,7 +1017,7 @@ class OrderController extends Controller
                     }
                 }
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return redirect()->route('front.orders.show', ['order' => $order])
                 ->with('error', $e->getMessage());
         }
@@ -1003,7 +1030,7 @@ class OrderController extends Controller
         $gateways = Gateway::active()->pluck('key')->toArray();
 
         $request->validate([
-            'gateway' => 'required|in:wallet,' . implode(',', $gateways)
+            'gateway' => 'required|in:wallet,'.implode(',', $gateways),
         ]);
 
         $gateway = $request->gateway;
@@ -1019,19 +1046,19 @@ class OrderController extends Controller
                 (new Invoice)->amount(intval($order->price)),
                 function ($driver, $transactionId) use ($order, $gateway) {
                     DB::table('transactions')->insert([
-                        'status'               => false,
-                        'amount'               => $order->price,
-                        'factorNumber'         => $order->id,
-                        'mobile'               => auth()->user()->username,
-                        'message'              => 'تراکنش ایجاد شد برای درگاه ' . $gateway,
-                        'transID'              => (string) $transactionId,
-                        'token'                => (string) $transactionId,
-                        'user_id'              => auth()->user()->id,
+                        'status' => false,
+                        'amount' => $order->price,
+                        'factorNumber' => $order->id,
+                        'mobile' => auth()->user()->username,
+                        'message' => 'تراکنش ایجاد شد برای درگاه '.$gateway,
+                        'transID' => (string) $transactionId,
+                        'token' => (string) $transactionId,
+                        'user_id' => auth()->user()->id,
                         'transactionable_type' => Order::class,
-                        'transactionable_id'   => $order->id,
-                        'gateway_id'           => Gateway::where('key', $gateway)->first()->id,
-                        "created_at"           => Carbon::now(),
-                        "updated_at"           => Carbon::now(),
+                        'transactionable_id' => $order->id,
+                        'gateway_id' => Gateway::where('key', $gateway)->first()->id,
+                        'created_at' => Carbon::now(),
+                        'updated_at' => Carbon::now(),
                     ]);
 
                     session()->put('transactionId', (string) $transactionId);
@@ -1039,6 +1066,13 @@ class OrderController extends Controller
                 }
             )->pay()->render();
         } catch (Exception $e) {
+            // فاز ۱۰۰ — خطای واقعی درگاه در لاگ ثبت شود تا قابل ریشه‌یابی باشد
+            Log::error('OrderController: خرید درگاه ناموفق', [
+                'order_id' => $order->id,
+                'gateway' => $gateway,
+                'error' => $e->getMessage(),
+            ]);
+
             return redirect()
                 ->route('front.orderResultInfo', ['order' => $order])
                 ->with('transaction-error', $e->getMessage())
@@ -1067,21 +1101,21 @@ class OrderController extends Controller
             $receipt = $receipt->transactionId($transactionId)->verify();
 
             DB::table('transactions')->where('transID', (string) $transactionId)->update([
-                'status'               => 1,
-                'amount'               => $order->price,
-                'factorNumber'         => $order->id,
-                'mobile'               => $order->mobile,
-                'traceNumber'          => $receipt->getReferenceId(),
-                'message'              => $transaction->message . '<br>' . 'پرداخت موفق با درگاه ' . $gateway,
-                'updated_at'           => Carbon::now(),
+                'status' => 1,
+                'amount' => $order->price,
+                'factorNumber' => $order->id,
+                'mobile' => $order->mobile,
+                'traceNumber' => $receipt->getReferenceId(),
+                'message' => $transaction->message.'<br>'.'پرداخت موفق با درگاه '.$gateway,
+                'updated_at' => Carbon::now(),
             ]);
 
             return $this->orderPaid($order);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
 
             DB::table('transactions')->where('transID', (string) $transactionId)->update([
-                'message'              => $transaction->message . '<br>' . $exception->getMessage(),
-                "updated_at"           => Carbon::now(),
+                'message' => $transaction->message.'<br>'.$exception->getMessage(),
+                'updated_at' => Carbon::now(),
             ]);
 
             return redirect()->route('front.orderResultInfo', ['order' => $order])->with('transaction-error', $exception->getMessage());
@@ -1090,8 +1124,8 @@ class OrderController extends Controller
 
     private function payUsingWallet(Order $order)
     {
-        $wallet  = $order->user->getWallet();
-        $amount  = intval($wallet->balance() - $order->price);
+        $wallet = $order->user->getWallet();
+        $amount = intval($wallet->balance() - $order->price);
 
         if ($amount >= 0) {
             $result = $order->payUsingWallet();
@@ -1103,44 +1137,44 @@ class OrderController extends Controller
         }
 
         $gateway = Gateway::active()->orderBy('ordering')->first();
-        $amount  = abs($amount);
+        $amount = abs($amount);
 
-        if (!$gateway) {
+        if (! $gateway) {
             return redirect()->route('front.orders.show', ['order' => $order])
                 ->with('transaction-error', 'درگاه فعالی برای پرداخت یافت نشد')
                 ->with('order_id', $order->id);
         }
 
         $history = $wallet->histories()->create([
-            'type'        => 'deposit',
-            'amount'      => $amount,
+            'type' => 'deposit',
+            'amount' => $amount,
             'description' => 'شارژ آنلاین کیف پول برای ثبت سفارش',
-            'source'      => 'user',
-            'status'      => 'fail',
-            'order_id'    => $order->id
+            'source' => 'user',
+            'status' => 'fail',
+            'order_id' => $order->id,
         ]);
 
         try {
-            $gateway         = $gateway->key;
+            $gateway = $gateway->key;
             $gateway_configs = get_gateway_configs($gateway);
 
             return Payment::via($gateway)->config($gateway_configs)->callbackUrl(route('front.wallet.verify', ['gateway' => $gateway]))->purchase(
                 (new Invoice)->amount($amount),
                 function ($driver, $transactionId) use ($history, $gateway, $amount) {
                     DB::table('transactions')->insert([
-                        'status'               => false,
-                        'amount'               => $amount,
-                        'factorNumber'         => $history->id,
-                        'mobile'               => auth()->user()->username,
-                        'message'              => 'تراکنش ایجاد شد برای درگاه ' . $gateway,
-                        'transID'              => $transactionId,
-                        'token'                => $transactionId,
-                        'user_id'              => auth()->user()->id,
+                        'status' => false,
+                        'amount' => $amount,
+                        'factorNumber' => $history->id,
+                        'mobile' => auth()->user()->username,
+                        'message' => 'تراکنش ایجاد شد برای درگاه '.$gateway,
+                        'transID' => $transactionId,
+                        'token' => $transactionId,
+                        'user_id' => auth()->user()->id,
                         'transactionable_type' => WalletHistory::class,
-                        'transactionable_id'   => $history->id,
-                        'gateway_id'           => Gateway::where('key', $gateway)->first()->id,
-                        "created_at"           => Carbon::now(),
-                        "updated_at"           => Carbon::now(),
+                        'transactionable_id' => $history->id,
+                        'gateway_id' => Gateway::where('key', $gateway)->first()->id,
+                        'created_at' => Carbon::now(),
+                        'updated_at' => Carbon::now(),
                     ]);
 
                     session()->put('transactionId', $transactionId);
@@ -1168,7 +1202,7 @@ class OrderController extends Controller
             // ========== بررسی مجدد موجودی با قفل (فقط برای محصولات فیزیکی) ==========
             foreach ($order->items as $item) {
                 // اگر محصول دانلودی است، از بررسی موجودی صرف نظر کن
-                if (!$item->product->isPhysical()) {
+                if (! $item->product->isPhysical()) {
                     continue;
                 }
 
@@ -1179,7 +1213,7 @@ class OrderController extends Controller
 
                 $price = $item->get_price;
 
-                if (!$price) {
+                if (! $price) {
                     throw new Exception("محصول {$item->title} یافت نشد");
                 }
 
@@ -1191,7 +1225,7 @@ class OrderController extends Controller
 
                 if ($availableStock < $item->quantity) {
                     throw new Exception(
-                        "موجودی محصول {$item->title} کافی نیست. " .
+                        "موجودی محصول {$item->title} کافی نیست. ".
                         "موجودی فعلی: {$availableStock} - درخواستی: {$item->quantity}"
                     );
                 }
@@ -1200,7 +1234,7 @@ class OrderController extends Controller
             // ========== ثبت حرکات انبار (فقط برای محصولات فیزیکی) ==========
             foreach ($order->items as $item) {
                 // اگر محصول دانلودی است، از ثبت حرکات انبار صرف نظر کن
-                if (!$item->product->isPhysical()) {
+                if (! $item->product->isPhysical()) {
                     continue;
                 }
 
@@ -1255,7 +1289,7 @@ class OrderController extends Controller
             // لاگ خطا
             \Log::warning('خطا در هنگام پرداخت سفارش', [
                 'order_id' => $order->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             // ========== لغو سفارش و برگشت هزینه ==========
@@ -1282,11 +1316,11 @@ class OrderController extends Controller
                         ->where('reserved_stock', '>=', $item->quantity)
                         ->decrement('reserved_stock', $item->quantity);
 
-                    if (!$decremented) {
-                        Log::warning("خطا در برگشت موجودی رزرو شده", [
+                    if (! $decremented) {
+                        Log::warning('خطا در برگشت موجودی رزرو شده', [
                             'order_id' => $order->id,
                             'item_id' => $item->id,
-                            'price_id' => $price->id
+                            'price_id' => $price->id,
                         ]);
                     }
                 }
@@ -1317,13 +1351,13 @@ class OrderController extends Controller
                         'amount' => $order->price,
                         'description' => "برگشت هزینه سفارش لغو شده #{$order->id} - {$errorMessage}",
                         'status' => 'success',
-                        'order_id' => $order->id
+                        'order_id' => $order->id,
                     ]);
 
-                    Log::info("برگشت وجه به کیف پول کاربر", [
+                    Log::info('برگشت وجه به کیف پول کاربر', [
                         'order_id' => $order->id,
                         'user_id' => $order->user_id,
-                        'amount' => $order->price
+                        'amount' => $order->price,
                     ]);
                 }
             }
@@ -1341,13 +1375,13 @@ class OrderController extends Controller
             event(new OrderCancelledNotification($order, $errorMessage, $refundAmount));
 
             // 5. ارسال نوتیفیکیشن به کاربر
-            //$this->sendOrderCancellationNotifications($order, $errorMessage, $refundAmount);
+            // $this->sendOrderCancellationNotifications($order, $errorMessage, $refundAmount);
 
             // 6. ارسال نوتیفیکیشن به ادمین (در ایونت هندل می‌شود)
 
             return redirect()->route('front.orders.show', ['order' => $order])
                 ->with('error', "سفارش شما لغو شد: {$errorMessage}")
-                ->with('refund_message', $refundAmount > 0 ? "مبلغ " . number_format($refundAmount) . " تومان به کیف پول شما برگشت داده شد" : null);
+                ->with('refund_message', $refundAmount > 0 ? 'مبلغ '.number_format($refundAmount).' تومان به کیف پول شما برگشت داده شد' : null);
 
         } catch (Exception $e) {
             DB::rollBack();
@@ -1358,7 +1392,7 @@ class OrderController extends Controller
                 'user_id' => $order->user_id,
                 'amount' => $order->price,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             // در صورت خطا، مدیر سیستم باید مداخله کند
@@ -1371,9 +1405,9 @@ class OrderController extends Controller
                     'failed_reason' => "خطای سیستمی: {$errorMessage}",
                     'failed_at' => now(),
                 ]);
-            } catch (\Exception $updateError) {
+            } catch (Exception $updateError) {
                 // لاگ خطای آپدیت
-                Log::error("خطا در آپدیت وضعیت سفارش: " . $updateError->getMessage());
+                Log::error('خطا در آپدیت وضعیت سفارش: '.$updateError->getMessage());
             }
 
             return redirect()->route('front.orders.show', ['order' => $order])
@@ -1389,24 +1423,24 @@ class OrderController extends Controller
         // 1. ارسال نوتیفیکیشن دیتابیس و WebPush
         try {
             $order->user->notify(new OrderCancelled($order, $errorMessage, $refundAmount));
-        } catch (\Exception $e) {
-            Log::warning("ارسال نوتیفیکیشن دیتابیس لغو سفارش ناموفق: " . $e->getMessage());
+        } catch (Exception $e) {
+            Log::warning('ارسال نوتیفیکیشن دیتابیس لغو سفارش ناموفق: '.$e->getMessage());
 
             // روش جایگزین: ذخیره مستقیم در دیتابیس
             try {
                 $order->user->notifications()->create([
                     'type' => 'order_cancelled',
                     'title' => 'لغو سفارش',
-                    'message' => "سفارش #{$order->id} به دلیل {$errorMessage} لغو شد." .
-                        ($refundAmount > 0 ? " مبلغ " . number_format($refundAmount) . " تومان به کیف پول شما برگشت داده شد." : ""),
+                    'message' => "سفارش #{$order->id} به دلیل {$errorMessage} لغو شد.".
+                        ($refundAmount > 0 ? ' مبلغ '.number_format($refundAmount).' تومان به کیف پول شما برگشت داده شد.' : ''),
                     'data' => [
                         'order_id' => $order->id,
                         'reason' => $errorMessage,
-                        'refund_amount' => $refundAmount
-                    ]
+                        'refund_amount' => $refundAmount,
+                    ],
                 ]);
-            } catch (\Exception $dbError) {
-                Log::error("خطا در ذخیره نوتیفیکیشن در دیتابیس: " . $dbError->getMessage());
+            } catch (Exception $dbError) {
+                Log::error('خطا در ذخیره نوتیفیکیشن در دیتابیس: '.$dbError->getMessage());
             }
         }
 
@@ -1414,23 +1448,22 @@ class OrderController extends Controller
         if (option('user_sms_on_order_cancelled', 'off') == 'on') {
             try {
                 Notification::send($order->user, new OrderCancelledSms($order, $errorMessage, $refundAmount));
-            } catch (\Exception $e) {
-                Log::warning("ارسال SMS لغو سفارش به کاربر ناموفق: " . $e->getMessage());
+            } catch (Exception $e) {
+                Log::warning('ارسال SMS لغو سفارش به کاربر ناموفق: '.$e->getMessage());
 
                 // روش جایگزین: استفاده از سرویس SMS مستقیم
                 if (option('sms_order_cancel_enable', false)) {
                     try {
 
-                        $smsServiceData=[
-                            'refund_amount'=>number_format($refundAmount),
-                            'reason'=>  $errorMessage,
+                        $smsServiceData = [
+                            'refund_amount' => number_format($refundAmount),
+                            'reason' => $errorMessage,
                         ];
-                        $smsService = new SmsService($order->user->mobile,$smsServiceData,Sms::TYPES['USER_ORDER_CANCELLED'],$order->user_id);
+                        $smsService = new SmsService($order->user->mobile, $smsServiceData, Sms::TYPES['USER_ORDER_CANCELLED'], $order->user_id);
                         $smsService->sendSms();
 
-
-                    } catch (\Exception $smsError) {
-                        Log::error("خطا در ارسال SMS مستقیم: " . $smsError->getMessage());
+                    } catch (Exception $smsError) {
+                        Log::error('خطا در ارسال SMS مستقیم: '.$smsError->getMessage());
                     }
                 }
             }
@@ -1451,29 +1484,29 @@ class OrderController extends Controller
             'error' => $errorMessage,
             'system_error' => $systemError,
             'timestamp' => now()->toDateTimeString(),
-            'order_status' => $order->status
+            'order_status' => $order->status,
         ]);
 
         // 2. ایجاد نوتیفیکیشن برای ادمین‌ها در دیتابیس
         try {
-            $admins = \App\Models\Admin::whereIn('level', ['admin', 'creator'])->get();
+            $admins = Admin::whereIn('level', ['admin', 'creator'])->get();
 
             foreach ($admins as $admin) {
                 $admin->notifications()->create([
                     'type' => 'order_cancellation_error',
                     'title' => 'خطا در لغو سفارش و برگشت وجه',
-                    'message' => "سفارش #{$order->id} نیاز به بررسی دستی دارد. مبلغ: " . number_format($order->price) . " تومان",
+                    'message' => "سفارش #{$order->id} نیاز به بررسی دستی دارد. مبلغ: ".number_format($order->price).' تومان',
                     'data' => [
                         'order_id' => $order->id,
                         'user_id' => $order->user_id,
                         'amount' => $order->price,
                         'error' => $errorMessage,
-                        'action_needed' => true
-                    ]
+                        'action_needed' => true,
+                    ],
                 ]);
             }
-        } catch (\Exception $e) {
-            Log::error("خطا در ارسال نوتیفیکیشن به ادمین: " . $e->getMessage());
+        } catch (Exception $e) {
+            Log::error('خطا در ارسال نوتیفیکیشن به ادمین: '.$e->getMessage());
         }
 
         // 3. ارسال SMS به ادمین (اختیاری)
@@ -1482,26 +1515,27 @@ class OrderController extends Controller
                 $adminMobile = option('admin_mobile_number');
                 if ($adminMobile) {
 
-                    $smsServiceData=[
-                        'refund_amount'=>number_format($order->price),
-                        'reason'=>  $errorMessage,
+                    $smsServiceData = [
+                        'refund_amount' => number_format($order->price),
+                        'reason' => $errorMessage,
                     ];
-                    $smsService = new SmsService($adminMobile,$smsServiceData,Sms::TYPES['USER_ORDER_CANCELLED'],$order->user_id);
+                    $smsService = new SmsService($adminMobile, $smsServiceData, Sms::TYPES['USER_ORDER_CANCELLED'], $order->user_id);
                     $smsService->sendSms();
 
                 }
-            } catch (\Exception $e) {
-                Log::warning("ارسال SMS به ادمین ناموفق: " . $e->getMessage());
+            } catch (Exception $e) {
+                Log::warning('ارسال SMS به ادمین ناموفق: '.$e->getMessage());
             }
         }
-   }
+    }
 
     public function print(Order $order)
     {
-        //$this->authorize('orders.view');
-        if (auth()->user()->id!=$order->user_id){
+        // $this->authorize('orders.view');
+        if (auth()->user()->id != $order->user_id) {
             abort(404);
         }
+
         return view('front::user.orders.print', compact('order'));
     }
 
@@ -1511,26 +1545,27 @@ class OrderController extends Controller
     private function activateDownloadLink($orderItem, $order)
     {
         $price = $orderItem->get_price;
-        if (!$price) {
+        if (! $price) {
             return;
         }
 
         // فرض بر این است که مدل Price دارای رابطه file است
         $file = $price->file;
-        if (!$file) {
+        if (! $file) {
             \Log::warning("فایل دانلودی برای محصول {$orderItem->title} یافت نشد", [
                 'order_id' => $order->id,
-                'order_item_id' => $orderItem->id
+                'order_item_id' => $orderItem->id,
             ]);
+
             return;
         }
 
         // ایجاد لینک دانلود
-        $downloadLink = \App\Models\DownloadLink::create([
+        $downloadLink = DownloadLink::create([
             'order_item_id' => $orderItem->id,
             'user_id' => $order->user_id,
             'file_id' => $file->id,
-            'token' => \Illuminate\Support\Str::random(64),
+            'token' => Str::random(64),
             'expires_at' => now()->addDays(option('download_expiry_days', 30)),
             'max_downloads' => option('max_downloads', 5),
             'download_count' => 0,
@@ -1544,10 +1579,9 @@ class OrderController extends Controller
 
         // ارسال ایمیل حاوی لینک دانلود (اختیاری)
         try {
-            \Mail::to($order->user->email)->send(new \App\Mail\DownloadLinkMail($orderItem, $downloadLink));
-        } catch (\Exception $e) {
-            \Log::warning("ارسال ایمیل لینک دانلود ناموفق: " . $e->getMessage());
+            \Mail::to($order->user->email)->send(new DownloadLinkMail($orderItem, $downloadLink));
+        } catch (Exception $e) {
+            \Log::warning('ارسال ایمیل لینک دانلود ناموفق: '.$e->getMessage());
         }
     }
-
 }

@@ -62,8 +62,14 @@
                             <span>پکیج‌های مشمول اشتراک، بدون پرداخت نصب می‌شوند</span>
                         </div>
                         <div class="pkg-sub-banner-days">
-                            <span class="pkg-sub-days-value">{{ $subscriptionSummary['days_remaining'] ?? 0 }}</span>
-                            <span class="pkg-sub-days-label">روز باقی‌مانده</span>
+                            @if (!empty($subscriptionSummary['less_than_one_day']))
+                                {{-- فاز ۱۰۰ — به‌جای «۰ روز» عبارت «کمتر از ۱ روز» --}}
+                                <span class="pkg-sub-days-value" style="font-size: 0.95rem;">کمتر از ۱ روز</span>
+                                <span class="pkg-sub-days-label">باقی‌مانده</span>
+                            @else
+                                <span class="pkg-sub-days-value">{{ $subscriptionSummary['days_remaining'] ?? 0 }}</span>
+                                <span class="pkg-sub-days-label">روز باقی‌مانده</span>
+                            @endif
                         </div>
                     </div>
                 @else
@@ -249,7 +255,9 @@
                                             <span class="text-success">رایگان</span>
                                         @elseif ($hasActiveSubscription)
                                             <span class="pkg-price-sub"><i class="feather icon-award"></i> رایگان با اشتراک</span>
-                                            @if (!empty($pkg['subscription']['days_remaining']))
+                                            @if (!empty($pkg['subscription']['less_than_one_day']))
+                                                <small class="text-muted d-block">کمتر از ۱ روز باقی‌مانده</small>
+                                            @elseif (!empty($pkg['subscription']['days_remaining']))
                                                 <small class="text-muted d-block">{{ $pkg['subscription']['days_remaining'] }} روز باقی‌مانده</small>
                                             @endif
                                         @elseif ($hasFreePlan)
