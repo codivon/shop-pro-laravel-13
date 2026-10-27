@@ -465,6 +465,14 @@ return [
                             'icon' => 'list',
                         ],
                         [
+                            // فاز ۱۰۶-۷ — گیت سوییچ multi_vendor_leaderboard (الگوی فاز ۸۳)
+                            'label' => 'مقایسهٔ فروشندگان',
+                            'route' => 'np.sellers.leaderboard',
+                            'permission' => 'sellers.index',
+                            'icon' => 'trophy',
+                            'enabled' => 'multi_vendor_leaderboard',
+                        ],
+                        [
                             'label' => 'محصولات فروشندگان',
                             'route' => 'np.sellers.products',
                             'permission' => 'sellers.products',

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Extra;
 
 use App\Exports\SellerProductsExport;
+use App\Livewire\Admin\Sellers\SellerLeaderboard;
 use App\Livewire\Admin\System\Developer;
 use App\Models\Admin;
 use App\Models\PriceAlert;
@@ -912,5 +913,104 @@ class Phase106Test extends TestCase
 
         $response = $this->get(route('seller.products.export'));
         $response->assertRedirect(route('seller.products.index'));
+    }
+
+    /* ================= فاز ۱۰۶-۷) لیدربورد مقایسهٔ فروشندگان (ادمین) ================= */
+
+    #[Test]
+    #[TestDox('تب چندفروشندگی Developer سوییچ لیدربورد مقایسهٔ فروشندگان را ذخیره می‌کند')]
+    public function developer_tab_saves_leaderboard_toggle(): void
+    {
+        $this->newCreator();
+
+        Livewire::test(Developer::class)
+            ->set('vendorEnabled', true)
+            ->set('vendorLeaderboard', false)
+            ->call('saveMultiVendor')
+            ->assertDispatched('toast');
+
+        $this->assertSame('0', option('multi_vendor_leaderboard', '1'));
+        $this->assertFalse(MultiVendorSettings::leaderboardEnabled());
+
+        Livewire::test(Developer::class)
+            ->set('vendorLeaderboard', true)
+            ->call('saveMultiVendor');
+
+        $this->assertSame('1', option('multi_vendor_leaderboard', '1'));
+    }
+
+    #[Test]
+    #[TestDox('لیدربورد: رتبه‌بندی درآمد بر مبنای order_items.seller_id با فیلتر دوره ۳۰/۹۰/همه')]
+    public function leaderboard_ranks_sellers_by_revenue_with_period(): void
+    {
+        $this->newCreator();
+
+        $sellerA = $this->newSeller();
+        $sellerB = $this->newSeller();
+
+        SellerInfo::where('seller_id', $sellerA->id)->update(['business_name' => 'فروشندهٔ الف لیدربورد']);
+        SellerInfo::where('seller_id', $sellerB->id)->update(['business_name' => 'فروشندهٔ ب لیدربورد']);
+
+        // فروشندهٔ الف: سفارش ۵۰۰٬۰۰۰ (امروز) + سفارش ۳۰۰٬۰۰۰ (۴۵ روز پیش)
+        [$orderOld] = $this->newSellerPaidOrder($sellerA, 300000);
+        $orderOld->forceFill(['created_at' => now()->subDays(45)])->save();
+
+        $this->newSellerPaidOrder($sellerA, 500000);
+
+        // فروشندهٔ ب: یک سفارش ۲۵۰٬۰۰۰
+        $this->newSellerPaidOrder($sellerB, 250000);
+
+        // آیتم بدون فروشنده (فروش مستقیم فروشگاه) — نباید در رتبه‌بندی بیاید
+        $this->newPaidOrder($this->newUser(), $this->newProduct(), [], ['price' => 900000, 'real_price' => 900000]);
+
+        // دورهٔ پیش‌فرض ۳۰ روز: الف = ۵۰۰٬۰۰۰ (سفارش ۴۵ روزه خارج) و صدرنشین
+        $component = Livewire::test(SellerLeaderboard::class);
+        $html = $component->html();
+        $this->assertStringContainsString('فروشندهٔ الف لیدربورد', $html);
+        $this->assertStringContainsString('فروشندهٔ ب لیدربورد', $html);
+        $this->assertStringContainsString('500,000', $html);
+        $this->assertStringContainsString('250,000', $html);
+        $this->assertStringNotContainsString('300,000', $html);
+        $this->assertStringNotContainsString('900,000', $html);
+        // ترتیب: الف قبل از ب
+        $this->assertLessThan(
+            mb_strpos($html, 'فروشندهٔ ب لیدربورد'),
+            mb_strpos($html, 'فروشندهٔ الف لیدربورد')
+        );
+
+        // دورهٔ همهٔ زمان‌ها: الف = ۸۰۰٬۰۰۰، میانگین هر سفارش ۴۰۰٬۰۰۰
+        $allHtml = Livewire::test(SellerLeaderboard::class)
+            ->set('period', 'all')
+            ->html();
+        $this->assertStringContainsString('800,000', $allHtml);
+        $this->assertStringContainsString('400,000', $allHtml);
+    }
+
+    #[Test]
+    #[TestDox('سوییچ خاموش لیدربورد: ریدایرکت به لیست فروشندگان و آیتم منو گیت‌شده')]
+    public function leaderboard_respects_toggle(): void
+    {
+        $this->newCreator();
+
+        // آیتم منو با کلید enabled فاز ۸۳ گیت شده است
+        $item = null;
+        foreach (config('admin-menu.groups', []) as $group) {
+            foreach ($group['items'] ?? [] as $child) {
+                foreach ($child['children'] ?? [] as $leaf) {
+                    if (($leaf['route'] ?? null) === 'np.sellers.leaderboard') {
+                        $item = $leaf;
+                    }
+                }
+            }
+        }
+        $this->assertNotNull($item, 'آیتم منوی لیدربورد باید در admin-menu موجود باشد.');
+        $this->assertSame('multi_vendor_leaderboard', $item['enabled'] ?? null);
+
+        // سوییچ خاموش → ریدایرکت به لیست فروشندگان
+        option_update('multi_vendor_leaderboard', '0');
+        Cache::flush();
+
+        Livewire::test(SellerLeaderboard::class)
+            ->assertRedirect(route('np.sellers.index'));
     }
 }

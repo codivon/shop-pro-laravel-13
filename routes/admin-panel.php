@@ -82,6 +82,7 @@ use App\Livewire\Admin\Returns\ReturnReasons;
 use App\Livewire\Admin\Returns\ReturnShow;
 use App\Livewire\Admin\Reviews\ReviewIndex;
 use App\Livewire\Admin\Sellers\SellerIndex;
+use App\Livewire\Admin\Sellers\SellerLeaderboard;
 use App\Livewire\Admin\Sellers\SellerNotifications;
 use App\Livewire\Admin\Sellers\SellerOrders;
 use App\Livewire\Admin\Sellers\SellerProducts;
@@ -252,6 +253,8 @@ Route::prefix('admin/'.admin_route_prefix())->name('np.')->group(function () {
         */
         Route::get('sellers/orders/export/create', [LegacyOrderController::class, 'export'])->name('sellers.orders-export');
         Route::get('sellers', SellerIndex::class)->name('sellers.index');
+        // فاز ۱۰۶-۷ — لیدربورد مقایسهٔ فروشندگان؛ روت ثابت قبل از {seller} (ترتیب مهم)
+        Route::get('sellers/leaderboard', SellerLeaderboard::class)->name('sellers.leaderboard');
         Route::get('sellers/products', SellerProducts::class)->name('sellers.products');
         Route::get('sellers/orders', SellerOrders::class)->name('sellers.orders');
         Route::get('sellers/{seller}', SellerShow::class)->name('sellers.show');
