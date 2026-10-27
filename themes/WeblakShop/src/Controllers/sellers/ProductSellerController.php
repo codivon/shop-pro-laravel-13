@@ -2,95 +2,120 @@
 
 namespace Themes\WeblakShop\src\Controllers\sellers;
 
-use App\Events\SellerProductCreated as EventsSellerProductCreated;
+use App\Exports\SellerProductsExport;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Datatable\Product\ProductCollection;
 use App\Models\Admin;
 use App\Models\Attribute;
-use App\Models\Price;
-use App\Models\User;
-use App\Notifications\Product\SellerProductCreated;
-use App\Notifications\Product\SellerProductUpdate;
-use App\Notifications\Sms\NewSellerCodeSent;
-use Illuminate\Support\Facades\Notification;
-use Themes\WeblakShop\src\Requests\seller_panel\products\StoreProductRequest;
-use Themes\WeblakShop\src\Requests\seller_panel\products\UpdateProductRequest;
-use App\Http\Resources\Datatable\Product\ProductCollection;
-use App\Models\Address;
 use App\Models\AttributeGroup;
 use App\Models\Brand;
 use App\Models\Category;
-use App\Models\City;
 use App\Models\Currency;
-use App\Models\Favorite;
 use App\Models\Label;
+use App\Models\Price;
 use App\Models\Product;
 use App\Models\ProductAbilityScore;
-use App\Models\Province;
 use App\Models\Seller;
 use App\Models\SellerVariant;
 use App\Models\SizeType;
 use App\Models\Specification;
 use App\Models\SpecificationGroup;
 use App\Models\SpecType;
-use App\Models\Variant;
+use App\Notifications\Product\SellerProductCreated;
+use App\Notifications\Product\SellerProductUpdate;
+use App\Support\MultiVendorSettings;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
 use Morilog\Jalali\Jalalian;
-
+use Themes\WeblakShop\src\Requests\seller_panel\products\StoreProductRequest;
+use Themes\WeblakShop\src\Requests\seller_panel\products\UpdateProductRequest;
 
 class ProductSellerController extends Controller
 {
     public function index()
     {
-        if (seller()->status_documents!="Accept"){
+        if (seller()->status_documents != 'Accept') {
             session()->put('toast-warning', 'مدارک شما در حال برسی می باشد.');
+
             return redirect()->route('seller.dashboard');
         }
-        if (seller()->status_work!="ACTIVE"){
+        if (seller()->status_work != 'ACTIVE') {
             session()->put('toast-warning', 'اظلاعات شما در حال برسی می باشد.');
+
             return redirect()->route('seller.dashboard');
         }
-        $categories      = Category::detectLang()->where('type', 'productcat')->orderBy('ordering')->get();
-        return view('front::sellers.panel.products.index',compact('categories'));
+        $categories = Category::detectLang()->where('type', 'productcat')->orderBy('ordering')->get();
+
+        return view('front::sellers.panel.products.index', compact('categories'));
+    }
+
+    /**
+     * فاز ۱۰۶-۶ — خروجی اکسل محصولات فروشنده (گیت: seller_products_export).
+     * گاردهای مدارک/فعالیت مثل index — خروجی بدون فیلتر (کل لیست فروشنده).
+     */
+    public function export()
+    {
+        if (seller()->status_documents != 'Accept') {
+            session()->put('toast-warning', 'مدارک شما در حال برسی می باشد.');
+
+            return redirect()->route('seller.dashboard');
+        }
+        if (seller()->status_work != 'ACTIVE') {
+            session()->put('toast-warning', 'اظلاعات شما در حال برسی می باشد.');
+
+            return redirect()->route('seller.dashboard');
+        }
+        if (! MultiVendorSettings::productsExportEnabled()) {
+            session()->put('toast-error', 'خروجی اکسل محصولات از تنظیمات غیرفعال شده است.');
+
+            return redirect()->route('seller.products.index');
+        }
+
+        return Excel::download(new SellerProductsExport((int) sellerID()), 'products.xlsx');
     }
 
     public function apiIndex(Request $request)
     {
-        //$this->authorize('products.index');
+        // $this->authorize('products.index');
 
-        if (seller()->status_documents!="Accept"){
+        if (seller()->status_documents != 'Accept') {
             session()->put('toast-warning', 'مدارک شما در حال برسی می باشد.');
+
             return redirect()->route('seller.dashboard');
         }
-        if (seller()->status_work!="ACTIVE"){
+        if (seller()->status_work != 'ACTIVE') {
             session()->put('toast-warning', 'اظلاعات شما در حال برسی می باشد.');
+
             return redirect()->route('seller.dashboard');
         }
-        $seller_product_id=SellerVariant::where('seller_id',seller_info()->seller_id)->get()->pluck('product_id')->toArray();
-        $products = Product::with('category','lowestPrice','brand')->detectLang()->whereIN('id',$seller_product_id)->datatableFilter($request);
-        $count=$products->count();
-        $products = datatable($request, $products,$count);
+        $seller_product_id = SellerVariant::where('seller_id', seller_info()->seller_id)->get()->pluck('product_id')->toArray();
+        $products = Product::with('category', 'lowestPrice', 'brand')->detectLang()->whereIN('id', $seller_product_id)->datatableFilter($request);
+        $count = $products->count();
+        $products = datatable($request, $products, $count);
+
         return new ProductCollection($products);
     }
 
-
-
     public function find()
     {
-        if (seller()->status_documents!="Accept"){
+        if (seller()->status_documents != 'Accept') {
             session()->put('toast-warning', 'مدارک شما در حال برسی می باشد.');
+
             return redirect()->route('seller.dashboard');
         }
-        if (seller()->status_work!="ACTIVE"){
+        if (seller()->status_work != 'ACTIVE') {
             session()->put('toast-warning', 'اظلاعات شما در حال برسی می باشد.');
+
             return redirect()->route('seller.dashboard');
         }
 
-        $categories      = Category::detectLang()->where('type', 'productcat')->orderBy('ordering')->get();
-        return view('front::sellers.panel.products.find',compact('categories'));
+        $categories = Category::detectLang()->where('type', 'productcat')->orderBy('ordering')->get();
+
+        return view('front::sellers.panel.products.find', compact('categories'));
     }
 
     public function apiIndexFind(Request $request)
@@ -101,7 +126,7 @@ class ProductSellerController extends Controller
         }
 
         // اگر فروشنده است، اجازه دسترسی کامل بده
-        $products = Product::with('category','lowestPrice')
+        $products = Product::with('category', 'lowestPrice')
             ->published()
             ->detectLang()
             ->datatableFilter($request);
@@ -112,23 +137,26 @@ class ProductSellerController extends Controller
 
         return $pro; // یا dd($pro->get());
     }
+
     public function create(Request $request)
     {
-        if (seller()->status_documents!="Accept"){
+        if (seller()->status_documents != 'Accept') {
             session()->put('toast-warning', 'مدارک شما در حال برسی می باشد.');
+
             return redirect()->route('seller.dashboard');
         }
-        if (seller()->status_work!="ACTIVE"){
+        if (seller()->status_work != 'ACTIVE') {
             session()->put('toast-warning', 'اظلاعات شما در حال برسی می باشد.');
+
             return redirect()->route('seller.dashboard');
         }
-        $categories      = Category::detectLang()->where('type', 'productcat')->orderBy('ordering')->get();
-        $specTypes       = SpecType::detectLang()->get();
-        $sizetypes       = SizeType::detectLang()->get();
+        $categories = Category::detectLang()->where('type', 'productcat')->orderBy('ordering')->get();
+        $specTypes = SpecType::detectLang()->get();
+        $sizetypes = SizeType::detectLang()->get();
         $attributeGroups = AttributeGroup::detectLang()->orderBy('ordering')->get();
-        $currencies      = Currency::latest()->get();
-        $sellers         = Seller::where(['status_register'=>'complete','status_documents'=>'Accept','status_work'=>'ACTIVE'])->get();
-        $brands          = Brand::all();
+        $currencies = Currency::latest()->get();
+        $sellers = Seller::where(['status_register' => 'complete', 'status_documents' => 'Accept', 'status_work' => 'ACTIVE'])->get();
+        $brands = Brand::all();
         $copy_product = $request->product ? Product::where('slug', $request->product)->first() : null;
 
         return view('front::sellers.panel.products.create', compact(
@@ -143,43 +171,44 @@ class ProductSellerController extends Controller
         ));
     }
 
-
     public function store(StoreProductRequest $request)
     {
-        if (seller()->status_documents!="Accept"){
+        if (seller()->status_documents != 'Accept') {
             session()->put('toast-warning', 'مدارک شما در حال برسی می باشد.');
+
             return redirect()->route('seller.dashboard');
         }
-        if (seller()->status_work!="ACTIVE"){
+        if (seller()->status_work != 'ACTIVE') {
             session()->put('toast-warning', 'اظلاعات شما در حال برسی می باشد.');
+
             return redirect()->route('seller.dashboard');
         }
         $product = Product::create([
-            'seller_id'          => seller()->id,
-            'title'              => $request->title,
-            'title_en'           => $request->title_en,
-            'category_id'        => $request->category_id,
-            'spec_type_id'       => spec_type($request),
-            'size_type_id'       => $request->size_type_id,
-            'weight'             => $request->weight,
-            'unit'               => $request->unit,
-            'price_type'         => "multiple-price",
-            'type'               => $request->type,
-            'shipping_nature'    => $request->shipping_nature,
-            'description'        => sanitize_rich_text($request->description),
-            'short_description'  => sanitize_rich_text($request->short_description),
-            'special'            => $request->special ? true : false,
-            'slug'               => $request->slug ?: $request->title,
-            'meta_title'         => $request->meta_title,
-            'image_alt'          => $request->image_alt,
-            'meta_description'   => $request->meta_description,
-            'published'          => 0,
-            'publish_date'       => $request->publish_date ? Jalalian::fromFormat('Y-m-d H:i:s', $request->publish_date)->toCarbon() : null,
-            'currency_id'        => $request->currency_id,
-            'rounding_amount'    => $request->rounding_amount,
-            'rounding_type'      => $request->rounding_type,
-            'lang'               => app()->getLocale(),
-            'status'             => "Waiting",
+            'seller_id' => seller()->id,
+            'title' => $request->title,
+            'title_en' => $request->title_en,
+            'category_id' => $request->category_id,
+            'spec_type_id' => spec_type($request),
+            'size_type_id' => $request->size_type_id,
+            'weight' => $request->weight,
+            'unit' => $request->unit,
+            'price_type' => 'multiple-price',
+            'type' => $request->type,
+            'shipping_nature' => $request->shipping_nature,
+            'description' => sanitize_rich_text($request->description),
+            'short_description' => sanitize_rich_text($request->short_description),
+            'special' => $request->special ? true : false,
+            'slug' => $request->slug ?: $request->title,
+            'meta_title' => $request->meta_title,
+            'image_alt' => $request->image_alt,
+            'meta_description' => $request->meta_description,
+            'published' => 0,
+            'publish_date' => $request->publish_date ? Jalalian::fromFormat('Y-m-d H:i:s', $request->publish_date)->toCarbon() : null,
+            'currency_id' => $request->currency_id,
+            'rounding_amount' => $request->rounding_amount,
+            'rounding_type' => $request->rounding_type,
+            'lang' => app()->getLocale(),
+            'status' => 'Waiting',
         ]);
 
         // update product brand
@@ -207,28 +236,30 @@ class ProductSellerController extends Controller
         $this->updateProductSizes($product, $request);
 
         // update product Ability Score
-        $this->updateProductAbilityScore($product,$request);
+        $this->updateProductAbilityScore($product, $request);
 
         $admins = Admin::whereIn('level', ['admin', 'creator'])->get();
-        Notification::send($admins, new SellerProductCreated(seller(),$product));
+        Notification::send($admins, new SellerProductCreated(seller(), $product));
 
-        session()->put('toast-success','محصول با موفقیت ایجاد شد.');
-        return response("success");
+        session()->put('toast-success', 'محصول با موفقیت ایجاد شد.');
+
+        return response('success');
     }
 
     public function edit(Product $product)
     {
-        if ($product->seller_id!=seller_info()->seller_id){
+        if ($product->seller_id != seller_info()->seller_id) {
             abort(404);
         }
-        $categories      = Category::detectLang()->where('type', 'productcat')->orderBy('ordering')->get();
-        $specTypes       = SpecType::detectLang()->get();
-        $sizetypes       = SizeType::detectLang()->get();
+        $categories = Category::detectLang()->where('type', 'productcat')->orderBy('ordering')->get();
+        $specTypes = SpecType::detectLang()->get();
+        $sizetypes = SizeType::detectLang()->get();
         $attributeGroups = AttributeGroup::detectLang()->orderBy('ordering')->get();
-        $currencies      = Currency::latest()->get();
-        $AbilityScores   = ProductAbilityScore::where('product_id',$product->id)->orderBy('ordering')->get();
-        $sellers         = Seller::with('seller_info')->where(['status_register'=>'complete','status_documents'=>'Accept','status_work'=>'ACTIVE'])->get();
-        $brands          = Brand::all();
+        $currencies = Currency::latest()->get();
+        $AbilityScores = ProductAbilityScore::where('product_id', $product->id)->orderBy('ordering')->get();
+        $sellers = Seller::with('seller_info')->where(['status_register' => 'complete', 'status_documents' => 'Accept', 'status_work' => 'ACTIVE'])->get();
+        $brands = Brand::all();
+
         return view('front::sellers.panel.products.edit', compact(
             'product',
             'categories',
@@ -244,33 +275,33 @@ class ProductSellerController extends Controller
 
     public function update(UpdateProductRequest $request, Product $product)
     {
-        if ($product->seller_id!=seller_info()->seller_id){
+        if ($product->seller_id != seller_info()->seller_id) {
             abort(404);
         }
         $product->update([
-            'title'              => $request->title,
-            'title_en'           => $request->title_en,
-            'category_id'        => $request->category_id,
-            'spec_type_id'       => spec_type($request),
-            'size_type_id'       => $request->size_type_id,
-            'weight'             => $request->weight,
-            'unit'               => $request->unit,
-            'price_type'         => "multiple-price",
-            'type'               => $request->type,
-            'shipping_nature'    => $request->shipping_nature,
-            'description'        => sanitize_rich_text($request->description),
-            'short_description'  => sanitize_rich_text($request->short_description),
-            'special'            => $request->special ? true : false,
-            'slug'               => $request->slug ?: $request->title,
-            'meta_title'         => $request->meta_title,
-            'image_alt'          => $request->image_alt,
-            'meta_description'   => $request->meta_description,
-            'published'          => 0,
-            'publish_date'       => $request->publish_date ? Jalalian::fromFormat('Y-m-d H:i:s', $request->publish_date)->toCarbon() : null,
-            'currency_id'        => $request->currency_id,
-            'rounding_amount'    => $request->rounding_amount,
-            'rounding_type'      => $request->rounding_type,
-            'status'             => "Waiting",
+            'title' => $request->title,
+            'title_en' => $request->title_en,
+            'category_id' => $request->category_id,
+            'spec_type_id' => spec_type($request),
+            'size_type_id' => $request->size_type_id,
+            'weight' => $request->weight,
+            'unit' => $request->unit,
+            'price_type' => 'multiple-price',
+            'type' => $request->type,
+            'shipping_nature' => $request->shipping_nature,
+            'description' => sanitize_rich_text($request->description),
+            'short_description' => sanitize_rich_text($request->short_description),
+            'special' => $request->special ? true : false,
+            'slug' => $request->slug ?: $request->title,
+            'meta_title' => $request->meta_title,
+            'image_alt' => $request->image_alt,
+            'meta_description' => $request->meta_description,
+            'published' => 0,
+            'publish_date' => $request->publish_date ? Jalalian::fromFormat('Y-m-d H:i:s', $request->publish_date)->toCarbon() : null,
+            'currency_id' => $request->currency_id,
+            'rounding_amount' => $request->rounding_amount,
+            'rounding_type' => $request->rounding_type,
+            'status' => 'Waiting',
         ]);
 
         // update product brand
@@ -298,13 +329,14 @@ class ProductSellerController extends Controller
         $this->updateProductSizes($product, $request);
 
         // update product Ability Score
-        $this->updateProductAbilityScore($product,$request);
+        $this->updateProductAbilityScore($product, $request);
 
         $admins = Admin::whereIn('level', ['admin', 'creator'])->get();
-        Notification::send($admins, new SellerProductUpdate(seller(),$product));
+        Notification::send($admins, new SellerProductUpdate(seller(), $product));
 
-        session()->put('toast-success','محصول با موفقیت ویرایش شد.');
-        return response("success");
+        session()->put('toast-success', 'محصول با موفقیت ویرایش شد.');
+
+        return response('success');
     }
 
     public function image_store(Request $request)
@@ -317,7 +349,7 @@ class ProductSellerController extends Controller
         $image = $request->file('file');
 
         $currentDate = Carbon::now()->toDateString();
-        $imagename = 'img' . '-' . $currentDate . '-' . uniqid() . '.' . $image->getClientOriginalExtension();
+        $imagename = 'img'.'-'.$currentDate.'-'.uniqid().'.'.$image->getClientOriginalExtension();
 
         $image->storeAs('tmp', $imagename);
 
@@ -328,8 +360,8 @@ class ProductSellerController extends Controller
     {
         $filename = $request->get('filename');
 
-        if (Storage::exists('tmp/' . $filename)) {
-            Storage::delete('tmp/' . $filename);
+        if (Storage::exists('tmp/'.$filename)) {
+            Storage::delete('tmp/'.$filename);
         }
 
         return response('success');
@@ -337,27 +369,31 @@ class ProductSellerController extends Controller
 
     public function variant(Request $request)
     {
-        if (seller()->status_documents!="Accept"){
+        if (seller()->status_documents != 'Accept') {
             session()->put('toast-warning', 'مدارک شما در حال برسی می باشد.');
+
             return redirect()->route('seller.dashboard');
         }
-        if (seller()->status_work!="ACTIVE"){
+        if (seller()->status_work != 'ACTIVE') {
             session()->put('toast-warning', 'اظلاعات شما در حال برسی می باشد.');
+
             return redirect()->route('seller.dashboard');
         }
-        $product=Product::find($request->product_id);
-        if (!$product){
+        $product = Product::find($request->product_id);
+        if (! $product) {
             abort(404);
         }
         $attributeGroups = AttributeGroup::detectLang()->orderBy('ordering')->get();
-        return view('front::sellers.panel.products.variant',compact('product','attributeGroups'));
+
+        return view('front::sellers.panel.products.variant', compact('product', 'attributeGroups'));
     }
 
     public function variant_store(Request $request, Product $product)
     {
         // اعتبارسنجی اولیه
-        if (!isset($request->prices) || !is_array($request->prices) || !count($request->prices)) {
+        if (! isset($request->prices) || ! is_array($request->prices) || ! count($request->prices)) {
             session()->put('toast-warning', 'حداقل یک تنوع اضافه کنید.');
+
             return redirect()->back();
         }
 
@@ -371,6 +407,7 @@ class ProductSellerController extends Controller
             // اعتبارسنجی فیلدهای اجباری
             if (empty($priceData['stock']) || empty($priceData['price'])) {
                 session()->put('toast-error', 'قیمت و موجودی نمی توانند خالی باشند.');
+
                 return redirect()->back();
             }
 
@@ -382,7 +419,7 @@ class ProductSellerController extends Controller
                         Jalalian::fromFormat('Y-m-d H:i:s', $priceData['discount_expire'])->toCarbon()
                     )->toDateTimeString();
                 } catch (\Exception $e) {
-                    \Log::error("Date parsing error: " . $e->getMessage());
+                    \Log::error('Date parsing error: '.$e->getMessage());
                 }
             }
 
@@ -402,7 +439,8 @@ class ProductSellerController extends Controller
             }
 
             if ($colorCount > 1) {
-                session()->put('toast-error', 'هر قیمت نمی‌تواند بیش از یک رنگ داشته باشد. رنگ‌های انتخاب شده: ' . implode('، ', $colorNames));
+                session()->put('toast-error', 'هر قیمت نمی‌تواند بیش از یک رنگ داشته باشد. رنگ‌های انتخاب شده: '.implode('، ', $colorNames));
+
                 return redirect()->back();
             }
 
@@ -447,22 +485,22 @@ class ProductSellerController extends Controller
             if ($existingPrice) {
                 // به‌روزرسانی قیمت موجود
                 $existingPrice->createChange(
-                    $priceData["price"],
-                    $priceData["discount"] ?? 0,
-                    $priceData["stock"]
+                    $priceData['price'],
+                    $priceData['discount'] ?? 0,
+                    $priceData['stock']
                 );
 
                 $existingPrice->update([
-                    "price"              => $priceData["price"],
-                    "discount"           => $priceData["discount"] ?? 0,
-                    "discount_price"     => get_discount_price($priceData["price"], $priceData["discount"] ?? 0, $product),
-                    "regular_price"      => get_discount_price($priceData["price"], 0, $product),
-                    "stock"              => $priceData["stock"],
-                    "cart_max"           => $priceData["cart_max"] ?? 1,
-                    "cart_min"           => $priceData["cart_min"] ?? 1,
-                    "discount_expire_at" => $priceData["discount"] ? $time : null,
-                    "deleted_at"         => null,
-                    "published"          => $priceData["published"] ?? true,
+                    'price' => $priceData['price'],
+                    'discount' => $priceData['discount'] ?? 0,
+                    'discount_price' => get_discount_price($priceData['price'], $priceData['discount'] ?? 0, $product),
+                    'regular_price' => get_discount_price($priceData['price'], 0, $product),
+                    'stock' => $priceData['stock'],
+                    'cart_max' => $priceData['cart_max'] ?? 1,
+                    'cart_min' => $priceData['cart_min'] ?? 1,
+                    'discount_expire_at' => $priceData['discount'] ? $time : null,
+                    'deleted_at' => null,
+                    'published' => $priceData['published'] ?? true,
                 ]);
 
                 // همگام‌سازی ویژگی‌ها (حذف قدیمی و اضافه جدید)
@@ -487,16 +525,16 @@ class ProductSellerController extends Controller
             } else {
                 // ایجاد قیمت جدید
                 $newPrice = $product->prices()->create([
-                    "seller_id"           => $currentSellerId,
-                    "price"               => $priceData["price"],
-                    "discount"            => $priceData["discount"] ?? 0,
-                    "discount_price"      => get_discount_price($priceData["price"], $priceData["discount"] ?? 0, $product),
-                    "regular_price"       => get_discount_price($priceData["price"], 0, $product),
-                    "stock"               => $priceData["stock"],
-                    "cart_max"            => $priceData["cart_max"] ?? 1,
-                    "cart_min"            => $priceData["cart_min"] ?? 1,
-                    "discount_expire_at"  => $priceData["discount"] ? $time : null,
-                    "published"           => $priceData["published"] ?? true,
+                    'seller_id' => $currentSellerId,
+                    'price' => $priceData['price'],
+                    'discount' => $priceData['discount'] ?? 0,
+                    'discount_price' => get_discount_price($priceData['price'], $priceData['discount'] ?? 0, $product),
+                    'regular_price' => get_discount_price($priceData['price'], 0, $product),
+                    'stock' => $priceData['stock'],
+                    'cart_max' => $priceData['cart_max'] ?? 1,
+                    'cart_min' => $priceData['cart_min'] ?? 1,
+                    'discount_expire_at' => $priceData['discount'] ? $time : null,
+                    'published' => $priceData['published'] ?? true,
                 ]);
 
                 // اتصال ویژگی‌ها
@@ -512,8 +550,8 @@ class ProductSellerController extends Controller
                 }
 
                 // ثبت تغییرات اولیه
-                $newPrice->createChange($priceData["price"], $priceData["discount"] ?? 0);
-                $newPrice->createChange($priceData["price"], $priceData["discount"] ?? 0, $priceData["stock"]);
+                $newPrice->createChange($priceData['price'], $priceData['discount'] ?? 0);
+                $newPrice->createChange($priceData['price'], $priceData['discount'] ?? 0, $priceData['stock']);
 
                 $pricesToKeep[] = $newPrice->id;
             }
@@ -522,19 +560,19 @@ class ProductSellerController extends Controller
         // ========== مدیریت SellerVariant ==========
         $sellerVariant = SellerVariant::where([
             'product_id' => $product->id,
-            'seller_id' => $currentSellerId
+            'seller_id' => $currentSellerId,
         ])->first();
 
-        if (!$sellerVariant) {
+        if (! $sellerVariant) {
             SellerVariant::create([
                 'product_id' => $product->id,
-                'seller_id'  => $currentSellerId,
-                'prices_id'  => json_encode($pricesToKeep),
+                'seller_id' => $currentSellerId,
+                'prices_id' => json_encode($pricesToKeep),
             ]);
             session()->put('toast-success', 'اکنون شما هم فروشنده این کالا هستید.');
         } else {
             $sellerVariant->update([
-                'prices_id' => json_encode($pricesToKeep)
+                'prices_id' => json_encode($pricesToKeep),
             ]);
             session()->put('toast-success', 'تنوع ها با موفقیت ویرایش شدند.');
         }
@@ -589,10 +627,10 @@ class ProductSellerController extends Controller
             SellerVariant::updateOrCreate(
                 [
                     'product_id' => $product->id,
-                    'seller_id' => $sellerId
+                    'seller_id' => $sellerId,
                 ],
                 [
-                    'prices_id' => json_encode($priceIds)
+                    'prices_id' => json_encode($priceIds),
                 ]
             );
         }
@@ -603,14 +641,14 @@ class ProductSellerController extends Controller
             ->pluck('id')
             ->toArray();
 
-        if (!empty($nullSellerPriceIds)) {
+        if (! empty($nullSellerPriceIds)) {
             SellerVariant::updateOrCreate(
                 [
                     'product_id' => $product->id,
-                    'seller_id' => null
+                    'seller_id' => null,
                 ],
                 [
-                    'prices_id' => json_encode($nullSellerPriceIds)
+                    'prices_id' => json_encode($nullSellerPriceIds),
                 ]
             );
         }
@@ -631,6 +669,7 @@ class ProductSellerController extends Controller
             // اعتبارسنجی اولیه
             if (empty($price['stock']) || empty($price['price'])) {
                 session()->put('toast-error', 'قیمت و موجودی نمی توانند خالی باشند.');
+
                 return redirect()->back();
             }
 
@@ -642,7 +681,7 @@ class ProductSellerController extends Controller
                         Jalalian::fromFormat('Y-m-d H:i:s', $price['discount_expire'])->toCarbon()
                     )->toDateTimeString();
                 } catch (\Exception $e) {
-                    \Log::error("Date parsing error: " . $e->getMessage());
+                    \Log::error('Date parsing error: '.$e->getMessage());
                 }
             }
 
@@ -683,6 +722,7 @@ class ProductSellerController extends Controller
         $this->updateSellerVariants($product, $currentSellerId);
 
         session()->put('toast-success', 'قیمت‌ها با موفقیت به‌روزرسانی شد.');
+
         return true;
     }
 
@@ -727,23 +767,23 @@ class ProductSellerController extends Controller
     {
         // ثبت تغییرات
         $price->createChange(
-            $data["price"],
-            $data["discount"] ?? 0,
-            $data["stock"]
+            $data['price'],
+            $data['discount'] ?? 0,
+            $data['stock']
         );
 
         // به‌روزرسانی فیلدها
         $price->update([
-            "price"              => $data["price"],
-            "discount"           => $data["discount"] ?? 0,
-            "discount_price"     => get_discount_price($data["price"], $data["discount"] ?? 0, $product),
-            "regular_price"      => get_discount_price($data["price"], 0, $product),
-            "stock"              => $data["stock"],
-            "cart_max"           => $data["cart_max"] ?? 1,
-            "cart_min"           => $data["cart_min"] ?? 1,
-            "discount_expire_at" => $data["discount"] ? $time : null,
-            "deleted_at"         => null,
-            "published"          => $data["published"] ?? true,
+            'price' => $data['price'],
+            'discount' => $data['discount'] ?? 0,
+            'discount_price' => get_discount_price($data['price'], $data['discount'] ?? 0, $product),
+            'regular_price' => get_discount_price($data['price'], 0, $product),
+            'stock' => $data['stock'],
+            'cart_max' => $data['cart_max'] ?? 1,
+            'cart_min' => $data['cart_min'] ?? 1,
+            'discount_expire_at' => $data['discount'] ? $time : null,
+            'deleted_at' => null,
+            'published' => $data['published'] ?? true,
         ]);
 
         // همگام‌سازی ویژگی‌ها
@@ -775,16 +815,16 @@ class ProductSellerController extends Controller
     {
         // ایجاد قیمت جدید
         $newPrice = $product->prices()->create([
-            "seller_id"           => $currentSellerId,
-            "price"               => $data["price"],
-            "discount"            => $data["discount"] ?? 0,
-            "discount_price"      => get_discount_price($data["price"], $data["discount"] ?? 0, $product),
-            "regular_price"       => get_discount_price($data["price"], 0, $product),
-            "stock"               => $data["stock"],
-            "cart_max"            => $data["cart_max"] ?? 1,
-            "cart_min"            => $data["cart_min"] ?? 1,
-            "discount_expire_at"  => $data["discount"] ? $time : null,
-            "published"           => $data["published"] ?? true,
+            'seller_id' => $currentSellerId,
+            'price' => $data['price'],
+            'discount' => $data['discount'] ?? 0,
+            'discount_price' => get_discount_price($data['price'], $data['discount'] ?? 0, $product),
+            'regular_price' => get_discount_price($data['price'], 0, $product),
+            'stock' => $data['stock'],
+            'cart_max' => $data['cart_max'] ?? 1,
+            'cart_min' => $data['cart_min'] ?? 1,
+            'discount_expire_at' => $data['discount'] ? $time : null,
+            'published' => $data['published'] ?? true,
         ]);
 
         // افزودن ویژگی‌ها
@@ -800,8 +840,8 @@ class ProductSellerController extends Controller
         }
 
         // ثبت تغییرات اولیه
-        $newPrice->createChange($data["price"], $data["discount"] ?? 0);
-        $newPrice->createChange($data["price"], $data["discount"] ?? 0, $data["stock"]);
+        $newPrice->createChange($data['price'], $data['discount'] ?? 0);
+        $newPrice->createChange($data['price'], $data['discount'] ?? 0, $data['stock']);
 
         \Log::info("Created new price ID: {$newPrice->id} for seller: {$currentSellerId}");
 
@@ -858,12 +898,12 @@ class ProductSellerController extends Controller
         // به‌روزرسانی یا ایجاد seller_variant
         $sellerVariant = SellerVariant::where([
             'product_id' => $product->id,
-            'seller_id' => $currentSellerId
+            'seller_id' => $currentSellerId,
         ])->first();
 
         if ($sellerVariant) {
             $sellerVariant->update([
-                'prices_id' => json_encode($sellerPriceIds)
+                'prices_id' => json_encode($sellerPriceIds),
             ]);
         } else {
             SellerVariant::create([
@@ -873,8 +913,9 @@ class ProductSellerController extends Controller
             ]);
         }
 
-        \Log::info("Updated seller_variant for seller: {$currentSellerId}, prices: " . json_encode($sellerPriceIds));
+        \Log::info("Updated seller_variant for seller: {$currentSellerId}, prices: ".json_encode($sellerPriceIds));
     }
+
     private function updateProductFiles(Product $product, Request $request)
     {
         if ($product->isPhysical()) {
@@ -895,17 +936,17 @@ class ProductSellerController extends Controller
             if ($update_price) {
 
                 $update_price->createChange(
-                    $price["price"],
-                    $price["discount"]
+                    $price['price'],
+                    $price['discount']
                 );
 
                 $update_price->update([
-                    "price"             => $price["price"],
-                    "discount"          => $price["discount"],
-                    "discount_price"    => get_discount_price($price["price"], $price["discount"], $product),
-                    "regular_price"     => get_discount_price($price["price"], 0, $product),
-                    "deleted_at"        => null,
-                    "ordering"          => $ordering++
+                    'price' => $price['price'],
+                    'discount' => $price['discount'],
+                    'discount_price' => get_discount_price($price['price'], $price['discount'], $product),
+                    'regular_price' => get_discount_price($price['price'], 0, $product),
+                    'deleted_at' => null,
+                    'ordering' => $ordering++,
                 ]);
 
                 $update_price->updateFile($price['title'], $price['file'] ?? null, $price['status']);
@@ -914,21 +955,21 @@ class ProductSellerController extends Controller
             } else {
                 $insert_price = $product->prices()->create(
                     [
-                        "price"           => $price["price"],
-                        "discount"        => $price["discount"],
-                        "discount_price"  => get_discount_price($price["price"], $price["discount"], $product),
-                        "regular_price"   => get_discount_price($price["price"], $price["discount"], $product),
-                        "ordering"        => $ordering++
+                        'price' => $price['price'],
+                        'discount' => $price['discount'],
+                        'discount_price' => get_discount_price($price['price'], $price['discount'], $product),
+                        'regular_price' => get_discount_price($price['price'], $price['discount'], $product),
+                        'ordering' => $ordering++,
                     ]
                 );
 
                 $insert_price->createFile($price['title'], $price['file'], $price['status']);
 
-                $insert_price->createChange($price["price"], $price["discount"]);
+                $insert_price->createChange($price['price'], $price['discount']);
 
                 $insert_price->createChange(
-                    $price["price"],
-                    $price["discount"]
+                    $price['price'],
+                    $price['discount']
                 );
 
                 $prices_id[] = $insert_price->id;
@@ -941,7 +982,7 @@ class ProductSellerController extends Controller
             $file = $delete_price->file;
 
             if ($file) {
-                Storage::disk('downloads')->delete('product-files/' . $file->file);
+                Storage::disk('downloads')->delete('product-files/'.$file->file);
                 $file->delete();
             }
 
@@ -957,7 +998,7 @@ class ProductSellerController extends Controller
         if ($request->specification_group) {
             foreach ($request->specification_group as $group) {
 
-                if (!isset($group['specifications'])) {
+                if (! isset($group['specifications'])) {
                     continue;
                 }
 
@@ -969,17 +1010,17 @@ class ProductSellerController extends Controller
 
                 foreach ($group['specifications'] as $specification) {
                     $spec = Specification::firstOrCreate([
-                        'name' => $specification['name']
+                        'name' => $specification['name'],
                     ]);
 
                     $product->specifications()->attach([
                         $spec->id => [
                             'specification_group_id' => $spec_group->id,
-                            'group_ordering'         => $group_ordering,
+                            'group_ordering' => $group_ordering,
                             'specification_ordering' => $specification_ordering++,
-                            'value'                  => $specification['value'],
-                            'special'                => isset($specification['special']) ? true : false
-                        ]
+                            'value' => $specification['value'],
+                            'special' => isset($specification['special']) ? true : false,
+                        ],
                     ]);
                 }
 
@@ -993,8 +1034,8 @@ class ProductSellerController extends Controller
         if ($request->brand) {
             $brand = Brand::firstOrCreate(
                 [
-                    'name'    => $request->brand,
-                    'lang'    => app()->getLocale(),
+                    'name' => $request->brand,
+                    'lang' => app()->getLocale(),
                 ],
                 [
                     'slug' => $request->brand,
@@ -1002,7 +1043,7 @@ class ProductSellerController extends Controller
             );
 
             $product->update([
-                'brand_id' => $brand->id
+                'brand_id' => $brand->id,
             ]);
         }
     }
@@ -1015,21 +1056,21 @@ class ProductSellerController extends Controller
             }
 
             $file = $request->image;
-            $name = uniqid() . '_' . $product->id . '.' . $file->getClientOriginalExtension();
+            $name = uniqid().'_'.$product->id.'.'.$file->getClientOriginalExtension();
             $request->image->storeAs('products', $name);
 
-            $product->image = '/uploads/products/' . $name;
+            $product->image = '/uploads/products/'.$name;
             $product->save();
         }
 
         $product_images = $product->gallery()->pluck('image')->toArray();
-        $images         = explode(',', $request->images);
+        $images = explode(',', $request->images);
         $deleted_images = array_diff($product_images, $images);
 
         foreach ($deleted_images as $del_img) {
             $del_img = $product->gallery()->where('image', $del_img)->first();
 
-            if (!$del_img) {
+            if (! $del_img) {
                 continue;
             }
 
@@ -1046,12 +1087,12 @@ class ProductSellerController extends Controller
 
             foreach ($images as $image) {
 
-                if (Storage::exists('tmp/' . $image)) {
+                if (Storage::exists('tmp/'.$image)) {
 
-                    Storage::move('tmp/' . $image, 'products/' . $image);
+                    Storage::move('tmp/'.$image, 'products/'.$image);
 
                     $product->gallery()->create([
-                        'image'    => '/uploads/products/' . $image,
+                        'image' => '/uploads/products/'.$image,
                         'ordering' => $ordering++,
                     ]);
                 } else {
@@ -1081,8 +1122,8 @@ class ProductSellerController extends Controller
 
             foreach ($labels as $item) {
                 $label = Label::firstOrCreate([
-                    'title'    => $item,
-                    'lang'     => app()->getLocale(),
+                    'title' => $item,
+                    'lang' => app()->getLocale(),
                 ]);
 
                 $label_ids[] = $label->id;
@@ -1096,9 +1137,11 @@ class ProductSellerController extends Controller
     {
         $product->sizes()->detach();
 
-        if (!$request->sizes) return;
+        if (! $request->sizes) {
+            return;
+        }
 
-        $ordering      = 1;
+        $ordering = 1;
         $groupOrdering = 1;
 
         foreach ($request->sizes as $group => $sizes) {
@@ -1107,10 +1150,10 @@ class ProductSellerController extends Controller
                 $product->sizes()->attach(
                     [
                         $size_id => [
-                            'group'    => $groupOrdering,
-                            'value'    => $value,
-                            'ordering' => $ordering++
-                        ]
+                            'group' => $groupOrdering,
+                            'value' => $value,
+                            'ordering' => $ordering++,
+                        ],
                     ]
                 );
             }
@@ -1119,7 +1162,7 @@ class ProductSellerController extends Controller
         }
     }
 
-    private function updateProductAbilityScore(Product $product,Request $request)
+    private function updateProductAbilityScore(Product $product, Request $request)
     {
 
         $ordering = 0;
@@ -1129,11 +1172,11 @@ class ProductSellerController extends Controller
             }
             foreach ($request->AbilityProductScore as $specification) {
 
-                $Score=new ProductAbilityScore();
-                $Score->product_id= $product->id;
-                $Score->name= $specification['name'];
-                $Score->value= $specification['value'];
-                $Score->ordering=$ordering;
+                $Score = new ProductAbilityScore;
+                $Score->product_id = $product->id;
+                $Score->name = $specification['name'];
+                $Score->value = $specification['value'];
+                $Score->ordering = $ordering;
                 $Score->save();
                 $ordering++;
             }

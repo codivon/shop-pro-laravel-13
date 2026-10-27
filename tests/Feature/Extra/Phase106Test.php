@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Extra;
 
+use App\Exports\SellerProductsExport;
 use App\Livewire\Admin\System\Developer;
 use App\Models\Admin;
 use App\Models\PriceAlert;
@@ -9,6 +10,7 @@ use App\Models\Review;
 use App\Models\Seller;
 use App\Models\SellerDeposit;
 use App\Models\SellerInfo;
+use App\Models\SellerVariant;
 use App\Models\StockMovement;
 use App\Models\StockNotify;
 use App\Models\Viewer;
@@ -826,5 +828,89 @@ class Phase106Test extends TestCase
 
         // آیتم منو با سوییچ خاموش حذف شود
         $this->get(route('seller.dashboard'))->assertDontSee(route('seller.inventory.index'), false);
+    }
+
+    /* ================= فاز ۱۰۶-۶) خروجی اکسل محصولات ================= */
+
+    #[Test]
+    #[TestDox('تب چندفروشندگی Developer سوییچ خروجی اکسل محصولات را ذخیره می‌کند')]
+    public function developer_tab_saves_products_export_toggle(): void
+    {
+        $this->newCreator();
+
+        Livewire::test(Developer::class)
+            ->set('vendorEnabled', true)
+            ->set('vendorProductsExport', false)
+            ->call('saveMultiVendor')
+            ->assertDispatched('toast');
+
+        $this->assertSame('0', option('seller_products_export', '1'));
+        $this->assertFalse(MultiVendorSettings::productsExportEnabled());
+
+        Livewire::test(Developer::class)
+            ->set('vendorProductsExport', true)
+            ->call('saveMultiVendor');
+
+        $this->assertSame('1', option('seller_products_export', '1'));
+    }
+
+    #[Test]
+    #[TestDox('خروجی اکسل محصولات: مبنای SellerVariant، ردیف/قیمت درست، دکمهٔ گیت‌شده و دانلود xlsx')]
+    public function products_export_downloads_and_respects_toggle(): void
+    {
+        $seller = $this->newSeller();
+
+        // دو محصول از مبنای SellerVariant (همان apiIndex «مدیریت محصولات»)
+        // توجه: newProduct خودش یک قیمت پیش‌فرض ۱۰۰٬۰۰۰ می‌سازد؛ برای تشخیص مین،
+        // قیمت‌های صریحِ زیر ۱۰۰ هزار اضافه می‌کنیم
+        $productA = $this->newProduct(['seller_id' => $seller->id, 'title' => 'محصول اکسل الف']);
+        $priceA = $this->newPrice($productA, ['price' => 55000, 'regular_price' => 55000, 'discount_price' => 55000]);
+        $this->newPrice($productA, ['price' => 22000, 'regular_price' => 22000, 'discount_price' => 22000, 'stock' => 3]);
+
+        $productB = $this->newProduct(['seller_id' => $seller->id, 'title' => 'محصول اکسل ب']);
+        $this->newPrice($productB, ['stock' => 4]);
+
+        // محصول بیرون از مبنای SellerVariant — نباید در خروجی بیاید
+        $this->newProduct(['title' => 'محصول غریبهٔ اکسل']);
+
+        SellerVariant::create([
+            'seller_id' => $seller->id,
+            'product_id' => $productA->id,
+            'prices_id' => (string) $priceA->id,
+        ]);
+        SellerVariant::create([
+            'seller_id' => $seller->id,
+            'product_id' => $productB->id,
+            'prices_id' => '',
+        ]);
+
+        $this->actingAs($seller, 'seller');
+
+        // دکمهٔ خروجی در صفحهٔ محصولات (سوییچ روشن)
+        $this->get(route('seller.products.index'))->assertSee(route('seller.products.export'), false);
+
+        // محتوای خروجی: فقط محصولات مبنای SellerVariant + قیمت مؤثر و موجودی
+        $html = (new SellerProductsExport($seller->id))->view()->render();
+        $this->assertStringContainsString('محصول اکسل الف', $html);
+        $this->assertStringContainsString('محصول اکسل ب', $html);
+        $this->assertStringContainsString('22,000', $html);   // مین قیمت مؤثر محصول الف (۱۰۰ پیش‌فرض/۵۵/۲۲)
+        $this->assertStringNotContainsString('محصول غریبهٔ اکسل', $html);
+
+        // دانلود واقعی xlsx (امضای PK)
+        $response = $this->get(route('seller.products.export'));
+        $response->assertOk();
+        $this->assertStringContainsString('spreadsheet', (string) $response->headers->get('Content-Type'));
+        $file = $response->getFile();
+        $bytes = (string) file_get_contents($file->getPathname());
+        $this->assertSame('PK', substr($bytes, 0, 2));
+
+        // سوییچ خاموش: دکمه حذف و دانلود ریدایرکت می‌شود
+        option_update('seller_products_export', '0');
+        Cache::flush();
+
+        $this->get(route('seller.products.index'))->assertDontSee(route('seller.products.export'), false);
+
+        $response = $this->get(route('seller.products.export'));
+        $response->assertRedirect(route('seller.products.index'));
     }
 }

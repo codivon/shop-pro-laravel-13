@@ -14,6 +14,10 @@
                 <div class="c-grid__col">
                     <div class="c-content-page__header">
                         <span class="c-content-page__header-action">مدیریت محصولات </span>
+                        {{-- فاز ۱۰۶-۶ — خروجی اکسل؛ گیت سوییچ seller_products_export (قانون طلایی) --}}
+                        @if(\App\Support\MultiVendorSettings::productsExportEnabled())
+                            <a class="btn btn-sm btn-primary float-left" href="{{ route('seller.products.export') }}"><i class="feather icon-download"></i> خروجی اکسل</a>
+                        @endif
                         <span class="c-content-page__header-desc">محصولی که قصد فروش آن را دارید، جستجو کنید. در غیر این‌صورت از "ایجاد کالای جدید" اقدام به درج کالای خود کنید</span>
                     </div>
                 </div>

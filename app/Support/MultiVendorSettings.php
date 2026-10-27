@@ -148,6 +148,16 @@ class MultiVendorSettings
     }
 
     /**
+     * خروجی اکسل محصولات فروشنده (فاز ۱۰۶-۶): دکمهٔ خروجی در «مدیریت
+     * محصولات» پنل فروشنده — همان مبنای لیست (SellerVariant) با قیمت/موجودی/
+     * دسته‌بندی/تنوع‌ها. الگوی SellerOrdersExport و SellerSettlementsExport.
+     */
+    public static function productsExportEnabled(): bool
+    {
+        return option('seller_products_export', '1') === '1';
+    }
+
+    /**
      * حداقل مبلغ درخواست برداشت فروشنده (تومان) — ۰ یعنی بدون حد اضافه
      * (حداقل قدیمی ۱۰٬۰۰۰ تومانی فرم برداشت همیشه معتبر است).
      */

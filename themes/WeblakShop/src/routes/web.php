@@ -352,6 +352,8 @@ Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
         Route::prefix('products')->name('products.')->group(function () {
             Route::get('/', [ProductSellerController::class, 'index'])->name('index');
             Route::post('api/index', [ProductSellerController::class, 'apiIndex'])->name('apiIndex');
+            // فاز ۱۰۶-۶ — خروجی اکسل؛ روت ثابت قبل از وایلدکارد {product} (درس فاز ۹۱)
+            Route::get('export', [ProductSellerController::class, 'export'])->name('export');
             Route::get('create', [ProductSellerController::class, 'create'])->name('create');
             Route::post('store', [ProductSellerController::class, 'store'])->name('store');
             Route::get('{product}/edit', [ProductSellerController::class, 'edit'])->name('edit');
