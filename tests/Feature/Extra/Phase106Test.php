@@ -7,6 +7,7 @@ use App\Models\Admin;
 use App\Models\Seller;
 use App\Models\SellerDeposit;
 use App\Models\SellerInfo;
+use App\Models\Viewer;
 use App\Support\MultiVendorSettings;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -28,6 +29,9 @@ use Tests\TestCase;
  *  4) کارت «ارزش سفارشات موفق» داشبورد orders.seller_id (ستون قدیمی) را جمع می‌زد و
  *     با «فروش موفق» بلوک چندفروشندگی (order_items.seller_id) دو عدد متفاوت نشان می‌داد
  *  5) partial اعلان‌های هدر فروشنده به route ادمین لینک می‌داد (کد مرده)
+ *
+ * فاز ۱۰۶-۱ — صورت‌حساب تسویهٔ فروشنده (سوییچ multi_vendor_settlement_statement)
+ * فاز ۱۰۶-۲ — گزارش فروش فروشنده (سوییچ seller_analytics_enabled)
  */
 class Phase106Test extends TestCase
 {
@@ -333,5 +337,141 @@ class Phase106Test extends TestCase
         $this->assertNotEmpty($bytes);
         // xlsx = بستهٔ ZIP → امضای PK
         $this->assertSame('PK', substr($bytes, 0, 2));
+    }
+
+    /* ================= فاز ۱۰۶-۲) گزارش فروش فروشنده ================= */
+
+    #[Test]
+    #[TestDox('تب چندفروشندگی Developer سوییچ گزارش فروش فروشنده را ذخیره می‌کند')]
+    public function developer_tab_saves_seller_analytics_toggle(): void
+    {
+        $this->newCreator();
+
+        Livewire::test(Developer::class)
+            ->set('vendorEnabled', true)
+            ->set('vendorSellerAnalytics', false)
+            ->call('saveMultiVendor')
+            ->assertDispatched('toast');
+
+        $this->assertSame('0', option('seller_analytics_enabled', '1'));
+        $this->assertFalse(MultiVendorSettings::analyticsEnabled());
+
+        Livewire::test(Developer::class)
+            ->set('vendorSellerAnalytics', true)
+            ->call('saveMultiVendor');
+
+        $this->assertSame('1', option('seller_analytics_enabled', '1'));
+    }
+
+    /** بازدید صفحات محصول فروشنده (مکملِ newSellerPaidOrder برای نرخ تبدیل) */
+    private function newProductViews(Seller $seller, string $productSlug, int $count, int $daysAgo = 0): void
+    {
+        for ($i = 0; $i < $count; $i++) {
+            Viewer::create([
+                'ip' => '10.0.'.rand(1, 250).'.'.rand(1, 250),
+                'product_path' => $productSlug,
+                'path' => '/product/'.$productSlug,
+                'created_at' => now()->subDays($daysAgo),
+            ]);
+        }
+    }
+
+    #[Test]
+    #[TestDox('گزارش فروش: درآمد ۳۰ روزه، پرفروش‌ترین‌ها و نرخ تبدیل بر مبنای order_items.seller_id')]
+    public function seller_analytics_shows_revenue_bestsellers_and_conversion(): void
+    {
+        $seller = $this->newSeller();
+
+        // دو سفارش پرداخت‌شدهٔ فروشندهٔ A (۵۰۰٬۰۰۰ × ۲ قلم = ۱٬۰۰۰٬۰۰۰ برای تشخیص عدد)
+        // محصولات با seller_id فروشنده ساخته می‌شوند (الگوی «جستجو یا درج محصول») تا
+        // بازدید صفحاتشان در نرخ تبدیل شمرده شود
+        $productA = $this->newProduct(['seller_id' => $seller->id], ['price' => 500000]);
+        [$orderA, $itemA] = $this->newPaidOrder($this->newUser(), $productA, [], [
+            'seller_id' => $seller->id,
+            'price' => 500000,
+            'real_price' => 500000,
+        ]);
+        $itemA->forceFill(['quantity' => 2])->save();
+
+        $productB = $this->newProduct(['seller_id' => $seller->id], ['price' => 200000]);
+        $this->newPaidOrder($this->newUser(), $productB, [], [
+            'seller_id' => $seller->id,
+            'price' => 200000,
+            'real_price' => 200000,
+        ]);
+
+        // سفارشِ فروشندهٔ دیگر نباید در گزارش فروشندهٔ A دیده شود
+        $this->newSellerPaidOrder($this->newSeller(), 999000);
+
+        // بازدید صفحات محصول (۵ بازدید محصول اول + ۵ بازدید محصول دوم)
+        $this->newProductViews($seller, $itemA->product->slug, 5);
+        $this->newProductViews($seller, $productB->slug, 5);
+
+        $this->actingAs($seller, 'seller');
+        $response = $this->get(route('seller.statistics.index'));
+
+        $response->assertOk();
+        $response->assertSee('گزارش فروش (۳۰ روز اخیر)', false);
+        // درآمد: ۱٬۰۰۰٬۰۰۰ + ۲۰۰٬۰۰۰ = ۱٬۲۰۰٬۰۰۰ (سفارش ۹۹۹٬۰۰۰ فروشندهٔ دیگر حذف)
+        $response->assertSee('1,200,000', false);
+        $response->assertSee('روند درآمد ۳۰ روز اخیر', false);
+        $response->assertSee('stx-revenue-chart', false);
+        // پرفروش‌ترین‌ها (محصول اول ۲ قلم در صدر)
+        $response->assertSee('پرفروش‌ترین محصولات', false);
+        $response->assertSee($itemA->product->title, false);
+        // بازدید → سفارش: ۱۰ بازدید / ۲ سفارش = ۲۰٪
+        $response->assertSee('بازدید → سفارش', false);
+        $response->assertSee('20.0٪', false);
+
+        // آیتم منوی سایدبار
+        $this->get(route('seller.dashboard'))->assertSee(route('seller.statistics.index'), false);
+    }
+
+    #[Test]
+    #[TestDox('سوییچ خاموش گزارش فروش: بخش فروش حذف ولی آمار بازدید همان صفحه سرو می‌شود')]
+    public function seller_analytics_respects_toggle(): void
+    {
+        $seller = $this->newSeller();
+        $this->newSellerPaidOrder($seller, 500000);
+        $this->newProductViews($seller, 'any-product', 4);
+        $this->actingAs($seller, 'seller');
+
+        option_update('seller_analytics_enabled', '0');
+        Cache::flush();
+
+        $response = $this->get(route('seller.statistics.index'));
+
+        // صفحهٔ آمار (فاز ۱۰۶ الف) همچنان ۲۰۰ و آمار بازدید دارد
+        $response->assertOk();
+        $response->assertSee('آمار بازدید فروشگاه', false);
+        $response->assertSee('بازدیدکنندگان یکتا', false);
+        $response->assertSee('stx-daily-chart', false);
+
+        // بخش فروش کامل حذف — نه کارت‌ها، نه نمودار، نه پرفروش‌ها
+        $response->assertDontSee('گزارش فروش (۳۰ روز اخیر)', false);
+        $response->assertDontSee('stx-revenue-chart', false);
+        $response->assertDontSee('پرفروش‌ترین محصولات', false);
+        $response->assertDontSee('500,000', false);
+    }
+
+    #[Test]
+    #[TestDox('گزارش فروش محصول حذف‌شده را بی‌صدا از پرفروش‌ها حذف می‌کند (nullSafe)')]
+    public function seller_analytics_skips_deleted_products(): void
+    {
+        $seller = $this->newSeller();
+        [$order, $item] = $this->newSellerPaidOrder($seller, 300000);
+
+        // محصول حذف می‌شود — ردیف پرفروش‌ها نباید صفحه را بشکند
+        $item->product()->delete();
+
+        $this->actingAs($seller, 'seller');
+        $response = $this->get(route('seller.statistics.index'));
+
+        $response->assertOk();
+        $response->assertSee('گزارش فروش (۳۰ روز اخیر)', false);
+        // کارت‌های جمع همچنان درآمد را نشان می‌دهند (آیتم حذف‌شده فروش است)
+        $response->assertSee('300,000', false);
+        // ولی جدول پرفروش‌ها خالی است (ردیف محصول نال فیلتر شده)
+        $response->assertSee('هنوز فروشی در ۳۰ روز اخیر ثبت نشده است', false);
     }
 }

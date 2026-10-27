@@ -82,6 +82,13 @@
                 </a>
             </li>
 
+            <li class="{{ active_class('seller.statistics.index') }} nav-item">
+                <a href="{{ route('seller.statistics.index') }}">
+                    <i class="feather icon-bar-chart-2"></i>
+                    <span class="menu-title">آمار و گزارش فروش</span>
+                </a>
+            </li>
+
             <li class="{{ active_class('seller.tickets.index') }} nav-item">
                 <a href="{{ route('seller.tickets.index') }}">
                     <i class="fas fa-headset"></i>

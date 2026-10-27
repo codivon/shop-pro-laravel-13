@@ -157,6 +157,9 @@ class Developer extends Component
     /** صورت‌حساب تسویهٔ فروشنده (فاز ۱۰۶ — شفافیت مالی) */
     public bool $vendorSettlementStatement = true;
 
+    /** گزارش فروش فروشنده (فاز ۱۰۶-۲ — درآمد زمانی/پرفروش‌ها/تبدیل) */
+    public bool $vendorSellerAnalytics = true;
+
     /** کمیسیون پیش‌فرض سراسری ٪ — '' یعنی بدون پیش‌فرض (رفتار قبل: ۰) */
     public string $vendorDefaultCommission = '';
 
@@ -239,6 +242,7 @@ class Developer extends Component
         $this->vendorBulkSettlement = MultiVendorSettings::bulkSettlementEnabled();
         $this->vendorDashboardStats = MultiVendorSettings::dashboardStatsEnabled();
         $this->vendorSettlementStatement = MultiVendorSettings::settlementStatementEnabled();
+        $this->vendorSellerAnalytics = MultiVendorSettings::analyticsEnabled();
         $this->vendorDefaultCommission = (string) (MultiVendorSettings::defaultCommission() ?? '');
         $this->vendorMinWithdraw = (string) MultiVendorSettings::minWithdrawAmount();
     }
@@ -407,6 +411,7 @@ class Developer extends Component
         option_update('multi_vendor_bulk_settlement', $this->vendorBulkSettlement ? '1' : '0');
         option_update('multi_vendor_dashboard_stats', $this->vendorDashboardStats ? '1' : '0');
         option_update('multi_vendor_settlement_statement', $this->vendorSettlementStatement ? '1' : '0');
+        option_update('seller_analytics_enabled', $this->vendorSellerAnalytics ? '1' : '0');
         option_update('multi_vendor_default_commission', trim((string) $this->vendorDefaultCommission) === '' ? '' : (string) max(0, min(100, (int) $this->vendorDefaultCommission)));
         option_update('multi_vendor_withdraw_min_amount', (string) max(0, (int) $this->vendorMinWithdraw));
 
