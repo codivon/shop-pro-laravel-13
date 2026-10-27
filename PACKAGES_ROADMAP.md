@@ -252,6 +252,21 @@ API باربری‌ها (تیپاکس/ماهکس/پست) + بارنامه و پ�
 
 ### ترتیب اجرای پیشنهادی: الف (همه) ✅ → ۱ ✅ → ۲ ✅ → ۳ ✅ → ۴ ✅ → ۵ ✅ → ۶ ✅ → ۷ ✅ — فاز ۱۰۶ کامل شد
 
+---
+
+## پیوست فاز ۱۰۶ — مهاجرت سرور مارکت/بروزرسانی به هاست ایران (update.opashop.ir) ✅ (انجام شد)
+
+درخواست کاربر: سرور قبلی `update.weblak.ir` روی هاست آلمان بود و مشتریان در خرید پکیج مشکل داشتند → سرور مارکت/بروزرسانی روی هاست ایران با دامنهٔ `update.opashop.ir` مستقر شد. جایگزینی کامل در مخزن:
+
+- `config/packages.php` — مقدار پیش‌فرض `PACKAGES_API_URL` → `https://update.opashop.ir`
+- `Back\DeveloperController` و Livewire `Developer` — `panelUrl` (`/api/v1/check-update`)
+- `bootstrap/helpers.php::update_url()` — آدرس check-update
+- اسناد: `PROJECT_ANALYSIS.md`، `PACKAGES_ROADMAP.md`، `ADMIN_PANEL_PROGRESS.md`
+
+راستی‌آزمایی: جستجوی تمام-مخزن با `--no-ignore` (شامل Modules/themes/packages/storage/.env و dump کامل دیتابیس) = صفر رخداد باقی‌مانده؛ `.env` فاقد overrideِ `PACKAGES_API_URL` است (پیش‌فرض جدید اعمال می‌شود). **نکتهٔ دیپلوی روی سرور تولیدی:** پس از pull حتماً `php artisan config:clear` (و در صورت cache کانفیگ، `config:cache`) اجرا شود تا مقدار قدیمی از cache بیرون بیاید؛ اگر روی هاستِ مشتری `.env` مقدار `PACKAGES_API_URL` با دامنهٔ قدیمی داشته باشد باید دستی اصلاح شود. (کامیت `69816b28`)
+
+**درس جستجو:** `Modules/*` در `.gitignore` ریشه است (`/Modules/*`) — ابزارهای جستجوی محترم-gitignore (ripgrep پیش‌فرض) از آن عبور می‌کنند؛ هر جستجوی فراگیر باید `Modules/` را با `--no-ignore` جداگانه پوشش دهد.
+
 ## نقشهٔ راه جدید (باقی‌مانده)
 
 1. **PWA موبایل** — به درخواست کاربر تا بازطراحی فرانت معلق شد (بند فاز ۱۰۲).
