@@ -66,6 +66,14 @@ class DashboardSellerController extends Controller
                     ->where(['withdraw' => 1, 'type' => 'withdraw'])
                     ->where('status_pay', 'waiting')
                     ->sum('amount'),
+
+                // نرخ کمیسیون مؤثرِ خودِ فروشنده (فاز ۱۰۳) — override اختصاصی > جدول دسته‌بندی‌ها > پیش‌فرض سراسری.
+                // null یعنی override اختصاصی ندارد → کمیسیونش از جدول دسته‌بندی‌ها/پیش‌فرض تعیین می‌شود.
+                'seller_override_commission' => MultiVendorSettings::sellerOverrideEnabled()
+                    ? MultiVendorSettings::sellerOverride($sellerId)
+                    : null,
+
+                'default_commission' => MultiVendorSettings::defaultCommission(),
             ];
         }
 

@@ -596,4 +596,46 @@ class Phase103Test extends TestCase
         $this->post(route('seller.wallet.withdraw'), ['amount' => '60000']);
         $this->assertSame(1, $wallet->histories()->where(['type' => 'withdraw', 'withdraw' => 1])->count());
     }
+
+    /* ================= ۷) نمایش نرخ کمیسیون خودِ فروشنده در داشبورد ================= */
+
+    #[Test]
+    #[TestDox('داشبورد فروشنده نرخ کمیسیون مؤثر خودش را نشان می‌دهد (override اختصاصی > جدول دسته‌بندی‌ها)')]
+    public function seller_dashboard_shows_own_commission_rate(): void
+    {
+        $this->enableVendor();
+
+        // الف) فروشنده با override اختصاصی (ادمین از پنل کمیسیون گذاشته) → نرخ اختصاصی دیده شود
+        $seller = $this->newSeller(['commission' => 12]);
+        $this->actingAs($seller, 'seller');
+
+        $response = $this->get(route('seller.dashboard'));
+        $response->assertOk();
+        $response->assertSee('نرخ کمیسیون اختصاصی شما: 12٪', false);
+
+        // ب) فروشنده بدون override → ارجاع به جدول دسته‌بندی‌ها
+        $plain = $this->newSeller();
+        $this->actingAs($plain, 'seller');
+
+        $response = $this->get(route('seller.dashboard'));
+        $response->assertOk();
+        $response->assertSee('کمیسیون طبق جدول دسته‌بندی‌ها', false);
+        $response->assertSee(route('seller.commission'), false);
+
+        // ج) با پیش‌فرض سراسری → پیام پیش‌فرض سایت هم دیده شود
+        option_update('multi_vendor_default_commission', '9');
+        Cache::flush();
+
+        $response = $this->get(route('seller.dashboard'));
+        $response->assertOk();
+        $response->assertSee('پیش‌فرض سایت 9٪', false);
+
+        // د) سوییچ آمار داشبورد خاموش → کل بلوک کارت‌ها رندر نمی‌شود
+        option_update('multi_vendor_dashboard_stats', '0');
+        Cache::flush();
+
+        $response = $this->get(route('seller.dashboard'));
+        $response->assertOk();
+        $response->assertDontSee('vset-card', false);
+    }
 }

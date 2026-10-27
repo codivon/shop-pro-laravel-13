@@ -203,6 +203,13 @@
                         'color' => '#d97706',
                         'icon'  => 'percent',
                         'link'  => null,
+                        // نرخ مؤثر خودِ فروشنده (فاز ۱۰۳) — override اختصاصی ادمین > جدول دسته‌بندی‌ها > پیش‌فرض سراسری
+                        'note' => ! is_null($vendorStats['seller_override_commission'] ?? null)
+                            ? 'نرخ کمیسیون اختصاصی شما: '.(int) $vendorStats['seller_override_commission'].'٪ (روی همهٔ فروش‌ها)'
+                            : (! is_null($vendorStats['default_commission'] ?? null)
+                                ? 'کمیسیون طبق جدول دسته‌بندی‌ها؛ پیش‌فرض سایت '.(int) $vendorStats['default_commission'].'٪'
+                                : 'کمیسیون طبق جدول دسته‌بندی‌ها'),
+                        'note_link' => route('seller.commission'),
                     ],
                     [
                         'title' => 'درخواست در انتظار',
@@ -226,6 +233,15 @@
                                 <span class="vset-card__title">{{ $vsItem['title'] }}</span>
                             </div>
                             <div class="vset-card__value">{{ $vsItem['value'] }}</div>
+                            @if(! empty($vsItem['note']))
+                                <div class="vset-card__note">
+                                    @if(! empty($vsItem['note_link']))
+                                        <a href="{{ $vsItem['note_link'] }}">{{ $vsItem['note'] }}</a>
+                                    @else
+                                        {{ $vsItem['note'] }}
+                                    @endif
+                                </div>
+                            @endif
                         </div>
                     </div>
                 @endforeach
@@ -239,6 +255,9 @@
                 .vset-card__icon { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:10px; flex-shrink:0; }
                 .vset-card__title { font-size:13px; font-weight:600; color:#555; }
                 .vset-card__value { margin-top:10px; font-size:14px; font-weight:700; color:#1f2430; line-height:1.8; }
+                .vset-card__note { margin-top:6px; font-size:11.5px; color:#8a8f9c; line-height:1.7; }
+                .vset-card__note a { color:#d97706; text-decoration:none; }
+                .vset-card__note a:hover { text-decoration:underline; }
                 @media (max-width:767px){ .vset-card__value { font-size:13px; } }
             </style>
         @endif
