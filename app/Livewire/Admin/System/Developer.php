@@ -184,6 +184,15 @@ class Developer extends Component
     /** صفحهٔ فرود پیشرفتهٔ فروشندگان (فاز ۱۰۹ — لندینگ تک‌صفحه‌ای /seller) */
     public bool $vendorLandingPage = true;
 
+    /** احراز هویت مالکیت موبایل فروشنده با فینوتک (فاز ۱۱۰ — پیش‌فرض خاموش) */
+    public bool $vendorKycMobileVerify = false;
+
+    /** شناسهٔ کلاینت فینوتک (فاز ۱۱۰) */
+    public string $vendorFinnotechClientId = '';
+
+    /** رمز کلاینت فینوتک (فاز ۱۱۰) */
+    public string $vendorFinnotechClientSecret = '';
+
     /** حداقل مبلغ درخواست برداشت فروشنده (تومان) — ۰ یعنی بدون حد اضافه */
     public string $vendorMinWithdraw = '0';
 
@@ -271,6 +280,9 @@ class Developer extends Component
         $this->vendorLeaderboard = MultiVendorSettings::leaderboardEnabled();
         $this->vendorModernPanel = MultiVendorSettings::modernPanelEnabled();
         $this->vendorLandingPage = MultiVendorSettings::landingPageEnabled();
+        $this->vendorKycMobileVerify = MultiVendorSettings::kycMobileVerifyEnabled();
+        $this->vendorFinnotechClientId = trim((string) option('finnotech_client_id', ''));
+        $this->vendorFinnotechClientSecret = trim((string) option('finnotech_client_secret', ''));
         $this->vendorDefaultCommission = (string) (MultiVendorSettings::defaultCommission() ?? '');
         $this->vendorMinWithdraw = (string) MultiVendorSettings::minWithdrawAmount();
     }
@@ -423,6 +435,8 @@ class Developer extends Component
         $this->validate([
             'vendorDefaultCommission' => ['nullable', 'integer', 'between:0,100'],
             'vendorMinWithdraw' => ['nullable', 'integer', 'between:0,50000000'],
+            'vendorFinnotechClientId' => ['nullable', 'string', 'max:191'],
+            'vendorFinnotechClientSecret' => ['nullable', 'string', 'max:191'],
         ], [
             'vendorDefaultCommission.integer' => 'کمیسیون پیش‌فرض باید عدد باشد.',
             'vendorDefaultCommission.between' => 'کمیسیون پیش‌فرض باید بین ۰ تا ۱۰۰ درصد باشد.',
@@ -447,6 +461,9 @@ class Developer extends Component
         option_update('multi_vendor_leaderboard', $this->vendorLeaderboard ? '1' : '0');
         option_update(MultiVendorSettings::KEY_MODERN_PANEL, $this->vendorModernPanel ? '1' : '0');
         option_update(MultiVendorSettings::KEY_LANDING_PAGE, $this->vendorLandingPage ? '1' : '0');
+        option_update(MultiVendorSettings::KEY_KYC_MOBILE, $this->vendorKycMobileVerify ? '1' : '0');
+        option_update('finnotech_client_id', trim((string) $this->vendorFinnotechClientId));
+        option_update('finnotech_client_secret', trim((string) $this->vendorFinnotechClientSecret));
         option_update('multi_vendor_default_commission', trim((string) $this->vendorDefaultCommission) === '' ? '' : (string) max(0, min(100, (int) $this->vendorDefaultCommission)));
         option_update('multi_vendor_withdraw_min_amount', (string) max(0, (int) $this->vendorMinWithdraw));
 

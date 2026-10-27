@@ -5,13 +5,15 @@ namespace App\Livewire\Seller\Auth;
 use App\Models\Seller;
 use App\Models\SellerInfo;
 use App\Support\MultiVendorSettings;
+use App\Support\SellerRegistrationFlow;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /**
- * فاز ۱۰۸ — گام ۴ ثبت‌نام: بارگذاری مدارک — پورت SellerController@registration_documents.
+ * فاز ۱۰۸ — گام مدارک: بارگذاری مدارک — پورت SellerController@registration_documents.
  * بارگذاری/حذف تصاویر با fetch به همان اندپوینت‌های قدیمی (documents_store/delete/check).
+ * فاز ۱۱۰ — رزومه: با گم‌شدن سشن، از پیش‌نویس (کوکی توکن‌دار) بازیابی می‌شود.
  */
 #[Title('بارگذاری مدارک')]
 #[Layout('sellers.layouts.guest')]
@@ -27,6 +29,16 @@ class Documents extends Component
         }
 
         $seller = Seller::where(['mobile' => session('show-seller-documents')])->first();
+
+        // فاز ۱۱۰ — بازیابی از پیش‌نویس وقتی سشن گم شده (رفرش/قطع اینترنت)
+        if (! $seller) {
+            $draft = SellerRegistrationFlow::currentDraft();
+
+            if ($draft && $draft->reached('documents')) {
+                session()->put('show-seller-documents', $draft->mobile);
+                $seller = Seller::where('mobile', $draft->mobile)->first();
+            }
+        }
 
         if (! $seller) {
             $this->redirect(route('seller.registration'), navigate: true);

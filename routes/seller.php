@@ -32,6 +32,7 @@ use App\Http\Controllers\Seller\SellerCarrierController;
 use App\Http\Controllers\Seller\SellerController;
 use App\Http\Controllers\Seller\SellerDemandController;
 use App\Http\Controllers\Seller\SellerInventoryController;
+use App\Http\Controllers\Seller\SellerRegistrationController;
 use App\Http\Controllers\Seller\SellerReviewController;
 use App\Http\Controllers\Seller\SellerStatisticsController;
 use App\Http\Controllers\Seller\SellerTariffController;
@@ -44,6 +45,8 @@ use App\Livewire\Seller\Auth\Landing;
 use App\Livewire\Seller\Auth\Login;
 use App\Livewire\Seller\Auth\Register;
 use App\Livewire\Seller\Auth\RegisterMobile;
+use App\Livewire\Seller\Auth\SellerIdentity;
+use App\Livewire\Seller\Auth\SellerType;
 use App\Livewire\Seller\Carriers\Create as CarrierCreate;
 use App\Livewire\Seller\Carriers\Edit as CarrierEdit;
 use App\Livewire\Seller\Carriers\Index as CarrierIndex;
@@ -95,6 +98,21 @@ Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
     Route::post('registration', [SellerController::class, 'registration_new_seller'])->name('registration_new_seller');
     Route::get('registration/mobile', $modern ? RegisterMobile::class : [SellerController::class, 'registration_mobile'])->name('registration_mobile');
     Route::post('registration/mobile', [SellerController::class, 'registration_mobile_check'])->name('registration_mobile_check');
+
+    // فاز ۱۱۰ — ثبت‌نام مرحله‌ای جدید (فقط پنل مدرن): موبایل ← کد ۶ رقمی ←
+    // وضعیت ← اطلاعات تکمیلی (فینوتک) ← کسب‌وکار ← مدارک ← پایان.
+    // ذخیرهٔ هر مرحله در seller_registrations + گیت ترتیب مراحل سمت سرور.
+    Route::get('registration/type', $modern ? SellerType::class : [SellerController::class, 'registration'])->name('registration_type');
+    Route::get('registration/identity', $modern ? SellerIdentity::class : [SellerController::class, 'registration'])->name('registration_identity');
+
+    if ($modern) {
+        Route::post('registration/phone', [SellerRegistrationController::class, 'sendPhoneOtp'])->name('registration_phone_send');
+        Route::post('registration/verify', [SellerRegistrationController::class, 'verifyPhoneOtp'])->name('registration_phone_verify');
+        Route::post('registration/resend', [SellerRegistrationController::class, 'resendPhoneOtp'])->name('registration_phone_resend');
+        Route::post('registration/type', [SellerRegistrationController::class, 'saveType'])->name('registration_type_store');
+        Route::post('registration/identity', [SellerRegistrationController::class, 'saveIdentity'])->name('registration_identity_store');
+        Route::post('registration/business', [SellerRegistrationController::class, 'saveBusiness'])->name('registration_business_store');
+    }
 
     // مرحله 1: اطلاعات کسب و کار
     Route::get('registration/business-details', $modern ? BusinessDetails::class : [SellerController::class, 'registration_business_details'])->name('registration_business_details');

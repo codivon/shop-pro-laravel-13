@@ -63,32 +63,31 @@
                 <h1 class="text-2xl font-black leading-[1.7] text-ink dark:text-night-ink sm:text-3xl">{{ $hero['title'] }}</h1>
                 <p class="mt-2 text-[13px] font-semibold leading-7 text-ink-3 dark:text-night-ink-2">{{ $hero['subtitle'] }}</p>
 
-                {{-- فرم ثبت‌نام سریع — نام فروشگاه + موبایل (پیش‌پرکردن گام ثبت‌نام) --}}
+                {{-- فرم ثبت‌نام سریع — فاز ۱۱۰: فقط شمارهٔ موبایل؛ کد ۶ رقمی مستقیم ارسال می‌شود --}}
                 <div class="mt-7 max-w-md" x-data="{
                         busy: false,
-                        shop: '',
                         mobile: '',
-                        go() {
+                        async go() {
                             let m = (this.mobile || '').replace(/[^0-9]/g, '');
                             if (! /^09[0-9]{9}$/.test(m)) {
                                 spToast('شمارهٔ موبایل را با فرمت 09xxxxxxxxx وارد کنید', 'error');
                                 return;
                             }
-                            try { sessionStorage.setItem('sp_shop_name', this.shop || ''); } catch (e) {}
                             this.busy = true;
-                            window.location.href = '{{ route('seller.registration') }}?mobile=' + m;
+                            let fd = new FormData();
+                            fd.append('mobile', m);
+                            try {
+                                let data = await spPost('{{ route('seller.registration_phone_send') }}', fd);
+                                if (data.redirect) { window.location.href = data.redirect; }
+                                else { spToast(data.message || 'ارسال کد ناموفق بود', 'error'); this.busy = false; }
+                            } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); this.busy = false; }
                         }
                     }">
                     <p class="mb-2 flex items-center gap-1.5 text-[12px] font-extrabold text-ink dark:text-night-ink">
-                        <x-admin-panel::icon name="store" class="size-4 text-brand-600 dark:text-brand-400" />
+                        <x-admin-panel::icon name="rocket" class="size-4 text-brand-600 dark:text-brand-400" />
                         ثبت‌نام سریع
                     </p>
                     <div class="space-y-3">
-                        <div>
-                            <label class="mb-1.5 block text-[11px] font-bold text-ink-3 dark:text-night-ink-2" for="sp-hero-shop">{{ $hero['shop_label'] }}</label>
-                            <input id="sp-hero-shop" type="text" x-model="shop" class="ap-input py-3!"
-                                   placeholder="{{ $hero['shop_label'] }}" autocomplete="organization">
-                        </div>
                         <div>
                             <label class="mb-1.5 block text-[11px] font-bold text-ink-3 dark:text-night-ink-2" for="sp-hero-mobile">{{ $hero['mobile_label'] }}</label>
                             <div class="relative">
@@ -106,7 +105,7 @@
                             </span>
                             <span x-show="busy" x-cloak class="flex items-center justify-center gap-2">
                                 <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"/></svg>
-                                در حال انتقال…
+                                در حال ارسال کد…
                             </span>
                         </button>
                         <p class="flex items-center justify-center gap-1.5 rounded-xl bg-brand-50/70 py-2.5 text-[11px] font-bold text-brand-700 dark:bg-brand-500/10 dark:text-brand-300">
@@ -167,7 +166,7 @@
     {{-- ===== چرا ما (از مدل SellerHero) ===== --}}
     @if (count($sellersHeroes))
         <section id="sp-why" class="scroll-mt-24">
-            <h2 class="text-center text-xl font-black text-ink dark:text-night-ink">چرا از ما بخرید؟</h2>
+            <h2 class="text-center text-xl font-black text-ink dark:text-night-ink">چرا فروش در اینجا؟</h2>
             <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($sellersHeroes as $heroItem)
                     <div class="ap-card p-5">

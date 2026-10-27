@@ -3,14 +3,20 @@
 namespace App\Livewire\Seller\Auth;
 
 use App\Support\MultiVendorSettings;
+use App\Support\SellerRegistrationFlow;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /**
- * فاز ۱۰۸ — گام ۱ ثبت‌نام (اطلاعات پایه: ایمیل/موبایل/رمز) — پورت SellerController@registration.
- * ارسال با fetch به seller.registration_new_seller (JSON همان کنترلر قدیمی).
+ * گام ۱ ثبت‌نام — فاز ۱۱۰: فقط شمارهٔ موبایل (ایمیل/رمز در گام کسب‌وکار
+ * جمع می‌شود). ارسال با fetch به seller.registration_phone_send (کنترلر
+ * جدید) و ارسال کد ۶ رقمی.
+ *
+ * ذخیرهٔ مرحله‌ای: اگر پیش‌نویسِ ثبت‌نام از قبل وجود داشته باشد، کاربر
+ * دقیقاً به همان مرحلهٔ رهاکرده برمی‌گردد (رفرش/قطع اینترنت پیشرفت را
+ * نمی‌پراند).
  */
 #[Title('ثبت‌نام فروشنده')]
 #[Layout('sellers.layouts.guest')]
@@ -22,15 +28,19 @@ class Register extends Component
             abort(404);
         }
 
-        session()->forget([
-            'show-seller-business-details',
-            'show-seller-verification-form',
-            'show-seller-documents',
-            'show-seller-checkout',
-        ]);
-
         if (Auth::guard('seller')->check()) {
             $this->redirect(route('seller.dashboard'), navigate: true);
+
+            return;
+        }
+
+        // ادامهٔ ثبت‌نام نیمه‌کاره — دقیقاً همان مرحله
+        $draft = SellerRegistrationFlow::activeDraft();
+
+        if ($draft) {
+            $this->redirect(SellerRegistrationFlow::resumeUrl($draft), navigate: true);
+
+            return;
         }
     }
 

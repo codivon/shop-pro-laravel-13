@@ -204,6 +204,22 @@ class MultiVendorSettings
         return max(0, (int) option('multi_vendor_withdraw_min_amount', '0'));
     }
 
+    /**
+     * احراز هویت مالکیت موبایل فروشنده (فاز ۱۱۰): در گام «اطلاعات تکمیلی»
+     * ثبت‌نام، تطابق شمارهٔ موبایل و کد ملی با سرویس شاهکارِ فینوتک (همان
+     * سرویس پکیج InstallmentCredit) بررسی می‌شود. کلیدهای فینوتک جداگانه‌اند:
+     * finnotech_client_id / finnotech_client_secret — بدون آن‌ها (یا خطای
+     * اتصال) بررسی رد می‌شود و ثبت‌نام آزاد ادامه می‌یابد؛ تنها جواب صریح
+     * «متعلق به یک نفر نیستند» مسدودکننده است.
+     * پیش‌فرض خاموش (سرویس بیرونی است).
+     */
+    public const KEY_KYC_MOBILE = 'seller_kyc_mobile_verify';
+
+    public static function kycMobileVerifyEnabled(): bool
+    {
+        return option(self::KEY_KYC_MOBILE, '0') === '1';
+    }
+
     /* ================= منطق کمیسیون ================= */
 
     /**

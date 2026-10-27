@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SellerPanel\Store_registration_business_details;
 use App\Models\Admin;
 use App\Models\Category;
 use App\Models\NewSeller;
@@ -13,6 +14,7 @@ use App\Models\SellerEcontract;
 use App\Models\SellerHero;
 use App\Models\SellerInfo;
 use App\Models\SellerQuestion;
+use App\Models\SellerRegistration;
 use App\Models\Slider;
 use App\Models\Wallet;
 use App\Notifications\Seller\SellerCreated;
@@ -26,20 +28,25 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use App\Http\Requests\SellerPanel\Store_registration_business_details;
 
 class SellerController extends Controller
 {
     // Registration status constants
     protected const REGISTER_STATUS_COMPLETE = 'complete';
+
     protected const REGISTER_STATUS_DOCUMENTS = 'documents';
+
     protected const REGISTER_STATUS_BUSINESS_DETAILS = 'business-details';
+
     protected const REGISTER_STATUS_CHECKOUT = 'checkout';
 
     // Session keys
     protected const SESSION_KEY_BUSINESS_DETAILS = 'show-seller-business-details';
+
     protected const SESSION_KEY_VERIFICATION = 'show-seller-verification-form';
+
     protected const SESSION_KEY_DOCUMENTS = 'show-seller-documents';
+
     protected const SESSION_KEY_CHECKOUT = 'show-seller-checkout';
 
     public function __construct()
@@ -64,12 +71,14 @@ class SellerController extends Controller
     private function getSellerFromSession(string $sessionKey): ?Seller
     {
         $mobile = session($sessionKey);
+
         return Seller::where('mobile', $mobile)->first();
     }
 
     private function getNewSellerFromSession(string $sessionKey): ?NewSeller
     {
         $mobile = session($sessionKey);
+
         return NewSeller::where('mobile', $mobile)->first();
     }
 
@@ -79,8 +88,10 @@ class SellerController extends Controller
         $slug = sluggable_helper_function($businessName) ?: trim($businessName);
         if (Seller::where('slug', $slug)->exists()) {
             $lastId = Seller::latest()->first()->id ?? 0;
-            return $slug . ($lastId + 1);
+
+            return $slug.($lastId + 1);
         }
+
         return $slug;
     }
 
@@ -134,7 +145,7 @@ class SellerController extends Controller
     {
         $seller = NewSeller::where(['mobile' => session(self::SESSION_KEY_VERIFICATION)])->first();
 
-        if (!$seller) {
+        if (! $seller) {
             return redirect()->route('seller.registration_new_seller');
         }
 
@@ -150,7 +161,7 @@ class SellerController extends Controller
         }
 
         $seller = NewSeller::where(['mobile' => session(self::SESSION_KEY_BUSINESS_DETAILS)])->first();
-        if (!$seller) {
+        if (! $seller) {
             return redirect()->route('seller.registration_new_seller');
         }
 
@@ -164,7 +175,7 @@ class SellerController extends Controller
     public function registration_documents()
     {
         $seller = Seller::where(['mobile' => session(self::SESSION_KEY_DOCUMENTS)])->first();
-        if (!$seller) {
+        if (! $seller) {
             return redirect()->route('seller.registration_new_seller');
         }
 
@@ -175,7 +186,7 @@ class SellerController extends Controller
     {
         $seller = Seller::where(['mobile' => session(self::SESSION_KEY_CHECKOUT)])->first();
 
-        if (!$seller) {
+        if (! $seller) {
             return redirect()->route('seller.registration_new_seller');
         }
 
@@ -213,14 +224,14 @@ class SellerController extends Controller
 
         $seller = Seller::where($loginField, $request->username)->first();
 
-        if (!$seller) {
+        if (! $seller) {
             return response([
                 'status' => 'error',
-                'message' => $userTitle . ' وارد شده با اطلاعات ما سازگار نیست.',
+                'message' => $userTitle.' وارد شده با اطلاعات ما سازگار نیست.',
             ]);
         }
 
-        if (!Auth::guard('seller')->attempt(
+        if (! Auth::guard('seller')->attempt(
             [$loginField => $request->username, 'password' => $request->password],
             $request->remember
         )) {
@@ -234,6 +245,7 @@ class SellerController extends Controller
         if ($seller->status_register == self::REGISTER_STATUS_COMPLETE) {
             if ($seller->status != 'ACTIVE') {
                 Auth::guard('seller')->logout();
+
                 return response([
                     'status' => 'error',
                     'message' => 'حساب کاربری شما مسدود شده است',
@@ -253,6 +265,7 @@ class SellerController extends Controller
             ]);
         } elseif ($seller->status_register == self::REGISTER_STATUS_BUSINESS_DETAILS) {
             session()->put(self::SESSION_KEY_DOCUMENTS, $seller->mobile);
+
             return response([
                 'status' => 'success',
                 'message' => 'با موفقیت وارد شدید',
@@ -260,6 +273,7 @@ class SellerController extends Controller
             ]);
         } elseif ($seller->status_register == self::REGISTER_STATUS_DOCUMENTS) {
             session()->put(self::SESSION_KEY_CHECKOUT, $seller->mobile);
+
             return response([
                 'status' => 'success',
                 'message' => 'با موفقیت وارد شدید',
@@ -268,6 +282,7 @@ class SellerController extends Controller
         }
 
         Auth::guard('seller')->logout();
+
         return response([
             'status' => 'error',
             'message' => 'وضعیت ثبت‌نام نامعتبر است.',
@@ -277,6 +292,7 @@ class SellerController extends Controller
     public function logout()
     {
         Auth::guard('seller')->logout();
+
         return redirect()->route('seller.dashboard');
     }
 
@@ -300,7 +316,7 @@ class SellerController extends Controller
             $seller->password = $request->password;
             $seller->save();
         } else {
-            $seller = new NewSeller();
+            $seller = new NewSeller;
             $seller->email = $request->email;
             $seller->mobile = $request->mobile;
             $seller->password = $request->password;
@@ -346,7 +362,7 @@ class SellerController extends Controller
     {
         $newSeller = NewSeller::where(['mobile' => session(self::SESSION_KEY_BUSINESS_DETAILS)])->first();
 
-        if (!$newSeller) {
+        if (! $newSeller) {
             return redirect()->route('seller.login');
         }
 
@@ -354,6 +370,7 @@ class SellerController extends Controller
 
         if ($seller) {
             session()->forget(self::SESSION_KEY_BUSINESS_DETAILS);
+
             return response([
                 'status' => 'error',
                 'message' => 'ایمیل و شماره از قبل وجود دارد.',
@@ -363,7 +380,7 @@ class SellerController extends Controller
 
         $slug = $this->generateUniqueSlug($request->business_name);
 
-        $seller = new Seller();
+        $seller = new Seller;
         $seller->slug = $slug;
         $seller->email = $newSeller->email;
         $seller->mobile = $newSeller->mobile;
@@ -372,11 +389,11 @@ class SellerController extends Controller
         $seller->remember_token = Str::random(60);
         $seller->save();
 
-        $seller_info = new SellerInfo();
+        $seller_info = new SellerInfo;
         $seller_info->seller_id = $seller->id;
         $seller_info->first_name = $request->first_name;
         $seller_info->last_name = $request->last_name;
-        $seller_info->birth_day = $request->birth_year . '/' . $request->birth_month . '/' . $request->birth_day;
+        $seller_info->birth_day = $request->birth_year.'/'.$request->birth_month.'/'.$request->birth_day;
         $seller_info->gender = $request->gender;
         $seller_info->identity_card_number = $request->identity_card_number;
         $seller_info->national_identity_number = $request->national_identity_number;
@@ -402,7 +419,7 @@ class SellerController extends Controller
         $seller_info->econtract = $request->econtract;
         $seller_info->save();
 
-        $wallet = new Wallet();
+        $wallet = new Wallet;
         $wallet->seller_id = $seller->id;
         $wallet->save();
 
@@ -411,6 +428,7 @@ class SellerController extends Controller
         if ($seller_info) {
             session()->forget(self::SESSION_KEY_BUSINESS_DETAILS);
             session()->put(self::SESSION_KEY_DOCUMENTS, $seller_info->mobile);
+
             return response([
                 'status' => 'success',
                 'redirect' => route('seller.registration_documents'),
@@ -422,7 +440,7 @@ class SellerController extends Controller
     {
         $seller = Seller::where(['mobile' => session(self::SESSION_KEY_DOCUMENTS)])->first();
 
-        if (!$seller) {
+        if (! $seller) {
             return abort(404);
         }
 
@@ -431,7 +449,7 @@ class SellerController extends Controller
         if ($request->hasFile($request->imageFor)) {
             $directory = "uploads/sellers/documents/{$seller->id}";
 
-            if (!file_exists(public_path($directory))) {
+            if (! file_exists(public_path($directory))) {
                 Storage::disk('public')->makeDirectory($directory);
             }
 
@@ -451,7 +469,7 @@ class SellerController extends Controller
     {
         $seller = Seller::where(['mobile' => session(self::SESSION_KEY_DOCUMENTS)])->first();
 
-        if (!$seller) {
+        if (! $seller) {
             return abort(404);
         }
 
@@ -466,21 +484,21 @@ class SellerController extends Controller
     {
         $seller = Seller::where(['mobile' => session(self::SESSION_KEY_DOCUMENTS)])->first();
 
-        if (!$seller) {
+        if (! $seller) {
             return abort(404);
         }
 
         $sellerInfo = SellerInfo::where('seller_id', $seller->id)->first();
 
         if ($request->vat_free == 1) {
-            if ($sellerInfo->card_image == "" or $sellerInfo->card_image_back == "" or $sellerInfo->vat_image == "") {
+            if ($sellerInfo->card_image == '' or $sellerInfo->card_image_back == '' or $sellerInfo->vat_image == '') {
                 return response([
                     'status' => 'error',
                     'message' => 'انتخاب تصویر گواهی ارزش افزوده و تصویر کارت ملی اجباری است',
                 ]);
             }
         } elseif ($request->vat_free == 2) {
-            if ($sellerInfo->card_image == "" or $sellerInfo->card_image_back == "") {
+            if ($sellerInfo->card_image == '' or $sellerInfo->card_image_back == '') {
                 return response([
                     'status' => 'error',
                     'message' => 'انتخاب تصویر کارت ملی اجباری است',
@@ -493,6 +511,9 @@ class SellerController extends Controller
 
         $seller->status_register = self::REGISTER_STATUS_DOCUMENTS;
         $seller->save();
+
+        // فاز ۱۱۰ — پیشروی پیش‌نویس ثبت‌نام مرحله‌ای (پنل مدرن)؛ جریان قدیمی بدون پیش‌نویس بی‌اثر است
+        SellerRegistration::where('mobile', $seller->mobile)->update(['step' => 'checkout']);
 
         session()->forget(self::SESSION_KEY_DOCUMENTS);
         session()->put(self::SESSION_KEY_CHECKOUT, $sellerInfo->mobile);
@@ -507,7 +528,7 @@ class SellerController extends Controller
     {
         $seller = Seller::where(['mobile' => session(self::SESSION_KEY_CHECKOUT)])->first();
 
-        if (!$seller) {
+        if (! $seller) {
             return response([
                 'status' => 'success',
                 'redirect' => route('seller.registration_new_seller'),
@@ -518,6 +539,9 @@ class SellerController extends Controller
         $seller->save();
 
         session()->forget(self::SESSION_KEY_CHECKOUT);
+
+        // فاز ۱۱۰ — بستن پیش‌نویس ثبت‌نام مرحله‌ای (پنل مدرن)
+        SellerRegistration::where('mobile', $seller->mobile)->update(['step' => 'complete']);
 
         $admins = Admin::whereIn('level', ['admin', 'creator'])->get();
         Notification::send($admins, new SellerRegistered($seller));

@@ -107,8 +107,8 @@ class Phase109Test extends TestCase
         $landing->assertSee('فروشندهٔ حرفه‌ای', false);
         $landing->assertSee('تجربهٔ فروشندگان', false);
         $landing->assertSee('ثبت‌نام سریع', false);
-        // پیش‌پرکردن: فرم هیرو به ثبت‌نام با پارامتر موبایل وصل است
-        $landing->assertSee(route('seller.registration').'?mobile=', false);
+        // فاز ۱۱۰ — ثبت‌نام سریع فقط موبایل است و مستقیم به اندپوینت ارسال کد وصل است
+        $landing->assertSee(route('seller.registration_phone_send'), false);
     }
 
     #[Test]
@@ -230,7 +230,8 @@ class Phase109Test extends TestCase
 
         $page = $this->get(route('seller.registration', ['mobile' => '09123456789']));
         $page->assertOk();
-        $page->assertSee('value="09123456789"', false);
+        // فاز ۱۱۰ — پیش‌پر کردن با x-model انجام می‌شود (فرم تک‌فیلدی موبایل)
+        $page->assertSee("mobile: '09123456789'", false);
     }
 
     /* ================= ۴) گارد ایستا: ارور Alpine ================= */

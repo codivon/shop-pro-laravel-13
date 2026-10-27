@@ -13,6 +13,11 @@
 
     <style>
         [x-cloak] { display: none !important; }
+
+        {{-- فاز ۱۱۰ — اسکرول نرم برای پرش به سکشن‌های لندینگ (منوی چسبان) --}}
+        @media (prefers-reduced-motion: no-preference) {
+            html { scroll-behavior: smooth; }
+        }
     </style>
 </head>
 <body class="min-h-screen bg-background text-ink dark:bg-night-1 dark:text-night-ink">

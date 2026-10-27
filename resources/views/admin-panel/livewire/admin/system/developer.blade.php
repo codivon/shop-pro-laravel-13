@@ -1017,6 +1017,44 @@
                         </div>
                     </section>
 
+                    {{-- ───── احراز هویت فروشندگان (فاز ۱۱۰ — فینوتک/شاهکار) ───── --}}
+                    <section class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
+                        <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">
+                            <x-admin-panel::icon name="id-card" class="size-4.5 text-brand-600 dark:text-brand-400" />
+                            <h3 class="text-[13px] font-bold">احراز هویت فروشندگان (فینوتک)</h3>
+                            <span class="ms-auto text-[10px] font-semibold text-ink-3 dark:text-night-ink-2">گام «اطلاعات تکمیلی» ثبت‌نام پنل مدرن</span>
+                        </div>
+                        <div class="space-y-3 p-4">
+                            <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                                <span class="flex min-w-0 items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="smartphone" class="size-4" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-[13px] font-bold">احراز هویت شمارهٔ موبایل (مالکیت کد ملی)</span>
+                                        <span class="block text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">در ثبت‌نام مرحله‌ای، تطابق شمارهٔ موبایل و کد ملی فروشنده با سرویس شاهکارِ فینوتک بررسی شود (همان سرویس پکیج InstallmentCredit) — فقط وقتی روشن است و کلیدهای زیر پر و سرویس در دسترس است بررسی می‌شود؛ جواب صریح «متعلق به یک نفر نیستند» جلوی مرحلهٔ بعد را می‌گیرد و خطای اتصال ثبت‌نام را نمی‌بندد</span>
+                                    </span>
+                                </span>
+                                <x-admin-panel::toggle wire:model="vendorKycMobileVerify" size="sm" aria-label="احراز هویت موبایل با فینوتک" />
+                            </div>
+                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <div>
+                                    <label class="mb-1.5 block text-[12px] font-bold" for="dev-finnotech-client-id">شناسهٔ کلاینت فینوتک (Client ID)</label>
+                                    <input id="dev-finnotech-client-id" type="text" wire:model="vendorFinnotechClientId" dir="ltr"
+                                           class="ap-input py-2.5 text-start" placeholder="finnotech-client-id" autocomplete="off">
+                                </div>
+                                <div>
+                                    <label class="mb-1.5 block text-[12px] font-bold" for="dev-finnotech-client-secret">رمز کلاینت فینوتک (Client Secret)</label>
+                                    <input id="dev-finnotech-client-secret" type="password" wire:model="vendorFinnotechClientSecret" dir="ltr"
+                                           class="ap-input py-2.5 text-start" placeholder="••••••••••••" autocomplete="new-password">
+                                </div>
+                            </div>
+                            <p class="text-[11px] font-semibold leading-5 text-ink-3 dark:text-night-ink-2">
+                                کلیدها را از پنل فینوتک (console.finnotech.ir) دریافت کنید؛ بدون کلید یا با خطای اتصال، بررسی انجام نمی‌شود و ثبت‌نام مثل حالت خاموش ادامه می‌یابد.
+                            </p>
+                        </div>
+                    </section>
+
                     {{-- ───── کمیسیون ───── --}}
                     <section class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
                         <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">
