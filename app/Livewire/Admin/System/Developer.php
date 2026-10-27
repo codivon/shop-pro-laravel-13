@@ -163,6 +163,9 @@ class Developer extends Component
     /** سیگنال‌های تقاضا (فاز ۱۰۶-۳ — منتظر موجودی/کاهش قیمت) */
     public bool $vendorDemandSignals = true;
 
+    /** دسترسی به نظرات محصولات (فاز ۱۰۶-۴ — امتیاز/توصیه/رضایت) */
+    public bool $vendorReviewsAccess = true;
+
     /** کمیسیون پیش‌فرض سراسری ٪ — '' یعنی بدون پیش‌فرض (رفتار قبل: ۰) */
     public string $vendorDefaultCommission = '';
 
@@ -247,6 +250,7 @@ class Developer extends Component
         $this->vendorSettlementStatement = MultiVendorSettings::settlementStatementEnabled();
         $this->vendorSellerAnalytics = MultiVendorSettings::analyticsEnabled();
         $this->vendorDemandSignals = MultiVendorSettings::demandSignalsEnabled();
+        $this->vendorReviewsAccess = MultiVendorSettings::reviewsAccessEnabled();
         $this->vendorDefaultCommission = (string) (MultiVendorSettings::defaultCommission() ?? '');
         $this->vendorMinWithdraw = (string) MultiVendorSettings::minWithdrawAmount();
     }
@@ -417,6 +421,7 @@ class Developer extends Component
         option_update('multi_vendor_settlement_statement', $this->vendorSettlementStatement ? '1' : '0');
         option_update('seller_analytics_enabled', $this->vendorSellerAnalytics ? '1' : '0');
         option_update('seller_demand_signals', $this->vendorDemandSignals ? '1' : '0');
+        option_update('seller_reviews_access', $this->vendorReviewsAccess ? '1' : '0');
         option_update('multi_vendor_default_commission', trim((string) $this->vendorDefaultCommission) === '' ? '' : (string) max(0, min(100, (int) $this->vendorDefaultCommission)));
         option_update('multi_vendor_withdraw_min_amount', (string) max(0, (int) $this->vendorMinWithdraw));
 

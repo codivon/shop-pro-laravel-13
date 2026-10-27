@@ -5,6 +5,7 @@ namespace Tests\Feature\Extra;
 use App\Livewire\Admin\System\Developer;
 use App\Models\Admin;
 use App\Models\PriceAlert;
+use App\Models\Review;
 use App\Models\Seller;
 use App\Models\SellerDeposit;
 use App\Models\SellerInfo;
@@ -594,5 +595,114 @@ class Phase106Test extends TestCase
 
         // آیتم منو با سوییچ خاموش حذف شود — سنجش URL (پیام toast حاوی نام قابلیت است)
         $this->get(route('seller.dashboard'))->assertDontSee(route('seller.demand.signals'), false);
+    }
+
+    /* ================= فاز ۱۰۶-۴) نظرات محصولات ================= */
+
+    #[Test]
+    #[TestDox('تب چندفروشندگی Developer سوییچ دسترسی به نظرات را ذخیره می‌کند')]
+    public function developer_tab_saves_reviews_access_toggle(): void
+    {
+        $this->newCreator();
+
+        Livewire::test(Developer::class)
+            ->set('vendorEnabled', true)
+            ->set('vendorReviewsAccess', false)
+            ->call('saveMultiVendor')
+            ->assertDispatched('toast');
+
+        $this->assertSame('0', option('seller_reviews_access', '1'));
+        $this->assertFalse(MultiVendorSettings::reviewsAccessEnabled());
+
+        Livewire::test(Developer::class)
+            ->set('vendorReviewsAccess', true)
+            ->call('saveMultiVendor');
+
+        $this->assertSame('1', option('seller_reviews_access', '1'));
+    }
+
+    /** نظری روی محصول فروشنده (rating ۱-۵، suggest yes/no/not_sure، وضعیت‌های سه‌گانه) */
+    private function newReview(int $productId, array $attributes = []): Review
+    {
+        return Review::create(array_merge([
+            'user_id' => $this->newUser()->id,
+            'product_id' => $productId,
+            'title' => 'عنوان نظر '.Str::random(5),
+            'body' => 'متن نظر تستی — کیفیت خوب بود و سریع رسید.',
+            'rating' => 5,
+            'suggest' => 'yes',
+            'status' => 'accepted',
+            'likes_count' => 2,
+            'dislikes_count' => 1,
+        ], $attributes));
+    }
+
+    #[Test]
+    #[TestDox('صفحهٔ نظرات محصولات امتیاز، درصد توصیه و ردیف‌به‌ردیف نظرات همان فروشنده را نشان می‌دهد')]
+    public function seller_reviews_page_shows_reviews_and_stats(): void
+    {
+        $seller = $this->newSeller();
+
+        // محصول A: دو نظر تأییدشده (امتیاز ۵ + ۳، توصیه بله/نه → میانگین ۴ و توصیه ۵۰٪) + یک در انتظار
+        $productA = $this->newProduct(['seller_id' => $seller->id]);
+        $this->newReview($productA->id, ['rating' => 5, 'suggest' => 'yes', 'likes_count' => 7]);
+        $this->newReview($productA->id, ['rating' => 3, 'suggest' => 'no']);
+        $this->newReview($productA->id, ['rating' => 4, 'suggest' => 'yes', 'status' => 'pending']);
+
+        // محصول B: یک نظر تأییدشدهٔ دیگر (میانگین کل تأییدشده‌ها: (۵+۳+۴)/۳ = ۴)
+        $productB = $this->newProduct(['seller_id' => $seller->id]);
+        $this->newReview($productB->id, ['rating' => 4, 'suggest' => 'yes']);
+
+        // نظر فروشندهٔ دیگر — نباید دیده شود
+        $otherProduct = $this->newProduct(['seller_id' => $this->newSeller()->id]);
+        $this->newReview($otherProduct->id, ['title' => 'نظر محرمانهٔ فروشندهٔ دیگر']);
+
+        $this->actingAs($seller, 'seller');
+        $response = $this->get(route('seller.reviews.index'));
+
+        $response->assertOk();
+        $response->assertSee('نظرات محصولات', false);
+
+        // کارت‌های آمار: کل ۴ (۳ تأییدشده + ۱ در انتظار) — میانگین ۴ — توصیه ۶۶.۷٪ (۲ از ۳)
+        $response->assertSee('کل نظرات ثبت‌شده', false);
+        $response->assertSee('میانگین امتیاز', false);
+        $response->assertSee('4.0', false);
+        $response->assertSee('66.7٪', false);
+        $response->assertSee('در انتظار تأیید مدیر', false);
+
+        // ردیف‌به‌ردیف: محصولات فروشنده + ستاره‌ها و وضعیت‌ها
+        $response->assertSee($productA->title, false);
+        $response->assertSee($productB->title, false);
+        $response->assertSee('تأییدشده', false);
+        $response->assertSee('در انتظار تأیید', false);
+        $response->assertSee('پیشنهاد نمی‌کنم', false);
+
+        // انزوا: نظر فروشندهٔ دیگر نشت نمی‌کند
+        $response->assertDontSee('نظر محرمانهٔ فروشندهٔ دیگر', false);
+        $response->assertDontSee($otherProduct->title, false);
+
+        // آیتم منوی سایدبار (سوییچ روشن)
+        $this->get(route('seller.dashboard'))->assertSee(route('seller.reviews.index'), false);
+    }
+
+    #[Test]
+    #[TestDox('سوییچ خاموش نظرات: صفحه به داشبورد برمی‌گردد و منو مخفی می‌شود')]
+    public function seller_reviews_respects_toggle(): void
+    {
+        $seller = $this->newSeller();
+
+        $product = $this->newProduct(['seller_id' => $seller->id]);
+        $this->newReview($product->id);
+
+        $this->actingAs($seller, 'seller');
+
+        option_update('seller_reviews_access', '0');
+        Cache::flush();
+
+        $response = $this->get(route('seller.reviews.index'));
+        $response->assertRedirect(route('seller.dashboard'));
+
+        // آیتم منو با سوییچ خاموش حذف شود
+        $this->get(route('seller.dashboard'))->assertDontSee(route('seller.reviews.index'), false);
     }
 }

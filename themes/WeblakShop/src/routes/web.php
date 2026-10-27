@@ -32,6 +32,7 @@ use Themes\WeblakShop\src\Controllers\sellers\ProfileSellerController;
 use Themes\WeblakShop\src\Controllers\sellers\QuestionSellerController;
 use Themes\WeblakShop\src\Controllers\sellers\SellerCarrierController;
 use Themes\WeblakShop\src\Controllers\sellers\SellerDemandController;
+use Themes\WeblakShop\src\Controllers\sellers\SellerReviewController;
 use Themes\WeblakShop\src\Controllers\sellers\SellerStatisticsController;
 use Themes\WeblakShop\src\Controllers\sellers\SellerTariffController;
 use Themes\WeblakShop\src\Controllers\sellers\SellerTicketController;
@@ -478,6 +479,9 @@ Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
         // فاز ۱۰۶-۳ — سیگنال‌های تقاضا (منتظر موجودی / منتظر کاهش قیمت)
         // گیت سوییچ داخل کنترلر است (خاموش → داشبورد + toast) — هم‌الگوی صورت‌حساب تسویه
         Route::get('demand-signals', [SellerDemandController::class, 'index'])->name('demand.signals');
+
+        // فاز ۱۰۶-۴ — نظرات محصولات از نگاه فروشنده (فقط-خواندنی؛ تأیید/رد با ادمین)
+        Route::get('reviews', [SellerReviewController::class, 'index'])->name('reviews.index');
     });
 });
 

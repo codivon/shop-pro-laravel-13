@@ -41,6 +41,13 @@
                                 </li>
                             @endif
 
+                            {{-- فاز ۱۰۶-۴ — نظرات محصولات؛ گیت سوییچ seller_reviews_access (قانون طلایی) --}}
+                            @if(\App\Support\MultiVendorSettings::reviewsAccessEnabled())
+                                <li class="{{ active_class('seller.reviews.index') }}">
+                                    <a href="{{ route('seller.reviews.index') }}"><i class="feather icon-circle"></i><span class="menu-item">نظرات محصولات</span></a>
+                                </li>
+                            @endif
+
                     </ul>
                 </li>
 
