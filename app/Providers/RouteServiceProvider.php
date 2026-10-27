@@ -43,7 +43,6 @@ class RouteServiceProvider extends ServiceProvider
                 ->namespace($this->namespace)
                 ->group(base_path('routes/api.php'));
 
-
             Route::middleware('web')
                 ->namespace($this->namespace)
                 ->group(base_path('routes/web.php'));
@@ -54,11 +53,20 @@ class RouteServiceProvider extends ServiceProvider
             Route::middleware('web')
                 ->group(base_path('routes/admin-panel.php'));
 
+            /*
+            | فاز ۱۰۸ — مسیرهای پنل فروشنده از تم جدا شد (routes/seller.php):
+            | ثبت خارج از حلقهٔ locale و مستقل از تم فعال — تعویض قالب تأثیری
+            | روی پنل فروشنده ندارد. داخل همین فایل بر اساس option
+            | seller_panel_modern بین پنل مدرن (لایوایر ۴) و قدیمی سوییچ می‌شود.
+            */
+            Route::middleware('web')
+                ->group(base_path('routes/seller.php'));
+
             foreach (config('app.locales') as $locale => $options) {
                 Route::middleware('web')
                     ->namespace($this->namespace)
                     ->prefix($locale)
-                    ->as($locale . '.')
+                    ->as($locale.'.')
                     ->group(base_path('routes/web.php'));
             }
 

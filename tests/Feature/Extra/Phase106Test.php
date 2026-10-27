@@ -224,7 +224,8 @@ class Phase106Test extends TestCase
     #[TestDox('partial اعلان‌های فروشنده به پنل فروشنده لینک می‌دهد نه ادمین')]
     public function seller_notifications_partial_links_to_seller_panel(): void
     {
-        $html = view('front::sellers.panel.partials.notifications', [
+        // فاز ۱۰۸ — ویوهای پنل فروشنده از تم جدا شدند (resources/views/sellers-old)
+        $html = view('sellers-old.panel.partials.notifications', [
             'notifications' => collect([]),
         ])->render();
 

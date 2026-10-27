@@ -13,21 +13,15 @@
             </span>
             <div>
                 <h2 class="text-base font-bold">تنظیمات دیگر</h2>
-                <p class="text-xs text-ink-3 dark:text-night-ink-2">چند فروشندگی، فاکتور، کاربران، تصاویر، Pusher، ایمیل و قابلیت‌های فروشگاه</p>
+                <p class="text-xs text-ink-3 dark:text-night-ink-2">فاکتور، کاربران، تصاویر، Pusher، ایمیل و قابلیت‌های فروشگاه — تنظیمات چندفروشندگی به تب «چندفروشندگی» در برنامه‌نویس منتقل شد (فاز ۱۰۸)</p>
             </div>
         </div>
     </div>
 
-    <form id="others-form" wire:submit="save" x-data="{ tab: 'vendor' }" class="space-y-5">
+    <form id="others-form" wire:submit="save" x-data="{ tab: 'factor' }" class="space-y-5">
 
         <div class="ap-card overflow-hidden">
             <div class="flex gap-1 overflow-x-auto border-b border-line bg-surface-2 px-2 pt-2 dark:border-night-line dark:bg-night-3/50" role="tablist">
-                <button type="button" class="ap-tab relative whitespace-nowrap" x-on:click="tab = 'vendor'"
-                        x-bind:aria-selected="(tab === 'vendor').toString()" role="tab"
-                        x-bind:class="tab === 'vendor' ? 'is-active' : ''">
-                    <x-admin-panel::icon name="shopping-bag" class="size-4" />
-                    چند فروشندگی
-                </button>
                 <button type="button" class="ap-tab relative whitespace-nowrap" x-on:click="tab = 'factor'"
                         x-bind:aria-selected="(tab === 'factor').toString()" role="tab"
                         x-bind:class="tab === 'factor' ? 'is-active' : ''">
@@ -66,27 +60,8 @@
                 </button>
             </div>
 
-            {{-- ============ چند فروشندگی ============ --}}
-            <div x-show="tab === 'vendor'" x-cloak class="animate-fade-in space-y-4 p-5 sm:p-6">
-                @include('admin-panel::livewire.admin.settings.partials.setting-switch', [
-                    'name'  => 'multi_vendor_system_status',
-                    'live'  => true,
-                    'icon'  => 'shopping-bag',
-                    'title' => 'سیستم چند فروشندگی',
-                    'desc'  => 'با فعال‌سازی، فروشندگان می‌توانند در سایت ثبت‌نام کنند و محصولات خود را بفروشند؛ غیرفعال کردن، صفحات فروشندگان را از سایت و پنل برمی‌دارد.',
-                ])
-                <div class="flex items-center gap-2.5 rounded-xl px-4 py-3 text-xs font-semibold
-                            {{ $multi_vendor_system_status
-                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
-                                : 'bg-surface-2 text-ink-3 dark:bg-night-3 dark:text-night-ink-2' }}">
-                    <x-admin-panel::icon name="{{ $multi_vendor_system_status ? 'check-circle' : 'circle-off' }}" class="size-4 shrink-0" />
-                    @if ($multi_vendor_system_status)
-                        چند فروشندگی فعال است — فروشندگان می‌توانند پنل خود را داشته باشند.
-                    @else
-                        چند فروشندگی غیرفعال است — فقط مدیر می‌تواند محصول ثبت کند.
-                    @endif
-                </div>
-            </div>
+            {{-- فاز ۱۰۸ — تب «چند فروشندگی» حذف شد؛ سوییچ سیستم چندفروشندگی فقط در
+                 برنامه‌نویس ← تب «چندفروشندگی» (فاز ۱۰۳) مدیریت می‌شود تا دو مالک برای یک کلید نداشته باشیم. --}}
 
             {{-- ============ فاکتور ============ --}}
             <div x-show="tab === 'factor'" x-cloak class="animate-fade-in space-y-5 p-5 sm:p-6">

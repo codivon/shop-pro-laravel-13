@@ -168,7 +168,22 @@ class MultiVendorSettings
     }
 
     /**
-     * حداقل مبلغ درخواست برداشت فروشنده (تومان) — ۰ یعنی بدون حد اضافه
+     * پنل مدرن فروشندگان (فاز ۱۰۸): رابط لایوایر ۴ SPA مستقل از تم —
+     * روشن ⇒ صفحات GET پنل فروشنده از پنل جدید (resources/views/sellers +
+     * app/Livewire/Seller) سرو می‌شود؛ خاموش ⇒ پنل قدیمی (sellers-old) سرجایش.
+     * اندپوینت‌های POST/داده‌ای هر دو حالت مشترک‌اند (همان کنترلرهای منتقل‌شدهٔ app).
+     * ⚠️ این کلید در سطح «تعریف روت» خوانده می‌شود (routes/seller.php) — مثل
+     * روت‌های تم، پروژه از route:cache استفاده نمی‌کند و روت‌ها per-request
+     * لود می‌شوند؛ با route:cache مقدار فریز می‌شود.
+     */
+    public const KEY_MODERN_PANEL = 'seller_panel_modern';
+
+    public static function modernPanelEnabled(): bool
+    {
+        return option(self::KEY_MODERN_PANEL, '1') === '1';
+    }
+
+    /** حداقل مبلغ درخواست برداشت فروشنده (تومان) — ۰ یعنی بدون حد اضافه
      * (حداقل قدیمی ۱۰٬۰۰۰ تومانی فرم برداشت همیشه معتبر است).
      */
     public static function minWithdrawAmount(): int

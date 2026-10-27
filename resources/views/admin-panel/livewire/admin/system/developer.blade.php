@@ -975,6 +975,19 @@
                                 </span>
                                 <x-admin-panel::toggle wire:model="vendorLeaderboard" size="sm" aria-label="لیدربورد فروشندگان" />
                             </div>
+                            {{-- فاز ۱۰۸ — پنل مدرن فروشندگان (لایوایر ۴ SPA مستقل از تم) --}}
+                            <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                                <span class="flex min-w-0 items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="layout-panel-top" class="size-4" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-[13px] font-bold">پنل مدرن فروشندگان (Livewire 4 — SPA)</span>
+                                        <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">رابط جدید مستقل از تم: ثبت‌نام، ورود و صفحات پنل با ظاهر هماهنگ با پنل مدیریت — خاموش ⇒ پنل قدیمی (sellers-old)</span>
+                                    </span>
+                                </span>
+                                <x-admin-panel::toggle wire:model="vendorModernPanel" size="sm" aria-label="پنل مدرن فروشندگان" />
+                            </div>
                             <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line p-3.5 dark:border-night-line">
                                 <span class="flex min-w-0 items-center gap-2.5">
                                     <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">

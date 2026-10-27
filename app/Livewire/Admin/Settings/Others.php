@@ -21,11 +21,6 @@ use Livewire\Component;
 #[Title('تنظیمات دیگر')]
 class Others extends Component
 {
-    /* ---------------- چند فروشندگی ---------------- */
-
-    // فاز ۳۰: بولین واقعی — در UI سوییچ است (نه select)؛ هنگام ذخیره به "true"/"false" تبدیل می‌شود
-    public bool $multi_vendor_system_status = false;
-
     /* ---------------- فاکتور ---------------- */
 
     public string $factor_title = '';
@@ -106,23 +101,23 @@ class Others extends Component
 
     // نقشهٔ رنگ دکمهٔ هشدار قیمت (فاز ۸۳) — هم‌قرارداد با تم (hex جفت [روشن، تیره])
     public const PALETTE = [
-        'red'    => ['#ef394e', '#c8102e'],
+        'red' => ['#ef394e', '#c8102e'],
         'orange' => ['#f97316', '#ea580c'],
-        'green'  => ['#10b981', '#059669'],
-        'teal'   => ['#06b6d4', '#0891b2'],
+        'green' => ['#10b981', '#059669'],
+        'teal' => ['#06b6d4', '#0891b2'],
         'purple' => ['#8b5cf6', '#7c3aed'],
-        'dark'   => ['#334155', '#0f172a'],
+        'dark' => ['#334155', '#0f172a'],
     ];
 
-    public const SIZES  = ['sm', 'md', 'lg'];
+    public const SIZES = ['sm', 'md', 'lg'];
 
     public const PLACEMENTS = ['below-cart', 'above-cart', 'under-price', 'float', 'custom-selector'];
 
     public const PLACEMENT_LABELS = [
-        'below-cart'      => 'زیر دکمهٔ خرید',
-        'above-cart'      => 'بالای دکمهٔ خرید',
-        'under-price'     => 'چسبیده به قیمت محصول',
-        'float'           => 'شناور در گوشهٔ صفحه',
+        'below-cart' => 'زیر دکمهٔ خرید',
+        'above-cart' => 'بالای دکمهٔ خرید',
+        'under-price' => 'چسبیده به قیمت محصول',
+        'float' => 'شناور در گوشهٔ صفحه',
         'custom-selector' => 'در تگ دلخواه (سلکتور)',
     ];
 
@@ -134,23 +129,23 @@ class Others extends Component
     ];
 
     public const FLOAT_POSITION_LABELS = [
-        'top-left'      => 'بالا-چپ',
-        'top-center'    => 'بالا-وسط',
-        'top-right'     => 'بالا-راست',
-        'middle-left'   => 'وسط-چپ',
+        'top-left' => 'بالا-چپ',
+        'top-center' => 'بالا-وسط',
+        'top-right' => 'بالا-راست',
+        'middle-left' => 'وسط-چپ',
         'middle-center' => 'وسط صفحه',
-        'middle-right'  => 'وسط-راست',
-        'bottom-left'   => 'پایین-چپ',
+        'middle-right' => 'وسط-راست',
+        'bottom-left' => 'پایین-چپ',
         'bottom-center' => 'پایین-وسط',
-        'bottom-right'  => 'پایین-راست',
+        'bottom-right' => 'پایین-راست',
     ];
 
     // سلکتورهای نمونهٔ پیشنهادی (چیپ‌های قابل‌کلیک در UI — مثل نمونهٔ CheckoutTurbo)
     public const SELECTOR_EXAMPLES = [
-        '#buy-box'                          => 'باکس خرید دیجی‌کالا-مانند',
-        '.product-seller-row'               => 'ردیف فروشنده/قیمت',
-        '.product-actions>.wrap'            => 'اکشن‌های کارت محصول',
-        '.product-carousel .owl-item'       => 'اسلایدر محصولات',
+        '#buy-box' => 'باکس خرید دیجی‌کالا-مانند',
+        '.product-seller-row' => 'ردیف فروشنده/قیمت',
+        '.product-actions>.wrap' => 'اکشن‌های کارت محصول',
+        '.product-carousel .owl-item' => 'اسلایدر محصولات',
     ];
 
     // ذخیره‌سازی «1»/«0» (هسته با option(..., '1') == '1' چک می‌کند)
@@ -197,8 +192,8 @@ class Others extends Component
         auth('adminPanel')->user()?->can('settings.others') ?: abort(403);
 
         // option ها — یک‌بار در mount خوانده می‌شوند
-        // فاز ۳۰: سه تنظیم بله/خیر حالا سوییچ بولین هستند (مقادیر قدیمی true/false/1/0 هم پذیرفته می‌شود)
-        $this->multi_vendor_system_status = filter_var((string) (option('multi_vendor_system_status') ?: 'false'), FILTER_VALIDATE_BOOLEAN);
+        // فاز ۳۰: سوییچ‌های بولین (مقادیر قدیمی true/false/1/0 هم پذیرفته می‌شود)
+        // فاز ۱۰۸ — multi_vendor_system_status از این صفحه حذف شد (مالکیت: تب چندفروشندگی برنامه‌نویس)
 
         $this->factor_title = (string) (option('factor_title') ?: option('info_site_title'));
         $this->factor_seller_name = (string) option('factor_seller_name');
@@ -352,8 +347,9 @@ class Others extends Component
         }
 
         // ========== 3. options (پورت دقیق — شامل quirk کلید transport) ==========
+        // فاز ۱۰۸ — سوییچ «سیستم چند فروشندگی» به تب «چندفروشندگی» صفحهٔ برنامه‌نویس منتقل شد
+        // (فاز ۱۰۳) و از این صفحه حذف شد — اینجا دیگر مالکیت این کلید را ندارد.
         $optionKeys = [
-            'multi_vendor_system_status',
             'factor_title', 'factor_seller_name', 'factor_national_code',
             'factor_registeration_id', 'factor_economical_number',
             'user_register_gift_credit', 'user_referrals_enable', 'user_referrals_gift_type',
@@ -374,7 +370,7 @@ class Others extends Component
          */
 
         // فاز ۳۰: این کلیدها سوییچ بولین دارند → مثل قدیمی "true"/"false" ذخیره شوند
-        $boolOptionKeys = ['multi_vendor_system_status', 'user_referrals_enable', 'watermarkStatus'];
+        $boolOptionKeys = ['user_referrals_enable', 'watermarkStatus'];
 
         // فاز ۸۲ — قابلیت‌های فروشگاه: کلیدهای فعال/غیرفعال «1»/«0» ذخیره می‌شوند
         // (هسته ProcessPriceAlerts/PriceObserver/Product::isPreOrderable با == '1' چک می‌کنند)
@@ -384,8 +380,8 @@ class Others extends Component
         $defaultOptionValues = [
             'dt_price_alert_button_text' => 'هشدار کاهش قیمت',
             'dt_price_alert_button_icon' => 'mdi mdi-bell-ring-outline',
-            'dt_pre_order_button_text'   => 'ثبت پیش‌فروش',
-            'dt_pre_order_badge_text'    => 'پیش‌فروش',
+            'dt_pre_order_button_text' => 'ثبت پیش‌فروش',
+            'dt_pre_order_badge_text' => 'پیش‌فروش',
         ];
 
         $optionChanges = [];
@@ -404,27 +400,19 @@ class Others extends Component
 
             // فاز ۸۳/۸۴ — وایت‌لیست رنگ/اندازه/موقعیت + بازهٔ گردی گوشه‌ها
             $value = match ($key) {
-                'dt_price_alert_button_color'    => in_array($value, array_keys(self::PALETTE), true) ? $value : 'red',
-                'dt_price_alert_button_size'     => in_array($value, self::SIZES, true) ? $value : 'md',
+                'dt_price_alert_button_color' => in_array($value, array_keys(self::PALETTE), true) ? $value : 'red',
+                'dt_price_alert_button_size' => in_array($value, self::SIZES, true) ? $value : 'md',
                 'dt_price_alert_button_placement' => in_array($value, self::PLACEMENTS, true) ? $value : 'below-cart',
-                'dt_price_alert_button_radius'   => (string) min(30, max(0, (int) $value)),
-                default                          => $value,
+                'dt_price_alert_button_radius' => (string) min(30, max(0, (int) $value)),
+                default => $value,
             };
 
             $oldValue = option($key);
 
-            // پورت نرمال‌سازی multi_vendor_system_status برای لاگ
-            $normalizedOld = $oldValue;
-            $normalizedNew = $value;
-            if ($key === 'multi_vendor_system_status') {
-                $normalizedOld = $oldValue === 'true' ? 'فعال' : 'غیرفعال';
-                $normalizedNew = $value === 'true' ? 'فعال' : 'غیرفعال';
-            }
-
             if ($oldValue != $value) {
                 $optionChanges[$key] = [
-                    'old' => $normalizedOld ?: 'خالی',
-                    'new' => $normalizedNew ?: 'خالی',
+                    'old' => $oldValue ?: 'خالی',
+                    'new' => $value ?: 'خالی',
                     'title' => $this->getOthersFieldTitle($key),
                 ];
             }
@@ -446,8 +434,8 @@ class Others extends Component
 
         if (option('dt_price_alert_channels') != $channelsValue) {
             $optionChanges['dt_price_alert_channels'] = [
-                'old'   => $this->channelsLabel((string) option('dt_price_alert_channels')),
-                'new'   => $this->channelsLabel($channelsValue),
+                'old' => $this->channelsLabel((string) option('dt_price_alert_channels')),
+                'new' => $this->channelsLabel($channelsValue),
                 'title' => $this->getOthersFieldTitle('dt_price_alert_channels'),
             ];
         }
@@ -458,8 +446,8 @@ class Others extends Component
         $floatPos = in_array($this->dt_price_alert_float_pos, self::FLOAT_POSITIONS, true) ? $this->dt_price_alert_float_pos : 'bottom-right';
         if (option('dt_price_alert_float_pos') != $floatPos) {
             $optionChanges['dt_price_alert_float_pos'] = [
-                'old'   => self::FLOAT_POSITION_LABELS[(string) option('dt_price_alert_float_pos', 'bottom-right')] ?? (string) option('dt_price_alert_float_pos', 'bottom-right'),
-                'new'   => self::FLOAT_POSITION_LABELS[$floatPos],
+                'old' => self::FLOAT_POSITION_LABELS[(string) option('dt_price_alert_float_pos', 'bottom-right')] ?? (string) option('dt_price_alert_float_pos', 'bottom-right'),
+                'new' => self::FLOAT_POSITION_LABELS[$floatPos],
                 'title' => $this->getOthersFieldTitle('dt_price_alert_float_pos'),
             ];
         }
@@ -468,8 +456,8 @@ class Others extends Component
         $selectorsJson = json_encode(self::sanitizeSelectors($this->dt_price_alert_selectors), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         if ((string) option('dt_price_alert_selectors') != $selectorsJson) {
             $optionChanges['dt_price_alert_selectors'] = [
-                'old'   => (string) option('dt_price_alert_selectors') ?: 'خالی',
-                'new'   => $selectorsJson ?: 'خالی',
+                'old' => (string) option('dt_price_alert_selectors') ?: 'خالی',
+                'new' => $selectorsJson ?: 'خالی',
                 'title' => $this->getOthersFieldTitle('dt_price_alert_selectors'),
             ];
         }
@@ -501,11 +489,6 @@ class Others extends Component
 
             $logMessage .= implode('، ', $changeGroups);
 
-            if (isset($allChanges['option_settings']['multi_vendor_system_status'])) {
-                $change = $allChanges['option_settings']['multi_vendor_system_status'];
-                $logMessage .= " (سیستم چند فروشندگی: {$change['old']} → {$change['new']})";
-            }
-
             activity()
                 ->causedBy(auth('adminPanel')->user())
                 ->withProperties([
@@ -532,7 +515,6 @@ class Others extends Component
             'PUSHER_APP_CLUSTER' => 'خوشه Pusher',
             'BROADCAST_DRIVER' => 'درایور پخش',
             'AI_TOKEN_KEY' => 'توکن هوش مصنوعی',
-            'multi_vendor_system_status' => 'سیستم چند فروشندگی',
             'default_currency_id' => 'ارز پیش فرض',
             'default_rounding_amount' => 'مقدار گرد کردن',
             'default_rounding_type' => 'نحوه گرد کردن',
@@ -577,7 +559,7 @@ class Others extends Component
     private function channelsLabel(string $raw): string
     {
         $labels = [
-            'sms'     => 'پیامک',
+            'sms' => 'پیامک',
             'profile' => 'اعلان پروفایل',
         ];
 
