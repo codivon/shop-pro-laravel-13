@@ -371,6 +371,14 @@ return [
                             'vendor' => true,
                         ],
                         [
+                            // فاز ۱۰۳ — پنل کمیسیون فروشندگان (گیت صفحه: کلید اصلی چندفروشندگی + همین پرمیشن)
+                            'label' => 'کمیسیون فروشندگان',
+                            'route' => 'np.vendors.commission',
+                            'permission' => 'payments.transactions.seller_deposit',
+                            'icon' => 'percent',
+                            'vendor' => true,
+                        ],
+                        [
                             'label' => 'لیست ارزها',
                             'route' => 'np.currencies.index',
                             'permission' => 'payments.currencies',

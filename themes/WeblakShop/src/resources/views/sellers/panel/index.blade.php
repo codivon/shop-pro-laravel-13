@@ -179,6 +179,70 @@
             </div>
         </div>
 
+        {{-- آمار تسویه (فاز ۱۰۳ — گیت از تنظیمات چندفروشندگی؛ بدون فرانت‌سپند — سبک inline اسکوپ‌شده) --}}
+        @if(!is_null($vendorStats))
+            @php
+                $vsItems = [
+                    [
+                        'title' => 'موجودی قابل برداشت',
+                        'value' => number_format($vendorStats['balance']).' تومان',
+                        'color' => '#2d9b6e',
+                        'icon'  => 'wallet',
+                        'link'  => route('seller.dashboard'),
+                    ],
+                    [
+                        'title' => 'فروش موفق',
+                        'value' => number_format($vendorStats['total_sales']).' تومان',
+                        'color' => '#6b5ce7',
+                        'icon'  => 'shopping-bag',
+                        'link'  => null,
+                    ],
+                    [
+                        'title' => 'کمیسیون پرداخت‌شده',
+                        'value' => number_format($vendorStats['total_commission']).' تومان',
+                        'color' => '#d97706',
+                        'icon'  => 'percent',
+                        'link'  => null,
+                    ],
+                    [
+                        'title' => 'درخواست در انتظار',
+                        'value' => $vendorStats['waiting_withdraw_count'] > 0
+                            ? number_format($vendorStats['waiting_withdraw_count']).' درخواست / '.number_format($vendorStats['waiting_withdraw_amount']).' تومان'
+                            : 'درخواستی در انتظار نیست',
+                        'color' => '#0ea5e9',
+                        'icon'  => 'hourglass',
+                        'link'  => route('seller.dashboard'),
+                    ],
+                ];
+            @endphp
+            <div class="row ml-0 mt-4 vset-cards">
+                @foreach($vsItems as $vsItem)
+                    <div class="col-md-3 col-sm-6 col-xs-12">
+                        <div class="vset-card" @if($vsItem['link']) onclick="window.location='{{ $vsItem['link'] }}'" style="cursor:pointer" @endif>
+                            <div class="vset-card__head">
+                                <span class="vset-card__icon" style="background: {{ $vsItem['color'] }}1a; color: {{ $vsItem['color'] }};">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle></svg>
+                                </span>
+                                <span class="vset-card__title">{{ $vsItem['title'] }}</span>
+                            </div>
+                            <div class="vset-card__value">{{ $vsItem['value'] }}</div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            <style>
+                /* اسکوپ اختصاصی کارت‌های تسویه — بدون وابستگی به استایل سراسری تم */
+                .vset-cards { display:flex; flex-wrap:wrap; margin-right:-8px; margin-left:-8px; }
+                .vset-cards > [class*="col-"] { padding-right:8px; padding-left:8px; margin-bottom:16px; }
+                .vset-card { background:#fff; border:1px solid #ececf1; border-radius:14px; padding:16px; height:100%; box-shadow:0 2px 10px rgba(0,0,0,.04); }
+                .vset-card__head { display:flex; align-items:center; gap:8px; }
+                .vset-card__icon { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:10px; flex-shrink:0; }
+                .vset-card__title { font-size:13px; font-weight:600; color:#555; }
+                .vset-card__value { margin-top:10px; font-size:14px; font-weight:700; color:#1f2430; line-height:1.8; }
+                @media (max-width:767px){ .vset-card__value { font-size:13px; } }
+            </style>
+        @endif
+
 
 
         {{-- کارت‌های سریع (همان کد قبلی) --}}

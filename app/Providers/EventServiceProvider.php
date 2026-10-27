@@ -4,7 +4,6 @@ namespace App\Providers;
 
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Event;
 
@@ -17,7 +16,7 @@ class EventServiceProvider extends ServiceProvider
      */
     protected $listen = [
         Login::class => [
-            'App\Listeners\UserLogin\GetCart'
+            'App\Listeners\UserLogin\GetCart',
         ],
 
         Registered::class => [
@@ -40,6 +39,8 @@ class EventServiceProvider extends ServiceProvider
 
         'App\Events\OrderPaid' => [
             'App\Listeners\OrderPaid',
+            // فاز ۱۰۳ — تسویهٔ خودکار فروشندگان (گیت‌دار از تنظیمات؛ ایدمپوتنت)
+            'App\Listeners\SettleVendorsOnOrderPaid',
         ],
 
         'App\Events\SellerCreated' => [
@@ -58,7 +59,7 @@ class EventServiceProvider extends ServiceProvider
             'App\Listeners\Product\CreatePricesChange',
         ],
 
-        'App\Events\ContactCreated' => []
+        'App\Events\ContactCreated' => [],
     ];
 
     /**

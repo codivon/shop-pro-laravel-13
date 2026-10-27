@@ -19,7 +19,7 @@ return [
                 'update' => 'ویرایش مدیر',
                 'delete' => 'حذف مدیر',
                 'export' => 'خروجی گرفتن',
-            ]
+            ],
         ],
         'sessions' => [
             'title' => 'مدیریت نشست های فعال',
@@ -27,19 +27,19 @@ return [
                 'index' => 'لیست نشست های فعال',
                 'exit' => 'خروج دادن',
                 'blocked' => 'مسدود سازی',
-            ]
+            ],
         ],
         'pulse' => [
             'title' => 'سنجه‌های سیستمی',
             'values' => [
                 'monitor' => 'نمایش وضعیت لحظه‌ای سیستم',
-            ]
+            ],
         ],
         'activity-log' => [
             'title' => 'فعالیت های اخیر',
             'values' => [
                 'index' => 'لیست فعالیت ها',
-            ]
+            ],
         ],
         'users' => [
             'title' => 'مدیریت کاربران',
@@ -51,7 +51,7 @@ return [
                 'delete' => 'حذف کاربر',
                 'export' => 'خروجی گرفتن',
                 'wallet' => 'مدیریت کیف پول',
-            ]
+            ],
         ],
 
         'posts' => [
@@ -65,14 +65,14 @@ return [
                 'delete' => 'حذف نوشته',
                 'category' => 'مدیریت دسته بندی ها',
                 'comments' => 'مدیریت دیدگاه ها',
-            ]
+            ],
         ],
         'packages' => [
             'title' => 'بازار (پکیج و قالب)',
             'values' => [
                 'index' => 'پکیج‌ها و قالب‌ها',
                 'installed' => 'پکیج های نصب شده',
-            ]
+            ],
         ],
 
         'products' => [
@@ -94,7 +94,7 @@ return [
                 'pricesGroup' => 'تغییر گروهی قیمت',
                 'reviews' => 'مدیریت دیدگاه ها',
                 'comments' => 'مدیریت پرسش و پاسخ ها',
-            ]
+            ],
         ],
         'warehouses' => [
             'title' => 'مدیریت انبارها',
@@ -107,7 +107,7 @@ return [
                 'export' => 'خروجی گرفتن از انبار',
                 'movements' => 'تاریخچه انبار',
                 'movements_export' => 'خروجی گرفتن از تاریخچه انبار',
-            ]
+            ],
         ],
         'sellers' => [
             'title' => 'مدیریت فروشندگان',
@@ -121,7 +121,7 @@ return [
                 'products' => 'لیست محصولات',
                 'orders' => 'لیست سفارشات',
                 'orders.export' => 'خروجی گرفتن سفارشات',
-            ]
+            ],
         ],
 
         'request_deposit' => 'درخواستی واریز وجه',
@@ -135,7 +135,7 @@ return [
                 'create' => 'ایجاد تخفیف',
                 'update' => 'ویرایش تخفیف',
                 'delete' => 'حذف تخفیف',
-            ]
+            ],
         ],
 
         'attributes' => [
@@ -151,7 +151,7 @@ return [
                 'create' => 'ایجاد ویژگی',
                 'update' => 'ویرایش ویژگی',
                 'delete' => 'حذف ویژگی',
-            ]
+            ],
         ],
 
         'filters' => [
@@ -161,7 +161,7 @@ return [
                 'create' => 'ایجاد فیلتر',
                 'update' => 'ویرایش فیلتر',
                 'delete' => 'حذف فیلتر',
-            ]
+            ],
         ],
 
         'orders' => [
@@ -173,7 +173,7 @@ return [
                 'update' => 'ویرایش سفارش',
                 'delete' => 'حذف سفارش',
                 'export' => 'خروجی گرفتن',
-            ]
+            ],
         ],
 
         'returns' => [
@@ -189,7 +189,7 @@ return [
                 'reasons.store' => 'افزودن دلیل مرجوعی',
                 'reasons.destroy' => 'حذف دلیل مرجوعی',
                 'reasons.toggle' => 'تغییر وضعیت دلیل مرجوعی',
-            ]
+            ],
         ],
 
         'carriers' => [
@@ -203,7 +203,7 @@ return [
                 'cities.update' => 'ویرایش شهر',
                 'cities.delete' => 'حذف شهر',
                 'cities.create' => 'ایجاد شهر',
-            ]
+            ],
         ],
 
         'tags' => [
@@ -214,7 +214,7 @@ return [
                 'update' => 'ویرایش',
                 'show' => 'جزئیات',
                 'delete' => 'حذف تگ',
-            ]
+            ],
         ],
 
         'sliders' => [
@@ -224,7 +224,7 @@ return [
                 'create' => 'ایجاد اسلایدر',
                 'update' => 'ویرایش اسلایدر',
                 'delete' => 'حذف اسلایدر',
-            ]
+            ],
         ],
 
         'banners' => [
@@ -234,7 +234,7 @@ return [
                 'create' => 'ایجاد بنر',
                 'update' => 'ویرایش بنر',
                 'delete' => 'حذف بنر',
-            ]
+            ],
         ],
 
         'links' => [
@@ -244,8 +244,8 @@ return [
                 'create' => 'ایجاد لینک',
                 'update' => 'ویرایش لینک',
                 'delete' => 'حذف لینک',
-                'groups' => 'مدیریت گروه ها'
-            ]
+                'groups' => 'مدیریت گروه ها',
+            ],
         ],
 
         'backups' => [
@@ -255,7 +255,7 @@ return [
                 'create' => 'ایجاد بکاپ',
                 'download' => 'دانلود بکاپ',
                 'delete' => 'حذف بکاپ',
-            ]
+            ],
         ],
 
         'apikeys' => [
@@ -265,7 +265,7 @@ return [
                 'create' => 'ایجاد کلید وب سرویس',
                 'update' => 'ویرایش کلید وب سرویس',
                 'delete' => 'حذف کلید وب سرویس',
-            ]
+            ],
         ],
 
         'pages' => [
@@ -276,7 +276,7 @@ return [
                 'create' => 'ایجاد صفحه',
                 'update' => 'ویرایش صفحه',
                 'delete' => 'حذف صفحه',
-            ]
+            ],
         ],
         'forms' => [
             'title' => 'مدیریت فرم ها',
@@ -287,7 +287,7 @@ return [
                 'submissions' => 'مشاهده پاسخ ها',
                 'preview' => 'پیشنمایش',
                 'delete' => 'حذف صفحه',
-            ]
+            ],
         ],
 
         'roles' => [
@@ -297,7 +297,7 @@ return [
                 'create' => 'ایجاد مقام',
                 'update' => 'ویرایش مقام',
                 'delete' => 'حذف مقام',
-            ]
+            ],
         ],
 
         'statistics' => [
@@ -310,7 +310,7 @@ return [
                 'product' => 'آمارگیری فروش هر محصول',
                 'viewers' => 'بازدید کنندگان امروز',
                 'sms' => 'لاگ پیامک های ارسالی',
-            ]
+            ],
         ],
 
         'themes' => [
@@ -321,13 +321,11 @@ return [
                 'update' => 'تغییر قالب',
                 'delete' => 'حذف قالب',
                 'settings' => 'تنظیمات قالب',
-                'widgets' => 'مدیریت صفحه اصلی'
-            ]
+                'widgets' => 'مدیریت صفحه اصلی',
+            ],
         ],
 
         'file-manager' => 'مدیریت فایل ها',
-
-
 
         'filds' => [
             'title' => 'فیلدهای اختصاصی',
@@ -336,7 +334,7 @@ return [
                 'create' => 'ایجاد فیلد',
                 'update' => 'ویرایش فیلد',
                 'delete' => 'حذف فیلد',
-            ]
+            ],
         ],
 
         'redirects' => [
@@ -346,7 +344,7 @@ return [
                 'create' => 'ایجاد ریدایرکت',
                 'update' => 'ویرایش ریدایرکت',
                 'delete' => 'حذف ریدایرکت',
-            ]
+            ],
         ],
 
         'tickets' => [
@@ -357,7 +355,7 @@ return [
                 'create' => 'ایجاد تیکت',
                 'update' => 'ویرایش تیکت',
                 'delete' => 'حذف تیکت',
-            ]
+            ],
         ],
 
         'menus' => [
@@ -367,7 +365,7 @@ return [
                 'create' => 'ایجاد منو',
                 'update' => 'ویرایش منو',
                 'delete' => 'حذف منو',
-            ]
+            ],
         ],
 
         'payments' => [
@@ -377,8 +375,8 @@ return [
                 'transactions.view' => 'مشاهده تراکنش',
                 'transactions.delete' => 'حذف تراکنش',
                 'currencies' => 'مدیریت ارزها',
-                'wallet-histories.index' => 'تاریخچه کیف پول'
-            ]
+                'wallet-histories.index' => 'تاریخچه کیف پول',
+            ],
         ],
 
         'contacts' => [
@@ -387,7 +385,7 @@ return [
                 'index' => 'لیست تماس با ما',
                 'view' => 'مشاهده تماس با ما',
                 'delete' => 'حذف تماس با ما',
-            ]
+            ],
         ],
 
         'notifications' => [
@@ -399,14 +397,14 @@ return [
                 'update' => 'ویرایش اعلان',
                 'delete' => 'حذف اعلان',
                 'panel' => 'مشاهده اعلانات پنل',
-            ]
+            ],
         ],
         'searches' => [
             'title' => 'مدیریت جستجوها',
             'values' => [
                 'index' => 'لیست جستجوها',
                 'delete' => 'حذف جستجوها',
-            ]
+            ],
         ],
         'newsletters' => [
             'title' => 'مدیریت خبرنامه ها',
@@ -414,7 +412,7 @@ return [
                 'index' => 'لیست خبرنامه',
                 'show' => 'جزئیات خبرنامه',
                 'delete' => 'حذف خبرنامه',
-            ]
+            ],
         ],
         'faqs' => [
             'title' => 'مدیریت سوالات متداول',
@@ -423,7 +421,7 @@ return [
                 'create' => 'ایجاد  سوالات متداول',
                 'update' => 'ویرایش  سوالات متداول',
                 'delete' => 'حذف سوالات متداول',
-            ]
+            ],
         ],
 
         'imports' => [
@@ -432,7 +430,7 @@ return [
                 'posts' => 'درون ریزی مقالات',
                 'products' => 'درون ریزی محصولات',
                 'users' => 'درون ریزی کاربران',
-            ]
+            ],
         ],
 
         'settings' => [
@@ -444,19 +442,18 @@ return [
                 'others' => 'تنظیمات دیگر',
                 'sms' => 'تنظیمات پیامک',
                 'floating-widget' => 'تنظیمات ویجت شناور',
-            ]
+            ],
         ],
-
 
     ],
 
     'static_menus' => [
         'posts' => [
-            'title' => 'وبلاگ'
+            'title' => 'وبلاگ',
         ],
         'products' => [
             'title' => 'محصولات',
-        ]
+        ],
     ],
 
     'supported_gateways' => [
@@ -473,7 +470,6 @@ return [
         'sadad' => 'بانک ملی',
         'zibal' => 'زیبال',
     ],
-
 
     'non_language_options' => [
         'multi_language_enabled',
@@ -528,5 +524,15 @@ return [
         'packages_market_auto_check_updates',
         'packages_market_items_per_page',
         'packages_market_notice_text',
-    ]
+
+        // فاز ۱۰۳ — چندفروشندگی پیشرفته (تب «چندفروشندگی» تنظیمات برنامه‌نویس — گیت‌ها در App\Support\MultiVendorSettings)
+        // ⚠️ کلید قدیمی multi_vendor_system_status عمداً در این لیست نیست — خواندنش
+        // باید دقیقاً مثل فاز ۳۰ با locale جاری بماند تا مقدار ذخیره‌شدهٔ قبلی نشکند
+        'multi_vendor_auto_settlement',
+        'multi_vendor_seller_commission_override',
+        'multi_vendor_bulk_settlement',
+        'multi_vendor_dashboard_stats',
+        'multi_vendor_default_commission',
+        'multi_vendor_withdraw_min_amount',
+    ],
 ];

@@ -13,11 +13,14 @@ class Seller extends Authenticatable
 {
     use HasApiTokens;
     use HasFactory;
-    use Notifiable;
     use HasPushSubscriptions;
+    use Notifiable;
     use SellerScopes;
-    protected $guard='seller';
+
+    protected $guard = 'seller';
+
     protected $guarded = ['id'];
+
     /**
      * The attributes that should be hidden for arrays.
      *
@@ -66,15 +69,15 @@ class Seller extends Authenticatable
         return $this->wallet()->firstOrCreate(
             [],
             [
-                'balance'   => 0,
-                'is_active' => true
+                'balance' => 0,
+                'is_active' => true,
             ]
         );
     }
 
     public function products()
     {
-        return $this->belongsToMany(Product::class,'seller_variants');
+        return $this->belongsToMany(Product::class, 'seller_variants');
     }
 
     public function views()
@@ -86,6 +89,7 @@ class Seller extends Authenticatable
     {
         return $this->hasMany(Order::class);
     }
+
     public function orderItem()
     {
         return $this->hasMany(OrderItem::class);
@@ -96,11 +100,11 @@ class Seller extends Authenticatable
         return $this->hasManyThrough(OrderItem::class, Order::class);
     }
 
-
     public function comments()
     {
         return $this->hasMany(Comment::class);
     }
+
     public function notifications()
     {
         return $this->belongsToMany(NotificationManage::class, 'notification_manage_users')
@@ -122,7 +126,7 @@ class Seller extends Authenticatable
     {
         return $this->unreadNotifications()->update([
             'notification_manage_users.read' => true,
-            'notification_manage_users.read_at' => now()
+            'notification_manage_users.read_at' => now(),
         ]);
     }
 
@@ -133,7 +137,7 @@ class Seller extends Authenticatable
             ->where('notification_manage_users.notification_id', $notificationId)
             ->update([
                 'notification_manage_users.read' => true,
-                'notification_manage_users.read_at' => now()
+                'notification_manage_users.read_at' => now(),
             ]);
     }
 
@@ -144,13 +148,17 @@ class Seller extends Authenticatable
 
     public function getFullnameAttribute()
     {
-        $seller=SellerInfo::where('seller_id',$this->id)->first();
-        return $seller->first_name . ' ' . $seller->last_name;
+        // گارد null — فروشندهٔ بدون ردیف seller_info (مثلاً رکورد تست/ناقص) نباید ۵۰۰ بدهد (فاز ۱۰۳)
+        $seller = SellerInfo::where('seller_id', $this->id)->first();
+
+        return $seller ? trim(($seller->first_name ?? '').' '.($seller->last_name ?? '')) : '';
     }
+
     public function getBusinessNameAttribute()
     {
-        $seller=SellerInfo::where('seller_id',$this->id)->first();
-        return $seller->business_name;
+        $seller = SellerInfo::where('seller_id', $this->id)->first();
+
+        return $seller->business_name ?? '';
     }
 
     public function getImageUrlAttribute()
@@ -160,7 +168,8 @@ class Seller extends Authenticatable
 
     public function imageUrl()
     {
-        $seller=SellerInfo::where('seller_id',$this->id)->first();
+        $seller = SellerInfo::where('seller_id', $this->id)->first();
+
         return $seller->logo ? asset($seller->logo) : asset('/back/app-assets/images/portrait/small/default.png');
     }
 
@@ -175,11 +184,12 @@ class Seller extends Authenticatable
     // متد نمونه (non-static) - تغییر نام بدهید
     public function checkIsFullActive()  // نام متفاوت
     {
-        return $this->status_work == "ACTIVE"
-            && $this->status_documents == "Accept"
-            && $this->status_register == "complete"
-            && $this->status == "ACTIVE";
+        return $this->status_work == 'ACTIVE'
+            && $this->status_documents == 'Accept'
+            && $this->status_register == 'complete'
+            && $this->status == 'ACTIVE';
     }
+
     public function hasRole($role)
     {
         if (is_string($role)) {
@@ -188,5 +198,4 @@ class Seller extends Authenticatable
 
         return $role->intersect($this->roles)->count();
     }
-
 }

@@ -54,6 +54,12 @@
                     <x-admin-panel::icon name="store" class="size-4" />
                     بازارچه
                 </button>
+                {{-- فاز ۱۰۳ — تنظیمات چندفروشندگی --}}
+                <button type="button" class="ap-tab relative whitespace-nowrap" x-on:click="tab = 'vendors'"
+                        x-bind:class="tab === 'vendors' ? 'is-active' : ''">
+                    <x-admin-panel::icon name="store" class="size-4" />
+                    چندفروشندگی
+                </button>
             </div>
 
             {{-- ============ تب کرون جاب ============ --}}
@@ -798,6 +804,142 @@
                         <button type="submit" class="ap-btn-primary !py-2.5">
                             <x-admin-panel::icon name="check-circle" class="size-4" />
                             ذخیره تنظیمات بازارچه
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            {{-- ============ تب چندفروشندگی (فاز ۱۰۳ — گیت‌دار App\Support\MultiVendorSettings) ============ --}}
+            <div x-show="tab === 'vendors'" x-cloak class="animate-fade-in space-y-4 p-5 sm:p-6">
+                <form wire:submit="saveMultiVendor" class="space-y-5">
+
+                    {{-- ───── کلید اصلی ───── --}}
+                    <section class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
+                        <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">
+                            <x-admin-panel::icon name="store" class="size-4.5 text-brand-600 dark:text-brand-400" />
+                            <h3 class="text-[13px] font-bold">کلید اصلی سیستم چندفروشندگی</h3>
+                            <span class="ms-auto text-[10px] font-semibold text-ink-3 dark:text-night-ink-2">همان کلید «تنظیمات دیگر» — پنل فروشنده، منوی فروشندگان و محصولات فروشنده‌دار</span>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex items-center justify-between gap-3 rounded-xl border border-brand-200 bg-gradient-to-l from-brand-50/90 via-brand-50/40 to-transparent p-3.5 dark:border-brand-500/20 dark:from-brand-500/10 dark:via-brand-500/5 dark:to-transparent">
+                                <span class="flex min-w-0 items-center gap-3">
+                                    <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-600/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
+                                        <x-admin-panel::icon name="key-round" class="size-4.5" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="flex flex-wrap items-center gap-1.5">
+                                            <span class="text-[13px] font-bold">فعال‌بودن چندفروشندگی</span>
+                                            <span class="rounded-md bg-brand-600/10 px-1.5 py-0.5 text-[10px] font-bold text-brand-700 dark:bg-brand-500/15 dark:text-brand-400">کلید اصلی</span>
+                                        </span>
+                                        <span class="block text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">این همان سوییچ قدیمی «سیستم چند فروشندگی» در تنظیمات دیگر است (هر دو هم‌زمان تغییر می‌کنند)؛ با خاموشی، پنل فروشنده (۴۰۴)، گروه منوی فروشندگان و گیت‌های این تب بی‌اثر می‌شوند</span>
+                                    </span>
+                                </span>
+                                <x-admin-panel::toggle wire:model="vendorEnabled" aria-label="کلید اصلی چندفروشندگی" />
+                            </div>
+                        </div>
+                    </section>
+
+                    {{-- ───── تسویه ───── --}}
+                    <section class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
+                        <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">
+                            <x-admin-panel::icon name="wallet" class="size-4.5 text-brand-600 dark:text-brand-400" />
+                            <h3 class="text-[13px] font-bold">تسویهٔ فروشندگان</h3>
+                            <span class="ms-auto text-[10px] font-semibold text-ink-3 dark:text-night-ink-2">واریز سهم فروشنده به کیف پولش پس از فروش</span>
+                        </div>
+                        <div class="space-y-3 p-4">
+                            <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                                <span class="flex min-w-0 items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="badge-check" class="size-4" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-[13px] font-bold">تسویهٔ خودکار پس از پرداخت</span>
+                                        <span class="block text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">سهم فروشنده (پس از کمیسیون) بلافاصله بعد از پرداختِ موفقِ سفارش — با هر روش (درگاه، کیف پول، …) — به کیف پولش واریز و در لیست کمیسیون‌ها ثبت شود. خاموش = فقط سفارش‌های کیف‌پولی مثل قبل واریز می‌شوند</span>
+                                    </span>
+                                </span>
+                                <x-admin-panel::toggle wire:model="vendorAutoSettlement" size="sm" aria-label="تسویهٔ خودکار" />
+                            </div>
+                            <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                                <span class="flex min-w-0 items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="layers" class="size-4" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-[13px] font-bold">پرداخت دسته‌جمعی تسویه</span>
+                                        <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">در صفحهٔ «درخواستی‌ها» دکمهٔ پرداخت گروهیِ چند درخواستِ در انتظار با یک شماره پیگیری مشترک نمایش شود</span>
+                                    </span>
+                                </span>
+                                <x-admin-panel::toggle wire:model="vendorBulkSettlement" size="sm" aria-label="پرداخت دسته‌جمعی" />
+                            </div>
+                            <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                                <span class="flex min-w-0 items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="bar-chart-3" class="size-4" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-[13px] font-bold">کارت آمار تسویه در داشبورد فروشنده</span>
+                                        <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">موجودی، فروش موفق، کمیسیون پرداخت‌شده و درخواست‌های در انتظار، بالای داشبورد پنل فروشنده</span>
+                                    </span>
+                                </span>
+                                <x-admin-panel::toggle wire:model="vendorDashboardStats" size="sm" aria-label="آمار تسویه داشبورد" />
+                            </div>
+                            <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line p-3.5 dark:border-night-line">
+                                <span class="flex min-w-0 items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="banknote" class="size-4" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-[13px] font-bold">حداقل مبلغ درخواست برداشت فروشنده (تومان)</span>
+                                        <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">۰ = بدون حد اضافه (حداقل همیشگی ۱۰٬۰۰۰ تومان فرم برداشت برقرار است)</span>
+                                    </span>
+                                </span>
+                                <input type="number" min="0" max="50000000" wire:model="vendorMinWithdraw" class="ap-input !w-36 !py-2 text-center fa-digits" aria-label="حداقل مبلغ برداشت">
+                                @error('vendorMinWithdraw') <p class="w-full text-[11px] font-bold text-red-500">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+                    </section>
+
+                    {{-- ───── کمیسیون ───── --}}
+                    <section class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
+                        <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">
+                            <x-admin-panel::icon name="percent" class="size-4.5 text-brand-600 dark:text-brand-400" />
+                            <h3 class="text-[13px] font-bold">کمیسیون فروشندگان</h3>
+                            <span class="ms-auto text-[10px] font-semibold text-ink-3 dark:text-night-ink-2">اولویت: فروشنده ← دسته‌بندی ← پیش‌فرض سراسری</span>
+                        </div>
+                        <div class="space-y-3 p-4">
+                            <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line p-3.5 dark:border-night-line">
+                                <span class="flex min-w-0 items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="globe" class="size-4" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-[13px] font-bold">کمیسیون پیش‌فرض سراسری (درصد)</span>
+                                        <span class="block text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">وقتی هیچ دسته‌بندیِ مسیرِ محصول کمیسیون نداشته باشد اعمال می‌شود؛ خالی = بدون پیش‌فرض (۰٪ مثل قبل). کمیسیونِ صریحِ دسته‌بندی همیشه بر آن مقدم است</span>
+                                    </span>
+                                </span>
+                                <input type="number" min="0" max="100" wire:model="vendorDefaultCommission" class="ap-input !w-24 !py-2 text-center fa-digits" aria-label="کمیسیون پیش‌فرض سراسری">
+                                @error('vendorDefaultCommission') <p class="w-full text-[11px] font-bold text-red-500">{{ $message }}</p> @enderror
+                            </div>
+                            <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                                <span class="flex min-w-0 items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="user-cog" class="size-4" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-[13px] font-bold">اعتبار کمیسیون اختصاصی فروشنده</span>
+                                        <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">درجهٔ هر فروشنده در «پنل کمیسیون فروشندگان» قابل تنظیم است؛ خاموش = فیلدهای اختصاصی نادیده گرفته می‌شوند</span>
+                                    </span>
+                                </span>
+                                <x-admin-panel::toggle wire:model="vendorSellerOverride" size="sm" aria-label="کمیسیون اختصاصی فروشنده" />
+                            </div>
+                        </div>
+                    </section>
+
+                    {{-- ذخیره --}}
+                    <div class="flex items-center justify-end gap-3">
+                        <button type="submit" class="ap-btn-primary !py-2.5">
+                            <x-admin-panel::icon name="check-circle" class="size-4" />
+                            ذخیره تنظیمات چندفروشندگی
                         </button>
                     </div>
                 </form>

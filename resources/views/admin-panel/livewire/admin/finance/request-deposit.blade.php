@@ -88,6 +88,14 @@
             <span class="fa-digits" x-text="ApFormat.faDigits($wire.selected.length)"></span> مورد انتخاب شده
         </span>
         @can('request_deposit')
+            @if (\App\Support\MultiVendorSettings::bulkSettlementEnabled())
+                {{-- فاز ۱۰۳ — پرداخت دسته‌جمعی تسویه (فقط درخواست‌های در انتظار) --}}
+                <button type="button" wire:click="openBulkPay" wire:loading.attr="disabled" wire:target="openBulkPay"
+                        class="ap-btn !px-3 !py-1.5 text-[13px] bg-brand-600 text-white hover:bg-brand-700">
+                    <x-admin-panel::icon name="banknote" class="size-4" />
+                    پرداخت دسته‌جمعی
+                </button>
+            @endif
             <button type="button" wire:click="$set('confirmingBulkStatus', true)"
                     class="ap-btn !px-3 !py-1.5 text-[13px] bg-emerald-600 text-white hover:bg-emerald-700">
                 <x-admin-panel::icon name="check-check" class="size-4" />
@@ -286,6 +294,42 @@
                 <button type="button" wire:click="bulkStatusPay" wire:loading.attr="disabled" wire:target="bulkStatusPay"
                         class="ap-btn flex-1 bg-emerald-600 text-white hover:bg-emerald-700">
                     اعمال وضعیت
+                </button>
+                <button type="button" x-on:click="open=false" class="ap-btn-ghost flex-1">انصراف</button>
+            </div>
+        </div>
+    </div>
+
+    {{-- مودال پرداخت دسته‌جمعی تسویه (فاز ۱۰۳) --}}
+    <div x-data="{ open: @entangle('confirmingBulkPay').live }"
+         x-show="open" x-cloak
+         class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" x-show="open" x-on:click="open=false" x-transition.opacity aria-hidden="true"></div>
+        <div x-show="open" x-on:click.stop
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+             class="relative w-full max-w-sm rounded-2xl border border-line bg-surface p-6 shadow-pop dark:border-night-line dark:bg-night-2"
+             role="dialog" aria-modal="true">
+            <div class="mb-3 flex size-12 items-center justify-center rounded-2xl bg-brand-600/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
+                <x-admin-panel::icon name="banknote" class="size-6" />
+            </div>
+            <h3 class="text-base font-bold">پرداخت دسته‌جمعی تسویه</h3>
+            <p class="mt-1.5 text-[13px] leading-6 text-ink-2 dark:text-night-ink-2">
+                <span class="fa-digits font-bold">{{ $this->bulkPayCount() }}</span> درخواستِ در انتظار با جمعِ
+                <span class="fa-digits font-bold">{{ number_format($this->bulkPayTotal()) }}</span> تومان با یک حوالهٔ بانکی پرداخت می‌شود.
+                شمارهٔ پیگیری هر سطر به‌صورت «{شماره حواله}-{ردیف}» ثبت می‌شود (یکتای DB).
+            </p>
+            <div class="mt-4">
+                <label class="mb-1.5 block text-xs font-semibold" for="bulk-pay-tracking">شماره پیگیری حواله <span class="text-red-500">*</span></label>
+                <input id="bulk-pay-tracking" type="text" dir="ltr" wire:model="bulkPayTrackingId" class="ap-input font-mono" placeholder="مثلاً TR-14030715-942">
+                @error('bulkPayTrackingId')
+                    <p class="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">{{ $message }}</p>
+                @enderror
+            </div>
+            <div class="mt-5 flex gap-2.5">
+                <button type="button" wire:click="bulkPay" wire:loading.attr="disabled" wire:target="bulkPay"
+                        class="ap-btn flex-1 bg-brand-600 text-white hover:bg-brand-700">
+                    ثبت پرداخت دسته‌جمعی
                 </button>
                 <button type="button" x-on:click="open=false" class="ap-btn-ghost flex-1">انصراف</button>
             </div>

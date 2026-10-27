@@ -10,164 +10,170 @@
 | ثبت مسیرها خارج از حلقه‌ی locale انجام می‌شود تا فقط یک‌بار register شوند.
 */
 
-use App\Livewire\Admin\Dashboard;
-use App\Livewire\Admin\Profile;
+use App\Http\Controllers\AdminPanel\LogoutController;
+use App\Http\Controllers\AdminPanel\MediaController;
+use App\Http\Controllers\Back\FormController as LegacyFormController;
+use App\Http\Controllers\Back\OrderController as LegacyOrderController;
+use App\Http\Controllers\Back\RequestDepositAdmin as LegacyRequestDepositController;
+use App\Http\Controllers\Back\SellerControllers as LegacySellerController;
+use App\Http\Controllers\Back\TagController as LegacyTagController;
+use App\Http\Controllers\Back\UserController as LegacyUserController;
+use App\Http\Middleware\AdminPanel;
+use App\Http\Middleware\GuestAdminPanel;
+use App\Livewire\Admin\Admins\AdminIndex;
+use App\Livewire\Admin\Admins\PermissionIndex;
+use App\Livewire\Admin\Admins\RoleIndex;
 use App\Livewire\Admin\Auth\Login;
-use App\Livewire\Admin\Products\ProductIndex;
-use App\Livewire\Admin\Products\ProductForm;
-use App\Livewire\Admin\Orders\OrderIndex;
-use App\Livewire\Admin\Orders\OrderShow;
-use App\Livewire\Admin\Orders\OrderItemShow;
-use App\Livewire\Admin\Orders\OrderCreate;
-use App\Livewire\Admin\Orders\OrderNotCompleted;
-use App\Livewire\Admin\Sellers\SellerIndex;
-use App\Livewire\Admin\Sellers\SellerShow;
-use App\Livewire\Admin\Sellers\SellerProducts;
-use App\Livewire\Admin\Sellers\SellerVariants;
-use App\Livewire\Admin\Sellers\SellerOrders;
-use App\Livewire\Admin\Sellers\SellerViews;
-use App\Livewire\Admin\Sellers\SellerNotifications;
-use App\Livewire\Admin\Sellers\Settings\SellerHero;
-use App\Livewire\Admin\Sellers\Settings\SellerCommission;
-use App\Livewire\Admin\Sellers\Settings\SellerQuestion;
-use App\Livewire\Admin\Sellers\Settings\SellerEcontract;
-use App\Livewire\Admin\Users\UserIndex;
-use App\Livewire\Admin\Users\UserForm;
-use App\Livewire\Admin\Users\UserShow;
-use App\Livewire\Admin\Users\UserViews;
-use App\Livewire\Admin\Users\UserNotifications;
+use App\Livewire\Admin\Auth\TwoFactorChallenge;
+use App\Livewire\Admin\Banners\BannerForm;
+use App\Livewire\Admin\Banners\BannerIndex;
+use App\Livewire\Admin\Comments\CommentsIndex;
+use App\Livewire\Admin\Content\SearchIndex;
+use App\Livewire\Admin\Dashboard;
+use App\Livewire\Admin\Discounts\DiscountForm;
+use App\Livewire\Admin\Discounts\DiscountIndex;
+use App\Livewire\Admin\Faqs\FaqIndex;
+use App\Livewire\Admin\Finance\CurrencyIndex;
+use App\Livewire\Admin\Finance\RequestDepositHistory;
+use App\Livewire\Admin\Finance\RequestDepositIndex;
 use App\Livewire\Admin\Finance\TransactionIndex;
 use App\Livewire\Admin\Finance\TransactionSellerDeposits;
+use App\Livewire\Admin\Finance\VendorCommissionIndex;
 use App\Livewire\Admin\Finance\WalletHistoryIndex;
+use App\Livewire\Admin\Finance\WalletHistoryShow;
 use App\Livewire\Admin\Finance\WalletShow;
 use App\Livewire\Admin\Finance\WalletTransactionCreate;
-use App\Livewire\Admin\Finance\WalletHistoryShow;
-use App\Livewire\Admin\Finance\RequestDepositIndex;
-use App\Livewire\Admin\Finance\RequestDepositHistory;
-use App\Livewire\Admin\Returns\ReturnIndex;
-use App\Livewire\Admin\Returns\ReturnShow;
-use App\Livewire\Admin\Returns\ReturnReasons;
-use App\Livewire\Admin\Discounts\DiscountIndex;
-use App\Livewire\Admin\Discounts\DiscountForm;
-use App\Livewire\Admin\Taxonomy\CategoryTree;
-use App\Livewire\Admin\Taxonomy\CategoryForm;
-use App\Livewire\Admin\Taxonomy\BrandIndex;
-use App\Livewire\Admin\Taxonomy\BrandForm;
-use App\Livewire\Admin\Taxonomy\AttributeGroupIndex;
-use App\Livewire\Admin\Taxonomy\AttributeGroupAttributes;
-use App\Livewire\Admin\Taxonomy\AttributeForm;
-use App\Livewire\Admin\Taxonomy\SpecTypeIndex;
-use App\Livewire\Admin\Taxonomy\SpecTypeForm;
-use App\Livewire\Admin\Taxonomy\SizeTypeIndex;
-use App\Livewire\Admin\Taxonomy\SizeTypeForm;
-use App\Livewire\Admin\Taxonomy\SizeTypeValues;
-use App\Livewire\Admin\Taxonomy\FildIndex;
-use App\Livewire\Admin\Taxonomy\FildForm;
-use App\Livewire\Admin\Taxonomy\FilterIndex;
-use App\Livewire\Admin\Taxonomy\FilterForm;
-use App\Livewire\Admin\Taxonomy\TagIndex;
-use App\Livewire\Admin\Posts\PostIndex;
-use App\Livewire\Admin\Posts\PostForm;
-use App\Livewire\Admin\Pages\PageIndex;
-use App\Livewire\Admin\Pages\PageForm;
-use App\Livewire\Admin\Menus\MenuManager;
-use App\Livewire\Admin\Links\LinkIndex;
-use App\Livewire\Admin\Links\LinkGroups;
-use App\Livewire\Admin\Sliders\SliderIndex;
-use App\Livewire\Admin\Sliders\SliderForm;
-use App\Livewire\Admin\Banners\BannerIndex;
-use App\Livewire\Admin\Banners\BannerForm;
-use App\Livewire\Admin\Faqs\FaqIndex;
-use App\Livewire\Admin\Comments\CommentsIndex;
-use App\Livewire\Admin\Reviews\ReviewIndex;
-use App\Livewire\Admin\StockNotify\StockNotifyIndex;
-use App\Livewire\Admin\PriceAlert\PriceAlertIndex;
-use App\Livewire\Admin\Forms\FormIndex;
 use App\Livewire\Admin\Forms\FormBuilder;
+use App\Livewire\Admin\Forms\FormIndex; // فاز ۱۰۳
 use App\Livewire\Admin\Forms\FormSubmissions;
-use App\Livewire\Admin\Widgets\WidgetIndex;
-use App\Livewire\Admin\Widgets\WidgetForm;
-use App\Livewire\Admin\Widgets\PostWidgetIndex;
-use App\Livewire\Admin\Widgets\PostWidgetForm;
-use App\Livewire\Admin\Settings\FloatingWidget;
-use App\Livewire\Admin\Tickets\TicketIndex;
-use App\Livewire\Admin\Tickets\TicketCreate;
-use App\Livewire\Admin\Tickets\TicketShow;
-use App\Livewire\Admin\Messages\MessageIndex;
-use App\Livewire\Admin\Messages\MessageShow;
-use App\Livewire\Admin\Messages\MessageBirthday;
-use App\Livewire\Admin\Support\ContactIndex;
-use App\Livewire\Admin\Support\NewsletterIndex;
-use App\Livewire\Admin\Notifications\NotificationIndex;
-use App\Livewire\Admin\Finance\CurrencyIndex;
-use App\Livewire\Admin\Settings\Holidays;
-use App\Livewire\Admin\Geo\ProvinceIndex;
 use App\Livewire\Admin\Geo\CityIndex;
-use App\Livewire\Admin\Shipping\CarrierIndex;
-use App\Livewire\Admin\Shipping\TariffIndex;
-use App\Livewire\Admin\Content\SearchIndex;
-use App\Livewire\Admin\Settings\Robots;
-use App\Livewire\Admin\Settings\Redirects;
-use App\Livewire\Admin\Settings\Apikeys;
-use App\Livewire\Admin\Warehouses\WarehouseIndex;
-use App\Livewire\Admin\Warehouses\WarehouseShow;
-use App\Livewire\Admin\Warehouses\WarehouseVariations;
-use App\Livewire\Admin\Warehouses\WarehouseMovements;
-use App\Livewire\Admin\Warehouses\WarehouseStockTake;
-use App\Livewire\Admin\Warehouses\WarehouseBulkStock;
-use App\Livewire\Admin\System\SessionIndex;
-use App\Livewire\Admin\System\ActivityLogIndex;
-use App\Livewire\Admin\Admins\AdminIndex;
-use App\Livewire\Admin\Admins\RoleIndex;
-use App\Livewire\Admin\Admins\PermissionIndex;
-use App\Livewire\Admin\Statistics\ViewsPage;
-use App\Livewire\Admin\Statistics\ViewersPage;
-use App\Livewire\Admin\Statistics\ViewsList;
-use App\Livewire\Admin\Statistics\OrdersPage;
-use App\Livewire\Admin\Statistics\ProductsStats;
-use App\Livewire\Admin\Statistics\UsersStats;
-use App\Livewire\Admin\Statistics\SmsLog;
-use App\Livewire\Admin\Statistics\SmsShow;
-use App\Livewire\Admin\Products\PriceIndex;
-use App\Livewire\Admin\Products\PriceGroupIndex;
-use App\Livewire\Admin\Settings\Information;
-use App\Livewire\Admin\Settings\Socials;
-use App\Livewire\Admin\Settings\Gateways;
-use App\Livewire\Admin\Settings\Others;
-use App\Livewire\Admin\Settings\SmsSettings;
-use App\Livewire\Admin\System\Developer;
-use App\Livewire\Admin\System\BaleSettings;
-use App\Livewire\Admin\Auth\TwoFactorChallenge;
-use App\Livewire\Admin\Packages\PackageIndex;
-use App\Livewire\Admin\Packages\PackageInstalled;
-use App\Livewire\Admin\Packages\PackagePaymentCallback;
-use App\Livewire\Admin\Themes\ThemeIndex;
-use App\Livewire\Admin\Themes\ThemeSettings;
+use App\Livewire\Admin\Geo\ProvinceIndex;
 use App\Livewire\Admin\Imports\PostsImport;
 use App\Livewire\Admin\Imports\ProductsImport;
 use App\Livewire\Admin\Imports\UsersImport;
-use App\Livewire\Admin\System\PulseIndex;
-use App\Livewire\Admin\System\BackupIndex;
-use App\Livewire\Admin\System\FileManager;
+use App\Livewire\Admin\Links\LinkGroups;
+use App\Livewire\Admin\Links\LinkIndex;
+use App\Livewire\Admin\Menus\MenuManager;
+use App\Livewire\Admin\Messages\MessageBirthday;
+use App\Livewire\Admin\Messages\MessageIndex;
+use App\Livewire\Admin\Messages\MessageShow;
+use App\Livewire\Admin\Notifications\NotificationIndex;
 use App\Livewire\Admin\Notifications\PanelNotifications;
+use App\Livewire\Admin\Orders\OrderCreate;
+use App\Livewire\Admin\Orders\OrderIndex;
+use App\Livewire\Admin\Orders\OrderItemShow;
+use App\Livewire\Admin\Orders\OrderNotCompleted;
+use App\Livewire\Admin\Orders\OrderShow;
+use App\Livewire\Admin\Packages\PackageIndex;
+use App\Livewire\Admin\Packages\PackageInstalled;
+use App\Livewire\Admin\Packages\PackagePaymentCallback;
+use App\Livewire\Admin\Pages\PageForm;
+use App\Livewire\Admin\Pages\PageIndex;
+use App\Livewire\Admin\Posts\PostForm;
+use App\Livewire\Admin\Posts\PostIndex;
+use App\Livewire\Admin\PriceAlert\PriceAlertIndex;
+use App\Livewire\Admin\Products\PriceGroupIndex;
+use App\Livewire\Admin\Products\PriceIndex;
+use App\Livewire\Admin\Products\ProductForm;
+use App\Livewire\Admin\Products\ProductIndex;
+use App\Livewire\Admin\Profile;
+use App\Livewire\Admin\Returns\ReturnIndex;
+use App\Livewire\Admin\Returns\ReturnReasons;
+use App\Livewire\Admin\Returns\ReturnShow;
+use App\Livewire\Admin\Reviews\ReviewIndex;
+use App\Livewire\Admin\Sellers\SellerIndex;
+use App\Livewire\Admin\Sellers\SellerNotifications;
+use App\Livewire\Admin\Sellers\SellerOrders;
+use App\Livewire\Admin\Sellers\SellerProducts;
+use App\Livewire\Admin\Sellers\SellerShow;
+use App\Livewire\Admin\Sellers\SellerVariants;
+use App\Livewire\Admin\Sellers\SellerViews;
+use App\Livewire\Admin\Sellers\Settings\SellerCommission;
+use App\Livewire\Admin\Sellers\Settings\SellerEcontract;
+use App\Livewire\Admin\Sellers\Settings\SellerHero;
+use App\Livewire\Admin\Sellers\Settings\SellerQuestion;
+use App\Livewire\Admin\Settings\Apikeys;
+use App\Livewire\Admin\Settings\FloatingWidget;
+use App\Livewire\Admin\Settings\Gateways;
+use App\Livewire\Admin\Settings\Holidays;
+use App\Livewire\Admin\Settings\Information;
+use App\Livewire\Admin\Settings\Others;
+use App\Livewire\Admin\Settings\Redirects;
+use App\Livewire\Admin\Settings\Robots;
+use App\Livewire\Admin\Settings\SmsSettings;
+use App\Livewire\Admin\Settings\Socials;
+use App\Livewire\Admin\Shipping\CarrierIndex;
+use App\Livewire\Admin\Shipping\TariffIndex;
+use App\Livewire\Admin\Sliders\SliderForm;
+use App\Livewire\Admin\Sliders\SliderIndex;
+use App\Livewire\Admin\Statistics\OrdersPage;
+use App\Livewire\Admin\Statistics\ProductsStats;
+use App\Livewire\Admin\Statistics\SmsLog;
+use App\Livewire\Admin\Statistics\SmsShow;
+use App\Livewire\Admin\Statistics\UsersStats;
+use App\Livewire\Admin\Statistics\ViewersPage;
+use App\Livewire\Admin\Statistics\ViewsList;
+use App\Livewire\Admin\Statistics\ViewsPage;
+use App\Livewire\Admin\StockNotify\StockNotifyIndex;
+use App\Livewire\Admin\Support\ContactIndex;
+use App\Livewire\Admin\Support\NewsletterIndex;
+use App\Livewire\Admin\System\ActivityLogIndex;
+use App\Livewire\Admin\System\BackupIndex;
+use App\Livewire\Admin\System\BaleSettings;
+use App\Livewire\Admin\System\Developer;
+use App\Livewire\Admin\System\FileManager;
 use App\Livewire\Admin\System\LogsIndex;
-use App\Http\Controllers\Back\FormController as LegacyFormController;
-use App\Http\Controllers\AdminPanel\LogoutController;
-use App\Http\Controllers\Back\OrderController as LegacyOrderController;
-use App\Http\Controllers\Back\SellerControllers as LegacySellerController;
-use App\Http\Controllers\Back\UserController as LegacyUserController;
-use App\Http\Controllers\Back\RequestDepositAdmin as LegacyRequestDepositController;
-use App\Http\Controllers\Back\TagController as LegacyTagController;
+use App\Livewire\Admin\System\PulseIndex;
+use App\Livewire\Admin\System\SessionIndex;
+use App\Livewire\Admin\Taxonomy\AttributeForm;
+use App\Livewire\Admin\Taxonomy\AttributeGroupAttributes;
+use App\Livewire\Admin\Taxonomy\AttributeGroupIndex;
+use App\Livewire\Admin\Taxonomy\BrandForm;
+use App\Livewire\Admin\Taxonomy\BrandIndex;
+use App\Livewire\Admin\Taxonomy\CategoryForm;
+use App\Livewire\Admin\Taxonomy\CategoryTree;
+use App\Livewire\Admin\Taxonomy\FildForm;
+use App\Livewire\Admin\Taxonomy\FildIndex;
+use App\Livewire\Admin\Taxonomy\FilterForm;
+use App\Livewire\Admin\Taxonomy\FilterIndex;
+use App\Livewire\Admin\Taxonomy\SizeTypeForm;
+use App\Livewire\Admin\Taxonomy\SizeTypeIndex;
+use App\Livewire\Admin\Taxonomy\SizeTypeValues;
+use App\Livewire\Admin\Taxonomy\SpecTypeForm;
+use App\Livewire\Admin\Taxonomy\SpecTypeIndex;
+use App\Livewire\Admin\Taxonomy\TagIndex;
+use App\Livewire\Admin\Themes\ThemeIndex;
+use App\Livewire\Admin\Themes\ThemeSettings;
+use App\Livewire\Admin\Tickets\TicketCreate;
+use App\Livewire\Admin\Tickets\TicketIndex;
+use App\Livewire\Admin\Tickets\TicketShow;
+use App\Livewire\Admin\Users\UserForm;
+use App\Livewire\Admin\Users\UserIndex;
+use App\Livewire\Admin\Users\UserNotifications;
+use App\Livewire\Admin\Users\UserShow;
+use App\Livewire\Admin\Users\UserViews;
+use App\Livewire\Admin\Warehouses\WarehouseBulkStock;
+use App\Livewire\Admin\Warehouses\WarehouseIndex;
+use App\Livewire\Admin\Warehouses\WarehouseMovements;
+use App\Livewire\Admin\Warehouses\WarehouseShow;
+use App\Livewire\Admin\Warehouses\WarehouseStockTake;
+use App\Livewire\Admin\Warehouses\WarehouseVariations;
+use App\Livewire\Admin\Widgets\PostWidgetBuilder;
+use App\Livewire\Admin\Widgets\PostWidgetForm;
+use App\Livewire\Admin\Widgets\PostWidgetIndex;
+use App\Livewire\Admin\Widgets\WidgetBuilder;
+use App\Livewire\Admin\Widgets\WidgetForm;
+use App\Livewire\Admin\Widgets\WidgetIndex;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
+Route::prefix('admin/'.admin_route_prefix())->name('np.')->group(function () {
 
     /*
     |----------------------
     | احراز هویت
     |----------------------
     */
-    Route::middleware(\App\Http\Middleware\GuestAdminPanel::class)->group(function () {
+    Route::middleware(GuestAdminPanel::class)->group(function () {
         Route::get('login', Login::class)->name('login');
 
         // فاز ۴۴ — چالش ورود دومرحله‌ای مدیر (بین تأیید اعتبارنامه و ورود کامل)
@@ -181,7 +187,7 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
     | بخش‌های احراز هویت‌شده پنل
     |----------------------
     */
-    Route::middleware(\App\Http\Middleware\AdminPanel::class)->group(function () {
+    Route::middleware(AdminPanel::class)->group(function () {
 
         // نمای کلی
         Route::get('/', Dashboard::class)->name('dashboard');
@@ -197,10 +203,10 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
                 abort(403);
             }
 
-            \Artisan::call('config:clear');
-            \Artisan::call('cache:clear');
-            \Artisan::call('route:clear');
-            \Artisan::call('view:clear');
+            Artisan::call('config:clear');
+            Artisan::call('cache:clear');
+            Artisan::call('route:clear');
+            Artisan::call('view:clear');
 
             return redirect()->route('np.dashboard')->with('np-toast', [
                 'type' => 'success',
@@ -304,6 +310,13 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
         Route::get('request-deposit', RequestDepositIndex::class)->name('request-deposit.index');
         Route::get('request-deposit/histories/{history}', RequestDepositHistory::class)->name('request-deposit.history');
         Route::get('request-deposit/export/create', [LegacyRequestDepositController::class, 'export'])->name('request-deposit.export');
+
+        /*
+        |----------------------
+        | پنل کمیسیون فروشندگان (فاز ۱۰۳)
+        |----------------------
+        */
+        Route::get('vendors/commission', VendorCommissionIndex::class)->name('vendors.commission');
 
         /*
         |----------------------
@@ -441,9 +454,9 @@ Route::prefix('admin/' . admin_route_prefix())->name('np.')->group(function () {
         */
         Route::get('widgets', WidgetIndex::class)->name('widgets.index');
         Route::get('widgets/create', WidgetForm::class)->name('widgets.create');
-        Route::get('widgets/builder', \App\Livewire\Admin\Widgets\WidgetBuilder::class)->name('widgets.builder');
-        Route::get('widgets/posts-builder', \App\Livewire\Admin\Widgets\PostWidgetBuilder::class)->name('widgets.posts-builder'); // فاز ۱۱: ویجت‌ساز مقالات
-        Route::post('media/upload', \App\Http\Controllers\AdminPanel\MediaController::class . '@store')->name('media.upload'); // آپلود تصویر CKEditor
+        Route::get('widgets/builder', WidgetBuilder::class)->name('widgets.builder');
+        Route::get('widgets/posts-builder', PostWidgetBuilder::class)->name('widgets.posts-builder'); // فاز ۱۱: ویجت‌ساز مقالات
+        Route::post('media/upload', MediaController::class.'@store')->name('media.upload'); // آپلود تصویر CKEditor
         Route::get('widgets/{widget}/edit', WidgetForm::class)->name('widgets.edit');
 
         Route::get('posts-widgets', PostWidgetIndex::class)->name('posts-widgets.index');

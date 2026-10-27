@@ -4,12 +4,13 @@ namespace App\Models;
 
 use App\Events\WalletAmountDecreased;
 use App\Events\WalletAmountIncreased;
-use App\Notifications\Sms\NewUserCodeSent;
 use App\Notifications\Wallet\WalletAmountDecreasedSms;
+use App\Support\MultiVendorSettings;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Modules\InstallmentPayment\Models\InstallmentPlan;
 use Morilog\Jalali\Jalalian;
 
 class Order extends Model
@@ -87,26 +88,27 @@ class Order extends Model
 
             switch ($this->shipping_status) {
                 case 'pending':
-                {
+
                     $text = 'در حال بررسی';
                     break;
-                }
+
                 case 'waiting':
-                {
+
                     $text = 'منتظر ارسال';
                     break;
-                }
+
                 case 'sent':
-                {
+
                     $text = 'ارسال شد';
                     break;
-                }
+
                 case 'canceled':
-                {
+
                     $text = 'ارسال لغو شد';
                     break;
-                }
+
             }
+
             return $text;
         }
 
@@ -116,20 +118,18 @@ class Order extends Model
     public function statusText()
     {
         switch ($this->status) {
-            case "paid":
-            {
+            case 'paid':
+
                 return 'پرداخت شده';
-            }
 
-            case "unpaid":
-            {
+            case 'unpaid':
+
                 return 'پرداخت نشده';
-            }
 
-            case "canceled":
-            {
+            case 'canceled':
+
                 return 'لغو شده';
-            }
+
         }
     }
 
@@ -146,7 +146,6 @@ class Order extends Model
                 $q->where('username', 'like', "%$username%");
             });
         }
-
 
         if ($product_name = $request->input('query.product_name')) {
             $query->whereHas('products', function ($q) use ($product_name) {
@@ -170,7 +169,6 @@ class Order extends Model
                 $query->whereDoesntHave('installmentPlan');
             }
         }
-
 
         $status = $request->input('query.status');
 
@@ -212,24 +210,24 @@ class Order extends Model
 
             switch ($request->sort['field']) {
                 case 'fullname':
-                {
+
                     $query->join('users', 'orders.user_id', '=', 'users.id')
                         ->orderBy('users.first_name', $request->sort['sort'])
                         ->orderBy('users.last_name', $request->sort['sort'])
                         ->select('orders.*');
                     break;
-                }
+
                 case 'order_id':
-                {
+
                     $query->orderBy('id', $request->sort['sort']);
                     break;
-                }
+
                 default:
-                {
+
                     if ($this->getConnection()->getSchemaBuilder()->hasColumn($this->getTable(), $request->sort['field'])) {
                         $query->orderBy($request->sort['field'], $request->sort['sort']);
                     }
-                }
+
             }
         }
 
@@ -289,6 +287,7 @@ class Order extends Model
 
         $TotalPrice = array_sum($price);
         $price = $TotalPrice + $this->shippingCostSeller($seller_id);
+
         return $price - $this->totalDiscountSeller($sellerId) ?: 0;
     }
 
@@ -330,6 +329,7 @@ class Order extends Model
             $sum = $TotalPrice - $TotalDiscount;
 
             $TotalPrice = $TotalPrice - $discountPrice + $sum;
+
             return $TotalPrice ?: 0;
         }
 
@@ -352,6 +352,7 @@ class Order extends Model
                 return $order_item->shipping_cost ?: 0;
             }
         }
+
         return 0;
     }
 
@@ -368,8 +369,9 @@ class Order extends Model
         $commission = array_sum($commission);
         $result = [
             'priceForSite' => $priceForSite,
-            'commission' => $commission
+            'commission' => $commission,
         ];
+
         return $result;
     }
 
@@ -394,8 +396,9 @@ class Order extends Model
         $commission = array_sum($commission);
         $result = [
             'priceForSite' => $priceForSite,
-            'commission' => $commission
+            'commission' => $commission,
         ];
+
         return $result;
     }
 
@@ -415,6 +418,10 @@ class Order extends Model
                 $product = $order_item->product()->first();
                 $commissionInfo = $this->getCategoryCommissionWithParent($product->category_id);
 
+                // فاز ۱۰۳ — کمیسیون مؤثر: override فروشنده > دسته‌بندی > پیش‌فرض سراسری
+                // (وقتی MultiVendorSettings خاموش/بدون override/بدون پیش‌فرض باشد خروجی همان زنجیرهٔ دسته‌بندی قدیمی است)
+                $commissionInfo = MultiVendorSettings::resolveCommission((int) $sellerId, $commissionInfo);
+
                 $commission = $commissionInfo['commission'];
                 $categoryId = $commissionInfo['category_id'];
 
@@ -430,12 +437,12 @@ class Order extends Model
         $priceSeller = $this->priceSeller($sellerId);
         $price = intval($priceSeller * ((100 - $TotalCommission) / 100));
 
-        $totalPrice = array(
+        $totalPrice = [
             'priceForSeller' => $price,
             'priceForSite' => $priceSeller - $price,
             'category_id' => $lastCategoryId,
             'percent' => $TotalCommission,
-        );
+        ];
 
         return $totalPrice;
     }
@@ -445,36 +452,36 @@ class Order extends Model
         if (is_null($categoryId)) {
             return [
                 'commission' => 0,
-                'category_id' => null
+                'category_id' => null,
             ];
         }
 
         $category = Category::find($categoryId);
 
-        if (!$category) {
+        if (! $category) {
             return [
                 'commission' => 0,
-                'category_id' => null
+                'category_id' => null,
             ];
         }
 
         if (isset($category->commission)) {
-            if (!is_null($category->commission)) {
+            if (! is_null($category->commission)) {
                 return [
-                    'commission' => (int)$category->commission,
-                    'category_id' => $category->id
+                    'commission' => (int) $category->commission,
+                    'category_id' => $category->id,
                 ];
             }
         }
         if ($category->category_id) {
             return $this->getCategoryCommissionWithParent($category->category_id);
         }
+
         return [
             'commission' => 0,
-            'category_id' => null
+            'category_id' => null,
         ];
     }
-
 
     public function totalDiscount()
     {
@@ -530,11 +537,10 @@ class Order extends Model
         }
         $sellersID = array_unique($sellersID);
 
-
         if ($wallet->balance() >= $order->price) {
-            DB::transaction(function () use ($wallet, $order, $price, $sellersID) {
+            DB::transaction(function () use ($wallet, $order, $sellersID) {
                 $order->update([
-                    'status' => 'paid'
+                    'status' => 'paid',
                 ]);
 
                 $wallet->histories()->create([
@@ -543,10 +549,10 @@ class Order extends Model
                     'description' => 'ثبت سفارش',
                     'source' => 'user',
                     'status' => 'success',
-                    'order_id' => $order->id
+                    'order_id' => $order->id,
                 ]);
 
-                //add wallet for seller
+                // add wallet for seller
                 if (count($sellersID)) {
                     foreach (Seller::whereIn('id', $sellersID)->get() as $sellerItem) {
                         $sellerWallet = $sellerItem->getWallet();
@@ -557,7 +563,7 @@ class Order extends Model
                             'description' => 'ثبت سفارش',
                             'source' => 'seller',
                             'status' => 'success',
-                            'order_id' => $order->id
+                            'order_id' => $order->id,
                         ]);
                         SellerDeposit::create([
                             'seller_id' => $sellerItem->id,
@@ -573,8 +579,7 @@ class Order extends Model
                     }
                 }
 
-
-                //Notification::send($wallet, new WalletAmountDecreasedSms($wallet,$order->price));
+                // Notification::send($wallet, new WalletAmountDecreasedSms($wallet,$order->price));
                 $wallet->refereshBalance();
             });
 
@@ -600,7 +605,7 @@ class Order extends Model
     {
         return [
             'admin.orders_count',
-            'admin.total_sell'
+            'admin.total_sell',
         ];
     }
 
@@ -661,10 +666,8 @@ class Order extends Model
         return $result;
     }
 
-
-
     public function installmentPlan()
     {
-        return $this->hasOne(\Modules\InstallmentPayment\Models\InstallmentPlan::class);
+        return $this->hasOne(InstallmentPlan::class);
     }
 }

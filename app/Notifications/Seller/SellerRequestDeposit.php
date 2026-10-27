@@ -13,6 +13,7 @@ class SellerRequestDeposit extends Notification implements ShouldQueue
     use Queueable;
 
     protected $seller;
+
     protected $sellerInfo;
 
     /**
@@ -23,7 +24,7 @@ class SellerRequestDeposit extends Notification implements ShouldQueue
     public function __construct(Seller $seller)
     {
         $this->seller = $seller;
-        $this->sellerInfo = SellerInfo::where('seller_id',$seller->id)->first();
+        $this->sellerInfo = SellerInfo::where('seller_id', $seller->id)->first();
     }
 
     /**
@@ -45,8 +46,11 @@ class SellerRequestDeposit extends Notification implements ShouldQueue
      */
     public function toArray($notifiable)
     {
+        // گارد null — فروشندهٔ بدون ردیف seller_info نباید اعلان را منفجر کند (فاز ۱۰۳)
+        $businessName = $this->sellerInfo->business_name ?? '';
+
         return [
-            'message' => 'فروشنده با عنوان فروشگاه '.$this->sellerInfo->business_name.' درخواست واریز وجه کرده است.',
+            'message' => 'فروشنده با عنوان فروشگاه '.$businessName.' درخواست واریز وجه کرده است.',
             'seller_id' => $this->seller->id,
         ];
     }
@@ -55,5 +59,4 @@ class SellerRequestDeposit extends Notification implements ShouldQueue
     {
         return 'SellerRequestDeposit';
     }
-
 }
