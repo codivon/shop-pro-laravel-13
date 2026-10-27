@@ -34,6 +34,13 @@
                                 <a href="{{ route('seller.products.index') }}"><i class="feather icon-circle"></i><span class="menu-item"> مدیریت محصولات</span></a>
                             </li>
 
+                            {{-- فاز ۱۰۶-۳ — سیگنال‌های تقاضا؛ گیت سوییچ seller_demand_signals (قانون طلایی) --}}
+                            @if(\App\Support\MultiVendorSettings::demandSignalsEnabled())
+                                <li class="{{ active_class('seller.demand.signals') }}">
+                                    <a href="{{ route('seller.demand.signals') }}"><i class="feather icon-circle"></i><span class="menu-item">سیگنال‌های تقاضا</span></a>
+                                </li>
+                            @endif
+
                     </ul>
                 </li>
 

@@ -4,9 +4,11 @@ namespace Tests\Feature\Extra;
 
 use App\Livewire\Admin\System\Developer;
 use App\Models\Admin;
+use App\Models\PriceAlert;
 use App\Models\Seller;
 use App\Models\SellerDeposit;
 use App\Models\SellerInfo;
+use App\Models\StockNotify;
 use App\Models\Viewer;
 use App\Support\MultiVendorSettings;
 use Illuminate\Support\Facades\Auth;
@@ -473,5 +475,124 @@ class Phase106Test extends TestCase
         $response->assertSee('300,000', false);
         // ولی جدول پرفروش‌ها خالی است (ردیف محصول نال فیلتر شده)
         $response->assertSee('هنوز فروشی در ۳۰ روز اخیر ثبت نشده است', false);
+    }
+
+    /* ================= فاز ۱۰۶-۳) سیگنال‌های تقاضا ================= */
+
+    #[Test]
+    #[TestDox('تب چندفروشندگی Developer سوییچ سیگنال‌های تقاضا را ذخیره می‌کند')]
+    public function developer_tab_saves_demand_signals_toggle(): void
+    {
+        $this->newCreator();
+
+        Livewire::test(Developer::class)
+            ->set('vendorEnabled', true)
+            ->set('vendorDemandSignals', false)
+            ->call('saveMultiVendor')
+            ->assertDispatched('toast');
+
+        $this->assertSame('0', option('seller_demand_signals', '1'));
+        $this->assertFalse(MultiVendorSettings::demandSignalsEnabled());
+
+        Livewire::test(Developer::class)
+            ->set('vendorDemandSignals', true)
+            ->call('saveMultiVendor');
+
+        $this->assertSame('1', option('seller_demand_signals', '1'));
+    }
+
+    /** درخواست «منتظر موجودی» (StockNotify) روی محصول فروشنده */
+    private function newStockNotify(int $productId, array $attributes = []): StockNotify
+    {
+        return StockNotify::create(array_merge([
+            'name' => 'مشتری '.Str::random(4),
+            'mobile' => '0913'.str_pad((string) random_int(0, 9999999), 7, '0', STR_PAD_LEFT),
+            'seen' => false,
+            'product_id' => $productId,
+        ], $attributes));
+    }
+
+    /** اشتراک فعالِ «منتظر کاهش قیمت» (PriceAlert) روی محصول فروشنده */
+    private function newPriceAlert(int $productId, array $attributes = []): PriceAlert
+    {
+        return PriceAlert::create(array_merge([
+            'mobile' => '0912'.str_pad((string) random_int(0, 9999999), 7, '0', STR_PAD_LEFT),
+            'name' => 'مشتری '.Str::random(4),
+            'target_price' => 80000,
+            'active' => true,
+            'product_id' => $productId,
+        ], $attributes));
+    }
+
+    #[Test]
+    #[TestDox('صفحهٔ سیگنال‌های تقاضا شمارش هر محصول و آخرین سیگنال‌ها را با موبایل ماسک‌شده نشان می‌دهد')]
+    public function demand_signals_page_shows_counts_and_products(): void
+    {
+        $seller = $this->newSeller();
+
+        // محصول A: دو «منتظر موجودی» (یکی جدید) + یک «منتظر کاهش قیمت» با هدف ۸۰٬۰۰۰
+        $productA = $this->newProduct(['seller_id' => $seller->id]);
+        $this->newStockNotify($productA->id, ['mobile' => '09135550001', 'seen' => false]);
+        $this->newStockNotify($productA->id, ['seen' => true]);
+        $this->newPriceAlert($productA->id);
+
+        // محصول B: فقط یک اشتراک کاهش قیمت (برای تفکیک شمارش هر محصول)
+        $productB = $this->newProduct(['seller_id' => $seller->id]);
+        $this->newPriceAlert($productB->id);
+
+        // سیگنال‌های فروشندهٔ دیگر — نباید هیچ ردی دیده شود
+        $otherProduct = $this->newProduct(['seller_id' => $this->newSeller()->id]);
+        $this->newStockNotify($otherProduct->id, ['mobile' => '09359990007']);
+        $this->newPriceAlert($otherProduct->id);
+
+        $this->actingAs($seller, 'seller');
+        $response = $this->get(route('seller.demand.signals'));
+
+        $response->assertOk();
+        $response->assertSee('سیگنال‌های تقاضا', false);
+
+        // کارت‌ها: ۲ منتظر موجودی + ۲ منتظر کاهش قیمت + ۲ محصول دارای تقاضا
+        // (سیگنال‌های فروشندهٔ دیگر در هیچ عددی نمی‌آیند)
+        $response->assertSee('مشتریان منتظر موجودی', false);
+        $response->assertSee('منتظر کاهش قیمت', false);
+        $response->assertSee('تقاضا به‌ازای هر محصول', false);
+
+        // جدول محصولات — هر دو محصول فروشنده با شمارش ردیف‌به‌ردیف
+        $response->assertSee($productA->title, false);
+        $response->assertSee($productB->title, false);
+
+        // خوراک آخرین سیگنال‌ها: موبایل ماسک می‌شود و قیمت هدف دیده می‌شود
+        $response->assertSee('0913***001', false);
+        $response->assertDontSee('09135550001', false);
+        $response->assertSee('هدف: 80,000 تومان', false);
+        $response->assertSee('جدید', false);
+
+        // انزوا: سیگنال‌های فروشندهٔ دیگر (محصول و موبایل) نشت نمی‌کند
+        $response->assertDontSee($otherProduct->title, false);
+        $response->assertDontSee('09359990007', false);
+
+        // آیتم منوی سایدبار (سوییچ روشن)
+        $this->get(route('seller.dashboard'))->assertSee(route('seller.demand.signals'), false);
+    }
+
+    #[Test]
+    #[TestDox('سوییچ خاموش سیگنال‌های تقاضا: صفحه به داشبورد برمی‌گردد و منو مخفی می‌شود')]
+    public function demand_signals_respects_toggle(): void
+    {
+        $seller = $this->newSeller();
+
+        $product = $this->newProduct(['seller_id' => $seller->id]);
+        $this->newStockNotify($product->id);
+
+        $this->actingAs($seller, 'seller');
+
+        option_update('seller_demand_signals', '0');
+        Cache::flush();
+
+        $response = $this->get(route('seller.demand.signals'));
+        $response->assertRedirect(route('seller.dashboard'));
+
+        // آیتم منو با سوییچ خاموش حذف شود — سنجش URL (پیام toast حاوی نام قابلیت است)
+        $this->get(route('seller.dashboard'))->assertDontSee(route('seller.demand.signals'), false);
     }
 }
