@@ -29,3 +29,4 @@ yarn-error.log
 
 # فاز ۹۷ — مارکرهای گیت self-heal پکیج‌ها
 storage/framework/selfheal-*.flag
+composer.phar
