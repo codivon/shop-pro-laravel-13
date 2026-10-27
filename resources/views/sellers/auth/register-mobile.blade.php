@@ -37,6 +37,7 @@
             fd.append('verify_code', this.code.join(''));
             try {
                 let data = await spPost('{{ route('seller.registration_phone_verify') }}', fd);
+                if (data.status === 'exists') { window.location.href = data.login_url || '{{ route('seller.login') }}'; return; }
                 if (data.redirect) { window.location.href = data.redirect; }
                 else { spToast(data.message || 'کد وارد شده اشتباه است', 'error'); this.busy = false; }
             } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); this.busy = false; }

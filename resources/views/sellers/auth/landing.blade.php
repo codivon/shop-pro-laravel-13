@@ -13,26 +13,8 @@
 @endphp
 <div class="space-y-14 pb-6">
 
-    {{-- Toast اسکریپت مشترک --}}
+    {{-- Toast اسکریپت مشترک — فاز ۱۱۱: میزبان/شنوندهٔ toast به لایوت مهمان منتقل شد --}}
     @include('sellers.auth.partials.sp-fetch')
-    <div x-data
-         x-on:sp-auth-toast.document="spToastShow($event.detail.message, $event.detail.type)"
-         class="hidden"></div>
-    <script>
-        function spToastShow(message, type) {
-            var host = document.getElementById('sp-auth-toasts');
-            if (! host) { return; }
-            var el = document.createElement('div');
-            el.className = 'pointer-events-auto flex items-start gap-2.5 rounded-2xl border p-3.5 shadow-lg backdrop-blur-md text-[13px] font-bold w-full max-w-md '
-                + (type === 'success'
-                    ? 'border-emerald-200 bg-emerald-50/95 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-950/90 dark:text-emerald-200'
-                    : 'border-red-200 bg-red-50/95 text-red-800 dark:border-red-500/30 dark:bg-red-950/90 dark:text-red-200');
-            el.textContent = message;
-            host.appendChild(el);
-            setTimeout(function () { el.remove(); }, 6000);
-        }
-    </script>
-    <div id="sp-auth-toasts" class="pointer-events-none fixed inset-x-0 top-4 z-[100] flex flex-col items-center gap-2 px-4"></div>
 
     {{-- ===== ناوبری چسبان ===== --}}
     <nav class="ap-card sticky top-2 z-40 flex items-center justify-between gap-3 px-4 py-2.5" aria-label="ناوبری لندینگ فروشندگان">
@@ -63,7 +45,8 @@
                 <h1 class="text-2xl font-black leading-[1.7] text-ink dark:text-night-ink sm:text-3xl">{{ $hero['title'] }}</h1>
                 <p class="mt-2 text-[13px] font-semibold leading-7 text-ink-3 dark:text-night-ink-2">{{ $hero['subtitle'] }}</p>
 
-                {{-- فرم ثبت‌نام سریع — فاز ۱۱۰: فقط شمارهٔ موبایل؛ کد ۶ رقمی مستقیم ارسال می‌شود --}}
+                {{-- فرم ثبت‌نام سریع — فاز ۱۱۰: فقط شمارهٔ موبایل؛ کد ۶ رقمی مستقیم ارسال می‌شود
+                     فاز ۱۱۱: پاسخ status=exists مودال «فروشنده از قبل هست» (ورود/تغییر شماره) را باز می‌کند --}}
                 <div class="mt-7 max-w-md" x-data="{
                         busy: false,
                         mobile: '',
@@ -78,6 +61,11 @@
                             fd.append('mobile', m);
                             try {
                                 let data = await spPost('{{ route('seller.registration_phone_send') }}', fd);
+                                if (data.status === 'exists') {
+                                    document.dispatchEvent(new CustomEvent('sp-registration-exists', { detail: { login_url: data.login_url || '{{ route('seller.login') }}' } }));
+                                    this.busy = false;
+                                    return;
+                                }
                                 if (data.redirect) { window.location.href = data.redirect; }
                                 else { spToast(data.message || 'ارسال کد ناموفق بود', 'error'); this.busy = false; }
                             } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); this.busy = false; }
@@ -335,3 +323,6 @@
         <a href="{{ route('front.index') }}" class="transition-colors hover:text-brand-600 dark:hover:text-brand-400">بازگشت به فروشگاه</a>
     </p>
 </div>
+
+{{-- فاز ۱۱۱ — مودال «فروشنده با این شماره از قبل ثبت‌نام کرده است» (ورود / تغییر شماره) --}}
+@include('sellers.auth.partials.exists-modal')

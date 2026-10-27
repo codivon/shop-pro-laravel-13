@@ -58,23 +58,73 @@ class SellerRegistrationController extends Controller
 
         $mobile = (string) $request->input('mobile');
 
-        if (Seller::where('mobile', $mobile)->exists()) {
+        // فاز ۱۱۱ — بررسی شمارهٔ تکراری با تفکیک وضعیت:
+        //  ۱) ثبت‌نام تکمیل + فروشندهٔ تعلیق‌شده ⇒ پیام تعلیق (بدون اجازهٔ ادامه)
+        //  ۲) ثبت‌نام تکمیل + فروشندهٔ فعال ⇒ status=exists؛ فرانت مودال دو‌دکمه‌ای
+        //     «رفتن به صفحهٔ ورود / تغییر شماره» را باز می‌کند
+        //  ۳) ثبت‌نام نیمه‌کاره (حساب ساخته شده ولی مدارک/پایان باقی است) ⇒ همیشه کد
+        //     تأیید تازه لازم است؛ پس از تأیید، دقیقاً به همان مرحله برمی‌گردد
+        //  ۴) بدون حساب ولی با پیش‌نویس پیش‌رفته ⇒ ادامهٔ مستقیم از همان مرحله
+        //     (همان رفتار صفحهٔ ثبت‌نام؛ پیامک بیهوده نمی‌شود)
+        $seller = Seller::where('mobile', $mobile)->first();
+
+        if ($seller && $seller->status_register === 'complete') {
+            if ($seller->status !== 'ACTIVE') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'حساب فروشنده با این شماره موبایل تعلیق شده است؛ برای پیگیری با پشتیبانی تماس بگیرید.',
+                ]);
+            }
+
             return response()->json([
-                'status' => 'error',
-                'message' => 'این شمارهٔ موبایل قبلاً ثبت شده است؛ وارد شوید یا با شمارهٔ دیگری ثبت‌نام کنید.',
+                'status' => 'exists',
+                'message' => 'فروشنده با این شماره از قبل ثبت‌نام کرده است.',
+                'login_url' => route('seller.login'),
             ]);
         }
 
-        $code = random_int(100000, 999999);
-
-        $newSeller = NewSeller::firstOrNew(['mobile' => $mobile]);
-        $newSeller->code_mobile_verification = $code;
-        $newSeller->save();
-
-        Notification::send($newSeller, new SellerPhoneOtp($code));
-
         $draft = SellerRegistration::firstOrNew(['mobile' => $mobile]);
         $draft->token = $draft->token ?: SellerRegistration::newToken();
+
+        // ۳) حساب نیمه‌کاره — تأیید موبایل اجباری، بعد ادامه از مرحلهٔ دقیق
+        if ($seller) {
+            $draft->step = 'otp';
+            $draft->save();
+
+            $this->issueOtp($mobile);
+
+            session([
+                SellerRegistrationFlow::SESSION_VERIFICATION => $mobile,
+                SellerRegistrationFlow::SESSION_DRAFT => $draft->id,
+            ]);
+            $this->queueDraftCookie($draft);
+
+            return response()->json([
+                'status' => 'success',
+                'redirect' => route('seller.registration_mobile'),
+            ]);
+        }
+
+        // ۴) پیش‌نویس پیش‌رفتهٔ بدون حساب — تأیید موبایل تازه لازم است (فرانت آن را
+        //     درخواست کرده) ولی مرحلهٔ پیش‌نویس دست‌نخورده می‌ماند تا دقیقاً از همان‌جا ادامه شود
+        if ($draft->exists && $draft->step !== 'otp') {
+            $this->issueOtp($mobile);
+
+            session([
+                SellerRegistrationFlow::SESSION_VERIFICATION => $mobile,
+                SellerRegistrationFlow::SESSION_DRAFT => $draft->id,
+            ]);
+            $this->queueDraftCookie($draft);
+
+            return response()->json([
+                'status' => 'success',
+                'redirect' => route('seller.registration_mobile'),
+            ]);
+        }
+
+        // جریان تازه — ارسال کد و رفتن به صفحهٔ کد تأیید
+        $this->issueOtp($mobile);
+
         $draft->step = 'otp';
         $draft->save();
 
@@ -88,6 +138,18 @@ class SellerRegistrationController extends Controller
             'status' => 'success',
             'redirect' => route('seller.registration_mobile'),
         ]);
+    }
+
+    /** ساخت ردیف new_sellers برای موبایل و ارسال کد ۶ رقمی (فاز ۱۱۱ — مشترک بین مسیرها) */
+    private function issueOtp(string $mobile): void
+    {
+        $code = random_int(100000, 999999);
+
+        $newSeller = NewSeller::firstOrNew(['mobile' => $mobile]);
+        $newSeller->code_mobile_verification = $code;
+        $newSeller->save();
+
+        Notification::send($newSeller, new SellerPhoneOtp($code));
     }
 
     /* ================= گام ۲ — تأیید کد ۶ رقمی ================= */
@@ -125,16 +187,41 @@ class SellerRegistrationController extends Controller
 
         $draft = SellerRegistration::firstOrNew(['mobile' => $mobile]);
         $draft->token = $draft->token ?: SellerRegistration::newToken();
-        $draft->step = 'type';
+
+        // فاز ۱۱۱ — رزومهٔ دقیق: اگر حساب فروشنده از قبل ساخته شده (ثبت‌نام نیمه‌کاره)،
+        // مرحلهٔ پیش‌نویس باید با وضعیت واقعی حساب هم‌تراز شود تا کاربر دقیقاً به
+        // همان مرحله برود؛ برای پیش‌نویس‌های تازه، از گام وضعیت (حقیقی/حقوقی) ادامه می‌دهیم.
+        // پیش‌نویسی که خودش جلوتر رفته (identity/business) دست‌نخورده می‌ماند.
+        $seller = Seller::where('mobile', $mobile)->first();
+
+        if ($seller) {
+            if ($seller->status_register === 'complete') {
+                // تکمیل‌شده بین ارسال و تأیید کد (یا نشست قدیمی) — ورود، نه ادامهٔ ثبت‌نام
+                session()->forget(SellerRegistrationFlow::SESSION_VERIFICATION);
+
+                return response()->json([
+                    'status' => 'exists',
+                    'message' => 'فروشنده با این شماره از قبل ثبت‌نام کرده است.',
+                    'login_url' => route('seller.login'),
+                ]);
+            }
+
+            $draft->step = $seller->status_register === 'documents' ? 'checkout' : 'documents';
+        } elseif (! $draft->reached('type')) {
+            $draft->step = 'type';
+        }
+
         $draft->save();
 
         session([SellerRegistrationFlow::SESSION_DRAFT => $draft->id]);
         session()->forget(SellerRegistrationFlow::SESSION_VERIFICATION);
         $this->queueDraftCookie($draft);
 
+        // فاز ۱۱۱ — مقصد دقیقاً مرحلهٔ فعلی پیش‌نویس است (برای فروشندهٔ نیمه‌کارهٔ
+        // با حساب ساخته‌شده، همین‌جا به مدارک/تسویه هدایت می‌شود)
         return response()->json([
             'status' => 'success',
-            'redirect' => route('seller.registration_type'),
+            'redirect' => SellerRegistrationFlow::resumeUrl($draft),
         ]);
     }
 

@@ -23,7 +23,9 @@
         return data;
     };
 
+    {{-- فاز ۱۱۱ — رویداد روی document dispatch می‌شود (شنوندهٔ ‎.document آلپاین
+         رویدادهای dispatch‌شده روی window را نمی‌شنود — علت واقعی دیده‌نشدن پیام‌ها) --}}
     window.spToast = function (message, type) {
-        window.dispatchEvent(new CustomEvent('sp-auth-toast', { detail: { message: message, type: type || 'error' } }));
+        document.dispatchEvent(new CustomEvent('sp-auth-toast', { detail: { message: message, type: type || 'error' } }));
     };
 </script>

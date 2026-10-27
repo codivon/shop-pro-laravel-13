@@ -32,8 +32,13 @@ class RegisterMobile extends Component
 
         $draft = SellerRegistrationFlow::currentDraft();
 
+        // فاز ۱۱۱ — اگر کاربر همین الان کد خواسته (شماره را وارد کرده)، صفحهٔ کد باید
+        // بماند حتی اگر پیش‌نویس جلوتر رفته باشد؛ پرش خودکار فقط برای رفرش/بازگشت
+        // بدون درخواست کد تازه است (مثل بوکمارک قدیمی صفحهٔ کد).
+        $justRequested = (bool) session(SellerRegistrationFlow::SESSION_VERIFICATION);
+
         // ادامهٔ نیمه‌کارهٔ جلوتر از تأیید کد؟ → همان مرحله
-        if ($draft && $draft->reached('type')) {
+        if ($draft && $draft->reached('type') && ! $justRequested) {
             $this->redirect(SellerRegistrationFlow::resumeUrl($draft), navigate: true);
 
             return;

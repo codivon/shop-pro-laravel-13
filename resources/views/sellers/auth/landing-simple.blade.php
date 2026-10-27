@@ -2,26 +2,8 @@
      داده‌ها: sellers_heroes / sellers_commissions / sellers_questions (همان منابع قدیمی) --}}
 <div class="space-y-6" x-data>
 
-    {{-- Toast اسکریپت مشترک --}}
+    {{-- Toast اسکریپت مشترک — فاز ۱۱۱: میزبان/شنوندهٔ toast به لایوت مهمان منتقل شد --}}
     @include('sellers.auth.partials.sp-fetch')
-    <div x-data
-         x-on:sp-auth-toast.document="spToastShow($event.detail.message, $event.detail.type)"
-         class="hidden"></div>
-    <script>
-        function spToastShow(message, type) {
-            var host = document.getElementById('sp-auth-toasts');
-            if (! host) { return; }
-            var el = document.createElement('div');
-            el.className = 'pointer-events-auto flex items-start gap-2.5 rounded-2xl border p-3.5 shadow-lg backdrop-blur-md text-[13px] font-bold w-full max-w-md '
-                + (type === 'success'
-                    ? 'border-emerald-200 bg-emerald-50/95 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-950/90 dark:text-emerald-200'
-                    : 'border-red-200 bg-red-50/95 text-red-800 dark:border-red-500/30 dark:bg-red-950/90 dark:text-red-200');
-            el.textContent = message;
-            host.appendChild(el);
-            setTimeout(function () { el.remove(); }, 6000);
-        }
-    </script>
-    <div id="sp-auth-toasts" class="pointer-events-none fixed inset-x-0 top-4 z-[100] flex flex-col items-center gap-2 px-4"></div>
 
     {{-- هیرو --}}
     <section class="ap-card overflow-hidden p-6 text-center sm:p-10">

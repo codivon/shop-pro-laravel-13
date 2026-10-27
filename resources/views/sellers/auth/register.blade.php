@@ -1,5 +1,7 @@
 {{-- گام ۱ ثبت‌نام — فاز ۱۱۰: فقط شمارهٔ موبایل (ایمیل/رمز در گام کسب‌وکار جمع می‌شود)
-     ارسال با fetch به seller.registration_phone_send؛ کد ۶ رقمی پیامک می‌شود --}}
+     ارسال با fetch به seller.registration_phone_send؛ کد ۶ رقمی پیامک می‌شود.
+     فاز ۱۱۱: پیام‌های خطای سرور با spToast (میزبان در لایوت مهمان) نمایش داده می‌شود و
+     پاسخ status=exists (فروشندهٔ فعالِ تکمیل‌شده) مودال دو‌دکمه‌ای ورود/تغییر شماره را باز می‌کند --}}
 <div class="space-y-5" x-data="{
         busy: false,
         mobile: '{{ request()->query('mobile', '') }}',
@@ -9,6 +11,11 @@
             fd.append('mobile', this.mobile);
             try {
                 let data = await spPost('{{ route('seller.registration_phone_send') }}', fd);
+                if (data.status === 'exists') {
+                    document.dispatchEvent(new CustomEvent('sp-registration-exists', { detail: { login_url: data.login_url || '{{ route('seller.login') }}' } }));
+                    this.busy = false;
+                    return;
+                }
                 if (data.redirect) { window.location.href = data.redirect; }
                 else { spToast(data.message || 'ارسال کد ناموفق بود', 'error'); this.busy = false; }
             } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); this.busy = false; }
@@ -58,3 +65,6 @@
         </p>
     </div>
 </div>
+
+{{-- فاز ۱۱۱ — مودال «فروشنده با این شماره از قبل ثبت‌نام کرده است» (ورود / تغییر شماره) --}}
+@include('sellers.auth.partials.exists-modal')

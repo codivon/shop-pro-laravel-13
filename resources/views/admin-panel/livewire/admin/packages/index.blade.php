@@ -74,16 +74,66 @@
         </div>
     @endif
 
-    {{-- ============ بنر اشتراک (پورت pkg-sub-banner) ============
-         فاز ۵۸ — رفع باگ «اشتراکم فعال است ولی می‌گوید اشتراک فعالی ندارید»:
-         شرط قبلی $type === 'package' بود؛ یعنی در تب پیش‌فرض «همه» حتی با اشتراک فعال
-         همیشه بنر خاکستری نشان داده می‌شد. حالا بنر در هر تبی که پکیج‌ها را نشان می‌دهد
-         (همه + پکیج‌ها) بر اساس وضعیت واقعی اشتراک رندر می‌شود و در تب قالب‌ها حذف است
-         (اشتراک فقط پکیج‌ها را پوشش می‌دهد — گلاساری API).
-         فاز ۱۰۷ — درخواست کاربر: در تب «همه» این بنر تنها محل نمایش وضعیت اشتراک است؛
-         پیام «اشتراک ندارید / منقضی شده» دیگر داخل بخش پکیج‌ها یا قالب‌ها تکرار نمی‌شود
-         و دکمه‌های خرید/تمدید به update.opashop.ir/subscriptions لینک می‌شوند. --}}
-    @if ($this->showsPackages() && !empty($subscriptionSummary) && ($subscriptionSummary['has_active_subscription'] ?? false))
+    {{-- ============ فاز ۱۰۹ — گیت اشتراک بازار (درخواست کاربر) ============
+         بدون اشتراک فعال (تاحولا نخریده یا منقضی‌شده) به‌جای جستجو/سربرگ بخش‌ها/شبکه‌ها
+         فقط یک کارت سفید وضعیت اشتراک نمایش داده می‌شود — در هر سه تب (همه/قالب‌ها/پکیج‌ها).
+         کلمهٔ «سایت» به صفحهٔ خرید/تمدید اشتراک (update.opashop.ir/subscriptions) لینک است. --}}
+    @if ($this->subscriptionGate !== null)
+        @php
+            $gateProjectKey = (string) config('packages.api.project_key');
+            $gateSubscriptionsUrl = (string) config('packages.api.subscriptions_url');
+        @endphp
+        <div class="ap-card relative flex flex-col items-center gap-4 overflow-hidden px-5 py-10 text-center sm:px-8 sm:py-12" wire:key="market-subscription-gate">
+            <div class="pointer-events-none absolute -top-16 start-1/2 size-48 -translate-x-1/2 rounded-full blur-3xl {{ $this->subscriptionGate === 'expired' ? 'bg-amber-400/20' : 'bg-brand-400/20' }}" aria-hidden="true"></div>
+
+            <span class="relative flex size-16 items-center justify-center rounded-3xl {{ $this->subscriptionGate === 'expired' ? 'bg-amber-50 text-amber-500 dark:bg-amber-500/12 dark:text-amber-400' : 'bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400' }}">
+                <x-admin-panel::icon name="{{ $this->subscriptionGate === 'expired' ? 'clock' : 'award' }}" class="size-8" />
+            </span>
+
+            <div class="relative space-y-1.5">
+                <h2 class="text-base font-extrabold sm:text-lg">
+                    {{ $this->subscriptionGate === 'expired' ? 'اشتراک شما به پایان رسیده' : 'اشتراک ندارید' }}
+                </h2>
+                <p class="mx-auto max-w-md text-[13px] leading-6 text-ink-2 dark:text-night-ink-2">
+                    @if ($this->subscriptionGate === 'expired')
+                        برای ادامهٔ استفاده از پکیج‌ها و قالب‌ها، با
+                        <strong class="font-bold text-ink dark:text-night-ink">کد آپدیت</strong> زیر از
+                    @else
+                        برای استفاده از پکیج‌ها و قالب‌ها، با
+                        <strong class="font-bold text-ink dark:text-night-ink">کد پروژه</strong> زیر در
+                    @endif
+                    <a href="{{ $gateSubscriptionsUrl }}" target="_blank" rel="noopener"
+                       class="font-bold text-brand-600 underline decoration-brand-300 underline-offset-4 transition-colors hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300">سایت</a>
+                    اشتراک تهیه کنید.
+                </p>
+            </div>
+
+            {{-- کد پروژه/آپدیت + کپی --}}
+            <div class="relative flex flex-wrap items-center justify-center gap-2">
+                <span class="flex items-center gap-2 rounded-xl border border-dashed border-line bg-surface-2 px-3.5 py-2 dark:border-night-line dark:bg-night-3">
+                    <span class="text-[11px] font-semibold text-ink-3 dark:text-night-ink-2">{{ $this->subscriptionGate === 'expired' ? 'کد آپدیت:' : 'کد پروژه:' }}</span>
+                    <code class="ltr max-w-[16rem] truncate font-mono text-sm font-extrabold text-brand-600 dark:text-brand-400">{{ $gateProjectKey }}</code>
+                </span>
+                <button type="button"
+                        x-data="{ copied: false }"
+                        x-on:click="navigator.clipboard && navigator.clipboard.writeText(@js($gateProjectKey)); copied = true; setTimeout(() => copied = false, 1800)"
+                        class="flex items-center gap-1 rounded-xl px-2.5 py-2 text-[11px] font-bold transition-colors"
+                        :class="copied ? 'text-emerald-600' : 'text-ink-3 hover:text-brand-600 dark:text-night-ink-2 dark:hover:text-brand-400'">
+                    <x-admin-panel::icon name="copy" class="size-3.5" x-show="! copied" />
+                    <x-admin-panel::icon name="check" class="size-3.5 text-emerald-500" x-show="copied" x-cloak />
+                    <span x-text="copied ? 'کپی شد' : 'کپی کد'"></span>
+                </button>
+            </div>
+
+            <a href="{{ $gateSubscriptionsUrl }}" target="_blank" rel="noopener" class="ap-btn-primary relative !px-6 !py-2.5">
+                <x-admin-panel::icon name="shopping-cart" class="size-4" />
+                خرید یا تمدید اشتراک
+            </a>
+        </div>
+    @else
+        {{-- ============ بنر اشتراک فعال (پورت pkg-sub-banner — فقط حالت فعال؛
+             حالت‌های «ندارید/منقضی» به کارت گیت اشتراک بالای صفحه منتقل شدند) ============ --}}
+        @if ($this->showsPackages() && !empty($subscriptionSummary) && ($subscriptionSummary['has_active_subscription'] ?? false))
         <div class="relative flex flex-wrap items-center gap-4 overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-l from-emerald-50 to-teal-50 p-4 dark:border-emerald-500/25 dark:from-emerald-500/10 dark:to-teal-500/10 sm:p-5">
             <div class="pointer-events-none absolute -end-10 -top-10 size-32 rounded-full bg-emerald-400/20 blur-2xl" aria-hidden="true"></div>
             <span class="relative flex size-11 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/30">
@@ -107,61 +157,7 @@
                 @endif
             </div>
         </div>
-    @elseif ($this->showsPackages() && !empty($subscriptionSummary) && ($subscriptionSummary['is_expired'] ?? false))
-        {{-- فاز ۱۰۰ — اشتراک قبلاً وجود داشته ولی منقضی شده (تفکیک از «اصلاً اشتراک ندارید») --}}
-        <div class="relative flex flex-wrap items-center gap-4 overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-l from-amber-50 to-orange-50 p-4 dark:border-amber-500/25 dark:from-amber-500/10 dark:to-orange-500/10 sm:p-5">
-            <div class="pointer-events-none absolute -end-10 -top-10 size-32 rounded-full bg-amber-400/20 blur-2xl" aria-hidden="true"></div>
-            <span class="relative flex size-11 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-lg shadow-amber-500/30">
-                <x-admin-panel::icon name="clock" class="size-5.5" />
-            </span>
-            <div class="relative min-w-0 flex-1">
-                <p class="flex items-center gap-1.5 text-sm font-bold text-amber-700 dark:text-amber-400">
-                    <x-admin-panel::icon name="alert-triangle" class="size-4" />
-                    اشتراک شما منقضی شده است
-                </p>
-                <p class="mt-0.5 text-xs text-ink-2 dark:text-night-ink-2">به دلیل انقضای اشتراک، پکیج‌های مشمول اشتراک نمایش داده نمی‌شوند؛ برای دسترسی مجدد اشتراک را تمدید کنید</p>
-            </div>
-            {{-- فاز ۱۰۷ — لینک به صفحهٔ خرید/تمدید اشتراک روی سرور مارکت (update.opashop.ir/subscriptions) --}}
-            <a href="{{ config('packages.api.subscriptions_url') }}" target="_blank" rel="noopener" class="ap-btn-primary relative !py-2">
-                <x-admin-panel::icon name="refresh-cw" class="size-4" />
-                تمدید اشتراک
-            </a>
-        </div>
-    @elseif ($this->showsPackages())
-        <div class="relative flex flex-wrap items-center gap-4 overflow-hidden rounded-2xl border border-line bg-surface p-4 dark:border-night-line dark:bg-night-2 sm:p-5">
-            <div class="pointer-events-none absolute -end-10 -top-10 size-32 rounded-full bg-brand-400/15 blur-2xl" aria-hidden="true"></div>
-            <span class="relative flex size-11 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-lg shadow-brand-500/30">
-                <x-admin-panel::icon name="shopping-cart" class="size-5.5" />
-            </span>
-            <div class="relative min-w-0 flex-1">
-                <p class="flex items-center gap-1.5 text-sm font-bold">
-                    <x-admin-panel::icon name="award" class="size-4 text-brand-600 dark:text-brand-400" />
-                    اشتراک فعالی ندارید
-                </p>
-                <p class="mt-0.5 text-xs text-ink-2 dark:text-night-ink-2">برای دسترسی رایگان به پکیج‌های ویژه، اشتراک را از سایت مرکزی خریداری کنید</p>
-                <div class="mt-2 flex flex-wrap items-center gap-2">
-                    <span class="rounded-lg border border-dashed border-line bg-surface-2 px-2.5 py-1 text-[11px] text-ink-3 dark:border-night-line dark:bg-night-3 dark:text-night-ink-2">
-                        کد پروژه شما:
-                        <code class="ltr ms-1 font-mono font-bold text-brand-600 dark:text-brand-400">{{ config('packages.api.project_key') }}</code>
-                    </span>
-                    <button type="button"
-                            x-data="{ copied: false }"
-                            x-on:click="navigator.clipboard && navigator.clipboard.writeText(@js(config('packages.api.project_key'))); copied = true; setTimeout(() => copied = false, 1800)"
-                            class="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-bold transition-colors"
-                            :class="copied ? 'text-emerald-600' : 'text-ink-3 hover:text-brand-600 dark:text-night-ink-2 dark:hover:text-brand-400'">
-                        <x-admin-panel::icon name="copy" class="size-3.5" x-show="! copied" />
-                        <x-admin-panel::icon name="check" class="size-3.5 text-emerald-500" x-show="copied" x-cloak />
-                        <span x-text="copied ? 'کپی شد' : 'کپی کد'"></span>
-                    </button>
-                </div>
-            </div>
-            {{-- فاز ۱۰۷ — لینک به صفحهٔ خرید/تمدید اشتراک روی سرور مارکت (update.opashop.ir/subscriptions) --}}
-            <a href="{{ config('packages.api.subscriptions_url') }}" target="_blank" rel="noopener" class="ap-btn-primary relative !py-2">
-                <x-admin-panel::icon name="external-link" class="size-4" />
-                خرید اشتراک
-            </a>
-        </div>
-    @endif
+        @endif
 
     {{-- ============ فاز ۴۵ — جستجوی واحد تب «همه» (قالب + پکیج هم‌زمان) ============ --}}
     @if ($this->showsAll())
@@ -881,6 +877,7 @@
         @endif
     @endif
     @endif
+    @endif {{-- پایان گیت اشتراک (فاز ۱۰۹) --}}
     {{-- ============ مودال تأیید نصب (پورت install-confirm-modal — انتخاب پلن/لایسنس/اشتراک) ============ --}}
     <div x-show="modalOpen" x-cloak
          class="fixed inset-0 z-[90] flex items-center justify-center p-4"

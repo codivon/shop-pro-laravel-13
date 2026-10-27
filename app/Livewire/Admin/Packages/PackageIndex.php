@@ -155,6 +155,13 @@ class PackageIndex extends Component
 
     public ?array $subscriptionSummary = null;
 
+    /**
+     * فاز ۱۰۹ — آیا پاسخ سالمِ وضعیت اشتراک از سرور بازار خوانده شده؟
+     * تفکیک «API جواب نداده» (بازار عادی + پیام خطا) از «API جواب داد و
+     * اشتراکی وجود ندارد» (گیت اشتراک) — خلاصهٔ null در هر دو حالت است.
+     */
+    public bool $subscriptionLoaded = false;
+
     public ?string $apiError = null;
 
     /** نتیجه‌ی callback پرداخت (session payment_result قدیمی → مودال) */
@@ -339,6 +346,8 @@ class PackageIndex extends Component
 
         if ($this->type === 'template') {
             $this->loadTemplates();
+            // فاز ۱۰۹ — گیت اشتراک در تب قالب‌ها هم باید بداند وضعیت اشتراک چیست
+            $this->ensureSubscriptionSummary();
 
             return;
         }
@@ -352,6 +361,79 @@ class PackageIndex extends Component
         // تب «همه» — هر دو بخش (کش/فیوز مشترک است)
         $this->loadTemplates();
         $this->loadPackages();
+    }
+
+    /* ---------------- فاز ۱۰۹ — گیت اشتراک بازار ---------------- */
+
+    /**
+     * خلاصهٔ اشتراک باید در همهٔ تب‌ها (همه/قالب‌ها/پکیج‌ها) در دسترس باشد؛
+     * در تب «قالب‌ها» متد loadPackages صدا زده نمی‌شود، پس خلاصه را با
+     * سبک‌ترین مسیر ممکن (همان listPackages با کش مشترک) می‌خوانیم.
+     * خطای ارتباط ⇒ apiError ثبت می‌شود تا گیت اشتباهی «اشتراک ندارید» نبندد.
+     */
+    public function ensureSubscriptionSummary(): void
+    {
+        if (! MarketplaceSettings::marketEnabled()) {
+            return;
+        }
+
+        // قبلاً خوانده شده (فعال/منقضی) — دوباره زنگ نمی‌زنیم
+        if ($this->subscriptionLoaded) {
+            return;
+        }
+
+        if ($fuseMessage = $this->apiFuseError()) {
+            $this->apiError = $fuseMessage;
+
+            return;
+        }
+
+        try {
+            $query = array_filter([
+                'page' => 1,
+                'per_page' => MarketplaceSettings::itemsPerPage(),
+            ], fn ($v) => $v !== '' && $v !== null);
+
+            $data = Cache::remember('packages.list.'.md5(json_encode($query)), now()->addMinutes(config('packages.cache.list_ttl')), function () use ($query) {
+                return $this->api()->listPackages($query);
+            });
+
+            $this->subscriptionSummary = $this->normalizeSubscriptionSummary($data['subscription_summary'] ?? null);
+            $this->subscriptionLoaded = true;
+        } catch (RuntimeException $e) {
+            $this->tripApiFuse($e->getMessage());
+            $this->apiError = $e->getMessage();
+        }
+    }
+
+    /**
+     * فاز ۱۰۹ — گیت اشتراک بازار (درخواست کاربر):
+     *  null      = اشتراک فعال است (یا وضعیت نامشخص/خطای ارتباط) ⇒ بازار عادی
+     *  'none'    = تاحالا اشتراک خریداری نشده ⇒ فقط کارت «اشتراک ندارید»
+     *  'expired' = اشتراک قبلی به پایان رسیده ⇒ فقط کارت «اشتراک شما به پایان رسیده»
+     * در هر سه تب (همه/قالب‌ها/پکیج‌ها) همین گیت اعمال می‌شود.
+     */
+    public function getSubscriptionGateProperty(): ?string
+    {
+        if (! MarketplaceSettings::marketEnabled()) {
+            return null;
+        }
+
+        // خطای ارتباط با سرور بازار — گیت نمی‌بندد (نمایش «اشتراک ندارید» گمراه‌کننده است)
+        if ($this->apiError !== null || ! $this->subscriptionLoaded) {
+            return null;
+        }
+
+        // خلاصهٔ اشتراک خوانده شد ولی سرور هیچ اطلاعاتی نداد ⇒ تاحولا اشتراک نخریده
+        if (empty($this->subscriptionSummary)) {
+            return 'none';
+        }
+
+        if ($this->subscriptionSummary['has_active_subscription'] ?? false) {
+            return null;
+        }
+
+        return ($this->subscriptionSummary['is_expired'] ?? false) ? 'expired' : 'none';
     }
 
     /**
@@ -475,6 +557,7 @@ class PackageIndex extends Component
     public function loadPackages(): void
     {
         $this->apiError = null;
+        $this->subscriptionLoaded = false;
 
         // فیوز فعال؟ → بدون تماس با API، سریع خطای قبلی را نشان بده
         if ($fuseMessage = $this->apiFuseError()) {
@@ -482,6 +565,7 @@ class PackageIndex extends Component
             $this->paginationMeta = [];
             $this->installedMap = [];
             $this->subscriptionSummary = null;
+            $this->subscriptionLoaded = false;
             $this->apiError = $fuseMessage;
 
             return;
@@ -526,6 +610,7 @@ class PackageIndex extends Component
             $this->packages = $packages;
             $this->paginationMeta = $pagination;
             $this->subscriptionSummary = $subscriptionSummary;
+            $this->subscriptionLoaded = true;
 
             // آمار کارت‌ها از همین صفحه (حالت بدون فیلتر قیمت)
             $freeCount = collect($packages)->filter(fn ($p) => self::isEffectivelyFree($p))->count();
@@ -540,6 +625,7 @@ class PackageIndex extends Component
             $this->paginationMeta = [];
             $this->installedMap = [];
             $this->subscriptionSummary = null;
+            $this->subscriptionLoaded = false;
             $this->apiError = $e->getMessage();
         }
     }
@@ -641,6 +727,7 @@ class PackageIndex extends Component
             ];
 
             $this->subscriptionSummary = $this->normalizeSubscriptionSummary($subscriptionSummary);
+            $this->subscriptionLoaded = true;
             $this->syncInstalledState();
         } catch (RuntimeException $e) {
             $this->tripApiFuse($e->getMessage());
@@ -648,6 +735,7 @@ class PackageIndex extends Component
             $this->paginationMeta = [];
             $this->installedMap = [];
             $this->subscriptionSummary = null;
+            $this->subscriptionLoaded = false;
             $this->priceCounts = ['free' => 0, 'paid' => 0, 'total' => 0];
             $this->apiError = $e->getMessage();
         }
