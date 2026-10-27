@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Admin;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Support\PulseSettings;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -32,6 +33,25 @@ class AuthServiceProvider extends ServiceProvider
             $model::saved(fn () => Cache::forget(self::PERMISSIONS_CACHE_KEY));
             $model::deleted(fn () => Cache::forget(self::PERMISSIONS_CACHE_KEY));
         }
+
+        /*
+         * فاز ۱۰۴ — دسترسی به داشبورد Laravel Pulse (/pulse).
+         *
+         * پیش‌فرض پکیج فقط در محیط local باز است (پکیج: fn () => app()->environment('local'))
+         * → روی هاست تولیدی حتی سازندهٔ سایت هم ۴۰۳ می‌گرفت. چون پرووایدرهای پکیج قبل از
+         * پرووایدرهای اپ بوت می‌شوند، این تعریفِ بعدی همان گیت را override می‌کند.
+         *
+         * قانون دسترسی: ادمینِ لاگین‌کردهٔ پنل (گارد adminPanel) + سوییچ تنظیماتی
+         * (پنل ← تنظیمات برنامه‌نویس ← تب عمومی). فروشنده/مشتری/مهمان = ۴۰۳.
+         * عمداً خارج از گارد application_installed/کنسول تعریف شده تا در تست هم فعال باشد.
+         */
+        Gate::define('viewPulse', function ($user = null) {
+            if (! PulseSettings::adminAccess()) {
+                return false;
+            }
+
+            return Auth::guard('adminPanel')->check();
+        });
 
         if (! $this->app->runningInConsole() && application_installed()) {
             foreach ($this->getPermissions() as $permission) {

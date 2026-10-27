@@ -36,6 +36,16 @@ class SEP extends Driver
     protected $settings;
 
     /**
+     * فاز ۱۰۴ — آدرس پایهٔ neo-pg از هدر X-IPG-Url پاسخ توکن (مستند «راهنمای اتصال به neo-pg» سپ).
+     *
+     * برای ترمینال‌هایی که neo-pg رویشان فعال است، سپ در هدر X-IPG-Url پاسخِ توکن، آدرس
+     * جدید پایه را برمی‌گرداند (نمونهٔ مستند: https://neo-pg.sep.ir/transaction/init) و
+     * توکن باید به «همین آدرس» پست شود — فیلدها همان قبلی است. برای ترمینال‌های عادی
+     * هدر وجود ندارد و آدرس کلاسیک apiPaymentUrl استفاده می‌شود.
+     */
+    protected ?string $neoPgBaseUrl = null;
+
+    /**
      * SEP constructor.
      * Construct the class with the relevant settings.
      */
@@ -63,6 +73,15 @@ class SEP extends Driver
         $terminalId = trim((string) ($this->settings->terminalId ?? ''));
         if ($terminalId === '') {
             throw new PurchaseFailedException('کد پایانه (Terminal ID) درگاه سپ در تنظیمات خالی است — آن را از پنل مدیریت ← تنظیمات ← درگاه‌های پرداخت وارد کنید.');
+        }
+
+        // فاز ۱۰۴ — گارد فرمت ترمینال: مستند رسمی سپ (جدول پارامترها) نوع TerminalId را
+        // «Int64» تعریف می‌کند؛ ترمینال سپ همیشه فقط رقم است (مثل ۱۷۴۶۲۷۵۵). مقدار غیرعددی
+        // (مثلاً UUID کپی‌شده از فیلد دیگری پنل سامان) در اعتبارسنجی سپ رد می‌شود و همان
+        // خطای مبهم کد ۵ «پارامترهای ارسالی نامعتبر است؛ شماره ترمینال الزامی است» را می‌دهد.
+        // این گارد قبل از رفت‌وبرگشت به شاپرک، علت را شفاف و قابل‌اقدام می‌کند.
+        if (! ctype_digit($terminalId)) {
+            throw new PurchaseFailedException('شماره پایانهٔ درگاه سپ باید فقط رقم باشد (مستند رسمی سپ: Int64) — مقدار واردشده در تنظیمات «'.substr($terminalId, 0, 12).'…» غیرعددی است. «شماره پایانه» عددی را از پنل پذیرندگی سامان بردارید و در تنظیمات ← درگاه‌های پرداخت ← سپ وارد کنید (شناسهٔ UUID درگاه، شمارهٔ پایانه نیست).');
         }
 
         // فاز ۱۰۱ — payload دقیقاً مطابق مستند رسمی سپ نسخهٔ ۳.۶:
@@ -101,6 +120,11 @@ class SEP extends Driver
                 'json' => $data,
             ]
         );
+
+        // فاز ۱۰۴ — هدر X-IPG-Url پاسخ توکن (مستند neo-pg): برای ترمینال‌های neo-pg فعال،
+        // آدرس پایهٔ جدید درگاه در همین هدر می‌آید و pay() باید توکن را به آن بفرستد.
+        $neoPgUrl = trim((string) $response->getHeaderLine('X-IPG-Url'));
+        $this->neoPgBaseUrl = $neoPgUrl !== '' ? $neoPgUrl : null;
 
         $responseStatus = $response->getStatusCode();
 
@@ -171,7 +195,10 @@ class SEP extends Driver
      */
     public function pay(): RedirectionForm
     {
-        $payUrl = $this->settings->apiPaymentUrl;
+        // فاز ۱۰۴ — ترمینال‌های neo-pg فعال: آدرس پایه از هدر X-IPG-Url پاسخ توکن
+        // (مستند neo-pg: «فیلدهای دریافتی و ارسالی ... هیچ گونه تغییری نداشته و تنها
+        // تغییر آدرس پایه می‌باشد») — برای ترمینال‌های عادی هدر خالی است و آدرس کلاسیک.
+        $payUrl = $this->neoPgBaseUrl ?: $this->settings->apiPaymentUrl;
 
         return $this->redirectWithForm(
             $payUrl,

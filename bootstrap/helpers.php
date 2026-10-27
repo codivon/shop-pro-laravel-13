@@ -936,6 +936,9 @@ function get_gateway_configs($gateway)
             // فاز ۱۰۱ — سوییچ ارسال شماره موبایل خریدار (CellNumber مستند سپ) — پیش‌فرض روشن؛
             // درایور سپ فقط وقتی شماره معتبر باشد پارامتر را می‌فرستد (الزام شخصی‌سازی: هر امکان از تنظیمات)
             $configs['sendCellNumber'] = $gateway->config('sendCellNumber') ?? '1';
+            // فاز ۱۰۴ — واحد مبلغ: سپ «ریال» می‌خواهد (مستند ۳.۶: Amount به ریال، عدد صحیح).
+            // سوییچ پنل: قیمت‌های فروشگاه تومانی (پیش‌فرض) → درایور ×۱۰ می‌کند؛ ریالی → بدون تبدیل
+            $configs['currency'] = ($gateway->config('amountIsToman') ?? '1') === '1' ? 'T' : 'R';
             break;
 
         case 'behpardakht':

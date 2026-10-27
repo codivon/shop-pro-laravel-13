@@ -7,6 +7,7 @@ use App\Models\BotTrap;
 use App\Services\SecuritySettings;
 use App\Support\MarketplaceSettings;
 use App\Support\MultiVendorSettings;
+use App\Support\PulseSettings;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
@@ -55,6 +56,9 @@ class Developer extends Component
     public string $updaterToken = '';
 
     public bool $appDebugMode = false;
+
+    /** فاز ۱۰۴ — داشبورد Pulse برای مدیران پنل (گیت viewPulse در AuthServiceProvider) */
+    public bool $pulseAdminAccess = true;
 
     public bool $debugbarEnabled = false;
 
@@ -186,6 +190,9 @@ class Developer extends Component
         $this->enableOldUpdates = option('enable_old_updates', 'true') == 'true';
         $this->enableHelpVideos = option('enable_help_videos', 'true') == 'true';
 
+        // فاز ۱۰۴ — دسترسی مدیران به Pulse
+        $this->pulseAdminAccess = PulseSettings::adminAccess();
+
         // آپدیت‌کننده (پورت showUpdater — بدون اتصال شبکه در mount)
         $this->versionInstalled = $this->getVersion();
         $this->versionAvailable = $this->versionInstalled;
@@ -276,6 +283,9 @@ class Developer extends Component
         // enable_old_updates در option
         $oldUpdates = $this->enableOldUpdates ? 'true' : 'false';
         option_update('enable_old_updates', $oldUpdates);
+
+        // فاز ۱۰۴ — سوییچ دسترسی مدیران به داشبورد Pulse (/pulse)
+        PulseSettings::setAdminAccess($this->pulseAdminAccess);
 
         Artisan::call('config:clear');
 

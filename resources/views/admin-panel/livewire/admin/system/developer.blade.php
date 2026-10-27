@@ -194,7 +194,7 @@
                         <input type="text" dir="ltr" wire:model="updaterToken" class="ap-input font-mono">
                     </div>
 
-                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                         <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
                             <span>
                                 <span class="block text-[13px] font-bold">حالت توسعه</span>
@@ -217,6 +217,14 @@
                                 <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">این متد اکسپایر شده</span>
                             </span>
                             <x-admin-panel::toggle wire:model="enableOldUpdates" size="sm" aria-label="متد قدیمی آپدیت" />
+                        </div>
+
+                        <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                            <span>
+                                <span class="block text-[13px] font-bold">داشبورد Pulse برای مدیران</span>
+                                <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">آدرس /pulse (پایش سرور و کوئری‌ها) برای ادمین‌های لاگین‌کردهٔ پنل باز شود</span>
+                            </span>
+                            <x-admin-panel::toggle wire:model="pulseAdminAccess" size="sm" aria-label="داشبورد Pulse برای مدیران" />
                         </div>
                     </div>
 
