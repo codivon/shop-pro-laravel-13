@@ -19,7 +19,7 @@
                 </div>
             </div>
             <form id="filter-products-form" method="GET"
-                  action="{{ route('admin.products.index') }}">
+                  action="{{ route('seller.products.index') }}">
             <div class="card">
                 <div class="card-content collapse show">
                     <div class="card-body">

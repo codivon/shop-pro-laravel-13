@@ -6,13 +6,17 @@ use App\Events\OrderPaid;
 use App\Models\Admin;
 use App\Models\Permission;
 use App\Models\Review;
-use App\Models\User;
 use App\Models\WalletHistory;
 use App\Services\FrontModuleMenuRegistry;
 use App\Services\ModuleMenuRegistry;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Modules\CustomerClub\Models\ClubSetting;
 use Modules\CustomerClub\Models\GiftCard;
 use Modules\CustomerClub\Models\LoyaltyPoint;
@@ -77,12 +81,12 @@ class Phase90Test extends TestCase
     {
         return Admin::create([
             'first_name' => 'تست',
-            'last_name'  => 'فاز ۹۰',
-            'username'   => 'feat90-'.\Illuminate\Support\Str::random(6),
-            'email'      => 'feat90-'.\Illuminate\Support\Str::random(6).'@test.ir',
-            'password'   => \Illuminate\Support\Facades\Hash::make('secret1234'),
-            'level'      => 'creator',
-            'status'     => 'ACTIVE',
+            'last_name' => 'فاز ۹۰',
+            'username' => 'feat90-'.Str::random(6),
+            'email' => 'feat90-'.Str::random(6).'@test.ir',
+            'password' => Hash::make('secret1234'),
+            'level' => 'creator',
+            'status' => 'ACTIVE',
         ]);
     }
 
@@ -96,7 +100,7 @@ class Phase90Test extends TestCase
     /** کامپایل blade + lint؛ خروجی exitCode */
     private function compileAndLint(string $viewName): int
     {
-        $path     = view($viewName)->getPath();
+        $path = view($viewName)->getPath();
         $compiler = app('blade.compiler');
         $compiled = $compiler->compileString((string) file_get_contents($path));
 
@@ -119,12 +123,12 @@ class Phase90Test extends TestCase
         // گیت‌های پرمیژن هسته در CLI ثبت نمی‌شوند (AuthServiceProvider فقط
         // خارج از console) — عین کلوزر پروداکشن اینجا تعریف می‌کنیم.
         foreach (Permission::where('active', true)->with('roles')->get() as $permission) {
-            \Illuminate\Support\Facades\Gate::define($permission->name, function ($user = null) use ($permission) {
-                $admin = $user instanceof \App\Models\Admin
+            Gate::define($permission->name, function ($user = null) {
+                $admin = $user instanceof Admin
                     ? $user
-                    : \Illuminate\Support\Facades\Auth::guard('adminPanel')->user();
+                    : Auth::guard('adminPanel')->user();
 
-                return $admin instanceof \App\Models\Admin && $admin->level == 'creator';
+                return $admin instanceof Admin && $admin->level == 'creator';
             });
         }
 
@@ -146,7 +150,7 @@ class Phase90Test extends TestCase
         $this->assertSame('CustomerClub', $module['name']);
         $this->assertSame('customer-club', $module['alias']);
         $this->assertSame('باشگاه مشتریان', $module['title']);
-        $this->assertSame('1.1.0', $module['version']); // فاز ۹۲ — موتور پاداش معرفی
+        $this->assertSame('1.1.1', $module['version']); // فاز ۹۲ موتور پاداش معرفی + فاز ۱۰۵ تب‌بندی تنظیمات (bump مخزن مستقل)
         $this->assertStringContainsString('CustomerClubServiceProvider', $module['providers'][0]);
 
         $composer = json_decode((string) file_get_contents($dir.'/composer.json'), true);
@@ -170,7 +174,7 @@ class Phase90Test extends TestCase
         // قرارداد نام کلاس/امضا برای نصب‌کنندهٔ هاست
         $this->assertFileExists(base_path('Modules/CustomerClub/app/Console/Commands/InstallPermissionsCommand.php'));
         $cmd = $this->read('Modules/CustomerClub/app/Console/Commands/InstallPermissionsCommand.php');
-        $this->assertStringContainsString("customerclub:install-permissions {--remove}", $cmd);
+        $this->assertStringContainsString('customerclub:install-permissions {--remove}', $cmd);
         $this->assertStringContainsString('seedDefaults', $cmd);
 
         // seedDefaults: قوانین و سطوح موجودند (کامند واقعاً در سندباکس اجرا شده)
@@ -184,7 +188,7 @@ class Phase90Test extends TestCase
 
         // idempotency: اجرای دوباره مقدارها را بازنویسی نمی‌کند
         ClubSetting::set('redeem_rate_toman', '777');
-        \Illuminate\Support\Facades\Artisan::call('customerclub:install-permissions');
+        Artisan::call('customerclub:install-permissions');
         $this->assertSame('777', (string) ClubSetting::get('redeem_rate_toman'), 'اجرای مجدد نباید مقدار ادمین را بازنویسی کند.');
         ClubSetting::set('redeem_rate_toman', '1000');
     }
@@ -267,7 +271,7 @@ class Phase90Test extends TestCase
     public function purchase_points_on_order_paid_event(): void
     {
         $this->requireCustomerClub();
-        $user  = $this->newUser();
+        $user = $this->newUser();
         $product = $this->newProduct();
         [$order] = $this->newPaidOrder($user, $product, ['price' => 60000]);
 
@@ -312,16 +316,16 @@ class Phase90Test extends TestCase
     public function review_points_on_acceptance(): void
     {
         $this->requireCustomerClub();
-        $user    = $this->newUser();
+        $user = $this->newUser();
         $product = $this->newProduct();
 
         $review = Review::create([
-            'user_id'    => $user->id,
+            'user_id' => $user->id,
             'product_id' => $product->id,
-            'title'      => 'نظر تست',
-            'body'       => 'بدنهٔ نظر تستی',
-            'rating'     => 5,
-            'status'     => 'pending',
+            'title' => 'نظر تست',
+            'body' => 'بدنهٔ نظر تستی',
+            'rating' => 5,
+            'status' => 'pending',
         ]);
 
         $points = LoyaltyService::fixedPointsFor(LoyaltyRule::EVENT_REVIEW);
@@ -422,11 +426,11 @@ class Phase90Test extends TestCase
     public function referral_landing_page(): void
     {
         $this->requireCustomerClub();
-        $owner = $this->newUser(['referral_code' => \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(5))]);
+        $owner = $this->newUser(['referral_code' => Str::upper(Str::random(5))]);
 
         // صفحهٔ فرود با کد معتبر → ریدایرکت به فلوی ثبت‌نام هسته (login?ref — عین هسته)
         $response = $this->get(route('front.club.referral.landing', ['code' => $owner->referral_code]));
-        $response->assertRedirect(route('login') . '?ref=' . $owner->referral_code);
+        $response->assertRedirect(route('login').'?ref='.$owner->referral_code);
         $this->assertSame($owner->referral_code, session('cc_referral_code'));
 
         // کد نامعتبر → ۴۰۴
@@ -442,9 +446,9 @@ class Phase90Test extends TestCase
 
         ClubSetting::set('referral_bonus_enabled', '1');
 
-        $owner    = $this->newUser();
+        $owner = $this->newUser();
         $referred = $this->newUser(['referral_id' => $owner->id]);
-        $product  = $this->newProduct();
+        $product = $this->newProduct();
 
         $tier = ReferralTier::query()->orderBy('min_referrals')->first();
         $this->assertNotNull($tier);
@@ -478,16 +482,16 @@ class Phase90Test extends TestCase
         $this->grantCreatorPermissions();
 
         foreach ([
-            'admin.customerclub.dashboard'        => 'admin/customerclub',
-            'admin.customerclub.rules.index'      => 'admin/customerclub/rules',
-            'admin.customerclub.points.index'     => 'admin/customerclub/points',
-            'admin.customerclub.members.index'    => 'admin/customerclub/members',
-            'admin.customerclub.giftcards.index'  => 'admin/customerclub/gift-cards',
-            'admin.customerclub.referrals.index'  => 'admin/customerclub/referrals',
-            'admin.customerclub.settings.edit'    => 'admin/customerclub/settings',
-            'admin.customerclub.guide'            => 'admin/customerclub/guide',
+            'admin.customerclub.dashboard' => 'admin/customerclub',
+            'admin.customerclub.rules.index' => 'admin/customerclub/rules',
+            'admin.customerclub.points.index' => 'admin/customerclub/points',
+            'admin.customerclub.members.index' => 'admin/customerclub/members',
+            'admin.customerclub.giftcards.index' => 'admin/customerclub/gift-cards',
+            'admin.customerclub.referrals.index' => 'admin/customerclub/referrals',
+            'admin.customerclub.settings.edit' => 'admin/customerclub/settings',
+            'admin.customerclub.guide' => 'admin/customerclub/guide',
         ] as $route => $url) {
-            $this->assertTrue(\Illuminate\Support\Facades\Route::has($route), "روت {$route} ثبت نشده است.");
+            $this->assertTrue(Route::has($route), "روت {$route} ثبت نشده است.");
         }
 
         $this->get(route('admin.customerclub.dashboard'))->assertOk();
@@ -595,7 +599,7 @@ class Phase90Test extends TestCase
         $user = $this->newUser();
 
         $this->post(route('admin.customerclub.members.adjust', $user), [
-            'points'      => 150,
+            'points' => 150,
             'description' => 'جبران خسارت تست',
         ])->assertRedirect()->assertSessionHas('toast-success');
 
@@ -603,7 +607,7 @@ class Phase90Test extends TestCase
 
         // کسر 200 از موجودی 150 → رد
         $this->post(route('admin.customerclub.members.adjust', $user), [
-            'points'      => -200,
+            'points' => -200,
             'description' => 'بیش از موجودی',
         ])->assertRedirect()->assertSessionHas('toast-error');
 
@@ -611,7 +615,7 @@ class Phase90Test extends TestCase
 
         // کسر مجاز
         $this->post(route('admin.customerclub.members.adjust', $user), [
-            'points'      => -50,
+            'points' => -50,
             'description' => 'کسر تست',
         ])->assertRedirect()->assertSessionHas('toast-success');
 

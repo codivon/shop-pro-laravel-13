@@ -11,7 +11,7 @@
             @foreach ($notifications as $notification)
                 @if($notification->type == 'OrderPaid')
 
-                    <a class="d-flex justify-content-between" href="{{ route('admin.notifications') }}">
+                    <a class="d-flex justify-content-between" href="{{ route('seller.notifications.index') }}">
                         <div class="media d-flex align-items-start">
                             <div class="media-left"><i class="feather icon-plus-square font-medium-5 primary"></i></div>
                             <div class="media-body">
@@ -23,7 +23,7 @@
                     </a>
 
                 @elseif($notification->type == 'UserRegistered')
-                    <a class="d-flex justify-content-between" href="{{ route('admin.notifications') }}">
+                    <a class="d-flex justify-content-between" href="{{ route('seller.notifications.index') }}">
                         <div class="media d-flex align-items-start">
                             <div class="media-left"><i class="feather icon-user font-medium-5 success"></i></div>
                             <div class="media-body">
@@ -35,7 +35,7 @@
                     </a>
 
                 @elseif($notification->type == 'ContactCreated')
-                    <a class="d-flex justify-content-between" href="{{ route('admin.notifications') }}">
+                    <a class="d-flex justify-content-between" href="{{ route('seller.notifications.index') }}">
                         <div class="media d-flex align-items-start">
                             <div class="media-left"><i class="feather icon-message-square font-medium-5 info"></i></div>
                             <div class="media-body">
@@ -49,7 +49,7 @@
             @endforeach
         </li>
         <li class="dropdown-menu-footer">
-            <a class="dropdown-item p-1 text-center" href="{{ route('admin.notifications') }}">نمایش همه اعلان ها</a>
+            <a class="dropdown-item p-1 text-center" href="{{ route('seller.notifications.index') }}">نمایش همه اعلان ها</a>
         </li>
     </ul>
 </li>

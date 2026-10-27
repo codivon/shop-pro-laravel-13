@@ -6,16 +6,21 @@ use App\Events\OrderPaid;
 use App\Models\Admin;
 use App\Models\Order;
 use App\Models\Permission;
-use App\Models\Product;
 use App\Services\ModuleMenuRegistry;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Modules\Accounting\Models\AccountingConnection;
 use Modules\Accounting\Models\AccountingDocument;
 use Modules\Accounting\Models\AccountingSetting;
 use Modules\Accounting\Models\AccountingSyncLog;
 use Modules\Accounting\Services\AccountingManager;
 use Modules\Accounting\Services\Drivers\AccountingDriver;
+use Modules\Accounting\Services\Drivers\HesabfaDriver;
+use Modules\Accounting\Services\SyncService;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestDox;
 use Tests\Support\ShopTestSetup;
@@ -56,7 +61,7 @@ class Phase93Test extends TestCase
 
     private function requireAccounting(): void
     {
-        if (!is_dir(base_path('Modules/Accounting/app'))) {
+        if (! is_dir(base_path('Modules/Accounting/app'))) {
             $this->markTestSkipped('ماژول Accounting (حسابداری) روی این میزبان نصب نیست — تست فاز ۹۳ رد شد.');
         }
     }
@@ -92,16 +97,28 @@ class Phase93Test extends TestCase
      */
     private function bindFakeDriver(array $stocks = [], ?\Throwable $throw = null, string $number = 'INV-1001'): void
     {
-        app()->bind(AccountingDriver::class.'.fake', fn () => new class($stocks, $throw, $number) implements AccountingDriver {
+        app()->bind(AccountingDriver::class.'.fake', fn () => new class($stocks, $throw, $number) implements AccountingDriver
+        {
             public function __construct(
                 protected array $stocks,
                 protected ?\Throwable $throw,
                 protected string $number,
             ) {}
 
-            public function key(): string { return 'hesabfa'; }
-            public function title(): string { return 'حسابفا (فیک)'; }
-            public function isConfigured(): bool { return true; }
+            public function key(): string
+            {
+                return 'hesabfa';
+            }
+
+            public function title(): string
+            {
+                return 'حسابفا (فیک)';
+            }
+
+            public function isConfigured(): bool
+            {
+                return true;
+            }
 
             public function createSalesInvoice(Order $order, array $items, float $total): array
             {
@@ -135,7 +152,7 @@ class Phase93Test extends TestCase
     private function bindFakeDriverIntoManager(): void
     {
         // Manager درایور را از container می‌گیرد — فیک را جای درایور واقعی می‌نشانیم
-        app()->bind(\Modules\Accounting\Services\Drivers\HesabfaDriver::class, function () {
+        app()->bind(HesabfaDriver::class, function () {
             return app(AccountingDriver::class.'.fake');
         });
     }
@@ -143,23 +160,23 @@ class Phase93Test extends TestCase
     private function newCreator(): Admin
     {
         foreach (Permission::where('active', true)->with('roles')->get() as $permission) {
-            \Illuminate\Support\Facades\Gate::define($permission->name, function ($user = null) use ($permission) {
-                $admin = $user instanceof \App\Models\Admin
+            Gate::define($permission->name, function ($user = null) {
+                $admin = $user instanceof Admin
                     ? $user
-                    : \Illuminate\Support\Facades\Auth::guard('adminPanel')->user();
+                    : Auth::guard('adminPanel')->user();
 
-                return $admin instanceof \App\Models\Admin && $admin->level == 'creator';
+                return $admin instanceof Admin && $admin->level == 'creator';
             });
         }
 
         $creator = Admin::create([
             'first_name' => 'تست',
-            'last_name'  => 'فاز ۹۳',
-            'username'   => 'feat93-'.\Illuminate\Support\Str::random(6),
-            'email'      => 'feat93-'.\Illuminate\Support\Str::random(6).'@test.ir',
-            'password'   => \Illuminate\Support\Facades\Hash::make('secret1234'),
-            'level'      => 'creator',
-            'status'     => 'ACTIVE',
+            'last_name' => 'فاز ۹۳',
+            'username' => 'feat93-'.Str::random(6),
+            'email' => 'feat93-'.Str::random(6).'@test.ir',
+            'password' => Hash::make('secret1234'),
+            'level' => 'creator',
+            'status' => 'ACTIVE',
         ]);
 
         $this->actingAs($creator, 'adminPanel');
@@ -169,7 +186,7 @@ class Phase93Test extends TestCase
 
     private function compileAndLint(string $viewName): int
     {
-        $path     = view($viewName)->getPath();
+        $path = view($viewName)->getPath();
         $compiler = app('blade.compiler');
         $compiled = $compiler->compileString((string) file_get_contents($path));
 
@@ -199,7 +216,7 @@ class Phase93Test extends TestCase
         $this->assertSame('Accounting', $module['name']);
         $this->assertSame('accounting', $module['alias']);
         $this->assertSame('حسابداری', $module['title']);
-        $this->assertSame('1.0.0', $module['version']);
+        $this->assertSame('1.0.1', $module['version']); // فاز ۱۰۵ — تب‌بندی تنظیمات در مخزن مستقل (bump نسخه)
         $this->assertStringContainsString('AccountingServiceProvider', $module['providers'][0]);
 
         $composer = json_decode((string) file_get_contents(base_path('Modules/Accounting/composer.json')), true);
@@ -235,7 +252,7 @@ class Phase93Test extends TestCase
         // قرارداد نام کلاس/امضا برای نصب‌کنندهٔ هاست
         $this->assertFileExists(base_path('Modules/Accounting/app/Console/Commands/InstallPermissionsCommand.php'));
         $cmd = $this->read('Modules/Accounting/app/Console/Commands/InstallPermissionsCommand.php');
-        $this->assertStringContainsString("accounting:install-permissions {--remove}", $cmd);
+        $this->assertStringContainsString('accounting:install-permissions {--remove}', $cmd);
         $this->assertStringContainsString('seedDefaults', $cmd);
 
         // seedDefaults: تنظیمات + اتصال‌ها موجودند (کامند واقعاً در سندباکس اجرا شده)
@@ -248,7 +265,7 @@ class Phase93Test extends TestCase
 
         // idempotency: اجرای دوباره مقدار ادمین را بازنویسی نمی‌کند
         AccountingSetting::set('provider', 'holoo');
-        \Illuminate\Support\Facades\Artisan::call('accounting:install-permissions');
+        Artisan::call('accounting:install-permissions');
         $this->assertSame('holoo', (string) AccountingSetting::get('provider'), 'اجرای مجدد نباید مقدار ادمین را بازنویسی کند.');
         AccountingSetting::set('provider', 'hesabfa');
     }
@@ -264,7 +281,7 @@ class Phase93Test extends TestCase
         $this->bindFakeDriver();
         $this->bindFakeDriverIntoManager();
 
-        $user    = $this->newUser();
+        $user = $this->newUser();
         $product = $this->newProduct();
         [$order] = $this->newPaidOrder($user, $product, ['price' => 60000], ['quantity' => 2]);
 
@@ -298,7 +315,7 @@ class Phase93Test extends TestCase
     public function sales_invoice_guards_and_failure_safety(): void
     {
         $this->requireAccounting();
-        $user    = $this->newUser();
+        $user = $this->newUser();
         $product = $this->newProduct();
 
         // ۱) کلید اصلی خاموش — هیچ اتفاقی نمی‌افتد (حتی تماس به درایور)
@@ -315,7 +332,7 @@ class Phase93Test extends TestCase
         OrderPaid::dispatch($order2);
         $this->assertSame(0, AccountingDocument::query()->where('order_id', $order2->id)->count(), 'سند خودکار باید خاموش باشد.');
 
-        $sync = app(\Modules\Accounting\Services\SyncService::class);
+        $sync = app(SyncService::class);
         $result = $sync->createInvoiceForOrder($order2, manual: true);
         $this->assertTrue($result['ok'], 'سند دستی باید حتی با خاموشی auto کار کند.');
         $this->assertSame(1, AccountingDocument::query()->where('order_id', $order2->id)->count());
@@ -349,8 +366,8 @@ class Phase93Test extends TestCase
         $this->accountingDefaults();
 
         // محصولات: تک‌قیمت تطبیقی + تک‌قیمت ناشناس + چند‌متغیره
-        $matched    = $this->newProduct(['product_id' => 'SKU-100']);
-        $unknown    = $this->newProduct(['product_id' => 'SKU-999']);
+        $matched = $this->newProduct(['product_id' => 'SKU-100']);
+        $unknown = $this->newProduct(['product_id' => 'SKU-999']);
         $multiPrice = $this->newProduct(['product_id' => 'SKU-MULTI', 'price_type' => 'attribute-price']);
 
         // چند‌متغیره: دو قیمت
@@ -367,7 +384,7 @@ class Phase93Test extends TestCase
         ]);
         $this->bindFakeDriverIntoManager();
 
-        $result = app(\Modules\Accounting\Services\SyncService::class)->syncInventory();
+        $result = app(SyncService::class)->syncInventory();
 
         $this->assertTrue($result['ok'], $result['message']);
         $this->assertSame(1, $result['updated'], 'فقط تک‌قیمت تطبیقی باید به‌روزرسانی شود.');
@@ -394,7 +411,7 @@ class Phase93Test extends TestCase
         $this->requireAccounting();
         $this->accountingDefaults();
 
-        $sync = app(\Modules\Accounting\Services\SyncService::class);
+        $sync = app(SyncService::class);
 
         // ۱) خاموشی کلید → inventoryDue false
         AccountingSetting::set('inventory_sync_enabled', '0');
@@ -406,14 +423,14 @@ class Phase93Test extends TestCase
 
         // ۳) کامند با گاردها: خاموشی کلید → بدون عملیات
         AccountingSetting::set('inventory_sync_enabled', '0');
-        \Illuminate\Support\Facades\Artisan::call('accounting:sync-inventory');
-        $this->assertStringContainsString('غیرفعال', trim(\Illuminate\Support\Facades\Artisan::output()));
+        Artisan::call('accounting:sync-inventory');
+        $this->assertStringContainsString('غیرفعال', trim(Artisan::output()));
 
         // ۴) کامند force حتی خارج از نوبت اجرا می‌کند
         AccountingSetting::set('inventory_sync_enabled', '1');
         AccountingSetting::set('accounting_enabled', '0');
-        \Illuminate\Support\Facades\Artisan::call('accounting:sync-inventory', ['--force' => true]);
-        $this->assertStringContainsString('غیرفعال', trim(\Illuminate\Support\Facades\Artisan::output()));
+        Artisan::call('accounting:sync-inventory', ['--force' => true]);
+        $this->assertStringContainsString('غیرفعال', trim(Artisan::output()));
     }
 
     /* ================= ۴) صفحات ادمین ================= */
@@ -447,22 +464,22 @@ class Phase93Test extends TestCase
 
         // ذخیرهٔ POST تنظیمات + اعتبارنامه
         $this->post(route('admin.accounting.settings.update'), [
-            'accounting_enabled'         => '1',
-            'auto_invoice_enabled'       => '1',
-            'inventory_sync_enabled'     => '1',
-            'include_shipping_enabled'   => '0',
-            'hesabfa_enabled'            => '1',
-            'sepidar_enabled'            => '1',
-            'holoo_enabled'              => '0',
-            'provider'                   => 'sepidar',
+            'accounting_enabled' => '1',
+            'auto_invoice_enabled' => '1',
+            'inventory_sync_enabled' => '1',
+            'include_shipping_enabled' => '0',
+            'hesabfa_enabled' => '1',
+            'sepidar_enabled' => '1',
+            'holoo_enabled' => '0',
+            'provider' => 'sepidar',
             'inventory_interval_minutes' => '90',
-            'invoice_title_prefix'       => 'فروشگاه تست',
-            'credentials'                => [
+            'invoice_title_prefix' => 'فروشگاه تست',
+            'credentials' => [
                 [
-                    'provider'             => 'sepidar',
-                    'base_url'             => 'https://api.sepidar.example/api/v1',
-                    'username'             => 'sepidar-admin',
-                    'password'             => 'secret',
+                    'provider' => 'sepidar',
+                    'base_url' => 'https://api.sepidar.example/api/v1',
+                    'username' => 'sepidar-admin',
+                    'password' => 'secret',
                     'default_contact_code' => '55',
                 ],
             ],
@@ -483,7 +500,7 @@ class Phase93Test extends TestCase
         $this->accountingDefaults(['provider' => 'hesabfa']);
         $this->bindFakeDriver(['number' => 'MANUAL-7'], null, 'MANUAL-7');
         $this->bindFakeDriverIntoManager();
-        $user    = $this->newUser();
+        $user = $this->newUser();
         $product = $this->newProduct();
         [$order] = $this->newPaidOrder($user, $product);
 

@@ -1,63 +1,61 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Themes\WeblakShop\src\Controllers\MainController;
-use Themes\WeblakShop\src\Controllers\BlogController;
-use Themes\WeblakShop\src\Controllers\ProductController;
-use Themes\WeblakShop\src\Controllers\CartController;
-use Themes\WeblakShop\src\Controllers\StockNotifyController;
-use Themes\WeblakShop\src\Controllers\PriceAlertController;
-use Themes\WeblakShop\src\Controllers\PageController;
-use Themes\WeblakShop\src\Controllers\ReviewController;
-use Themes\WeblakShop\src\Controllers\BrandController;
-use Themes\WeblakShop\src\Controllers\OrderController;
-use Themes\WeblakShop\src\Controllers\UserController;
-use Themes\WeblakShop\src\Controllers\SitemapController;
-use Themes\WeblakShop\src\Controllers\ContactController;
-use Themes\WeblakShop\src\Controllers\FavoriteController;
-use Themes\WeblakShop\src\Controllers\CommentController;
-use Themes\WeblakShop\src\Controllers\TicketController;
-use Themes\WeblakShop\src\Controllers\UserHistoryController;
-use Themes\WeblakShop\src\Controllers\AddressesController;
-use Themes\WeblakShop\src\Controllers\VerifyController;
-use Themes\WeblakShop\src\Controllers\DiscountController;
-use Themes\WeblakShop\src\Controllers\WalletController;
-use Themes\WeblakShop\src\Controllers\SellerController;
-use Themes\WeblakShop\src\Controllers\StoryController;
-use Themes\WeblakShop\src\Controllers\NewsletterController;
-use Themes\WeblakShop\src\Controllers\FormController;
-use Themes\WeblakShop\src\Controllers\ArticleController;
-
-//seller controller
-use Themes\WeblakShop\src\Controllers\sellers\DashboardSellerController;
-use Themes\WeblakShop\src\Controllers\sellers\ProductSellerController;
-use Themes\WeblakShop\src\Controllers\sellers\WalletSellerController;
-use Themes\WeblakShop\src\Controllers\sellers\ProfileSellerController;
-use Themes\WeblakShop\src\Controllers\sellers\SellerTicketController;
-use Themes\WeblakShop\src\Controllers\sellers\NotificationSellerController;
-use Themes\WeblakShop\src\Controllers\sellers\QuestionSellerController;
-use Themes\WeblakShop\src\Controllers\sellers\OrderSellerController;
-use Themes\WeblakShop\src\Controllers\sellers\SellerCarrierController;
-use Themes\WeblakShop\src\Controllers\sellers\SellerTariffController;
 use App\Http\Controllers\Back\HolidayController;
-use Themes\WeblakShop\src\Controllers\sellers\SellerStatisticsController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Route;
+use Themes\WeblakShop\src\Controllers\AddressesController;
+use Themes\WeblakShop\src\Controllers\ArticleController;
+use Themes\WeblakShop\src\Controllers\BlogController;
+use Themes\WeblakShop\src\Controllers\BrandController;
+use Themes\WeblakShop\src\Controllers\CartController;
+use Themes\WeblakShop\src\Controllers\CommentController;
+use Themes\WeblakShop\src\Controllers\ContactController;
+use Themes\WeblakShop\src\Controllers\DiscountController;
+use Themes\WeblakShop\src\Controllers\FavoriteController;
+use Themes\WeblakShop\src\Controllers\FormController;
+use Themes\WeblakShop\src\Controllers\MainController;
+use Themes\WeblakShop\src\Controllers\NewsletterController;
+use Themes\WeblakShop\src\Controllers\OrderController;
+use Themes\WeblakShop\src\Controllers\PageController;
+use Themes\WeblakShop\src\Controllers\PriceAlertController;
+use Themes\WeblakShop\src\Controllers\ProductController;
 use Themes\WeblakShop\src\Controllers\ReturnController;
+use Themes\WeblakShop\src\Controllers\ReviewController;
+use Themes\WeblakShop\src\Controllers\SellerController;
+use Themes\WeblakShop\src\Controllers\sellers\DashboardSellerController;
+use Themes\WeblakShop\src\Controllers\sellers\NotificationSellerController;
+use Themes\WeblakShop\src\Controllers\sellers\OrderSellerController;
+// seller controller
+use Themes\WeblakShop\src\Controllers\sellers\ProductSellerController;
+use Themes\WeblakShop\src\Controllers\sellers\ProfileSellerController;
+use Themes\WeblakShop\src\Controllers\sellers\QuestionSellerController;
+use Themes\WeblakShop\src\Controllers\sellers\SellerCarrierController;
+use Themes\WeblakShop\src\Controllers\sellers\SellerStatisticsController;
+use Themes\WeblakShop\src\Controllers\sellers\SellerTariffController;
+use Themes\WeblakShop\src\Controllers\sellers\SellerTicketController;
+use Themes\WeblakShop\src\Controllers\sellers\WalletSellerController;
+use Themes\WeblakShop\src\Controllers\SitemapController;
+use Themes\WeblakShop\src\Controllers\StockNotifyController;
+use Themes\WeblakShop\src\Controllers\TicketController;
+use Themes\WeblakShop\src\Controllers\UserController;
+use Themes\WeblakShop\src\Controllers\UserHistoryController;
+use Themes\WeblakShop\src\Controllers\VerifyController;
+use Themes\WeblakShop\src\Controllers\WalletController;
+
 // ------------------ Front Part Routes
 
 Route::group(['as' => 'front.'], function () {
     // ------------------ MainController
     Route::get('/', [MainController::class, 'index'])->name('index');
 
-
     Route::get('/stores', [MainController::class, 'showStore'])->name('showStore');
     Route::get('/store/{seller}', [MainController::class, 'showSellerStore'])->name('showSellerStore');
     // ------------------ blogs
     Route::get('blog/search', [BlogController::class, 'search'])->name('blog.search');
 
-
-
     Route::prefix('blog')->group(function () {
-        Route::get('', [BlogController::class,'index'])->name('blog.index');
+        Route::get('', [BlogController::class, 'index'])->name('blog.index');
 
         // روت‌های اصلی
         Route::get('/articles', [ArticleController::class, 'index'])->name('articles.index');
@@ -74,21 +72,22 @@ Route::group(['as' => 'front.'], function () {
         });
     });
 
-//    Route::resource('blog/articles', ArticleController::class)->only(['index', 'show']);
-//    Route::get('blogs/category/{category}', [BlogController::class, 'category'])->name('blogs.category');
-//    Route::get('blogs/tag/{slug}', [BlogController::class, 'tag'])->name('blogs.tag');
+    //    Route::resource('blog/articles', ArticleController::class)->only(['index', 'show']);
+    //    Route::get('blogs/category/{category}', [BlogController::class, 'category'])->name('blogs.category');
+    //    Route::get('blogs/tag/{slug}', [BlogController::class, 'tag'])->name('blogs.tag');
 
     // ------------------ products
 
-    Route::get('/get-stores-cached/{productId}/{colorId}', function($productId, $colorId) {
+    Route::get('/get-stores-cached/{productId}/{colorId}', function ($productId, $colorId) {
         $cacheKey = "stores_{$productId}_{$colorId}";
-        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function() use ($productId, $colorId) {
+
+        return Cache::remember($cacheKey, 300, function () use ($productId, $colorId) {
             // فراخوانی متد get_stores
             return app()->call('App\Http\Controllers\Front\ProductController@get_stores', [
-                'request' => new Illuminate\Http\Request([
+                'request' => new Request([
                     'product_id' => $productId,
-                    'color_id' => $colorId
-                ])
+                    'color_id' => $colorId,
+                ]),
             ]);
         });
     })->name('get-stores-cached');
@@ -107,10 +106,10 @@ Route::group(['as' => 'front.'], function () {
     Route::get('products/questions/getQuestions', [ProductController::class, 'getQuestionAjax'])->name('products.getQuestions');
     Route::post('product/get-stores', [ProductController::class, 'get_stores'])->name('products.get_stores');
     Route::get('p/{id}', [ProductController::class, 'shortLink'])->name('products.shortLink');
-    Route::get('product/{product}', [ProductController::class,'show'])->name('products.show');
+    Route::get('product/{product}', [ProductController::class, 'show'])->name('products.show');
 
     // FIX مقیاس: rate-limit فقط در محیط production اعمال می‌شود (در تست/سندباکس محدود نیست)
-    Route::get('search', [ProductController::class,'index'])
+    Route::get('search', [ProductController::class, 'index'])
         ->middleware(array_filter([production_throttle('front-search')]))
         ->name('products.index');
     Route::post('search', [ProductController::class, 'ajax_search'])
@@ -129,7 +128,7 @@ Route::group(['as' => 'front.'], function () {
     Route::post('price-alert', [PriceAlertController::class, 'store'])->name('price-alert.store');
     Route::delete('price-alert', [PriceAlertController::class, 'destroy'])->name('price-alert.destroy');
 
-    //------------------forms
+    // ------------------forms
     Route::get('form/{form}', [FormController::class, 'show'])->name('form.show');
     Route::post('form/submit/{form}', [FormController::class, 'submit'])->name('form.submit');
 
@@ -139,7 +138,7 @@ Route::group(['as' => 'front.'], function () {
     // ------------------ brands
     Route::get('brands/{brand}', [BrandController::class, 'show'])->name('brands.show');
 
-// ------------------ Sitemap Routes ------------------
+    // ------------------ Sitemap Routes ------------------
     Route::prefix('sitemap')->name('sitemap.')->group(function () {
 
         // فایل اصلی sitemap.xml
@@ -181,9 +180,8 @@ Route::group(['as' => 'front.'], function () {
         Route::get('generate', [SitemapController::class, 'generateAll'])->name('generate');
     });
 
-// مسیر مستقیم sitemap.xml (برای گوگل)
+    // مسیر مستقیم sitemap.xml (برای گوگل)
     Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap.xml');
-
 
     // ------------------ contacts
     Route::resource('contact', ContactController::class)->only(['index', 'store']);
@@ -196,8 +194,6 @@ Route::group(['as' => 'front.'], function () {
 
     // ------------------ authentication required
     Route::group(['middleware' => ['auth', 'verified', 'CheckPasswordChange']], function () {
-
-
 
         // ------------------ MainController
 
@@ -214,14 +210,13 @@ Route::group(['as' => 'front.'], function () {
         Route::get('profile/orders/pay/{order}', [OrderController::class, 'pay'])->name('orders.pay');
         Route::get('profile/orders/{order}/print', [OrderController::class, 'print'])->name('orders.print');
         // ------------------ wallet
-        Route::post('profile/wallet/withdraw', [WalletController::class,'withdraw'])->name('wallet.withdraw');
-        Route::resource('profile/wallet', WalletController::class)->only(['index','store','show']);
+        Route::post('profile/wallet/withdraw', [WalletController::class, 'withdraw'])->name('wallet.withdraw');
+        Route::resource('profile/wallet', WalletController::class)->only(['index', 'store', 'show']);
 
         Route::get('profile/notifications', [UserController::class, 'notifications'])->name('notifications.index');
         Route::post('profile/notifications/mark-as-read', [UserController::class, 'markAsRead'])->name('notifications.mark-as-read');
         Route::get('profile/messages', [UserController::class, 'messages'])->name('messages.index');
         Route::get('profile/messages/show/{message}', [UserController::class, 'messages_show'])->name('messages.show');
-
 
         // ─── فاز ۹۲: امکان «معرفی افراد» به پکیج باشگاه مشتریان منتقل شد ───
         // لینک‌های قدیمی /profile/referrals به صفحهٔ معرفی دوستان پکیج هدایت می‌شوند
@@ -252,18 +247,17 @@ Route::group(['as' => 'front.'], function () {
         Route::resource('profile/favorites', FavoriteController::class)->only(['index', 'store', 'destroy']);
 
         // ------------------ addresses
-        Route::resource('profile/addresses', AddressesController::class)->only(['index', 'store', 'destroy','show','update']);
-        Route::get('profile/addresses/active/{address}', [AddressesController::class,'active_address'])->name('addresses.active');
+        Route::resource('profile/addresses', AddressesController::class)->only(['index', 'store', 'destroy', 'show', 'update']);
+        Route::get('profile/addresses/active/{address}', [AddressesController::class, 'active_address'])->name('addresses.active');
 
         // ------------------ user-history
-        Route::get('profile/user-history', [UserHistoryController::class,'index'])->name('user.user-history');
-        Route::delete('profile/user-history', [UserHistoryController::class,'destroy'])->name('user.user-history.delete');
+        Route::get('profile/user-history', [UserHistoryController::class, 'index'])->name('user.user-history');
+        Route::delete('profile/user-history', [UserHistoryController::class, 'destroy'])->name('user.user-history.delete');
 
         // ------------------ comments
         Route::resource('profile/comments', CommentController::class)->only(['index', 'store', 'destroy']);
         // ------------------ tickets
         Route::resource('profile/tickets', TicketController::class)->except(['destroy']);
-
 
         Route::prefix('profile/returns')->name('returns.')->middleware(['auth', 'verified'])->group(function () {
             Route::get('/', [ReturnController::class, 'index'])->name('index');
@@ -274,7 +268,6 @@ Route::group(['as' => 'front.'], function () {
             // مشتری ثبت می‌کند که محصول را ارسال کرده
             Route::post('/{returnRequest}/mark-shipped', [ReturnController::class, 'markShipped'])->name('mark_shipped');
         });
-
 
         // ------------------ reviews
 
@@ -309,11 +302,7 @@ Route::group(['as' => 'front.'], function () {
     Route::post('/login/CheckPassword', [UserController::class, 'CheckPassword'])->name('user.CheckPassword');
     Route::get('/welcome', [UserController::class, 'welcome'])->name('user.welcome');
 
-
-
-
 });
-
 
 Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
 
@@ -374,7 +363,9 @@ Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
 
         // ========== کیف پول و کمیسیون ==========
         Route::get('commission', [WalletSellerController::class, 'commission'])->name('commission');
-        Route::get('/commission-guide', [WalletSellerController::class, 'showCommissionRates'])->name('seller.commission.guide');
+        // فاز ۱۰۶ الف — نام روت قبلاً 'seller.commission.guide' بود که با پیشوند گروه بیرونی
+        // ('seller.') دو-پیشوندی می‌شد (seller.seller.….) و route('seller.commission.guide') می‌شکست.
+        Route::get('/commission-guide', [WalletSellerController::class, 'showCommissionRates'])->name('commission.guide');
 
         Route::prefix('wallet')->name('wallet.')->group(function () {
             Route::get('/', [WalletSellerController::class, 'index'])->name('index');
@@ -420,8 +411,8 @@ Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
             Route::get('not-completed', [OrderSellerController::class, 'notCompleted'])->name('notCompleted');
             Route::get('api/printAllShippingForms', [OrderSellerController::class, 'printAllShippingForms'])->name('printAllShippingForms');
             Route::get('api/printAll', [OrderSellerController::class, 'printAll'])->name('printAll');
-            Route::get('api/printAllShippingForms',[OrderSellerController::class, 'printAllShippingForms'])->name('printAllShippingForms');
-            Route::get('api/printAllShippingFormsMin',[OrderSellerController::class, 'printAllShippingFormsMin'])->name('printAllShippingFormsMin');
+            Route::get('api/printAllShippingForms', [OrderSellerController::class, 'printAllShippingForms'])->name('printAllShippingForms');
+            Route::get('api/printAllShippingFormsMin', [OrderSellerController::class, 'printAllShippingFormsMin'])->name('printAllShippingFormsMin');
 
             Route::get('export/create', [OrderSellerController::class, 'export'])->name('export');
 
@@ -462,7 +453,6 @@ Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
             'update' => 'tickets.update',
         ]);
 
-
         Route::prefix('holidays')->name('holidays.')->group(function () {
             Route::get('/', [HolidayController::class, 'index'])->name('index');
             Route::post('/check', [HolidayController::class, 'check'])->name('check');
@@ -477,10 +467,12 @@ Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
             Route::get('/', [SellerStatisticsController::class, 'index'])->name('index');
             Route::get('/view-counts', [SellerStatisticsController::class, 'viewCounts'])->name('viewCounts');
             Route::get('/viewer-counts', [SellerStatisticsController::class, 'viewerCounts'])->name('viewerCounts');
-            //Route::get('/latest-visitors', [SellerStatisticsController::class, 'latestVisitors'])->name('latestVisitors');
+            // Route::get('/latest-visitors', [SellerStatisticsController::class, 'latestVisitors'])->name('latestVisitors');
         });
     });
 });
 
 // get auth user in 404 page
-Route::fallback(function(){ return response()->view('errors.404', [], 404); });
+Route::fallback(function () {
+    return response()->view('errors.404', [], 404);
+});

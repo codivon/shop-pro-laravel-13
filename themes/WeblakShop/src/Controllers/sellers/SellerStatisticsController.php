@@ -1,4 +1,5 @@
 <?php
+
 // app/Http/Controllers/Seller/SellerStatisticsController.php
 
 namespace Themes\WeblakShop\src\Controllers\sellers;
@@ -22,11 +23,11 @@ class SellerStatisticsController extends Controller
      */
     private function baseSellerQuery($sellerSlug)
     {
-        return Viewer::where(function($query) use ($sellerSlug) {
+        return Viewer::where(function ($query) use ($sellerSlug) {
             // 1. فیلد path: /store/aopy
-            $query->where('path', 'like', '/store/' . $sellerSlug . '%')
+            $query->where('path', 'like', '/store/'.$sellerSlug.'%')
                 // 2. فیلد product_path: aopy?s=...
-                ->orWhere('product_path', 'like', $sellerSlug . '%')
+                ->orWhere('product_path', 'like', $sellerSlug.'%')
                 // 3. فیلد page_path: store یا shop
                 ->orWhere('page_path', 'like', '%/store/%')
                 ->orWhere('page_path', 'like', '%/shop%');
@@ -40,7 +41,7 @@ class SellerStatisticsController extends Controller
     {
         $sellerSlug = seller()->slug;
 
-        if (!$sellerSlug) {
+        if (! $sellerSlug) {
             return redirect()->back()->with('error', 'فروشنده یافت نشد');
         }
 
@@ -97,7 +98,9 @@ class SellerStatisticsController extends Controller
             ->whereNotNull('page_path')
             ->count();
 
-        return view('seller.statistics.index', compact(
+        // فاز ۱۰۶ الف — ویو با namespace تم سرو می‌شود (فرمت واحد بقیهٔ پنل).
+        // قبلاً view('seller.statistics.index') بود که هیچ namespace/پوشه‌ای نداشت → 500.
+        return view('front::sellers.panel.statistics.index', compact(
             'totalVisits',
             'uniqueVisitors',
             'todayVisits',
@@ -138,7 +141,7 @@ class SellerStatisticsController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-        return view('seller.statistics.visitors', compact('visitors'));
+        return view('front::sellers.panel.statistics.visitors', compact('visitors'));
     }
 
     /**
@@ -179,7 +182,7 @@ class SellerStatisticsController extends Controller
                 'path_visits' => $dailyPathVisits,
                 'product_visits' => $dailyProductVisits,
                 'page_visits' => $dailyPageVisits,
-            ]
+            ],
         ]);
     }
 }

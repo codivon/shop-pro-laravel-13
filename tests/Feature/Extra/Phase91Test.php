@@ -3,15 +3,23 @@
 namespace Tests\Feature\Extra;
 
 use App\Events\OrderPaid;
+use App\Livewire\Admin\Settings\SmsSettings;
 use App\Models\Admin;
-use App\Models\Order;
 use App\Models\Permission;
+use App\Models\Sms;
 use App\Models\User;
-use App\Services\FrontModuleMenuRegistry;
-use App\Services\ModuleMenuRegistry;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use App\Services\Sms\FarazSms;
+use App\Services\Sms\IdehPardazanSms;
+use App\Services\Sms\IppanelSms;
+use App\Services\Sms\KavenegarSms;
+use App\Services\Sms\MelipayamakSms;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Modules\Logistics\Models\CarrierConfig;
 use Modules\Logistics\Models\LogisticsSetting;
 use Modules\Logistics\Models\Shipment;
@@ -80,12 +88,12 @@ class Phase91Test extends TestCase
     {
         return Admin::create([
             'first_name' => 'تست',
-            'last_name'  => 'فاز ۹۱',
-            'username'   => 'feat91-'.\Illuminate\Support\Str::random(6),
-            'email'      => 'feat91-'.\Illuminate\Support\Str::random(6).'@test.ir',
-            'password'   => \Illuminate\Support\Facades\Hash::make('secret1234'),
-            'level'      => 'creator',
-            'status'     => 'ACTIVE',
+            'last_name' => 'فاز ۹۱',
+            'username' => 'feat91-'.Str::random(6),
+            'email' => 'feat91-'.Str::random(6).'@test.ir',
+            'password' => Hash::make('secret1234'),
+            'level' => 'creator',
+            'status' => 'ACTIVE',
         ]);
     }
 
@@ -99,7 +107,7 @@ class Phase91Test extends TestCase
     /** کامپایل blade + lint؛ خروجی exitCode */
     private function compileAndLint(string $viewName): int
     {
-        $path     = view($viewName)->getPath();
+        $path = view($viewName)->getPath();
         $compiler = app('blade.compiler');
         $compiled = $compiler->compileString((string) file_get_contents($path));
 
@@ -122,12 +130,12 @@ class Phase91Test extends TestCase
         // گیت‌های پرمیژن هسته در CLI ثبت نمی‌شوند (AuthServiceProvider فقط
         // خارج از console) — عین کلوزر پروداکشن اینجا تعریف می‌کنیم.
         foreach (Permission::where('active', true)->with('roles')->get() as $permission) {
-            \Illuminate\Support\Facades\Gate::define($permission->name, function ($user = null) use ($permission) {
-                $admin = $user instanceof \App\Models\Admin
+            Gate::define($permission->name, function ($user = null) {
+                $admin = $user instanceof Admin
                     ? $user
-                    : \Illuminate\Support\Facades\Auth::guard('adminPanel')->user();
+                    : Auth::guard('adminPanel')->user();
 
-                return $admin instanceof \App\Models\Admin && $admin->level == 'creator';
+                return $admin instanceof Admin && $admin->level == 'creator';
             });
         }
 
@@ -149,7 +157,7 @@ class Phase91Test extends TestCase
                 return true;
             }
 
-            public function register(\Modules\Logistics\Models\Shipment $shipment): array
+            public function register(Shipment $shipment): array
             {
                 $waybill = 'TPX-'.random_int(10000, 99999);
                 $this->registered[] = $waybill;
@@ -157,7 +165,7 @@ class Phase91Test extends TestCase
                 return ['waybill' => $waybill, 'raw' => ['fake' => true]];
             }
 
-            public function track(\Modules\Logistics\Models\Shipment $shipment): array
+            public function track(Shipment $shipment): array
             {
                 return $this->events;
             }
@@ -186,7 +194,7 @@ class Phase91Test extends TestCase
         $this->assertSame('Logistics', $module['name']);
         $this->assertSame('logistics', $module['alias']);
         $this->assertSame('لجستیک و باربری', $module['title']);
-        $this->assertSame('1.0.0', $module['version']);
+        $this->assertSame('1.0.1', $module['version']); // فاز ۱۰۵ — تب‌بندی تنظیمات در مخزن مستقل (bump نسخه)
         $this->assertStringContainsString('LogisticsServiceProvider', $module['providers'][0]);
 
         $composer = json_decode((string) file_get_contents($dir.'/composer.json'), true);
@@ -210,7 +218,7 @@ class Phase91Test extends TestCase
         // قرارداد نام کلاس/امضا برای نصب‌کنندهٔ هاست
         $this->assertFileExists(base_path('Modules/Logistics/app/Console/Commands/InstallPermissionsCommand.php'));
         $cmd = $this->read('Modules/Logistics/app/Console/Commands/InstallPermissionsCommand.php');
-        $this->assertStringContainsString("logistics:install-permissions {--remove}", $cmd);
+        $this->assertStringContainsString('logistics:install-permissions {--remove}', $cmd);
         $this->assertStringContainsString('seedDefaults', $cmd);
 
         // seedDefaults: تنظیمات و پیکربندی ۳ باربری موجودند
@@ -231,13 +239,13 @@ class Phase91Test extends TestCase
 
         // idempotency: اجرای دوباره مقدارها را بازنویسی نمی‌کند
         LogisticsSetting::set('track_interval_minutes', '77');
-        \Illuminate\Support\Facades\Artisan::call('logistics:install-permissions');
+        Artisan::call('logistics:install-permissions');
         $this->assertSame('77', (string) LogisticsSetting::get('track_interval_minutes'), 'اجرای مجدد نباید مقدار ادمین را بازنویسی کند.');
         LogisticsSetting::set('track_interval_minutes', '30');
 
         // idempotency پرمیژن — دوباره اجرا نمی‌سازد
         $countBefore = Permission::query()->where('name', 'like', 'logistics%')->count();
-        \Illuminate\Support\Facades\Artisan::call('logistics:install-permissions');
+        Artisan::call('logistics:install-permissions');
         $this->assertSame($countBefore, Permission::query()->where('name', 'like', 'logistics%')->count());
     }
 
@@ -477,7 +485,7 @@ class Phase91Test extends TestCase
         // نکتهٔ فنی: Dispatcher کلاس Listener را در Closure با متغیر captured
         // «listener» می‌پیچد — با ReflectionFunction نامش را بیرون می‌کشیم.
         $found = collect(Event::getListeners(OrderPaid::class))->contains(function ($listener) {
-            if (!$listener instanceof \Closure) {
+            if (! $listener instanceof \Closure) {
                 return str_contains((string) $listener, 'CreateShipmentOnOrderPaid');
             }
 
@@ -553,18 +561,18 @@ class Phase91Test extends TestCase
 
         // ذخیرهٔ تنظیمات — خاموش/روشن + فاصلهٔ پیگیری
         $this->post(route('admin.logistics.settings.update'), [
-            'logistics_enabled'          => '1',
-            'auto_shipment_enabled'      => '1',
-            'auto_tracking_enabled'      => '0',
+            'logistics_enabled' => '1',
+            'auto_shipment_enabled' => '1',
+            'auto_tracking_enabled' => '0',
             'sync_tracking_code_enabled' => '1',
-            'sync_order_status_enabled'  => '1',
-            'sms_on_status_enabled'      => '1',
-            'customer_panel_enabled'     => '1',
-            'tipax_enabled'              => '1',
-            'mahex_enabled'              => '0',
-            'post_enabled'               => '1',
-            'track_interval_minutes'     => '45',
-            'credentials'                => [
+            'sync_order_status_enabled' => '1',
+            'sms_on_status_enabled' => '1',
+            'customer_panel_enabled' => '1',
+            'tipax_enabled' => '1',
+            'mahex_enabled' => '0',
+            'post_enabled' => '1',
+            'track_interval_minutes' => '45',
+            'credentials' => [
                 'tipax' => ['driver' => 'tipax', 'api_key' => 'KEY-123', 'base_url' => '', 'sandbox' => '1'],
             ],
         ])->assertRedirect();
@@ -664,25 +672,25 @@ class Phase91Test extends TestCase
         $this->requireLogistics();
 
         // تایپ‌های جدید هستهٔ فاز ۹۱
-        $this->assertArrayHasKey('LOGISTICS_SHIPMENT_SENT', \App\Models\Sms::TYPES);
-        $this->assertArrayHasKey('LOGISTICS_SHIPMENT_DELIVERED', \App\Models\Sms::TYPES);
-        $this->assertSame('shipment-sent', \App\Models\Sms::TYPES['LOGISTICS_SHIPMENT_SENT']['key']);
-        $this->assertSame('shipment-delivered', \App\Models\Sms::TYPES['LOGISTICS_SHIPMENT_DELIVERED']['key']);
-        $this->assertSame('shipmentSent', \App\Models\Sms::TYPES['LOGISTICS_SHIPMENT_SENT']['method']);
-        $this->assertSame('shipmentDelivered', \App\Models\Sms::TYPES['LOGISTICS_SHIPMENT_DELIVERED']['method']);
+        $this->assertArrayHasKey('LOGISTICS_SHIPMENT_SENT', Sms::TYPES);
+        $this->assertArrayHasKey('LOGISTICS_SHIPMENT_DELIVERED', Sms::TYPES);
+        $this->assertSame('shipment-sent', Sms::TYPES['LOGISTICS_SHIPMENT_SENT']['key']);
+        $this->assertSame('shipment-delivered', Sms::TYPES['LOGISTICS_SHIPMENT_DELIVERED']['key']);
+        $this->assertSame('shipmentSent', Sms::TYPES['LOGISTICS_SHIPMENT_SENT']['method']);
+        $this->assertSame('shipmentDelivered', Sms::TYPES['LOGISTICS_SHIPMENT_DELIVERED']['method']);
 
         // متدها در هر ۵ پرووایدر (فراخوانی واقعی با data تست)
         $providers = [
-            \App\Services\Sms\IppanelSms::class,
-            \App\Services\Sms\KavenegarSms::class,
-            \App\Services\Sms\MelipayamakSms::class,
-            \App\Services\Sms\IdehPardazanSms::class,
-            \App\Services\Sms\FarazSms::class,
+            IppanelSms::class,
+            KavenegarSms::class,
+            MelipayamakSms::class,
+            IdehPardazanSms::class,
+            FarazSms::class,
         ];
         $data = ['name' => 'علی', 'order' => '123', 'code' => 'TPX-999'];
 
         foreach ($providers as $providerClass) {
-            $provider = new $providerClass('09120000000', $data, \App\Models\Sms::TYPES['LOGISTICS_SHIPMENT_SENT']);
+            $provider = new $providerClass('09120000000', $data, Sms::TYPES['LOGISTICS_SHIPMENT_SENT']);
 
             $payload = $provider->shipmentSent();
             $this->assertNotEmpty($payload, "پرووایدر {$providerClass} باید payload برمی‌گرداند.");
@@ -693,13 +701,13 @@ class Phase91Test extends TestCase
             $this->assertStringContainsString((string) $data['order'], $json, "پرووایدر {$providerClass} باید شماره سفارش را برگرداند.");
             $this->assertStringContainsString((string) $data['code'], $json, "پرووایدر {$providerClass} باید کد رهگیری را برگرداند.");
 
-            $provider = new $providerClass('09120000000', $data, \App\Models\Sms::TYPES['LOGISTICS_SHIPMENT_DELIVERED']);
+            $provider = new $providerClass('09120000000', $data, Sms::TYPES['LOGISTICS_SHIPMENT_DELIVERED']);
             $payload = $provider->shipmentDelivered();
             $this->assertNotEmpty($payload);
         }
 
         // فیلدهای پترن در تنظیمات پیامک هسته (هر ۵ پنل)
-        $defs = \App\Livewire\Admin\Settings\SmsSettings::patternDefinitions();
+        $defs = SmsSettings::patternDefinitions();
         foreach (['ippanel', 'kavenegar', 'melipayamak', 'idehpardazan', 'farazsms'] as $providerKey) {
             $this->assertArrayHasKey('shipment_sent_pattern_code', $defs[$providerKey] ?? [], "پترن ارسال برای {$providerKey} باید تعریف شده باشد.");
             $this->assertArrayHasKey('shipment_delivered_pattern_code', $defs[$providerKey] ?? [], "پترن تحویل برای {$providerKey} باید تعریف شده باشد.");

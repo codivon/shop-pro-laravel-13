@@ -135,6 +135,14 @@
                 $order_ids[]=$orderItem_id->order_id;
             }
             $order_ids=array_unique($order_ids);
+
+        // فاز ۱۰۶ الف — مبنای واحد آمار: order_items.seller_id (سهم واقعی فروشنده در سفارش‌های چندفروشندگی).
+        // کارت «ارزش سفارشات موفق» قبلاً orders.seller_id (ستون قدیمی) را جمع می‌زد و
+        // با «فروش موفق» بلوک چندفروشندگی (order_items) دو عدد متفاوت نشان می‌داد.
+        $paid_orders_value=(int) \App\Models\OrderItem::where('seller_id',sellerID())
+            ->whereHas('order', fn ($q) => $q->where('status', 'paid'))
+            ->selectRaw('COALESCE(SUM(price * quantity), 0) as total')
+            ->value('total');
     @endphp
 
     <div class="col-lg-9 col-md-8 col-xs-12 pull-right">
@@ -396,7 +404,7 @@
                                     ارزش سفارشات موفق
                                 </div>
                                 <div class="c-rating-chart__details-value ">
-                                    {{number_format(seller()->orders()->paid()->sum('price'))}} تومان
+                                    {{number_format($paid_orders_value)}} تومان
                                 </div>
                             </div>
                         </a>
