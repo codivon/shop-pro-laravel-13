@@ -58,19 +58,42 @@ class SEP extends Driver
      */
     public function purchase()
     {
+        // فاز ۱۰۱ — گارد تنظیمات: ترمینال خالی/فاصله‌دار → خطای فارسیِ قابل‌اقدام بدون رفت‌وبرگشت به شاپرک
+        // (قبلاً TerminalId خالی به سپ می‌رفت و همان خطای مبهم «پارامترهای ارسالی نامعتبر است» برمی‌گشت)
+        $terminalId = trim((string) ($this->settings->terminalId ?? ''));
+        if ($terminalId === '') {
+            throw new PurchaseFailedException('کد پایانه (Terminal ID) درگاه سپ در تنظیمات خالی است — آن را از پنل مدیریت ← تنظیمات ← درگاه‌های پرداخت وارد کنید.');
+        }
+
+        // فاز ۱۰۱ — payload دقیقاً مطابق مستند رسمی سپ نسخهٔ ۳.۶:
+        //   پارامترهای اجباری: action, TerminalId, Amount (ریال، عدد صحیح), ResNum, RedirectUrl
+        //   پارامترهای اختیاری (CellNumber/ResNum1..4) فقط «در صورت داشتن مقدار» ارسال می‌شوند —
+        //   ارسال رشتهٔ خالی ("" برای CellNumber و ResNum1..4 که کد قبلی همیشه می‌فرستاد) در اعتبارسنجی سپ
+        //   رد می‌شود و خطای ۵ «پارامترهای ارسالی نامعتبر است» می‌دهد (نکتهٔ ۵ مستند: از ارسال
+        //   پارامترهای بی‌مقدار پرهیز کنید).
         $data = [
             'action' => 'token',
-            'TerminalId' => $this->settings->terminalId,
-            // فاز ۱۰۰ — فالبک امن: اگر کلید currency در کانفیگ نبود، مبلغ به ریال تبدیل شود (قرارداد سپ)
-            'Amount' => $this->invoice->getAmount() * (($this->settings->currency ?? 'T') == 'T' ? 10 : 1), // convert to rial
+            'TerminalId' => $terminalId,
+            // فالبک امن: اگر کلید currency در کانفیگ نبود، مبلغ به ریال تبدیل شود (قرارداد سپ)
+            'Amount' => (int) ($this->invoice->getAmount() * (($this->settings->currency ?? 'T') == 'T' ? 10 : 1)), // convert to rial
             'ResNum' => $this->invoice->getUuid(),
             'RedirectUrl' => $this->settings->callbackUrl,
-            'CellNumber' => $this->invoice->getDetail('mobile') ?? '',
-            'ResNum1' => $this->invoice->getDetail('ResNum1') ?? '',
-            'ResNum2' => $this->invoice->getDetail('ResNum2') ?? '',
-            'ResNum3' => $this->invoice->getDetail('ResNum3') ?? '',
-            'ResNum4' => $this->invoice->getDetail('ResNum4') ?? '',
         ];
+
+        // فاز ۱۰۱ — CellNumber طبق مستند (شماره موبایل خریدار برای واکشی کارت‌های ذخیره‌شده) —
+        // فقط با مقدار معتبر ۰۹xxxxxxxxx؛ سوییچ تنظیمات sendCellNumber قابل خاموش‌کردن است (الزام شخصی‌سازی)
+        $cellNumber = $this->normalizedCellNumber();
+        if ($cellNumber !== null) {
+            $data['CellNumber'] = $cellNumber;
+        }
+
+        // فاز ۱۰۱ — ResNum1..4 (دیتای اضافی گزارش‌گیری پنل سپ) فقط وقتی مقدار دارند ارسال می‌شوند
+        foreach (['ResNum1', 'ResNum2', 'ResNum3', 'ResNum4'] as $extraKey) {
+            $extraValue = trim((string) ($this->invoice->getDetail($extraKey) ?? ''));
+            if ($extraValue !== '') {
+                $data[$extraKey] = $extraValue;
+            }
+        }
 
         $response = $this->client->post(
             $this->settings->apiGetToken,
@@ -89,7 +112,9 @@ class SEP extends Driver
         $responseData = json_decode($jsonBody, true);
 
         if ($responseData['status'] != 1) {
-            $this->purchaseFailed($responseData['errorCode']);
+            // فاز ۱۰۱ — errorDesc سپ دیگر دور ریخته نمی‌شود؛ در پیام استثنا + لاگ می‌آید
+            // (مستند ۳.۶: پاسخ خطا {status:-1, errorCode, errorDesc} — errorDesc علت دقیق را می‌گوید)
+            $this->purchaseFailed($responseData['errorCode'] ?? 0, (string) ($responseData['errorDesc'] ?? ''));
         }
 
         // set transaction id
@@ -97,6 +122,48 @@ class SEP extends Driver
 
         // return the transaction's id
         return $this->invoice->getTransactionId();
+    }
+
+    /**
+     * فاز ۱۰۱ — نرمال‌سازی شماره موبایل خریدار برای پارامتر CellNumber سپ.
+     *
+     * فقط شماره‌های معتبر موبایل ایران (09xxxxxxxxx) برگردانده می‌شوند؛ در غیر این صورت null
+     * (پارامتر کاملاً حذف می‌شود — ارسال مقدار نامعتبر خطای ۵ سپ می‌دهد).
+     */
+    private function normalizedCellNumber(): ?string
+    {
+        // سوییچ تنظیمات درگاه — whitelist سخت‌گیرانه: فقط '1'/1/true روشن است؛
+        // هر چیز دیگر ('0'، '' از تیک‌برداشتن سوییچ پنل، false) یعنی خاموش. نبودِ کلید = روشن (پیش‌فرض)
+        $send = $this->settings->sendCellNumber ?? '1';
+        if (! in_array($send, ['1', 1, true], true)) {
+            return null;
+        }
+
+        // ارقام فارسی/عربی → لاتین (ورودی فارسی‌زبان) سپس حذف هر کاراکتر غیررقمی
+        $persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+        $latinDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+        $mobile = str_replace($persianDigits, $latinDigits, (string) ($this->invoice->getDetail('mobile') ?? ''));
+        $mobile = str_replace(['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'], $latinDigits, $mobile);
+        $mobile = preg_replace('/\D+/', '', $mobile);
+        if ($mobile === '') {
+            return null;
+        }
+
+        // هم‌سان‌سازی: 989xxxxxxxxx یا 9xxxxxxxxx → 09xxxxxxxxx
+        if (strlen($mobile) === 12 && str_starts_with($mobile, '98')) {
+            $mobile = '0'.substr($mobile, 2);
+        }
+
+        if (strlen($mobile) === 10 && str_starts_with($mobile, '9')) {
+            $mobile = '0'.$mobile;
+        }
+
+        if (! preg_match('/^09\d{9}$/', $mobile)) {
+            return null;
+        }
+
+        return $mobile;
     }
 
     /**
@@ -160,7 +227,11 @@ class SEP extends Driver
         $responseData = json_decode($jsonData, true);
 
         if ($responseData['ResultCode'] != 0) {
-            $this->notVerified($responseData['ResultCode']);
+            // فاز ۱۰۱ — ResultDesc سپ (اگر در پاسخ باشد) در پیام استثنا می‌آید — علت دقیق ردِ تأیید
+            $this->notVerified(
+                $responseData['ResultCode'],
+                (string) ($responseData['ResultDesc'] ?? $responseData['resultDesc'] ?? '')
+            );
         }
 
         $transactionDetail = $responseData['TransactionDetail'];
@@ -206,10 +277,13 @@ class SEP extends Driver
     /**
      * Trigger an exception
      *
+     * فاز ۱۰۱ — پارامتر errorDesc: پیام دقیق سپ (errorDesc پاسخ توکن) به پیام اضافه می‌شود و
+     * کل پاسخ خطا در لاگ ثبت می‌گردد؛ قبلاً علت دقیق سپ دور ریخته می‌شد و فقط پیام ثابت
+     * (مثل «پارامترهای ارسالی نامعتبر است.») باقی می‌ماند و ریشه‌یابی غیرممکن بود.
      *
      * @throws PurchaseFailedException
      */
-    protected function purchaseFailed($status)
+    protected function purchaseFailed($status, string $errorDesc = '')
     {
         $translations = [
             1 => ' تراکنش توسط خریدار لغو شده است.',
@@ -217,26 +291,40 @@ class SEP extends Driver
             3 => 'پرداخت انجام نشد.',
             4 => 'کاربر در بازه زمانی تعیین شده پاسخی ارسال نکرده است.',
             5 => 'پارامترهای ارسالی نامعتبر است.',
-            8 => 'آدرس سرور پذیرنده نامعتبر است.',
+            8 => 'آدرس سرور پذیرنده نامعتبر است (IP پذیرنده باید نزد سامان ثبت شده باشد).',
             9 => 'رمز کارت 3 مرتبه اشتباه وارد شده است در نتیجه کارت غیر فعال خواهد شد.',
             10 => 'توکن ارسال شده یافت نشد.',
             11 => 'با این شماره ترمینال فقط تراکنش های توکنی قابل پرداخت هستند.',
             12 => 'شماره ترمینال ارسال شده یافت نشد.',
         ];
 
-        if (array_key_exists($status, $translations)) {
-            throw new PurchaseFailedException($translations[$status]);
+        $message = $translations[$status] ?? ('خطای ناشناخته‌ای از درگاه سپ رخ داده است. (کد خطا: '.$status.')');
+
+        $errorDesc = trim($errorDesc);
+
+        if ($errorDesc !== '') {
+            $message .= ' | جزئیات سپ: '.$errorDesc;
         }
-        throw new PurchaseFailedException('خطای ناشناخته ای رخ داده است.');
+
+        logger()->warning('SEP purchase failed', [
+            'errorCode' => $status,
+            'errorDesc' => $errorDesc,
+            'terminalId' => trim((string) ($this->settings->terminalId ?? '')),
+            'amount' => $this->invoice->getAmount(),
+            'resNum' => $this->invoice->getUuid(),
+        ]);
+
+        throw new PurchaseFailedException($message);
     }
 
     /**
      * Trigger an exception
      *
+     * فاز ۱۰۱ — پارامتر resultDesc: پیام دقیق سرویس وریفای سپ (ResultDesc) به پیام اضافه می‌شود.
      *
      * @throws InvalidPaymentException
      */
-    private function notVerified($status): void
+    private function notVerified($status, string $resultDesc = ''): void
     {
         $translations = [
             -2 => ' تراکنش یافت نشد.',
@@ -249,9 +337,14 @@ class SEP extends Driver
             -108 => 'اطلاعات پرداخت با فاکتور همخوانی ندارد.',
         ];
 
-        if (array_key_exists($status, $translations)) {
-            throw new InvalidPaymentException($translations[$status], (int) $status);
+        $message = $translations[$status] ?? ('خطای ناشناخته‌ای از درگاه سپ رخ داده است. (کد خطا: '.$status.')');
+
+        $resultDesc = trim($resultDesc);
+
+        if ($resultDesc !== '' && ! str_contains($message, $resultDesc)) {
+            $message .= ' | جزئیات سپ: '.$resultDesc;
         }
-        throw new InvalidPaymentException('خطای ناشناخته ای رخ داده است.', (int) $status);
+
+        throw new InvalidPaymentException($message, (int) $status);
     }
 }

@@ -219,6 +219,9 @@ return [
             'apiVerificationUrl' => 'https://sep.shaparak.ir/verifyTxnRandomSessionkey/ipg/VerifyTransaction',
             'terminalId' => '',
             'callbackUrl' => '',
+            // فاز ۱۰۱ — ارسال شماره موبایل خریدار (CellNumber) طبق مستند سامان — سوییچ از پنل درگاه‌ها
+            // تزریق می‌شود؛ درایور فقط شمارهٔ معتبر ۰۹xxxxxxxxx را می‌فرستد و بی‌مقدار را حذف می‌کند
+            'sendCellNumber' => '1',
             'description' => 'payment using SEP (Saman Electronic Payment)',
         ],
         'sepehr' => [

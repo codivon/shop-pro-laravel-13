@@ -933,6 +933,9 @@ function get_gateway_configs($gateway)
             // فاز ۹۹ — سپ (سمان الکترونیک): درایور shetabit فقط terminalId + callbackUrl می‌خواهد
             // (callbackUrl در جریان خرید با ->callbackUrl(route(...)) بازنویسی می‌شود)
             $configs['terminalId'] = $gateway->config('terminalId');
+            // فاز ۱۰۱ — سوییچ ارسال شماره موبایل خریدار (CellNumber مستند سپ) — پیش‌فرض روشن؛
+            // درایور سپ فقط وقتی شماره معتبر باشد پارامتر را می‌فرستد (الزام شخصی‌سازی: هر امکان از تنظیمات)
+            $configs['sendCellNumber'] = $gateway->config('sendCellNumber') ?? '1';
             break;
 
         case 'behpardakht':

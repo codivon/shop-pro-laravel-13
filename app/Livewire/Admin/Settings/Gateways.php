@@ -46,7 +46,8 @@ class Gateways extends Component
             ];
 
             foreach ($this->gatewayFields($gateway->key) as $field) {
-                $this->form[$gateway->id]['configs'][$field['name']] = (string) $gateway->config($field['name']);
+                // فاز ۱۰۱ — پشتیبانی از مقدار پیش‌فرض فیلد (سوییچ‌های جدید قبل از اولین ذخیره هم حالت واقعی را نشان دهند)
+                $this->form[$gateway->id]['configs'][$field['name']] = (string) ($gateway->config($field['name']) ?? ($field['default'] ?? ''));
             }
         }
     }
@@ -93,6 +94,9 @@ class Gateways extends Component
             'sep' => [
                 // فاز ۹۹ — سپ (سمان الکترونیک): درایور shetabit فقط terminalId می‌خواهد
                 ['name' => 'terminalId', 'label' => 'کد پایانه (Terminal ID)', 'type' => 'text'],
+                // فاز ۱۰۱ — سوییچ ارسال شماره موبایل خریدار به درگاه (CellNumber مستند سامان)
+                // برای واکشی کارت‌های ذخیره‌شدهٔ مشتری — قابل خاموش‌کردن (الزام شخصی‌سازی)
+                ['name' => 'sendCellNumber', 'label' => 'ارسال شماره موبایل خریدار به درگاه (واکشی کارت‌های ذخیره‌شدهٔ مشتری)', 'type' => 'toggle', 'default' => '1'],
             ],
             'sadad' => [
                 ['name' => 'terminalId', 'label' => 'شماره پذیرنده', 'type' => 'text'],
@@ -116,18 +120,18 @@ class Gateways extends Component
     {
         return match ($key) {
             'behpardakht' => ['color' => '#E11D48', 'bank' => 'بانک ملت'],
-            'payir'       => ['color' => '#0D9488', 'bank' => 'pay.ir'],
-            'zarinpal'    => ['color' => '#FFB800', 'bank' => 'زرین‌پال'],
-            'toman'       => ['color' => '#7C3AED', 'bank' => 'toman.ir'],
-            'payping'     => ['color' => '#F97316', 'bank' => 'پی‌پینگ'],
-            'irankish'    => ['color' => '#DC2626', 'bank' => 'ایران کیش'],
-            'saman'       => ['color' => '#0EA5A4', 'bank' => 'بانک سامان'],
-            'sep'         => ['color' => '#0F766E', 'bank' => 'سپ — بانک سامان'],
-            'sepehr'      => ['color' => '#16A34A', 'bank' => 'بانک صادرات'],
-            'idpay'       => ['color' => '#0EA5E9', 'bank' => 'idpay'],
-            'sadad'       => ['color' => '#B91C1C', 'bank' => 'بانک ملی'],
-            'zibal'       => ['color' => '#111827', 'bank' => 'زیبال'],
-            default       => ['color' => '#64748B', 'bank' => ''],
+            'payir' => ['color' => '#0D9488', 'bank' => 'pay.ir'],
+            'zarinpal' => ['color' => '#FFB800', 'bank' => 'زرین‌پال'],
+            'toman' => ['color' => '#7C3AED', 'bank' => 'toman.ir'],
+            'payping' => ['color' => '#F97316', 'bank' => 'پی‌پینگ'],
+            'irankish' => ['color' => '#DC2626', 'bank' => 'ایران کیش'],
+            'saman' => ['color' => '#0EA5A4', 'bank' => 'بانک سامان'],
+            'sep' => ['color' => '#0F766E', 'bank' => 'سپ — بانک سامان'],
+            'sepehr' => ['color' => '#16A34A', 'bank' => 'بانک صادرات'],
+            'idpay' => ['color' => '#0EA5E9', 'bank' => 'idpay'],
+            'sadad' => ['color' => '#B91C1C', 'bank' => 'بانک ملی'],
+            'zibal' => ['color' => '#111827', 'bank' => 'زیبال'],
+            default => ['color' => '#64748B', 'bank' => ''],
         };
     }
 
@@ -324,6 +328,7 @@ class Gateways extends Component
                 'shop_slug' => 'شناسه فروشگاه',
                 'auth_code' => 'کد احراز هویت',
                 'pubKey' => 'کلید عمومی',
+                'sendCellNumber' => 'سوییچ ارسال شماره موبایل به درگاه سپ',
             ];
             $configName = $configNames[$configKey] ?? $configKey;
             $fieldChanges[] = "{$configName} از «{$configChange['old']}» به «{$configChange['new']}»";

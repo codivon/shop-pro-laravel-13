@@ -204,17 +204,31 @@
                                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                         @foreach ($configFields as $field)
                                             <div @class(['sm:col-span-2' => ($field['col'] ?? 4) >= 8])>
-                                                <label class="mb-1.5 block text-xs font-semibold" for="gw-{{ $card['id'] }}-{{ $field['name'] }}">
-                                                    {{ $field['label'] }} <span class="text-red-500">*</span>
-                                                </label>
-                                                @if (($field['type'] ?? 'text') === 'textarea')
-                                                    <textarea id="gw-{{ $card['id'] }}-{{ $field['name'] }}" rows="3" dir="ltr"
-                                                              wire:model="form.{{ $card['id'] }}.configs.{{ $field['name'] }}"
-                                                              class="ap-input font-mono text-xs"></textarea>
+                                                @if (($field['type'] ?? 'text') === 'toggle')
+                                                    {{-- فاز ۱۰۱ — سوییچ (مثل سوییچ فعال/غیرفعال درگاه) — مقدار '1' ذخیره می‌شود --}}
+                                                    <label class="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-line px-3.5 py-3 transition-colors hover:bg-surface-2 dark:border-night-line dark:hover:bg-night-3/60"
+                                                           for="gw-{{ $card['id'] }}-{{ $field['name'] }}">
+                                                        <span class="text-xs font-medium leading-5">{{ $field['label'] }}</span>
+                                                        <x-admin-panel::toggle
+                                                            id="gw-{{ $card['id'] }}-{{ $field['name'] }}"
+                                                            wire:model="form.{{ $card['id'] }}.configs.{{ $field['name'] }}"
+                                                            value="1"
+                                                            aria-label="{{ $field['label'] }}"
+                                                        />
+                                                    </label>
                                                 @else
-                                                    <input id="gw-{{ $card['id'] }}-{{ $field['name'] }}" type="text" dir="ltr"
-                                                           wire:model="form.{{ $card['id'] }}.configs.{{ $field['name'] }}"
-                                                           class="ap-input font-mono" autocomplete="off">
+                                                    <label class="mb-1.5 block text-xs font-semibold" for="gw-{{ $card['id'] }}-{{ $field['name'] }}">
+                                                        {{ $field['label'] }} <span class="text-red-500">*</span>
+                                                    </label>
+                                                    @if (($field['type'] ?? 'text') === 'textarea')
+                                                        <textarea id="gw-{{ $card['id'] }}-{{ $field['name'] }}" rows="3" dir="ltr"
+                                                                  wire:model="form.{{ $card['id'] }}.configs.{{ $field['name'] }}"
+                                                                  class="ap-input font-mono text-xs"></textarea>
+                                                    @else
+                                                        <input id="gw-{{ $card['id'] }}-{{ $field['name'] }}" type="text" dir="ltr"
+                                                               wire:model="form.{{ $card['id'] }}.configs.{{ $field['name'] }}"
+                                                               class="ap-input font-mono" autocomplete="off">
+                                                    @endif
                                                 @endif
                                             </div>
                                         @endforeach

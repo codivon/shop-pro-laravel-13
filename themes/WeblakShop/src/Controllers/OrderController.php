@@ -1042,8 +1042,18 @@ class OrderController extends Controller
         try {
             $gateway_configs = get_gateway_configs($gateway);
 
+            $invoice = (new Invoice)->amount(intval($order->price));
+
+            // فاز ۱۰۱ — سپ (مستند سامان ۳.۶): CellNumber = شماره موبایل خریدار برای واکشی
+            // کارت‌های ذخیره‌شده در درگاه — با سوییچ تنظیمات درگاه (sendCellNumber) قابل خاموش‌کردن.
+            // درایور سپ فقط شمارهٔ معتبر را می‌فرستد؛ مقدار نامعتبر/خالی کاملاً از payload حذف می‌شود
+            // (ارسال "" قبلاً خطای ۵ «پارامترهای ارسالی نامعتبر است» می‌گرفت).
+            if ($gateway === 'sep' && ($gateway_configs['sendCellNumber'] ?? '1') !== '0') {
+                $invoice->detail('mobile', (string) $order->mobile);
+            }
+
             return Payment::via($gateway)->config($gateway_configs)->callbackUrl(route('front.orders.verify', ['gateway' => $gateway]))->purchase(
-                (new Invoice)->amount(intval($order->price)),
+                $invoice,
                 function ($driver, $transactionId) use ($order, $gateway) {
                     DB::table('transactions')->insert([
                         'status' => false,
