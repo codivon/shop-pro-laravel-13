@@ -10,6 +10,9 @@ return [
     'api' => [
         // فاز ۱۰۶ — سرور مارکت از update.weblak.ir (هاست آلمان) به update.opashop.ir (هاست ایران) منتقل شد.
         'base_url' => env('PACKAGES_API_URL', 'https://update.opashop.ir'),
+        // فاز ۱۰۷ — صفحهٔ خرید/تمدید اشتراک روی سرور مارکت؛ دکمه‌های «خرید اشتراک»،
+        // «تمدید اشتراک» و «خرید یا تمدید اشتراک» در بازار به همین آدرس لینک می‌شوند.
+        'subscriptions_url' => env('PACKAGES_SUBSCRIPTIONS_URL', 'https://update.opashop.ir/subscriptions'),
         // ✅ حذف option() و استفاده مستقیم از env()
         'token' => env('SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN', env('PACKAGES_API_TOKEN')),
         'project_key' => env('SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN', env('PACKAGES_API_PROJECT_KEY')),

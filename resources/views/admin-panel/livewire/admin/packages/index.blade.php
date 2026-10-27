@@ -79,7 +79,10 @@
          شرط قبلی $type === 'package' بود؛ یعنی در تب پیش‌فرض «همه» حتی با اشتراک فعال
          همیشه بنر خاکستری نشان داده می‌شد. حالا بنر در هر تبی که پکیج‌ها را نشان می‌دهد
          (همه + پکیج‌ها) بر اساس وضعیت واقعی اشتراک رندر می‌شود و در تب قالب‌ها حذف است
-         (اشتراک فقط پکیج‌ها را پوشش می‌دهد — گلاساری API). --}}
+         (اشتراک فقط پکیج‌ها را پوشش می‌دهد — گلاساری API).
+         فاز ۱۰۷ — درخواست کاربر: در تب «همه» این بنر تنها محل نمایش وضعیت اشتراک است؛
+         پیام «اشتراک ندارید / منقضی شده» دیگر داخل بخش پکیج‌ها یا قالب‌ها تکرار نمی‌شود
+         و دکمه‌های خرید/تمدید به update.opashop.ir/subscriptions لینک می‌شوند. --}}
     @if ($this->showsPackages() && !empty($subscriptionSummary) && ($subscriptionSummary['has_active_subscription'] ?? false))
         <div class="relative flex flex-wrap items-center gap-4 overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-l from-emerald-50 to-teal-50 p-4 dark:border-emerald-500/25 dark:from-emerald-500/10 dark:to-teal-500/10 sm:p-5">
             <div class="pointer-events-none absolute -end-10 -top-10 size-32 rounded-full bg-emerald-400/20 blur-2xl" aria-hidden="true"></div>
@@ -118,7 +121,8 @@
                 </p>
                 <p class="mt-0.5 text-xs text-ink-2 dark:text-night-ink-2">به دلیل انقضای اشتراک، پکیج‌های مشمول اشتراک نمایش داده نمی‌شوند؛ برای دسترسی مجدد اشتراک را تمدید کنید</p>
             </div>
-            <a href="{{ config('packages.api.base_url') }}" target="_blank" rel="noopener" class="ap-btn-primary relative !py-2">
+            {{-- فاز ۱۰۷ — لینک به صفحهٔ خرید/تمدید اشتراک روی سرور مارکت (update.opashop.ir/subscriptions) --}}
+            <a href="{{ config('packages.api.subscriptions_url') }}" target="_blank" rel="noopener" class="ap-btn-primary relative !py-2">
                 <x-admin-panel::icon name="refresh-cw" class="size-4" />
                 تمدید اشتراک
             </a>
@@ -151,7 +155,8 @@
                     </button>
                 </div>
             </div>
-            <a href="{{ config('packages.api.base_url') }}" target="_blank" rel="noopener" class="ap-btn-primary relative !py-2">
+            {{-- فاز ۱۰۷ — لینک به صفحهٔ خرید/تمدید اشتراک روی سرور مارکت (update.opashop.ir/subscriptions) --}}
+            <a href="{{ config('packages.api.subscriptions_url') }}" target="_blank" rel="noopener" class="ap-btn-primary relative !py-2">
                 <x-admin-panel::icon name="external-link" class="size-4" />
                 خرید اشتراک
             </a>
@@ -774,7 +779,8 @@
                         {{-- فاز ۱۰۰ — لیست خالی به‌خاطر نبود اشتراک فعال است، نه نبود پکیج؛ کاربر باید علت را بداند --}}
                         <p class="text-sm font-bold">نمایش پکیج‌ها به اشتراک فعال نیاز دارد</p>
                         <p class="text-xs text-ink-3 dark:text-night-ink-2">به دلیل نداشتن اشتراک فعال، پکیج‌های مشمول اشتراک نمایش داده نمی‌شوند. برای مشاهدهٔ پکیج‌ها، اشتراک خود را خریداری یا تمدید کنید.</p>
-                        <a href="{{ config('packages.api.base_url') }}" target="_blank" rel="noopener" class="ap-btn-primary mt-2 !py-2">
+                        {{-- فاز ۱۰۷ — لینک به صفحهٔ خرید/تمدید اشتراک روی سرور مارکت --}}
+                        <a href="{{ config('packages.api.subscriptions_url') }}" target="_blank" rel="noopener" class="ap-btn-primary mt-2 !py-2">
                             <x-admin-panel::icon name="shopping-cart" class="size-4" />
                             خرید یا تمدید اشتراک
                         </a>
@@ -841,7 +847,16 @@
         @endif
     @elseif (! $apiError && ! count($packages))
         {{-- فاز ۵۲: کارت خالی پکیج‌ها فقط وقتی واقعاً پکیجی نیست — در تب «همه» با رندر شدن
-             گرید پکیج‌ها، این کارت نباید زیر پکیج‌ها دیده شود (باگ گزارش‌شده توسط کاربر) --}}
+             گرید پکیج‌ها، این کارت نباید زیر پکیج‌ها دیده شود (باگ گزارش‌شده توسط کاربر)
+             فاز ۱۰۷ — درخواست کاربر: پیام «اشتراک ندارید / تمدید کنید» فقط یک بار و در بنر
+             بالای صفحه رندر می‌شود و دیگر داخل بخش پکیج‌های تب «همه» تکرار نمی‌شود؛
+             پس این کارت فقط وقتی رندر می‌شود که اشتراک فعال هست (و واقعاً نتیجه‌ای نیست)
+             یا فیلتری فعال است — در هر دو حالت علت خالی‌بودن، نبود اشتراک نیست. --}}
+        @php
+            $hasFilters = ($free !== '' || $search !== '' || $category !== '' || $sort !== '');
+            $hasActiveSub = ! empty($subscriptionSummary) && ($subscriptionSummary['has_active_subscription'] ?? false);
+        @endphp
+        @if ($hasActiveSub || $hasFilters)
         <div class="ap-card flex flex-col items-center justify-center gap-2 p-10 text-center">
             <span class="flex size-12 items-center justify-center rounded-2xl bg-surface-2 text-ink-3 dark:bg-night-3">
                 <x-admin-panel::icon name="package" class="size-6" />
@@ -853,20 +868,10 @@
                 <p class="text-sm font-bold">پکیج پولی یافت نشد</p>
                 <p class="text-xs text-ink-3 dark:text-night-ink-2">پکیج‌های این بخش رایگان هستند یا فیلترها را تغییر دهید.</p>
             @else
-                @if (!empty($subscriptionSummary) && ! ($subscriptionSummary['has_active_subscription'] ?? false))
-                    {{-- فاز ۱۰۰ — لیست خالی به‌خاطر نبود اشتراک فعال است، نه نبود پکیج؛ کاربر باید علت را بداند --}}
-                    <p class="text-sm font-bold">نمایش پکیج‌ها به اشتراک فعال نیاز دارد</p>
-                    <p class="text-xs text-ink-3 dark:text-night-ink-2">به دلیل نداشتن اشتراک فعال، پکیج‌های مشمول اشتراک نمایش داده نمی‌شوند. برای مشاهدهٔ پکیج‌ها، اشتراک خود را خریداری یا تمدید کنید.</p>
-                    <a href="{{ config('packages.api.base_url') }}" target="_blank" rel="noopener" class="ap-btn-primary mt-2 !py-2">
-                        <x-admin-panel::icon name="shopping-cart" class="size-4" />
-                        خرید یا تمدید اشتراک
-                    </a>
-                @else
-                    <p class="text-sm font-bold">پکیجی برای نمایش وجود ندارد</p>
-                    <p class="text-xs text-ink-3 dark:text-night-ink-2">فیلترها را تغییر دهید یا اتصال به سرور پکیج‌ها را بررسی کنید.</p>
-                @endif
+                <p class="text-sm font-bold">پکیجی برای نمایش وجود ندارد</p>
+                <p class="text-xs text-ink-3 dark:text-night-ink-2">فیلترها را تغییر دهید یا اتصال به سرور پکیج‌ها را بررسی کنید.</p>
             @endif
-            @if ($free !== '' || $search !== '' || $category !== '' || $sort !== '')
+            @if ($hasFilters)
                 <button type="button" wire:click="resetFilters" class="ap-btn-outline mt-1 !py-2">
                     <x-admin-panel::icon name="rotate-ccw" class="size-4" />
                     حذف همه‌ی فیلترها
@@ -874,6 +879,7 @@
             @endif
         </div>
         @endif
+    @endif
     @endif
     {{-- ============ مودال تأیید نصب (پورت install-confirm-modal — انتخاب پلن/لایسنس/اشتراک) ============ --}}
     <div x-show="modalOpen" x-cloak

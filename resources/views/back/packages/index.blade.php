@@ -87,7 +87,8 @@
                                 </button>
                             </div>
                         </div>
-                        <a href="{{ config('packages.api.base_url') }}" target="_blank" class="btn pkg-sub-buy-btn">
+                        {{-- فاز ۱۰۷ — لینک به صفحهٔ خرید/تمدید اشتراک روی سرور مارکت (update.opashop.ir/subscriptions) --}}
+                        <a href="{{ config('packages.api.subscriptions_url') }}" target="_blank" class="btn pkg-sub-buy-btn">
                             <i class="feather icon-external-link"></i> خرید اشتراک
                         </a>
                     </div>
