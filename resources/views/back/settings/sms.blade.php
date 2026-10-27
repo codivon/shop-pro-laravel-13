@@ -1,5 +1,9 @@
 @extends('back.layouts.master')
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('back/assets/css/settings-tabs.css') }}?v=1.0.0">
+@endpush
+
 @section('content')
 
     <div class="app-content content">
@@ -43,6 +47,15 @@
 
                     <form id="sms-form" action="{{ route('admin.settings.sms') }}" method="POST">
 
+                        {{-- نوار تب‌ها (فاز ۱۰۵ — الگوی مشترک تنظیمات) --}}
+                        <nav class="stab-tabs" role="tablist" aria-label="بخش‌های تنظیمات پیامک">
+                            <button type="button" class="stab-tab is-active" data-stab="panel" role="tab" aria-selected="true"><i class="feather icon-server"></i> پنل پیامک</button>
+                            <button type="button" class="stab-tab" data-stab="events" role="tab" aria-selected="false"><i class="feather icon-bell"></i> پیامک‌های خودکار</button>
+                        </nav>
+
+                        {{-- تب ۱: پنل پیامک و ارائه‌دهنده --}}
+                        <section class="stab-pane is-active" data-stab-pane="panel" role="tabpanel">
+
                         {{-- ================= انتخاب ارائه‌دهنده ================= --}}
                         <div class="card">
                             <div class="card-body">
@@ -71,6 +84,18 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- پیکربندی ارائه‌دهنده (هم‌تبِ پنل) --}}
+                        @include('back.settings.partials.ippanel-sms')
+                        @include('back.settings.partials.kavenegar-sms')
+                        @include('back.settings.partials.melipayamak-sms')
+                        @include('back.settings.partials.idehpardazan-sms')
+                        @include('back.settings.partials.faraz-sms')
+
+                        </section>
+
+                        {{-- تب ۲: پیامک‌های خودکار رویدادها --}}
+                        <section class="stab-pane" data-stab-pane="events" role="tabpanel">
 
                         {{-- ================= گروه: ثبت‌نام، ورود و احراز هویت ================= --}}
                         <div class="card">
@@ -150,12 +175,7 @@
                             </div>
                         </div>
 
-                        {{-- ================= تنظیمات اختصاصی هر ارائه‌دهنده ================= --}}
-                        @include('back.settings.partials.ippanel-sms')
-                        @include('back.settings.partials.kavenegar-sms')
-                        @include('back.settings.partials.melipayamak-sms')
-                        @include('back.settings.partials.idehpardazan-sms')
-                        @include('back.settings.partials.faraz-sms')
+                        </section>
 
                         <div class="row">
                             <div class="col-12 d-flex flex-sm-row flex-column justify-content-end mt-1 mb-3">
@@ -172,6 +192,10 @@
     </div>
 
 @endsection
+
+@push('scripts')
+    <script src="{{ asset('back/assets/js/settings-tabs.js') }}?v=1.0.0"></script>
+@endpush
 
 @push('styles')
     <style>

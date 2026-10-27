@@ -1,6 +1,7 @@
 @extends('back.layouts.master')
 @push('styles')
     <link rel="stylesheet" href="{{asset('back/assets/css/pages/settings/others.css')}}">
+    <link rel="stylesheet" href="{{ asset('back/assets/css/settings-tabs.css') }}?v=1.0.0">
 @endpush
 @section('content')
 
@@ -34,12 +35,22 @@
                         <div id="main-card" class="card-content">
                             <div class="card-body">
                                 <div class="tab-content">
+                                    {{-- نوار تب‌ها (فاز ۱۰۵ — الگوی مشترک تنظیمات) --}}
+                                    <nav class="stab-tabs" role="tablist" aria-label="بخش‌های تنظیمات دیگر">
+                                        <button type="button" class="stab-tab is-active" data-stab="vendor" role="tab" aria-selected="true"><i class="fas fa-shopping-bag"></i> چندفروشندگی</button>
+                                        <button type="button" class="stab-tab" data-stab="invoice" role="tab" aria-selected="false"><i class="fas fa-file-invoice"></i> فاکتور سفارشات</button>
+                                        <button type="button" class="stab-tab" data-stab="users" role="tab" aria-selected="false"><i class="fas fa-users"></i> کاربران</button>
+                                        <button type="button" class="stab-tab" data-stab="images" role="tab" aria-selected="false"><i class="fas fa-image"></i> تصاویر</button>
+                                        <button type="button" class="stab-tab" data-stab="features" role="tab" aria-selected="false"><i class="fas fa-store"></i> قابلیت‌های فروشگاه</button>
+                                        <button type="button" class="stab-tab" data-stab="pusher" role="tab" aria-selected="false"><i class="fas fa-tower-broadcast"></i> Pusher</button>
+                                        <button type="button" class="stab-tab" data-stab="mail" role="tab" aria-selected="false"><i class="fas fa-envelope"></i> Mail</button>
+                                    </nav>
+
                                     <form id="others-form" action="{{ route('admin.settings.others') }}" method="POST" enctype="multipart/form-data">
                                         @csrf
 
-                                        {{-- ====================================================== --}}
-                                        {{-- 1) Multi-vendor                                            --}}
-                                        {{-- ====================================================== --}}
+                                        {{-- تب ۱: چندفروشندگی --}}
+                                        <section class="stab-pane is-active" data-stab-pane="vendor" role="tabpanel">
                                         <div class="settings-section acc-vendor">
                                             <div class="section-heading">
                                                 <span class="icon-wrap"><i class="fas fa-shopping-bag"></i></span>
@@ -64,9 +75,10 @@
                                             </div>
                                         </div>
 
-                                        {{-- ====================================================== --}}
-                                        {{-- 2) Order invoice settings                                  --}}
-                                        {{-- ====================================================== --}}
+                                        </section>
+
+                                        {{-- تب ۲: فاکتور سفارشات --}}
+                                        <section class="stab-pane" data-stab-pane="invoice" role="tabpanel">
                                         <div class="settings-section acc-invoice">
                                             <div class="section-heading">
                                                 <span class="icon-wrap"><i class="feather icon-file-text"></i></span>
@@ -120,9 +132,10 @@
                                             </div>
                                         </div>
 
-                                        {{-- ====================================================== --}}
-                                        {{-- 3) User settings                                           --}}
-                                        {{-- ====================================================== --}}
+                                        </section>
+
+                                        {{-- تب ۳: کاربران --}}
+                                        <section class="stab-pane" data-stab-pane="users" role="tabpanel">
                                         <div class="settings-section acc-users">
                                             <div class="section-heading">
                                                 <span class="icon-wrap"><i class="feather icon-users"></i></span>
@@ -254,9 +267,10 @@
                                             </div>
                                         </div>
 
-                                        {{-- ====================================================== --}}
-                                        {{-- 4) Image settings                                          --}}
-                                        {{-- ====================================================== --}}
+                                        </section>
+
+                                        {{-- تب ۴: تصاویر --}}
+                                        <section class="stab-pane" data-stab-pane="images" role="tabpanel">
                                         <div class="settings-section acc-images">
                                             <div class="section-heading">
                                                 <span class="icon-wrap"><i class="feather icon-image"></i></span>
@@ -328,9 +342,10 @@
                                             </div>
                                         </div>
 
-                                        {{-- ====================================================== --}}
-                                        {{-- 5) قابلیت‌های فروشگاه (فاز ۸۲ — از تنظیمات قالب به تنظیمات سایت منتقل شد) --}}
-                                        {{-- ====================================================== --}}
+                                        </section>
+
+                                        {{-- تب ۵: قابلیت‌های فروشگاه --}}
+                                        <section class="stab-pane" data-stab-pane="features" role="tabpanel">
                                         <div class="settings-section acc-features">
                                             <div class="section-heading">
                                                 <span class="icon-wrap"><i class="feather icon-trending-down"></i></span>
@@ -482,9 +497,10 @@
                                             </div>
                                         </div>
 
-                                        {{-- ====================================================== --}}
-                                        {{-- 5) Pusher settings                                         --}}
-                                        {{-- ====================================================== --}}
+                                        </section>
+
+                                        {{-- تب ۶: Pusher --}}
+                                        <section class="stab-pane" data-stab-pane="pusher" role="tabpanel">
                                         <div class="settings-section acc-pusher">
                                             <div class="section-heading">
                                                 <span class="icon-wrap"><i class="feather icon-radio"></i></span>
@@ -523,9 +539,10 @@
                                             </div>
                                         </div>
 
-                                        {{-- ====================================================== --}}
-                                        {{-- 6) Mail / SMTP settings                                    --}}
-                                        {{-- ====================================================== --}}
+                                        </section>
+
+                                        {{-- تب ۷: Mail / SMTP --}}
+                                        <section class="stab-pane" data-stab-pane="mail" role="tabpanel">
                                         <div class="settings-section acc-mail">
                                             <div class="section-heading">
                                                 <span class="icon-wrap"><i class="feather icon-mail"></i></span>
@@ -577,9 +594,10 @@
                                             </div>
                                         </div>
 
-                                        {{-- ====================================================== --}}
-                                        {{--  Save bar                                                  --}}
-                                        {{-- ====================================================== --}}
+                                        </section>
+
+                                        {{-- ذخیره (بیرون از تب‌ها — همیشه نمایان) --}}
+                                        {{--  Save bar  --}}
                                         <div class="save-bar">
                                             <div class="save-note">
                                                 <i class="feather icon-shield"></i>
@@ -608,4 +626,5 @@
 
 @push('scripts')
     <script src="{{ asset('back/assets/js/pages/settings/others.js') }}"></script>
+    <script src="{{ asset('back/assets/js/settings-tabs.js') }}?v=1.0.0"></script>
 @endpush

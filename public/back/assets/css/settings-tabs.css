@@ -1,0 +1,139 @@
+/* ═══════════════════════════════════════════════════════════════════
+   کیت تب‌بندی تنظیمات — فاز ۱۰۵
+   الگوی مشترک همهٔ صفحات تنظیمات بزرگ (هسته + پکیج‌ها).
+   بی‌وابستگی به فریم‌ورک؛ رنگ تأکید با متغیر --stab-accent قابل
+   تغییر در هر صفحه است (پیش‌فرض: teal — هم‌خوان با باشگاه مشتریان).
+   ═══════════════════════════════════════════════════════════════════ */
+
+.stab {
+    --stab-accent: #0d9488;
+    --stab-accent-soft: rgba(13, 148, 136, .09);
+    --stab-ink: #1f2937;
+    --stab-muted: #6b7280;
+    --stab-line: #e5e7eb;
+    --stab-bg-soft: #f8fafc;
+    --stab-radius: 14px;
+}
+
+/* ── نوار تب‌ها ─────────────────────────────────────────────────── */
+.stab-tabs {
+    display: flex;
+    align-items: center;
+    gap: .375rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: .5rem;
+    margin-bottom: 1.25rem;
+    background: var(--stab-bg-soft);
+    border: 1px solid var(--stab-line);
+    border-radius: var(--stab-radius);
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+
+.stab-tabs::-webkit-scrollbar {
+    height: 6px;
+}
+
+.stab-tabs::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 999px;
+}
+
+.stab-tab {
+    appearance: none;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--stab-muted);
+    font: inherit;
+    font-size: .875rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: .625rem .9375rem;
+    border-radius: 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: .4375rem;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.stab-tab i {
+    font-size: .9375rem;
+}
+
+.stab-tab:hover {
+    color: var(--stab-ink);
+    background: rgba(31, 41, 55, .05);
+}
+
+.stab-tab:focus-visible {
+    outline: 2px solid var(--stab-accent);
+    outline-offset: 2px;
+}
+
+.stab-tab.is-active {
+    color: var(--stab-accent);
+    background: #fff;
+    border-color: var(--stab-line);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .07);
+}
+
+.stab-tab__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.375rem;
+    height: 1.375rem;
+    padding: 0 .3125rem;
+    border-radius: 999px;
+    font-size: .6875rem;
+    font-weight: 700;
+    color: var(--stab-accent);
+    background: var(--stab-accent-soft);
+}
+
+/* ── پنل‌ها ─────────────────────────────────────────────────────── */
+.stab-pane {
+    display: none;
+}
+
+.stab-pane.is-active {
+    display: block;
+    animation: stab-fade .18s ease;
+}
+
+@keyframes stab-fade {
+    from {
+        opacity: 0;
+        transform: translateY(3px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── نوار ذخیرهٔ انتهایی (اختیاری) ──────────────────────────────── */
+.stab-actions {
+    margin-top: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+
+.stab-actions__hint {
+    color: var(--stab-muted);
+    font-size: .8125rem;
+}
+
+/* ── موبایل: تب‌ها پهنای کامل اسکرول می‌شوند ───────────────────── */
+@media (max-width: 576px) {
+    .stab-tab {
+        padding: .5625rem .75rem;
+        font-size: .8125rem;
+    }
+}

@@ -1,5 +1,9 @@
 @extends('back.layouts.master')
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('back/assets/css/settings-tabs.css') }}?v=1.0.0">
+@endpush
+
 @section('content')
     <div class="app-content content">
         <div class="content-overlay"></div>
@@ -43,6 +47,16 @@
                     <div id="main-card" class="card-content">
                         <div class="card-body">
 
+                        {{-- نوار تب‌ها (فاز ۱۰۵ — الگوی مشترک تنظیمات) --}}
+                        <nav class="stab-tabs" role="tablist" aria-label="بخش‌های تنظیمات برنامه‌نویس">
+                            <button type="button" class="stab-tab is-active" data-stab="cron" role="tab" aria-selected="true"><i class="feather icon-clock"></i> کرون جاب</button>
+                            <button type="button" class="stab-tab" data-stab="update" role="tab" aria-selected="false"><i class="feather icon-refresh-cw"></i> حالت بروزرسانی</button>
+                            <button type="button" class="stab-tab" data-stab="webpush" role="tab" aria-selected="false"><i class="feather icon-bell"></i> اعلانات وب پوش</button>
+                            <button type="button" class="stab-tab" data-stab="general" role="tab" aria-selected="false"><i class="feather icon-settings"></i> تنظیمات دیگر</button>
+                        </nav>
+
+                        {{-- تب ۱: کرون جاب --}}
+                        <section class="stab-pane is-active" data-stab-pane="cron" role="tabpanel">
                             {{-- Shared hosting cron settings --}}
                             <div class="col-12 mb-4">
                                 <h3>کرون جاب (Cron Job)</h3>
@@ -254,8 +268,12 @@
                                     </button>
                                 </form>
                             </div>
+                        </section>
 
-                            <div class="col-md-12">
+                        <div class="col-md-12">
+
+                            {{-- تب ۲: حالت بروزرسانی --}}
+                            <section class="stab-pane" data-stab-pane="update" role="tabpanel">
 
                                 {{-- Maintenance mode settings --}}
                                 <h3 class="mt-5">حالت بروزرسانی</h3>
@@ -368,7 +386,10 @@
                                         </div>
                                     </form>
                                 @endif
+                            </section>
 
+                            {{-- تب ۳: اعلانات وب پوش --}}
+                            <section class="stab-pane" data-stab-pane="webpush" role="tabpanel">
                                 {{-- Web push settings --}}
                                 <h3 class="mt-5">اعلانات وب پوش</h3>
                                 <hr>
@@ -407,7 +428,10 @@
                                         </div>
                                     </div>
                                 </form>
+                            </section>
 
+                            {{-- تب ۴: تنظیمات دیگر + پاک‌سازی کش --}}
+                            <section class="stab-pane" data-stab-pane="general" role="tabpanel">
                                 {{-- General developer settings --}}
                                 <form
                                     class="developer-form"
@@ -590,9 +614,7 @@
                                         </button>
                                     </form>
                                 </div>
-
-
-
+                            </section>
 
                             </div>
                         </div>
@@ -613,4 +635,5 @@
 
 @push('scripts')
     <script src="{{ asset('back/assets/js/pages/developer/settings.js') }}?v=2"></script>
+    <script src="{{ asset('back/assets/js/settings-tabs.js') }}?v=1.0.0"></script>
 @endpush
