@@ -2819,3 +2819,42 @@ if (! function_exists('icon_render')) {
         return IconRegistry::render($value, $class);
     }
 }
+
+if (! function_exists('menu_icon')) {
+    /**
+     * فاز ۱۱۷ — رندر امن آیکون منوی فرانت (هم فونت‌آیکون، هم SVG/Lucide).
+     *
+     * قبلاً تم‌ها `<i class="{{ icon_class(...) }}">` می‌زدند که فقط با
+     * کلاس فونت‌آیکون کار می‌کرد؛ آیکون Lucide/SVG خالی رندر می‌شد و
+     * آیکون بدون استایل داخل `<i>` فضای خالی می‌گذاشت (بهم‌ریختگی منو).
+     * خروجی داخل span با inline-flex قرار می‌گیرد تا SVG/فونت هم‌تراز متن
+     * منو بنشیند و ارتفاع خط به‌هم نریزد؛ مقدار خالی/ناشناخته → رشتهٔ خالی.
+     */
+    function menu_icon(?string $value, string $spacing = '0.4rem'): string
+    {
+        $html = trim(\App\Support\IconRegistry::render($value));
+
+        if ($html === '') {
+            return '';
+        }
+
+        return '<span style="display:inline-flex;align-items:center;vertical-align:middle;margin-inline-end:'.$spacing.';line-height:1" aria-hidden="true">'
+            .$html.'</span>';
+    }
+}
+
+if (! function_exists('en_digits')) {
+    /**
+     * فاز ۱۱۷ — تبدیل ارقام فارسی/عربی به انگلیسی (ورودی‌های عددی مثل کد ملی
+     * و شناسهٔ ملی؛ کاربر ممکن است با کیبورد فارسی تایپ کرده باشد).
+     */
+    function en_digits(mixed $value): string
+    {
+        return strtr((string) $value, [
+            '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+            '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+            '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+            '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+        ]);
+    }
+}

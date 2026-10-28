@@ -134,6 +134,12 @@ class IconRegistry
         $style = self::iconStyle($value);
 
         if (($inner = self::lucide()[$name] ?? null) !== null) {
+            // فاز ۱۱۷ — SVG به font-size واکنش نشان نمی‌دهد؛ «اندازه» انتخابگر
+            // (font-size:Npx) به width/height تبدیل می‌شود تا در پنل و فرانت درست باشد
+            if ($style !== '' && str_contains($style, 'font-size')) {
+                $style = (string) preg_replace('/font-size:\s*(\d+(?:\.\d+)?)px/i', 'width:$1px;height:$1px', $style);
+            }
+
             return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"'
                 .' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
                 .($class !== '' ? ' class="'.htmlspecialchars($class, ENT_QUOTES, 'UTF-8').'"' : '')

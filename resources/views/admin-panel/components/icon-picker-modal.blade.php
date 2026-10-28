@@ -83,14 +83,17 @@
         {{-- بدنه: شبکهٔ آیکون‌ها --}}
         <div class="min-h-0 flex-1 overflow-y-auto p-4" x-ref="grid">
             <div class="grid grid-cols-6 gap-2 sm:grid-cols-10 md:grid-cols-12">
+                {{-- فاز ۱۱۷ — رنگ‌های حالت انتخاب/عادی داخل ternary آمده‌اند؛ اگر مثل قبل
+                     فقط کلاسِ انتخاب به class اضافه می‌شد، ترتیب CSS تیلویند (border-line
+                     بعد از border-brand-500 ساخته می‌شود) حالت انتخاب را می‌پوشاند --}}
                 <template x-for="icon in filtered" :key="tab + '-' + icon.key">
                     <button type="button"
                             x-on:click="pick(icon)"
-                            class="group flex min-h-14 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-line bg-surface p-1.5 transition-all hover:border-brand-400 hover:bg-brand-50/50 dark:border-night-line dark:bg-night-2 dark:hover:border-brand-500/50 dark:hover:bg-brand-500/10"
-                            x-bind:class="selected && selected.key === icon.key ? 'border-brand-500 ring-2 ring-brand-500/25 dark:border-brand-500' : ''"
+                            class="group flex min-h-14 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border p-1.5 transition-all"
+                            x-bind:class="selected && selected.key === icon.key ? 'border-brand-500 bg-brand-50/50 ring-2 ring-brand-500/25 dark:border-brand-500 dark:bg-brand-500/10' : 'border-line bg-surface hover:border-brand-400 hover:bg-brand-50/50 dark:border-night-line dark:bg-night-2 dark:hover:border-brand-500/50 dark:hover:bg-brand-500/10'"
                             x-bind:title="icon.name">
-                        <span class="ap-ip-icon text-ink-2 group-hover:text-brand-600 dark:text-night-ink-1 dark:group-hover:text-brand-300" x-html="preview(icon)"></span>
-                        <span class="w-full truncate text-center font-mono text-[8px] leading-3 text-ink-3 dark:text-night-ink-3" x-text="icon.name"></span>
+                        <span class="ap-ip-icon text-ink-2 group-hover:text-brand-600 dark:text-night-ink dark:group-hover:text-brand-300" x-html="preview(icon)"></span>
+                        <span class="w-full truncate text-center font-mono text-[8px] leading-3 text-ink-3 dark:text-night-ink-2" x-text="icon.name"></span>
                     </button>
                 </template>
             </div>
@@ -110,7 +113,7 @@
                 <div class="flex items-center gap-3">
                     <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl border border-line bg-surface ap-ip-preview dark:border-night-line dark:bg-night-2" x-html="selectedPreview"></span>
                     <div class="min-w-0">
-                        <p class="font-mono text-[11px] font-bold text-ink-2 dark:text-night-ink-1" x-text="selected ? selected.name : ''"></p>
+                        <p class="font-mono text-[11px] font-bold text-ink-2 dark:text-night-ink" x-text="selected ? selected.name : ''"></p>
                         <p class="text-[10px] text-ink-3 dark:text-night-ink-2" x-text="selected ? collections[selected.tab].label : ''"></p>
                     </div>
                 </div>
@@ -133,18 +136,18 @@
                     </label>
                 </div>
 
-                {{-- اندازه --}}
+                {{-- اندازه — فاز ۱۱۷: کلاس‌های رنگی انتخاب در ternary (مشکل ترتیب CSS تیلویند) --}}
                 <div class="flex flex-wrap items-center gap-1.5">
                     <span class="text-[11px] font-bold text-ink-3 dark:text-night-ink-2">اندازه:</span>
                     <template x-for="s in sizes" :key="'s-' + s">
                         <button type="button" x-on:click="size = s"
-                                class="min-w-10 rounded-lg border border-line bg-surface px-2 py-1 font-mono text-[11px] font-bold text-ink-2 transition-colors hover:border-brand-400 dark:border-night-line dark:bg-night-2 dark:text-night-ink-1"
-                                x-bind:class="size === s ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300' : ''"
+                                class="min-w-10 rounded-lg border px-2 py-1 font-mono text-[11px] font-bold transition-colors hover:border-brand-400"
+                                x-bind:class="size === s ? 'border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-500/15 dark:text-brand-300' : 'border-line bg-surface text-ink-2 dark:border-night-line dark:bg-night-2 dark:text-night-ink'"
                                 x-text="s"></button>
                     </template>
                     <button type="button" x-on:click="size = 0"
-                            class="rounded-lg border border-line bg-surface px-2 py-1 text-[10px] font-bold text-ink-3 transition-colors hover:border-brand-400 dark:border-night-line dark:bg-night-2 dark:text-night-ink-2"
-                            x-bind:class="size === 0 ? 'border-brand-500 text-brand-700 dark:text-brand-300' : ''">پیش‌فرض</button>
+                            class="rounded-lg border px-2 py-1 text-[10px] font-bold transition-colors hover:border-brand-400"
+                            x-bind:class="size === 0 ? 'border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-500/15 dark:text-brand-300' : 'border-line bg-surface text-ink-3 dark:border-night-line dark:bg-night-2 dark:text-night-ink-2'">پیش‌فرض</button>
                 </div>
 
                 {{-- عملیات --}}

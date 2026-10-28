@@ -120,6 +120,44 @@ class Phase110Test extends TestCase
         return $mobile;
     }
 
+    /**
+     * فاز ۱۱۷ — شناسهٔ ملی حقوقی «معتبر» با الگوریتم رسمی (همان الگوریتم ir_company_id)
+     */
+    private function validCompanyId(): string
+    {
+        $base = (string) random_int(1000000000, 9999999999); // ۱۰ رقم اول
+        $dec = [29, 27, 23, 19, 17];
+        $t = ((int) $base[9]) + 2;
+        $sum = 0;
+
+        for ($i = 0; $i < 10; $i++) {
+            $sum += ($t + (int) $base[$i]) * $dec[$i % 5];
+        }
+
+        $r = $sum % 11;
+
+        return $base.($r === 10 ? 0 : $r);
+    }
+
+    /**
+     * فاز ۱۱۷ — کد ملی «معتبر» با الگوریتم رسمی کنترل رقم بساز
+     * (ولیدیشن جدید registration/identity کدهای تصادفی را رد می‌کند)
+     */
+    private function validNationalCode(): string
+    {
+        $base = (string) random_int(100000000, 999999999);
+
+        $sum = 0;
+
+        for ($i = 0; $i < 9; $i++) {
+            $sum += ((int) $base[$i]) * (10 - $i);
+        }
+
+        $remainder = $sum % 11;
+
+        return $base.($remainder < 2 ? $remainder : 11 - $remainder);
+    }
+
     /** جریان کامل تا گام داده‌شده: send → verify → password → (type) → (identity) → (business) */
     private function flowTo(string $step, string $type = 'real'): SellerRegistration
     {
@@ -149,7 +187,7 @@ class Phase110Test extends TestCase
 
         if (in_array($step, ['identity', 'business', 'documents'], true)) {
             $payload = [
-                'national_code' => (string) random_int(1000000000, 9999999999),
+                'national_code' => $this->validNationalCode(),
                 'first_name' => 'علی',
                 'last_name' => 'فرهادی',
                 'ownership_confirm' => '1',
@@ -163,7 +201,7 @@ class Phase110Test extends TestCase
                     'company_name' => 'شرکت تست فاز',
                     'company_type' => 'سهامی خاص',
                     'company_registration_number' => '1234',
-                    'company_national_identity_number' => '12345678901',
+                    'company_national_identity_number' => $this->validCompanyId(),
                     'company_economic_number' => '',
                 ];
             }
@@ -432,7 +470,7 @@ class Phase110Test extends TestCase
 
         $this->withSession([SellerRegistrationFlow::SESSION_DRAFT => $draft->id])
             ->post(route('seller.registration_identity_store'), [
-                'national_code' => (string) random_int(1000000000, 9999999999),
+                'national_code' => $this->validNationalCode(),
                 'first_name' => 'مریم',
                 'last_name' => 'تستی',
                 'gender' => 'female',
@@ -457,7 +495,7 @@ class Phase110Test extends TestCase
 
         $response = $this->withSession([SellerRegistrationFlow::SESSION_DRAFT => $draft->id])
             ->post(route('seller.registration_identity_store'), [
-                'national_code' => (string) random_int(1000000000, 9999999999),
+                'national_code' => $this->validNationalCode(),
                 'first_name' => 'مریم',
                 'last_name' => 'تستی',
                 'gender' => 'female',
@@ -493,7 +531,7 @@ class Phase110Test extends TestCase
 
         $this->withSession([SellerRegistrationFlow::SESSION_DRAFT => $draft->id])
             ->post(route('seller.registration_identity_store'), [
-                'national_code' => (string) random_int(1000000000, 9999999999),
+                'national_code' => $this->validNationalCode(),
                 'first_name' => 'علی',
                 'last_name' => 'مطابق',
                 'gender' => 'male',
@@ -532,7 +570,7 @@ class Phase110Test extends TestCase
 
         $response = $this->withSession([SellerRegistrationFlow::SESSION_DRAFT => $draft->id])
             ->post(route('seller.registration_identity_store'), [
-                'national_code' => (string) random_int(1000000000, 9999999999),
+                'national_code' => $this->validNationalCode(),
                 'first_name' => 'علی',
                 'last_name' => 'مغایر',
                 'gender' => 'male',
@@ -568,7 +606,7 @@ class Phase110Test extends TestCase
 
         $this->withSession([SellerRegistrationFlow::SESSION_DRAFT => $draft->id])
             ->post(route('seller.registration_identity_store'), [
-                'national_code' => (string) random_int(1000000000, 9999999999),
+                'national_code' => $this->validNationalCode(),
                 'first_name' => 'علی',
                 'last_name' => 'قطعی',
                 'gender' => 'male',

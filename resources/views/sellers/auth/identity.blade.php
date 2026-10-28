@@ -13,7 +13,6 @@
         async submit() {
             this.busy = true;
             this.errors = {};
-            let fd = new FormData(this.$refs.form);
             // فاز ۱۱۳ — ولیدیشن کلاینتی فیلدهای الزامی با پیام فارسی برای تیک‌باکس‌های تأیید
             if (spRequire(this.$refs.form, this.errors, {
                     ownership_confirm: 'برای ادامه باید تأیید کنید موبایل و کد ملی متعلق به یک نفر است',
@@ -23,6 +22,31 @@
                 this.busy = false;
                 return;
             }
+            // فاز ۱۱۷ — نرمال‌سازی ارقام فارسی فیلدهای عددی (قبل از ساخت FormData)
+            // ⚠️ داخل x-data attribute کوتیشن دابل ممنوع — اتریبیوت HTML را می‌شکند؛
+            // سلکتورها بدون کوتیشن (CSS identifier) نوشته شده‌اند
+            this.$refs.form.querySelectorAll('input[inputmode=numeric]').forEach(function (el) {
+                el.value = spEnDigits(el.value).trim();
+            });
+            // فاز ۱۱۷ — کنترل رقم کد ملی ایرانی سمت کلاینت (پیام فارسی فوری بدون رفت‌وبرگشت)
+            var ninEl = this.$refs.form.querySelector('[name=national_code]');
+            if (ninEl && ! spValidNationalCode(ninEl.value)) {
+                this.errors.national_code = ['کد ملی وارد شده معتبر نیست؛ کد ملی ۱۰ رقمی را مطابق کارت ملی بررسی کنید'];
+                spToast('کد ملی وارد شده معتبر نیست', 'error');
+                ninEl.focus();
+                this.busy = false;
+                return;
+            }
+            // شناسهٔ ملی شرکت الگوریتم جداگانه دارد (سرور چک می‌کند) — اینجا فقط طول/عدد بودن
+            var cninEl = this.$refs.form.querySelector('[name=company_national_identity_number]');
+            if (cninEl && ! /^\d{11}$/.test(cninEl.value)) {
+                this.errors.company_national_identity_number = ['شناسهٔ ملی شرکت باید ۱۱ رقم باشد'];
+                spToast('شناسهٔ ملی شرکت باید ۱۱ رقم باشد', 'error');
+                cninEl.focus();
+                this.busy = false;
+                return;
+            }
+            let fd = new FormData(this.$refs.form);
             try {
                 let data = await spPost('{{ route('seller.registration_identity_store') }}', fd);
                 if (data.warning) { spToast(data.warning, 'success'); }

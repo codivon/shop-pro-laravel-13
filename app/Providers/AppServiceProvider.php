@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Filter;
+use App\Models\Menu;
 use App\Models\Price;
 use App\Observers\ProductObserver;
 use App\Observers\PriceObserver;
@@ -146,6 +147,35 @@ class AppServiceProvider extends ServiceProvider
             'کد امنیتی وارد شده صحیح نیست یا منقضی شده است.'
         );
 
+        // فاز ۱۱۷ — قوانین کد ملی/شناسهٔ ملی: تبدیل خودکار ارقام فارسی فعال شود
+        // (کاربر ممکن است کد ملی را با کیبورد فارسی تایپ کند؛ بدون تبدیل، ارقام
+        // چندبایتی در digits/الگوریتم کنترل رقم شکست می‌خورند)
+        config(['persian-validation.convert_persian_numbers' => true]);
+
+        /*
+         * فاز ۱۱۷ — کد ملی ایرانی با الگوریتم رسمی کنترل رقم + رد ارقام یکسان.
+         * (پکیج persian-validation چک‌سام کنترل رقم را دارد ولی ارقام تکراری مثل
+         * «۰۰۰۰۰۰۰۰۰۰» را — که از الگوریتم می‌گذرند — رد نمی‌کند؛ قانون اختصاصی هر دو را می‌بندد)
+         */
+        Validator::extend('iran_national_code', function ($attribute, $value) {
+            $code = en_digits(trim((string) $value));
+
+            if (! preg_match('/^\d{10}$/', $code) || preg_match('/^(\d)\1{9}$/', $code)) {
+                return false;
+            }
+
+            $sum = 0;
+
+            for ($i = 0; $i < 9; $i++) {
+                $sum += ((int) $code[$i]) * (10 - $i);
+            }
+
+            $remainder = $sum % 11;
+            $checkDigit = $remainder < 2 ? $remainder : 11 - $remainder;
+
+            return ((int) $code[9]) === $checkDigit;
+        }, 'کد ملی وارد شده معتبر نیست.');
+
 
         $this->observers();
 
@@ -258,6 +288,8 @@ class AppServiceProvider extends ServiceProvider
         Banner::observe(BannerObserver::class);
         Post::observe(PostObserver::class);
         Category::observe(CategoryObserver::class);
+        // فاز ۱۱۷ — باطل‌سازی کش درخت منوی فرانت هنگام هر تغییر منو
+        Menu::observe(\App\Observers\MenuObserver::class);
     }
 
     public static function loadTheme()

@@ -351,8 +351,11 @@ class SellerRegistrationController extends Controller
 
         $isLegal = $draft->type === SellerRegistration::TYPE_LEGAL;
 
+        // فاز ۱۱۷ — کد ملی ایرانی با الگوریتم رسمی کنترل رقم (iran_national_code؛
+        // ارقام یکسان هم رد می‌شود) و شناسهٔ ملی حقوقی (ir_company_id) اعتبارسنجی
+        // می‌شوند؛ ارقام فارسی خودکار به انگلیسی تبدیل می‌شوند
         $rules = [
-            'national_code' => ['required', 'digits:10'],
+            'national_code' => ['required', 'iran_national_code'],
             'first_name' => 'required|persian_alpha',
             'last_name' => 'required|persian_alpha',
             'ownership_confirm' => 'accepted',
@@ -369,26 +372,26 @@ class SellerRegistrationController extends Controller
             $rules['company_name'] = 'required|persian_alpha';
             $rules['company_type'] = 'required';
             $rules['company_registration_number'] = 'required';
-            $rules['company_national_identity_number'] = 'required|digits:11';
+            $rules['company_national_identity_number'] = 'required|ir_company_id';
             $rules['company_economic_number'] = 'nullable|digits:12';
         }
 
         $this->validate($request, $rules, [
             'national_code.required' => 'کد ملی را وارد کنید',
-            'national_code.digits' => 'کد ملی ۱۰ رقم است',
+            'national_code.iran_national_code' => 'کد ملی وارد شده معتبر نیست؛ کد ملی ۱۰ رقمی را مطابق کارت ملی بررسی کنید',
             'national_code.unique' => 'کدملی قبلا ثبت شده',
             'first_name.required' => 'نام را وارد کنید',
             'last_name.required' => 'نام خانوادگی را وارد کنید',
             'gender.required' => 'جنسیت را انتخاب کنید',
             'company_name.required' => 'نام شرکت را وارد کنید',
             'company_national_identity_number.required' => 'شناسهٔ ملی شرکت را وارد کنید',
-            'company_national_identity_number.digits' => 'شناسهٔ ملی شرکت ۱۱ رقم است',
+            'company_national_identity_number.ir_company_id' => 'شناسهٔ ملی شرکت معتبر نیست؛ شناسهٔ ملی ۱۱ رقمی حقوقی را بررسی کنید',
             'company_economic_number.digits' => 'شمارهٔ اقتصادی ۱۲ رقم است',
             'ownership_confirm.accepted' => 'برای ادامه باید تأیید کنید شمارهٔ موبایل و کد ملی متعلق به یک نفر است',
             'info_correct.accepted' => 'برای ادامه باید صحت اطلاعات را تأیید کنید',
         ]);
 
-        $nationalCode = (string) $request->input('national_code');
+        $nationalCode = en_digits(trim((string) $request->input('national_code')));
         $warning = null;
 
         // احراز هویت فینوتک (شاهکار): فقط وقتی از تنظیمات فعال، کلیدها پر و

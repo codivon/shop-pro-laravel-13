@@ -13,7 +13,7 @@
         @default
 
         <li>
-            <a href="{{ $menu->link }}">{{ $menu->title }}</a>
+            <a href="{{ $menu->link ?: '#' }}">{!! menu_icon($menu->icon) !!}{{ $menu->title }}</a>
         </li>
 
     @endswitch
@@ -23,7 +23,7 @@
         @case('category')
 
         <li class="has-sub">
-            <a href="{{ $menu->category->link }}">{{ $menu->category->title }}</a>
+            <a href="{{ $menu->category->link }}">{!! menu_icon($menu->icon) !!}{{ $menu->category->title }}</a>
             <ul>
 
                 @if($menu->category->getCategoriesCount())
@@ -43,7 +43,7 @@
 
         @default
         <li class="has-sub">
-            <a href="{{ $menu->link }}">{{ $menu->title }}</a>
+            <a href="{{ $menu->link ?: '#' }}">{!! menu_icon($menu->icon) !!}{{ $menu->title }}</a>
             <ul>
                 @foreach ($menu->childrenmenus as $childMenu)
                     @include('front::partials.mobile-menu.child-menu', ['menu' => $childMenu])

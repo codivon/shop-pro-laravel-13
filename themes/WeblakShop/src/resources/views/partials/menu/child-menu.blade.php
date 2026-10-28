@@ -15,8 +15,9 @@
         @case('normal')
         @case('megamenu')
 
+            {{-- فاز ۱۱۷ — menu_icon: هم فونت‌آیکون، هم SVG/Lucide (قبلاً <i> خالی رندر می‌شد) --}}
             <li class="list-item">
-                <a class="nav-link" href="{{ $menu->link }}"><i class="{{ icon_class($menu->icon) }}" @if(icon_style($menu->icon)) style="{{ icon_style($menu->icon) }}" @endif></i>{{ $menu->title }}</a>
+                <a class="nav-link" href="{{ $menu->link ?: '#' }}">{!! menu_icon($menu->icon) !!}{{ $menu->title }}</a>
             </li>
 
     @endswitch
@@ -27,7 +28,7 @@
         @case('category')
 
             <li class="list-item list-item-has-children menu-col-1">
-                <a class="nav-link" href="{{ $menu->category->link }}">{{ $menu->category->title }}</a>
+                <a class="nav-link" href="{{ $menu->category->link }}">{!! menu_icon($menu->icon) !!}{{ $menu->category->title }}</a>
                 <ul class="sub-menu nav">
                     @if(!$menu->category->categories->isEmpty())
                         @foreach ($menu->category->categories as $childCategory)
@@ -50,7 +51,7 @@
         @default
 
             <li class="list-item list-item-has-children menu-col-1">
-                <a class="nav-link" href="{{ $menu->link }}">{{ $menu->title }}</a>
+                <a class="nav-link" href="{{ $menu->link ?: '#' }}">{!! menu_icon($menu->icon) !!}{{ $menu->title }}</a>
                 <ul class="sub-menu nav">
                     @foreach ($menu->childrenmenus as $childMenu)
                         @include('front::partials.menu.child-menu', ['menu' => $childMenu])

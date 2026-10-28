@@ -19,22 +19,35 @@
         @endcan
     </div>
 
-    {{-- فرم افزودن/ویرایش (آفلاین در صفحه — پورت مودال‌های قدیمی با سوییچ نوع) --}}
+    {{-- مودال افزودن/ویرایش منو (فاز ۱۱۷ — تبدیل فرم داخل صفحه به مودال؛ محتوای فرم مثل قبل) --}}
     @can('menus.create')
-        <div class="ap-card p-4 sm:p-5" x-show="$wire.formOpen" x-cloak id="menu-form-card">
-            <div class="mb-4 flex items-center justify-between gap-2">
-                <h2 class="flex items-center gap-2 text-sm font-bold">
-                    <x-admin-panel::icon name="{{ $editingId ? 'pencil' : 'plus' }}" class="size-4.5 text-brand-600 dark:text-brand-400" />
-                    {{ $editingId ? 'ویرایش منو' : 'ایجاد منوی جدید' }}
-                </h2>
-                <button type="button" wire:click="cancelForm"
-                        class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-surface-3 dark:hover:bg-night-3"
-                        title="بستن فرم" aria-label="بستن فرم">
-                    <x-admin-panel::icon name="x" class="size-4" />
-                </button>
-            </div>
+        <div x-data="{ open: @entangle('formOpen').live }" x-cloak>
+            {{-- پوشش پس‌زمینه --}}
+            <div x-show="open" x-transition.opacity
+                 class="fixed inset-0 z-[60] bg-slate-950/50 backdrop-blur-sm"
+                 x-on:click="open = false; $wire.cancelForm()" aria-hidden="true"></div>
 
-            <form wire:submit="save" class="space-y-4">
+            {{-- پنجرهٔ اصلی --}}
+            <div x-show="open" x-on:click.stop
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                 x-on:keydown.escape.window="if (open) { open = false; $wire.cancelForm() }"
+                 class="fixed inset-4 z-[61] mx-auto flex w-auto max-w-3xl flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-pop sm:inset-x-auto sm:left-1/2 sm:w-[min(48rem,calc(100vw-2rem))] sm:-translate-x-1/2 dark:border-night-line dark:bg-night-2"
+                 role="dialog" aria-modal="true" aria-labelledby="menu-form-title">
+                <div class="flex items-center justify-between gap-2 border-b border-line px-5 py-3.5 dark:border-night-line">
+                    <h2 id="menu-form-title" class="flex items-center gap-2 text-sm font-bold">
+                        <x-admin-panel::icon name="{{ $editingId ? 'pencil' : 'plus' }}" class="size-4.5 text-brand-600 dark:text-brand-400" />
+                        {{ $editingId ? 'ویرایش منو' : 'ایجاد منوی جدید' }}
+                    </h2>
+                    <button type="button" wire:click="cancelForm"
+                            class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-surface-3 hover:text-red-500 dark:hover:bg-night-3"
+                            title="بستن فرم" aria-label="بستن فرم">
+                        <x-admin-panel::icon name="x" class="size-4" />
+                    </button>
+                </div>
+
+                <div class="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+                    <form wire:submit="save" class="space-y-4">
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <label class="mb-1.5 block text-xs font-semibold" for="menu-form-type">نوع منو</label>
@@ -158,7 +171,9 @@
                     </button>
                     <button type="button" wire:click="cancelForm" class="ap-btn-ghost !py-2.5">انصراف</button>
                 </div>
-            </form>
+                    </form>
+                </div>
+            </div>
         </div>
     @endcan
 

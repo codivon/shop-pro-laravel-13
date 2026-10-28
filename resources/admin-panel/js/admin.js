@@ -1588,7 +1588,8 @@ window.apIconPicker = () => ({
     get selectedPreview() {
         if (!this.selected) return '';
         let html = this.preview(this.selected);
-        const style = this.buildStyle();
+        // فاز ۱۱۷ — SVG به font-size واکنش ندارد؛ برای آیکون‌های SVG اندازه به width/height تبدیل می‌شود
+        const style = this.selected.tab === 'lucide' ? this.svgStyle() : this.buildStyle();
         if (style) {
             html = html.replace('<svg ', '<svg style="' + style + '" ');
             html = html.replace('<i class="', '<i style="' + style + '" class="');
@@ -1603,6 +1604,11 @@ window.apIconPicker = () => ({
         return parts.join(';');
     },
 
+    /* فاز ۱۱۷ — نسخهٔ SVG استایل: font-size:Npx → width/height (چون CSS font-size روی svg بی‌اثر است) */
+    svgStyle() {
+        return this.buildStyle().replace(/font-size:\s*(\d+(?:\.\d+)?)px/g, 'width:$1px;height:$1px');
+    },
+
     /* --- مقدار نهایی مطابق حالت فیلد (class|html) --- */
     buildValue() {
         if (!this.selected) return '';
@@ -1615,8 +1621,9 @@ window.apIconPicker = () => ({
 
         // حالت html — برای فیلدهایی که محتوای HTML (SVG/<i>) ذخیره می‌کنند
         if (s.tab === 'lucide') {
+            const svgStyle = this.svgStyle();
             return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
-                + (style ? ' style="' + style + '"' : '') + '>' + (s.inner || '') + '</svg>';
+                + (svgStyle ? ' style="' + svgStyle + '"' : '') + '>' + (s.inner || '') + '</svg>';
         }
         return '<i class="' + s.cls + '"' + (style ? ' style="' + style + '"' : '') + '></i>';
     },

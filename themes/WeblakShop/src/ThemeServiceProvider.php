@@ -96,7 +96,9 @@ class ThemeServiceProvider extends ServiceProvider
                 });
 
                 $postcats = Category::published()->where('type', 'postcat')->whereNull('category_id')->orderBy('ordering')->get();
-                $menus    = Menu::whereNull('menu_id')
+                // فاز ۱۱۷ — detectLang مثل پنل ادمین (منوهای سایر زبان‌ها در فرانت نیایند)
+                $menus    = Menu::detectLang()
+                    ->whereNull('menu_id')
                     // درخت منو + دستهٔ هر آیتم — childrenmenus خودش category را eager می‌کند
                     ->with(['category.categories', 'menus', 'childrenmenus'])
                     ->orderBy('ordering')

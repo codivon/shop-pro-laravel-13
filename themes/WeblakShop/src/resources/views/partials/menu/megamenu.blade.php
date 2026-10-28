@@ -1,5 +1,6 @@
 <li class="item-list-menu megamenu-1 category nav-overlay">
-    <a href="{{ $menu->link }}" class="list-category first after" style="font-weight: bold;"><i class="{{ icon_class($menu->icon) }}" @if(icon_style($menu->icon)) style="{{ icon_style($menu->icon) }}" @endif></i>
+    {{-- فاز ۱۱۷ — menu_icon: هم فونت‌آیکون، هم SVG/Lucide --}}
+    <a href="{{ $menu->link ?: '#' }}" class="list-category first after" style="font-weight: bold;">{!! menu_icon($menu->icon) !!}
         {{ $menu->title }}</a>
     @if(count($menu->childrenmenus))
         <ul class="list-menu-level-2">
@@ -9,9 +10,13 @@
                         @include('front::partials.megamenu.category', ['menu' => $childMenu])
                     @break
 
+                    {{-- فاز ۱۱۷ — فرزندان «منوی معمولی» داخل مگامنو قبلاً بی‌صدا دور انداخته
+                         می‌شدند (case خالی) و ادمین فکر می‌کرد منو را نمی‌آورد --}}
                     @case('normal')
-
-                        @break
+                        <li class="item-menu-2">
+                            <a href="{{ $childMenu->link ?: '#' }}" class="list-category-menu-2">{!! menu_icon($childMenu->icon) !!}{{ $childMenu->title }}</a>
+                        </li>
+                    @break
                     @default
 
                @endswitch
@@ -22,4 +27,3 @@
 
 
 </li>
-
