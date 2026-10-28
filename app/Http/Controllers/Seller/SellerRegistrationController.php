@@ -480,17 +480,18 @@ class SellerRegistrationController extends Controller
             'econtract' => 'required',
         ];
 
-        // فاز ۱۱۲ — رمز در گام «تنظیم رمز عبور» ست شده؛ برای پیش‌نویس‌های قدیمیِ
-        // بدون رمز (قبل از این فاز)، ورودی رمز همچنان پذیرفته می‌شود
+        // فاز ۱۱۳ — فیلد رمز عبور از گام کسب‌وکار حذف شد؛ رمز حتماً باید در گام
+        // «تنظیم رمز عبور» ست شده باشد. برای پیش‌نویس‌های خیلی قدیمیِ قبل از فاز ۱۱۲
+        // (بدون رمز ولی رسیده به این گام) رمز تصادفی ساخته می‌شود — فروشنده می‌تواند
+        // با روش دوم ورود (موبایل + کد تأیید، فاز ۱۱۲) وارد شود.
         if (! $draft->password) {
-            $rules['password'] = 'required|min:8';
+            $draft->password = Hash::make(Str::password(12));
+            $draft->save();
         }
 
         $this->validate($request, $rules, [
             'email.required' => 'ایمیل را وارد کنید',
             'email.unique' => 'این ایمیل قبلاً در سیستم ثبت شده است',
-            'password.required' => 'رمز عبور را وارد کنید',
-            'password.min' => 'رمز عبور حداقل ۸ کاراکتر باشد',
             'state_id.required' => 'استان را انتخاب کنید',
             'city_id.required' => 'شهر را انتخاب کنید',
             'address.required' => 'آدرس را وارد کنید',
@@ -517,13 +518,8 @@ class SellerRegistrationController extends Controller
         }
 
         // مثل جریان قدیمی: ایمیل روی new_sellers می‌نشیند؛ رمز از گام «تنظیم رمز
-        // عبور» (هش‌شده در پیش‌نویس) می‌آید و فقط برای پیش‌نویس‌های قدیمی از ورودی هش می‌شود
+        // عبور» (هش‌شده در پیش‌نویس) می‌آید
         $newSeller->email = (string) $request->input('email');
-
-        if ($request->filled('password')) {
-            $newSeller->password = (string) $request->input('password');
-        }
-
         $newSeller->save();
 
         $slug = $this->generateUniqueSlug((string) $request->input('business_name'));
@@ -532,8 +528,9 @@ class SellerRegistrationController extends Controller
         $seller->slug = $slug;
         $seller->email = $newSeller->email;
         $seller->mobile = $draft->mobile;
-        // فاز ۱۱۲ — رمزِ ست‌شده در گام رمز عبور از قبل هش است؛ پیش‌نویس قدیمیِ بدون رمز از ورودی هش می‌شود
-        $seller->password = $draft->password ?: Hash::make((string) $request->input('password'));
+        // فاز ۱۱۲/۱۱۳ — رمزِ ست‌شدهٔ هش‌شده از گام رمز عبور (برای پیش‌نویس قدیمیِ
+        // بدون رمز، بالا تصادفی ساخته شد)
+        $seller->password = $draft->password;
         $seller->mobile_verification = 'YES';
         $seller->remember_token = Str::random(60);
         $seller->save();

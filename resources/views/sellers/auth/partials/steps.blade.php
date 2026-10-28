@@ -11,6 +11,16 @@
         8 => ['label' => 'پایان', 'icon' => 'circle-check'],
     ];
 @endphp
+<!-- فاز ۱۱۳ — دکمهٔ اختیاری «بازگشت به مرحلهٔ قبل» (پارامتر back = route مرحلهٔ قبل) -->
+@if (! empty($back))
+    <div class="flex">
+        <a href="{{ $back }}" wire:navigate
+           class="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-[12px] font-bold text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink dark:text-night-ink-2 dark:hover:bg-night-3 dark:hover:text-night-ink">
+            <x-admin-panel::icon name="chevron-right" class="size-4" />
+            بازگشت به مرحلهٔ قبل
+        </a>
+    </div>
+@endif
 <ol class="flex items-center justify-between gap-1 rounded-2xl border border-line bg-surface/70 p-3 dark:border-night-line dark:bg-night-2/70 sm:gap-2"
     aria-label="مراحل ثبت‌نام فروشنده">
     @foreach ($steps as $i => $step)

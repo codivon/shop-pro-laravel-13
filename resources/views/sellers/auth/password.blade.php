@@ -4,10 +4,17 @@
 <div class="space-y-5" x-data="{
         busy: false,
         errors: {},
+        init() { window.spClearErrorOnInput(this.$refs.form, this); },
         async submit() {
             this.busy = true;
             this.errors = {};
             let fd = new FormData(this.$refs.form);
+            // فاز ۱۱۳ — ولیدیشن کلاینتی فیلدهای الزامی (پیام فارسی، بدون حبابهٔ مرورگر)
+            if (spRequire(this.$refs.form, this.errors)) {
+                spToast('لطفاً فیلدهای الزامی را تکمیل کنید', 'error');
+                this.busy = false;
+                return;
+            }
             try {
                 let data = await spPost('{{ route('seller.registration_password_store') }}', fd);
                 if (data.redirect) { window.location.href = data.redirect; return; }
@@ -18,7 +25,7 @@
         }
     }">
     @include('sellers.auth.partials.sp-fetch')
-    @include('sellers.auth.partials.steps', ['active' => 3])
+    @include('sellers.auth.partials.steps', ['active' => 3, 'back' => route('seller.registration_mobile')])
 
     <div class="ap-card p-6 sm:p-8">
         <div class="text-center">

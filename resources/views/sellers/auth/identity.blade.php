@@ -9,10 +9,20 @@
         busy: false,
         errors: {},
         gender: '{{ $draft['gender'] ?? 'male' }}',
+        init() { window.spClearErrorOnInput(this.$refs.form, this); },
         async submit() {
             this.busy = true;
             this.errors = {};
             let fd = new FormData(this.$refs.form);
+            // فاز ۱۱۳ — ولیدیشن کلاینتی فیلدهای الزامی با پیام فارسی برای تیک‌باکس‌های تأیید
+            if (spRequire(this.$refs.form, this.errors, {
+                    ownership_confirm: 'برای ادامه باید تأیید کنید موبایل و کد ملی متعلق به یک نفر است',
+                    info_correct: 'برای ادامه باید صحت اطلاعات را تأیید کنید',
+                })) {
+                spToast('لطفاً فیلدهای الزامی را تکمیل کنید', 'error');
+                this.busy = false;
+                return;
+            }
             try {
                 let data = await spPost('{{ route('seller.registration_identity_store') }}', fd);
                 if (data.warning) { spToast(data.warning, 'success'); }
@@ -24,7 +34,7 @@
         }
     }">
     @include('sellers.auth.partials.sp-fetch')
-    @include('sellers.auth.partials.steps', ['active' => 5])
+    @include('sellers.auth.partials.steps', ['active' => 5, 'back' => route('seller.registration_type')])
 
     <div class="ap-card p-6 sm:p-8">
         <h1 class="text-lg font-extrabold text-ink dark:text-night-ink">اطلاعات تکمیلی</h1>
@@ -45,7 +55,7 @@
             </div>
         </div>
 
-        <form class="mt-6 space-y-6" x-on:submit.prevent="submit()" x-ref="form">
+        <form class="mt-6 space-y-6" x-on:submit.prevent="submit()" x-ref="form" novalidate>
             {{-- اطلاعات نماینده / شخص --}}
             <section class="space-y-4">
                 <h2 class="flex items-center gap-2 text-[13px] font-extrabold text-ink dark:text-night-ink">

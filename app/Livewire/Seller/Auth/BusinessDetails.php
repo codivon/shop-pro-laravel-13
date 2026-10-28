@@ -13,9 +13,14 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /**
- * گام ۵ ثبت‌نام — فاز ۱۱۰: اطلاعات کسب‌وکار و ورود (ایمیل/رمز + آدرس +
- * فروشگاه). اطلاعات هویتی از گام قبلی (پیش‌نویس) می‌آید و اینجا حساب
+ * گام ۶ ثبت‌نام — فاز ۱۱۰: اطلاعات کسب‌وکار و ورود (ایمیل + آدرس + فروشگاه).
+ * اطلاعات هویتی از گام قبلی (پیش‌نویس) می‌آید و اینجا حساب
  * Seller ساخته می‌شود (اندپوینت جدید seller.registration_business_store).
+ *
+ * فاز ۱۱۳: فیلد رمز عبور از این گام حذف شد (رمز در گام «تنظیم رمز عبور» بعد
+ * از کد تأیید گرفته می‌شود)؛ دستهٔ اصلی تأمین کالا اصلاح شد — کوئری قبلی
+ * where('category_id', null) در SQL هیچ‌وقت true نمی‌شود و لیست همیشه خالی
+ * بود؛ اکنون whereNull + فقط منتشرشدهٔ type=productcat با ستون title.
  */
 #[Title('اطلاعات کسب‌وکار')]
 #[Layout('sellers.layouts.guest')]
@@ -28,9 +33,6 @@ class BusinessDetails extends Component
 
     /** وضعیت انتخابی (حقیقی/حقوقی) از پیش‌نویس */
     public ?string $draftType = null;
-
-    /** آیا رمز عبور در گام «تنظیم رمز عبور» ست شده؟ (فاز ۱۱۲) */
-    public bool $draftPasswordSet = false;
 
     /** قرارداد الکترونیکی (رکورد ۱ — مثل قدیمی) */
     public ?object $econtract = null;
@@ -71,10 +73,18 @@ class BusinessDetails extends Component
         $this->seller = ['mobile' => $draft->mobile];
         $this->draftEmail = $draft->email;
         $this->draftType = $draft->type;
-        $this->draftPasswordSet = (bool) $draft->password;
         $this->econtract = SellerEcontract::find(1);
         $this->provinces = Province::all();
-        $this->categories = Category::where('category_id', null)->get();
+
+        // فاز ۱۱۳ — اصلاح لیست خالی دسته‌بندی‌ها: category_id ستون nullable است و
+        // مقایسهٔ = NULL در SQL همیشه false است؛ والد‌ها (دستهٔ ریشه) با whereNull
+        // گرفته می‌شوند و عنوان دسته‌بندی هم ستون title است (نه name).
+        $this->categories = Category::query()
+            ->whereNull('category_id')
+            ->where('published', 1)
+            ->where('type', 'productcat')
+            ->orderBy('ordering')
+            ->get(['id', 'title']);
     }
 
     public function render()

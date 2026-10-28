@@ -21,6 +21,8 @@ use App\Notifications\Seller\SellerCreated;
 use App\Notifications\Seller\SellerRegistered;
 use App\Notifications\Sms\NewSellerCodeSent;
 use App\Notifications\Sms\SellerPhoneOtp;
+use App\Services\CaptchaService;
+use App\Support\MultiVendorSettings;
 use App\Support\SellerRegistrationFlow;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -169,7 +171,9 @@ class SellerController extends Controller
 
         $econtract = SellerEcontract::find(1);
         $provinces = Province::all();
-        $categories = Category::where('category_id', null)->get();
+        // فاز ۱۱۳ — where('category_id', null) در SQL همیشه false است و لیست خالی می‌شد؛
+        // whereNull + فقط منتشرشدهٔ productcat (هم‌سو با ثبت‌نام مرحله‌ای پنل مدرن)
+        $categories = Category::whereNull('category_id')->where('published', 1)->where('type', 'productcat')->orderBy('ordering')->get();
 
         return view('sellers-old.auth.business-details', compact('econtract', 'provinces', 'categories'));
     }
@@ -223,6 +227,24 @@ class SellerController extends Controller
         }
 
         $this->validate($request, $rules, $messages);
+
+        // فاز ۱۱۳ — ربات‌گیر ورود با رمز عبور: کد امنیتی تصویری (همان CaptchaService
+        // ورود مدیر). فقط برای پنل مدرن با سوییچ تب چندفروشندگی؛ پنل قدیمی بدون
+        // فیلد کد امنیتی است و رفتار قبلی‌اش حفظ می‌شود. کد یک‌بارمصرف است؛ بعد
+        // از هر تلاش ناموفق باید تصویر تازه بیاید (captcha_refresh برای فرانت).
+        if (MultiVendorSettings::loginCaptchaEnabled()) {
+            $this->validate($request, ['captcha' => 'required'], [
+                'captcha.required' => 'کد امنیتی را وارد کنید',
+            ]);
+
+            if (! app(CaptchaService::class)->verify($request->input('captcha'))) {
+                return response([
+                    'status' => 'error',
+                    'message' => 'کد امنیتی اشتباه است یا منقضی شده؛ کد جدید را وارد کنید.',
+                    'captcha_refresh' => true,
+                ]);
+            }
+        }
 
         $seller = Seller::where($loginField, $request->username)->first();
 

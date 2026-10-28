@@ -48,10 +48,13 @@ class Documents extends Component
 
         $sellerInfo = SellerInfo::where('seller_id', $seller->id)->first();
 
+        // فاز ۱۱۳ — مسیر ذخیره‌شده در DB نسبی است (uploads/sellers/documents/…);
+        // برای پیش‌نمایش پس از رفرش باید asset() اضافه شود (قبلاً مسیر خام
+        // به‌عنوان src می‌رفت و کنسول 404 می‌داد). مقدار خالی → پیش‌نمایش نیست.
         $this->images = [
-            'card_image' => $sellerInfo->card_image ?? '',
-            'card_image_back' => $sellerInfo->card_image_back ?? '',
-            'vat_image' => $sellerInfo->vat_image ?? '',
+            'card_image' => $sellerInfo->card_image ? asset($sellerInfo->card_image) : '',
+            'card_image_back' => $sellerInfo->card_image_back ? asset($sellerInfo->card_image_back) : '',
+            'vat_image' => $sellerInfo->vat_image ? asset($sellerInfo->vat_image) : '',
         ];
     }
 

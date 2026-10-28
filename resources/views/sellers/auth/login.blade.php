@@ -1,6 +1,11 @@
 {{-- ورود فروشندگان پنل مدرن — فاز ۱۱۲: دو روش ورود
      ① رمز عبور (موبایل/ایمیل + رمز → seller.login_check)
-     ② کد تأیید (فقط موبایل → کد ۶ رقمی → seller.login_otp_verify) --}}
+     ② کد تأیید (فقط موبایل → کد ۶ رقمی → seller.login_otp_verify)
+     فاز ۱۱۳: روش اول ربات‌گیر (کد امنیتی تصویری CaptchaService) گرفت —
+     سوییچ در تنظیمات برنامه‌نویس ← تب چندفروشندگی (seller_login_captcha) --}}
+@php
+    $loginCaptcha = \App\Support\MultiVendorSettings::loginCaptchaEnabled();
+@endphp
 <div class="space-y-5" x-data="{
         busy: false,
         errors: {},
@@ -36,18 +41,38 @@
         async submitPassword() {
             this.busy = true;
             this.errors = {};
+            // فاز ۱۱۳ — ولیدیشن کلاینتی فیلدهای الزامی (پیام فارسی، بدون حبابهٔ مرورگر)
+            if (! String(this.$refs.username.value || '').trim()) { this.errors.username = ['لطفا این قسمت را خالی نگذارید']; }
+            if (! this.$refs.password.value) { this.errors.password = ['رمز عبور را وارد کنید']; }
+            @if ($loginCaptcha)
+            if (! String(this.$refs.captcha?.value || '').trim()) { this.errors.captcha = ['کد امنیتی را وارد کنید']; }
+            @endif
+            if (Object.keys(this.errors).length) { spToast('لطفاً فیلدهای الزامی را تکمیل کنید', 'error'); this.busy = false; return; }
             let fd = new FormData();
             fd.append('username', this.$refs.username.value);
             fd.append('password', this.$refs.password.value);
             if (this.$refs.remember.checked) { fd.append('remember', 1); }
+            @if ($loginCaptcha)
+            fd.append('captcha', this.$refs.captcha?.value || '');
+            @endif
             try {
                 let data = await spPost('{{ route('seller.login_check') }}', fd);
                 if (data.status === 'success') { spToast(data.message || 'با موفقیت وارد شدید', 'success'); setTimeout(function () { window.location.href = data.redirect || '{{ route('seller.dashboard') }}'; }, 400); return; }
                 this.errors = data.errors || {};
                 spToast(data.message || 'ورود ناموفق بود', 'error');
+                @if ($loginCaptcha)
+                // کد امنیتی یک‌بارمصرف است — بعد از هر تلاش ناموفق تصویر تازه
+                this.refreshCaptcha();
+                @endif
                 this.busy = false;
             } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); this.busy = false; }
         },
+        @if ($loginCaptcha)
+        refreshCaptcha() {
+            if (this.$refs.captchaImg) { this.$refs.captchaImg.src = '{{ route('captcha.image') }}?_=' + Date.now(); }
+            if (this.$refs.captcha) { this.$refs.captcha.value = ''; }
+        },
+        @endif
         async sendOtp() {
             this.busy = true;
             this.errors = {};
@@ -131,7 +156,7 @@
         </div>
 
         {{-- ========== روش ۱: رمز عبور (موبایل/ایمیل) ========== --}}
-        <form class="mt-6 space-y-4" x-show="tab === 'password'" x-on:submit.prevent="submitPassword()">
+        <form class="mt-6 space-y-4" x-show="tab === 'password'" x-on:submit.prevent="submitPassword()" novalidate>
             <div>
                 <label class="mb-1.5 block text-xs font-bold" for="sp-login-username">شماره موبایل یا ایمیل</label>
                 <div class="relative">
@@ -151,6 +176,30 @@
                 </div>
                 <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.password" x-text="(errors.password || [])[0]" x-cloak></p>
             </div>
+
+            @if ($loginCaptcha)
+                {{-- فاز ۱۱۳ — ربات‌گیر ورود با رمز عبور --}}
+                <div>
+                    <label class="mb-1.5 block text-xs font-bold" for="sp-login-captcha">کد امنیتی <span class="text-red-500">*</span></label>
+                    <div class="flex items-stretch gap-2">
+                        <div class="relative flex-1">
+                            <x-admin-panel::icon name="shield" class="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
+                            <input id="sp-login-captcha" x-ref="captcha" type="text" dir="ltr" maxlength="5" autocomplete="off" autocapitalize="off" spellcheck="false"
+                                   x-on:input="delete errors.captcha"
+                                   class="ap-input pe-10! py-3! text-center font-mono tracking-widest" placeholder="ABCDX">
+                        </div>
+                        <button type="button" x-on:click="refreshCaptcha()" title="تولید کد جدید — با کلیک روی تصویر هم کد تازه می‌آید"
+                                class="relative w-28 shrink-0 overflow-hidden rounded-xl border border-line bg-night-1 dark:border-night-line"
+                                aria-label="تولید کد امنیتی جدید">
+                            <img x-ref="captchaImg" src="{{ route('captcha.image') }}" alt="کد امنیتی" class="size-full object-cover">
+                            <span class="absolute bottom-1 end-1 flex size-6 items-center justify-center rounded-lg bg-white/15 text-white backdrop-blur">
+                                <x-admin-panel::icon name="refresh-cw" class="size-3.5" />
+                            </span>
+                        </button>
+                    </div>
+                    <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.captcha" x-text="(errors.captcha || [])[0]" x-cloak></p>
+                </div>
+            @endif
 
             <label class="flex cursor-pointer items-center gap-2 text-xs font-bold text-ink-2 dark:text-night-ink-2">
                 <input type="checkbox" x-ref="remember" class="size-4 rounded border-line accent-brand-600">

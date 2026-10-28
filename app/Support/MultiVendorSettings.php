@@ -220,6 +220,21 @@ class MultiVendorSettings
         return option(self::KEY_KYC_MOBILE, '0') === '1';
     }
 
+    /**
+     * ربات‌گیر (کد امنیتی) ورود با رمز عبور (فاز ۱۱۳): در تب «رمز عبور» صفحهٔ
+     * ورود فروشندگان (موبایل/ایمیل + رمز) کد امنیتی تصویری سرو می‌شود و
+     * seller.login_check آن را با همان CaptchaService ورود مدیر اعتبارسنجی
+     * می‌کند. روش دوم ورود (موبایل + کد تأیید) خودش otp دارد و نیازی ندارد.
+     * فقط وقتی پنل مدرن فعال است اجرا می‌شود تا فرم ورود قدیمی نشکند.
+     * پیش‌فرض روشن (درخواست صریح مدیر پروژه).
+     */
+    public const KEY_LOGIN_CAPTCHA = 'seller_login_captcha';
+
+    public static function loginCaptchaEnabled(): bool
+    {
+        return self::modernPanelEnabled() && option(self::KEY_LOGIN_CAPTCHA, '1') === '1';
+    }
+
     /* ================= منطق کمیسیون ================= */
 
     /**

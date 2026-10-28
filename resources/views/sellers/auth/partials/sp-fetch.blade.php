@@ -28,4 +28,44 @@
     window.spToast = function (message, type) {
         document.dispatchEvent(new CustomEvent('sp-auth-toast', { detail: { message: message, type: type || 'error' } }));
     };
+
+    {{-- فاز ۱۱۳ — بررسی سمت کلاینتِ فیلدهای required با پیام فارسی یکدست.
+         فرم‌ها novalidate هستند (حبابهٔ انگلیسی مرورگر نداریم)؛ خالی‌ها با کلیدِ
+         name فیلد در errors (همان آبجکت آلپاین) می‌نشینند و زیر فیلد رندر می‌شوند.
+         customMessages: map اختیاری name → پیام فارسی (مثل تیک‌باکس‌های تأیید). --}}
+    window.spRequire = function (form, errors, customMessages) {
+        customMessages = customMessages || {};
+        var missing = false;
+
+        form.querySelectorAll('[required]').forEach(function (el) {
+            var filled = el.type === 'checkbox' ? el.checked : String(el.value || '').trim() !== '';
+
+            if (! filled) {
+                var name = el.name || el.id || '_';
+                if (! errors[name] || ! errors[name].length) {
+                    errors[name] = [customMessages[name] || 'این فیلد الزامی است'];
+                }
+                missing = true;
+            }
+        });
+
+        return missing;
+    };
+
+    {{-- فاز ۱۱۳ — پاک‌کردن پیام «الزامی» کلاینت وقتی کاربر شروع به پرکردن کرد.
+         scope = خود کامپوننت آلپاین (this در init) تا همیشه errors فعلی خوانده شود --}}
+    window.spClearErrorOnInput = function (form, scope) {
+        form.addEventListener('input', function (e) {
+            var errs = scope.errors || {};
+            if (e.target && e.target.name && errs[e.target.name] && errs[e.target.name][0] === 'این فیلد الزامی است') {
+                delete errs[e.target.name];
+            }
+        });
+        form.addEventListener('change', function (e) {
+            var errs = scope.errors || {};
+            if (e.target && e.target.type === 'checkbox' && e.target.name && errs[e.target.name]) {
+                delete errs[e.target.name];
+            }
+        });
+    };
 </script>

@@ -1116,6 +1116,29 @@
                         </div>
                     </section>
 
+                    {{-- ───── ورود و ثبت‌نام فروشندگان (فاز ۱۱۳ — ربات‌گیر) ───── --}}
+                    <section class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
+                        <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">
+                            <x-admin-panel::icon name="log-in" class="size-4.5 text-brand-600 dark:text-brand-400" />
+                            <h3 class="text-[13px] font-bold">ورود و ثبت‌نام فروشندگان</h3>
+                            <span class="ms-auto text-[10px] font-semibold text-ink-3 dark:text-night-ink-2">امنیت صفحهٔ ورود پنل مدرن</span>
+                        </div>
+                        <div class="space-y-3 p-4">
+                            <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                                <span class="flex min-w-0 items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="shield" class="size-4" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-[13px] font-bold">ربات‌گیر ورود با رمز عبور (کد امنیتی تصویری)</span>
+                                        <span class="block text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">در تب «رمز عبور» صفحهٔ ورود فروشندگان (موبایل/ایمیل + رمز)، کد امنیتی تصویری یک‌بارمصرف نمایش داده شود و سمت سرور هم اعتبارسنجی شود — روش دوم ورود (موبایل + کد تأیید) خودش کد پیامکی دارد و نیازی ندارد. فقط وقتی پنل مدرن فعال است اعمال می‌شود</span>
+                                    </span>
+                                </span>
+                                <x-admin-panel::toggle wire:model="vendorLoginCaptcha" size="sm" aria-label="ربات‌گیر ورود فروشنده" />
+                            </div>
+                        </div>
+                    </section>
+
                     {{-- ───── کمیسیون ───── --}}
                     <section class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
                         <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">

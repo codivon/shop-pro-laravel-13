@@ -1,60 +1,109 @@
-{{-- گام ۴ ثبت‌نام — بارگذاری مدارک (فاز ۱۰۸). مکانیزم عین قدیمی:
+{{-- گام ۷ ثبت‌نام — بارگذاری مدارک (فاز ۱۰۸). مکانیزم عین قدیمی:
      POST multipart با فیلد imageFor (نام فیلد تصویر) به seller.registration_documents_store
-     و حذف با DELETE به seller.registration_documents_delete؛ پایان با POST seller.registration_documents_check
-     (فیلد vat_free: 1=دارای ارزش افزوده، 2=بدون) --}}
+     و حذف با POST + _method=DELETE به seller.registration_documents_delete؛ پایان با
+     POST seller.registration_documents_check (فیلد vat_free: 1=دارای ارزش افزوده، 2=بدون).
+     فاز ۱۱۳ — اصلاحات:
+     • ارجاع‌های داخل متدهای آلپاین همه this. شد — قبلًا vatFree/busy/images بدون this
+       بود و «Uncaught ReferenceError: vatFree is not defined» می‌داد و بعد از آپلودِ
+       موفق هم «خطا در برقراری ارتباط» نمایش داده می‌شد و پیش‌نمایش نمی‌آمد.
+     • ولیدیشن کلاینتی «بررسی و ادامه»: کارت ملی رو/پشت اجباری؛ با انتخاب «دارای
+       گواهی ارزش افزوده» آپلود گواهی هم اجباری می‌شود (با هایلایت کادرهای ناقص).
+     • خطای سرور (۴۰۴ سشن گم‌شده و…) با پیام واقعی نمایش داده می‌شود. --}}
 <div class="space-y-5"
      x-data="{
         busy: false,
         vatFree: '2',
         images: @js($images),
         uploading: '',
+        missing: [],
+
+        docLabels: {
+            card_image: 'تصویر کارت ملی (رو)',
+            card_image_back: 'تصویر کارت ملی (پشت)',
+            vat_image: 'تصویر گواهی ارزش افزوده',
+        },
+
         async upload(field, input) {
             if (! input.files || ! input.files[0]) { return; }
-            uploading = field;
-            var fd = new FormData();
+            this.uploading = field;
+            this.missing = this.missing.filter(f => f !== field);
+
+            let fd = new FormData();
             fd.append('imageFor', field);
             fd.append(field, input.files[0]);
+            fd.append('_token', document.querySelector('meta[name=csrf-token]').content);
+
             try {
-                var res = await fetch('{{ route('seller.registration_documents_store') }}', {
+                let res = await fetch('{{ route('seller.registration_documents_store') }}', {
                     method: 'POST',
                     body: fd,
-                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                 });
-                var data = await res.json().catch(function () { return { status: 'success' }; });
+
+                let data = null;
+                try { data = await res.json(); } catch (e) { data = null; }
+
                 if (res.ok) {
-                    images[field] = URL.createObjectURL(input.files[0]);
-                    spToast('تصویر بارگذاری شد', 'success');
+                    // پیش‌نمایش فوری از خود فایل؛ پس از رفرش هم URL از سرور (asset) می‌آید
+                    this.images[field] = URL.createObjectURL(input.files[0]);
+                    spToast('تصویر «' + (this.docLabels[field] || field) + '» بارگذاری شد', 'success');
+                } else if (res.status === 404) {
+                    spToast('نشست ثبت‌نام منقضی شده است؛ صفحه را رفرش کنید', 'error');
                 } else {
-                    spToast(data.message || 'بارگذاری ناموفق بود', 'error');
+                    spToast((data && data.message) || 'بارگذاری تصویر ناموفق بود؛ دوباره تلاش کنید', 'error');
                 }
-            } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); }
-            uploading = '';
+            } catch (e) {
+                spToast('خطا در برقراری ارتباط؛ اتصال اینترنت را بررسی کنید', 'error');
+            }
+            this.uploading = '';
         },
+
         async removeImage(field) {
-            uploading = field;
-            var fd = new FormData();
+            this.uploading = field;
+            let fd = new FormData();
             fd.append('imageFor', field);
             fd.append('_method', 'DELETE');
+            fd.append('_token', document.querySelector('meta[name=csrf-token]').content);
             try {
                 await fetch('{{ route('seller.registration_documents_delete') }}', {
                     method: 'POST',
                     body: fd,
-                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                 });
-                images[field] = '';
+                this.images[field] = '';
                 spToast('تصویر حذف شد', 'success');
             } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); }
-            uploading = '';
+            this.uploading = '';
         },
+
         async finish() {
-            busy = true;
-            var fd = new FormData();
-            fd.append('vat_free', vatFree);
+            this.busy = true;
+
+            // فاز ۱۱۳ — ولیدیشن کلاینتی: کارت ملی (رو/پشت) همیشه اجباری؛
+            // گواهی ارزش افزوده فقط وقتی «دارای گواهی» انتخاب شده
+            let required = [
+                { field: 'card_image' },
+                { field: 'card_image_back' },
+            ];
+            if (this.vatFree === '1') { required.push({ field: 'vat_image' }); }
+
+            this.missing = required.filter(doc => ! this.images[doc.field]).map(doc => doc.field);
+
+            if (this.missing.length) {
+                let names = this.missing.map(field => this.docLabels[field] || field);
+                spToast('بارگذاری ' + names.join(' و ') + ' الزامی است', 'error');
+                this.busy = false;
+                return;
+            }
+
+            let fd = new FormData();
+            fd.append('vat_free', this.vatFree);
             try {
-                var data = await spPost('{{ route('seller.registration_documents_check') }}', fd);
-                if (data.redirect) { window.location.href = data.redirect; }
-                else { spToast(data.message || 'بررسی مدارک ناموفق بود', 'error'); busy = false; }
-            } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); busy = false; }
+                let data = await spPost('{{ route('seller.registration_documents_check') }}', fd);
+                if (data.redirect) { window.location.href = data.redirect; return; }
+                spToast(data.message || 'بررسی مدارک ناموفق بود', 'error');
+                this.busy = false;
+            } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); this.busy = false; }
         }
      }">
     @include('sellers.auth.partials.sp-fetch')
@@ -87,7 +136,8 @@
                 ['field' => 'card_image_back', 'title' => 'تصویر کارت ملی (پشت)', 'required' => true, 'icon' => 'credit-card'],
                 ['field' => 'vat_image', 'title' => 'گواهی ارزش افزوده', 'required' => false, 'icon' => 'file-badge', 'only' => '1'],
             ] as $doc)
-                <div class="rounded-2xl border border-line p-4 dark:border-night-line"
+                <div class="rounded-2xl border p-4 transition-colors"
+                     x-bind:class="missing.includes('{{ $doc['field'] }}') ? 'border-red-400 bg-red-50/40 dark:border-red-500/40 dark:bg-red-500/5' : 'border-line dark:border-night-line'"
                      x-show="{{ ! empty($doc['only']) ? "vatFree === '1'" : 'true' }}" x-cloak="{{ ! empty($doc['only']) ? 'x-cloak' : '' }}">
                     <div class="flex items-center justify-between gap-3">
                         <p class="flex items-center gap-2 text-[13px] font-extrabold text-ink dark:text-night-ink">
@@ -118,6 +168,12 @@
                         </button>
                         <svg x-show="uploading === '{{ $doc['field'] }}'" x-cloak class="size-4 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"/></svg>
                     </div>
+
+                    {{-- پیام الزامیِ همین مدرک (فاز ۱۱۳) --}}
+                    <p class="mt-2 text-[11px] font-bold text-red-600 dark:text-red-400"
+                       x-show="missing.includes('{{ $doc['field'] }}')" x-cloak>
+                        بارگذاری این تصویر الزامی است
+                    </p>
                 </div>
             @endforeach
         </div>

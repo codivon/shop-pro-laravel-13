@@ -18,7 +18,7 @@
         }
     }">
     @include('sellers.auth.partials.sp-fetch')
-    @include('sellers.auth.partials.steps', ['active' => 4])
+    @include('sellers.auth.partials.steps', ['active' => 4, 'back' => route('seller.registration_password')])
 
     <div class="ap-card p-6 sm:p-8">
         <h1 class="text-center text-lg font-extrabold text-ink dark:text-night-ink">وضعیت خود را انتخاب کنید</h1>

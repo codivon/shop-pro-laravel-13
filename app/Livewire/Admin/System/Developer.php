@@ -190,6 +190,9 @@ class Developer extends Component
     /** احراز هویت مالکیت موبایل فروشنده با فینوتک (فاز ۱۱۰ — پیش‌فرض خاموش) */
     public bool $vendorKycMobileVerify = false;
 
+    /** ربات‌گیر ورود فروشنده با رمز عبور (فاز ۱۱۳ — کد امنیتی تصویری؛ پیش‌فرض روشن) */
+    public bool $vendorLoginCaptcha = true;
+
     /** شناسهٔ کلاینت فینوتک (فاز ۱۱۰) */
     public string $vendorFinnotechClientId = '';
 
@@ -290,6 +293,7 @@ class Developer extends Component
         $this->vendorModernPanel = MultiVendorSettings::modernPanelEnabled();
         $this->vendorLandingPage = MultiVendorSettings::landingPageEnabled();
         $this->vendorKycMobileVerify = MultiVendorSettings::kycMobileVerifyEnabled();
+        $this->vendorLoginCaptcha = option(MultiVendorSettings::KEY_LOGIN_CAPTCHA, '1') === '1';
         $this->vendorFinnotechClientId = trim((string) option('finnotech_client_id', ''));
         $this->vendorFinnotechClientSecret = trim((string) option('finnotech_client_secret', ''));
         $this->vendorDefaultCommission = (string) (MultiVendorSettings::defaultCommission() ?? '');
@@ -471,6 +475,8 @@ class Developer extends Component
         option_update(MultiVendorSettings::KEY_MODERN_PANEL, $this->vendorModernPanel ? '1' : '0');
         option_update(MultiVendorSettings::KEY_LANDING_PAGE, $this->vendorLandingPage ? '1' : '0');
         option_update(MultiVendorSettings::KEY_KYC_MOBILE, $this->vendorKycMobileVerify ? '1' : '0');
+        // فاز ۱۱۳ — ربات‌گیر ورود فروشنده با رمز عبور
+        option_update(MultiVendorSettings::KEY_LOGIN_CAPTCHA, $this->vendorLoginCaptcha ? '1' : '0');
         option_update('finnotech_client_id', trim((string) $this->vendorFinnotechClientId));
         option_update('finnotech_client_secret', trim((string) $this->vendorFinnotechClientSecret));
         option_update('multi_vendor_default_commission', trim((string) $this->vendorDefaultCommission) === '' ? '' : (string) max(0, min(100, (int) $this->vendorDefaultCommission)));
