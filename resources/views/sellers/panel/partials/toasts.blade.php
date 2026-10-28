@@ -1,6 +1,8 @@
 {{-- Toasts پنل فروشندگان مدرن (فاز ۱۰۸) — درایور spToast داخل layouts/panel.blade.php
-     تعریف شده است (سشن toast-success/error/warning + رویداد Livewire 'toast'). --}}
-<div x-data="spToast" x-init="init()" class="pointer-events-none fixed inset-x-0 top-4 z-[100] flex flex-col items-center gap-2 px-4"
+     تعریف شده است (سشن toast-success/error/warning + رویداد Livewire 'toast').
+     ⑨-۱۲ — رویداد sp-auth-toast (ارسال fetch فرم‌های کلاسیک مثل تعرفه‌ها) هم به
+     همین درایور وصل شد تا پیام‌های موفقیت/خطا در پنل هم دیده شوند. --}}
+<div x-data="spToast" x-init="init()" x-on:sp-auth-toast.document="show($event.detail.message, $event.detail.type)" class="pointer-events-none fixed inset-x-0 top-4 z-[100] flex flex-col items-center gap-2 px-4"
      role="status" aria-live="polite">
     <template x-for="t in items" :key="t.id">
         <div x-show="t.visible" x-cloak

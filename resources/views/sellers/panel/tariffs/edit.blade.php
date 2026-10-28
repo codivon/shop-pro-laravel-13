@@ -1,5 +1,6 @@
 {{-- ویرایش تعرفهٔ ارسال (فاز ۱۰۸) — فیلدها عین قدیمی + @method('PUT') --}}
 <div class="mx-auto max-w-2xl space-y-5">
+    @include('sellers.auth.partials.sp-fetch')
 
     <div class="ap-card p-6 sm:p-8">
         <div class="flex items-center gap-2.5">
@@ -12,9 +13,12 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('seller.tariffs.update', $tariff) }}" class="mt-6 space-y-4">
+        <form method="POST" action="{{ route('seller.tariffs.update', $tariff) }}" id="sp-tariff-form" novalidate class="mt-6 space-y-4">
             @csrf
             @method('PUT')
+            {{-- ⑨-۱۲ — UpdateTariffRequest حدود carrier_id را لازم دارد (فرم قدیمی هم همین
+                 hidden را داشت)؛ نبودش باعث ۴۲۲ «فیلد carrier id الزامی است» می‌شد --}}
+            <input type="hidden" name="carrier_id" value="{{ $tariff->carrier_id }}">
 
             <div>
                 <label class="mb-1.5 block text-xs font-bold" for="tf-type">نوع ارسال</label>
@@ -47,3 +51,44 @@
         </form>
     </div>
 </div>
+
+{{-- ⑨-۱۲ — ذخیره با fetch + بازگشت به فهرست تعرفه‌های همان شرکت حمل (الگوی create).
+     _method=PUT داخل FormData است و با POST اسپوف می‌شود؛ قبلاً پاسخ خام
+     response('success') وسط صفحه چاپ می‌شد --}}
+<script>
+    (function () {
+        var form = document.getElementById('sp-tariff-form');
+        if (! form || form.dataset.spBound) { return; }
+        form.dataset.spBound = '1';
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            var btn = form.querySelector('button[type=submit]');
+            btn.disabled = true;
+            btn.classList.add('opacity-60', 'pointer-events-none');
+
+            try {
+                var res = await window.spPost(@js(route('seller.tariffs.update', $tariff)), new FormData(form));
+
+                if (res.status === 'success') {
+                    window.spToast('تعرفه با موفقیت ویرایش شد.', 'success');
+                    setTimeout(function () {
+                        window.Livewire
+                            ? Livewire.navigate(@js(route('seller.tariffs.index', ['carrier' => $tariff->carrier_id])))
+                            : (window.location.href = @js(route('seller.tariffs.index', ['carrier' => $tariff->carrier_id])));
+                    }, 800);
+                    return;
+                }
+
+                window.spToast(res.message || 'خطا در ویرایش تعرفه.', 'error');
+                btn.disabled = false;
+                btn.classList.remove('opacity-60', 'pointer-events-none');
+            } catch (err) {
+                window.spToast('ارتباط با سرور برقرار نشد.', 'error');
+                btn.disabled = false;
+                btn.classList.remove('opacity-60', 'pointer-events-none');
+            }
+        });
+    })();
+</script>

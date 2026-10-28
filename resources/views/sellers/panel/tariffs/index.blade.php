@@ -1,4 +1,5 @@
 {{-- لیست تعرفه‌های ارسال یک شرکت حمل (فاز ۱۰۸) — پورت sellers-old/panel/tariffs/index.blade.php --}}
+@include('sellers.auth.partials.sp-fetch')
 <div class="mx-auto max-w-7xl space-y-5">
 
     <div class="ap-card p-5 sm:p-6">
@@ -52,8 +53,19 @@
                                         <x-admin-panel::icon name="pencil" class="size-3.5" />
                                         ویرایش
                                     </a>
+                                    {{-- ⑨-۱۲ — حذف با fetch (پاسخ خام success کنترلر قدیمی صفحهٔ سفید
+                                         می‌ساخت)؛ در موفقیت toast + بازخوانی فهرست با Livewire.navigate --}}
                                     <form method="POST" action="{{ route('seller.tariffs.destroy', $tariff) }}"
-                                          x-data x-on:submit.prevent="if (confirm('این تعرفه حذف شود؟')) $el.submit()">
+                                          x-data x-on:submit.prevent="
+                                              if (! confirm('این تعرفه حذف شود؟')) return;
+                                              const fd = new FormData($el);
+                                              fd.append('_token', document.querySelector('meta[name=csrf-token]').content);
+                                              try {
+                                                  const res = await window.spPost(@js(route('seller.tariffs.destroy', $tariff)), fd);
+                                                  window.spToast('تعرفه حذف شد.', 'success');
+                                                  setTimeout(() => window.Livewire ? Livewire.navigate(location.href) : location.reload(), 600);
+                                              } catch (e) { window.spToast('حذف تعرفه انجام نشد.', 'error'); }
+                                          ">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="flex min-h-9 items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10">

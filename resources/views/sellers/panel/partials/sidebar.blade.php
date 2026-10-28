@@ -224,17 +224,10 @@
                     <span class="flex-1">روش‌های ارسال</span>
                 </a>
             </li>
-            <li>
-                <a href="{{ route('seller.tariffs.index') }}" wire:navigate
-                   class="flex min-h-11 items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200
-                          {{ request()->routeIs('seller.tariffs.*')
-                              ? 'bg-brand-500/15 font-bold text-emerald-300'
-                              : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
-                   @if(request()->routeIs('seller.tariffs.*')) aria-current="page" @endif>
-                    <x-admin-panel::icon name="coins" class="size-[18px] shrink-0 opacity-80" />
-                    <span class="flex-1">تعرفه‌های ارسال</span>
-                </a>
-            </li>
+            {{-- ⑨-۱۲ — لینک مستقیم تعرفه‌ها حذف شد: صفحهٔ تعرفه‌ها ?carrier= اجباری دارد
+                 (مثل کنترلر قدیمی Carrier::findOrFail) و بدون پارامتر 404 می‌شود؛
+                 منوی پنل قدیمی هم فقط «حمل و نقل» داشت و تعرفه از داخل همان صفحه
+                 باز می‌شود (دکمهٔ «تعرفه‌ها» روی هر ردیف شرکت حمل). --}}
         </ul>
 
         {{-- ابزارها و حساب --}}

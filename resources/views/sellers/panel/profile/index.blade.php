@@ -383,7 +383,10 @@
             <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <label class="block">
                     <span class="mb-1 block text-xs font-semibold text-ink-600 dark:text-night-ink-2">شماره شبا</span>
-                    <input type="number" name="shaba_number" value="{{ $seller->seller_info->shaba_number }}" class="ap-input w-full fa-digits" dir="ltr">
+                    {{-- ⑨-۳ — type="number" مقدار شبا با پیشوند IR را خالی می‌کند (مرورگر مقدار
+                         غیرعددی را نمی‌پذیرد) → بعد از ذخیره، ولیدیشن required می‌شکند؛
+                         مثل نسخهٔ قدیمی که همین باگ را داشت، در پنل مدرن text+ltr شد --}}
+                    <input type="text" name="shaba_number" value="{{ $seller->seller_info->shaba_number }}" class="ap-input w-full fa-digits" dir="ltr" inputmode="numeric" autocomplete="off">
                 </label>
                 <label class="block">
                     <span class="mb-1 block text-xs font-semibold text-ink-600 dark:text-night-ink-2">صاحب حساب</span>

@@ -60,4 +60,32 @@ class UpdateSellerRequest extends FormRequest
 
         return $rules;
     }
+
+    /** ⑨-۳ — برچسب فارسی فیلدها (پیام‌های پیش‌فرض انگلیسی مثل «فیلد shaba number» جلوهٔ پنل را می‌شکند) */
+    public function attributes(): array
+    {
+        return [
+            'email' => 'ایمیل',
+            'state_id' => 'استان',
+            'city_id' => 'شهر',
+            'address' => 'آدرس',
+            'post_code' => 'کد پستی',
+            'phone' => 'تلفن ثابت',
+            'shaba_number' => 'شماره شبا',
+            'main_supply_category_id' => 'قصد فروش کالا',
+            'number_of_products' => 'تعداد تنوع کالا',
+            'password' => 'رمز عبور',
+            'first_name' => 'نام',
+            'last_name' => 'نام خانوادگی',
+            'birth_day' => 'روز تولد',
+            'gender' => 'جنسیت',
+            'identity_card_number' => 'شماره شناسنامه',
+            'national_identity_number' => 'کد ملی',
+            'company_name' => 'نام شرکت',
+            'company_type' => 'نوع شرکت',
+            'company_registration_number' => 'شماره ثبت شرکت',
+            'company_national_identity_number' => 'شناسه ملی شرکت',
+            'company_economic_number' => 'شماره اقتصادی',
+        ];
+    }
 }

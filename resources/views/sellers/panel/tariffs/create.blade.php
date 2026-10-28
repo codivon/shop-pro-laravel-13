@@ -13,7 +13,7 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('seller.tariffs.store') }}" class="mt-6 space-y-4">
+        <form method="POST" action="{{ route('seller.tariffs.store') }}" id="sp-tariff-form" novalidate class="mt-6 space-y-4">
             @csrf
             <input type="hidden" name="carrier_id" value="{{ $carrier->id }}">
 
@@ -51,3 +51,46 @@
         </form>
     </div>
 </div>
+
+{{-- ⑨-۱۲ — ثبت با fetch + بازگشت به فهرست تعرفه‌های همان شرکت حمل. قبلاً POST
+     خام response('success') کنترلر قدیمی وسط صفحه چاپ می‌شد (بدون toast و
+     بدون بازگشت) — حالا spPost + spToast + navigate با الگوی بقیهٔ فرم‌های پنل --}}
+<script>
+    (function () {
+        // wire:navigate هر بار DOM تازه می‌سازد و اسکریپت‌ها را اجرا می‌کند؛
+        // فرم انتهای بدنه است و همین‌جا در دسترس است (DOMContentLoaded دوباره fire نمی‌شود)
+        var form = document.getElementById('sp-tariff-form');
+        if (! form || form.dataset.spBound) { return; }
+        form.dataset.spBound = '1';
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            var btn = form.querySelector('button[type=submit]');
+            btn.disabled = true;
+            btn.classList.add('opacity-60', 'pointer-events-none');
+
+            try {
+                var res = await window.spPost(@js(route('seller.tariffs.store')), new FormData(form));
+
+                if (res.status === 'success') {
+                    window.spToast('تعرفه با موفقیت ایجاد شد.', 'success');
+                    setTimeout(function () {
+                        window.Livewire
+                            ? Livewire.navigate(@js(route('seller.tariffs.index', ['carrier' => $carrier->id])))
+                            : (window.location.href = @js(route('seller.tariffs.index', ['carrier' => $carrier->id])));
+                    }, 800);
+                    return;
+                }
+
+                window.spToast(res.message || 'خطا در ثبت تعرفه.', 'error');
+                btn.disabled = false;
+                btn.classList.remove('opacity-60', 'pointer-events-none');
+            } catch (err) {
+                window.spToast('ارتباط با سرور برقرار نشد.', 'error');
+                btn.disabled = false;
+                btn.classList.remove('opacity-60', 'pointer-events-none');
+            }
+        });
+    })();
+</script>
