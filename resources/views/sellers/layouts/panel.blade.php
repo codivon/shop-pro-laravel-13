@@ -65,12 +65,48 @@
         });
     </script>
 
+    {{-- ⑨-۹ — اسکرول نرم سایدبار روی منوی فعال بعد از هر ناوبری --}}
+    <script>
+        (function () {
+            function scrollToActive() {
+                var active = document.querySelector('nav [aria-current="page"]');
+                if (active && typeof active.scrollIntoView === 'function') {
+                    active.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                }
+            }
+            document.addEventListener('DOMContentLoaded', scrollToActive);
+            document.addEventListener('livewire:navigated', scrollToActive);
+        })();
+    </script>
+
+    {{-- ⑨-۱۱ — کی‌فریم نوار پیشرفت --}}
+    <style>
+        @keyframes sp-navslide {
+            0% { transform: translateX(100%); }
+            50% { transform: translateX(-150%); }
+            100% { transform: translateX(-350%); }
+        }
+    </style>
+
     @stack('styles')
 </head>
 <body class="min-h-screen bg-background">
 
 {{-- بدنه با درایور Alpine سایدبار --}}
 <div x-data="spSidebar" class="min-h-screen flex flex-col">
+
+    {{-- ⑨-۱۰/⑨-۱۱ — نوار پیشرفت ناوبری SPA و اکشن‌های Livewire (کلیک منو تا باز شدن صفحه) --}}
+    <div wire:loading class="fixed inset-x-0 top-0 z-[60] h-0.5 overflow-hidden bg-brand-500/20" aria-hidden="true">
+        <div class="h-full w-1/3 animate-[sp-navslide_1s_ease-in-out_infinite] rounded-full bg-brand-500"></div>
+    </div>
+    <div x-data="{ p: 0, on: false }"
+         x-on:livewire:navigate.window="p = 30; on = true"
+         x-on:livewire:navigated.window="p = 100; setTimeout(() => { on = false; p = 0 }, 250)"
+         aria-hidden="true"
+         class="pointer-events-none fixed inset-x-0 top-0 z-[61] h-0.5 transition-all duration-200"
+         x-bind:style="on ? 'opacity:1' : 'opacity:0'">
+        <div class="h-full bg-emerald-400 transition-all duration-300" x-bind:style="'width:' + p + '%'"></div>
+    </div>
 
     {{-- پوشش موبایل --}}
     <div x-show="open" x-cloak x-transition.opacity.duration.200ms

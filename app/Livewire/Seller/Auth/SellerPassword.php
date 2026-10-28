@@ -37,6 +37,15 @@ class SellerPassword extends Component
             return;
         }
 
+        // ⑨-۲ — گام رمز یک‌بارمصرف است: پس از عبور (گام جلوتر)، بازگشت به
+        // این گام ممنوع و به مرحلهٔ فعلیِ پیش‌نویس هدایت می‌شود؛ سایر گام‌ها
+        // بازگشت‌پذیر می‌مانند.
+        if ($draft->step !== 'password') {
+            $this->redirect(SellerRegistrationFlow::resumeUrl($draft), navigate: true);
+
+            return;
+        }
+
         $this->seller = ['mobile' => $draft->mobile];
     }
 

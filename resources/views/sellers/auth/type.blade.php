@@ -18,7 +18,8 @@
         }
     }">
     @include('sellers.auth.partials.sp-fetch')
-    @include('sellers.auth.partials.steps', ['active' => 4, 'back' => route('seller.registration_password')])
+    {{-- ⑨-۲ — گام قبل از «وضعیت»، گام رمز عبور یک‌بارمصرف است؛ دکمهٔ بازگشت به آن ممنوع --}}
+    @include('sellers.auth.partials.steps', ['active' => 4])
 
     <div class="ap-card p-6 sm:p-8">
         <h1 class="text-center text-lg font-extrabold text-ink dark:text-night-ink">وضعیت خود را انتخاب کنید</h1>

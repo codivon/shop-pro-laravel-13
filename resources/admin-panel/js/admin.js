@@ -1531,9 +1531,9 @@ window.apIconPicker = () => ({
         let parsed = { fa: [], mdi: [], lucide: [] };
         try { parsed = JSON.parse(el ? el.textContent : '{}'); } catch (e) { parsed = { fa: [], mdi: [], lucide: [] }; }
         this.data = {
-            fa: (parsed.fa || []).map((n) => ({ tab: 'fa', key: 'fa-' + n, name: n, cls: 'fa-solid fa-' + n, inner: '' })),
-            mdi: (parsed.mdi || []).map((n) => ({ tab: 'mdi', key: 'mdi-' + n, name: n, cls: 'mdi mdi-' + n, inner: '' })),
-            lucide: (parsed.lucide || []).map((i) => ({ tab: 'lucide', key: 'lu-' + i.name, name: i.name, cls: i.name, inner: i.inner || '' })),
+            fa: (parsed.fa || []).map((n) => ({ tab: 'fa', key: 'fa-' + n, name: String(n), cls: 'fa-solid fa-' + n, inner: '' })),
+            mdi: (parsed.mdi || []).map((n) => ({ tab: 'mdi', key: 'mdi-' + n, name: String(n), cls: 'mdi mdi-' + n, inner: '' })),
+            lucide: (parsed.lucide || []).map((i) => ({ tab: 'lucide', key: 'lu-' + i.name, name: String(i.name), cls: i.name, inner: i.inner || '' })),
         };
     },
 

@@ -15,11 +15,11 @@
 @endphp
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/MaterialDesign-Webfont/7.4.47/css/materialdesignicons.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-<script type="application/json" id="ap-icon-picker-data">{{ json_encode([
+<script type="application/json" id="ap-icon-picker-data">{!! json_encode([
     'fa' => $faList,
     'mdi' => $mdiList,
     'lucide' => $lucideList,
-]) }}</script>
+], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
 
 <div x-data="apIconPicker" x-cloak
      x-on:open-ap-icon-picker.window="openWith($event.detail.target, $event.detail.mode)"

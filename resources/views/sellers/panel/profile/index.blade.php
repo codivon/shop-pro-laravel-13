@@ -10,7 +10,20 @@
         econtractChoice: '',
         loading: false,
         stateId: '{{ $seller->seller_info->state_id }}',
-        cities: @json($seller_info->province->cities->map(fn ($c) => ['id' => $c->id, 'name' => $c->name])->values()),
+        {{-- @js نه @json — داخل attribute کوتیشن‌های خام attribute را می‌شکند --}}
+        cities: @js($seller_info->province?->cities->map(fn ($c) => ['id' => $c->id, 'name' => $c->name])->values() ?? []),
+        // ⑨-۳ — کامبوباکس جستجودار استان/شهر (فرم کلاسیک با name حفظ می‌شود)؛
+        // nullsafe برای فروشنده‌ای که هنوز استان/شهر ندارد
+        provOpen: false,
+        provQuery: '',
+        provTitle: @js($provinces->firstWhere('id', (int) $seller->seller_info->state_id)?->name ?? ''),
+        provOptions: @js($provinces->map(fn ($p) => ['id' => $p->id, 'title' => $p->name])->values()->all()),
+        cityOpen: false,
+        cityQuery: '',
+        cityId: '{{ $seller->seller_info->city_id }}',
+        cityTitle: @js($seller_info->province?->cities->firstWhere('id', (int) $seller->seller_info->city_id)?->name ?? ''),
+        // ⑧-۶ — مشمولیت مالیات ارزش افزوده (باید در x-data تعریف شود)
+        vatFree: '{{ $seller->seller_info->vat_free == '1' ? '1' : '2' }}',
         updateUrl: @js($updateUrl),
         setEcontractUrl: @js($setEcontractUrl),
         citiesUrl: @js($citiesUrl),
@@ -26,7 +39,41 @@
             } catch (e) { this.cities = []; }
         },
 
-        // ارسال فرم کلاسیک به seller.profile.update — کنترلر قدیمی response("success") می‌دهد
+        // ⑨-۳ — انتخاب استان از کامبوباکس
+        get provFiltered() {
+            const q = this.provQuery.trim();
+            if (!q) { return this.provOptions; }
+            return this.provOptions.filter(function (o) { return o.title.indexOf(q) !== -1; });
+        },
+        toggleProv() {
+            this.provOpen = !this.provOpen;
+            if (this.provOpen) { this.provQuery = ''; this.$nextTick(() => this.$refs.provSearch?.focus()); }
+        },
+        pickProv(option) {
+            this.stateId = String(option.id);
+            this.provTitle = option.title;
+            this.provOpen = false;
+            this.cityId = ''; this.cityTitle = '';
+            this.fetchCities();
+        },
+        get cityFiltered() {
+            const q = this.cityQuery.trim();
+            if (!q) { return this.cities; }
+            return this.cities.filter(function (o) { return o.name.indexOf(q) !== -1; });
+        },
+        toggleCity() {
+            if (!this.stateId) { this.$dispatch('toast', { message: 'ابتدا استان را انتخاب کنید', type: 'error' }); return; }
+            this.cityOpen = !this.cityOpen;
+            if (this.cityOpen) { this.cityQuery = ''; this.$nextTick(() => this.$refs.citySearch?.focus()); }
+        },
+        pickCity(option) {
+            this.cityId = String(option.id);
+            this.cityTitle = option.name;
+            this.cityOpen = false;
+        },
+
+        // ارسال فرم کلاسیک به seller.profile.update — کنترلر قدیمی response('success') می‌دهد
+        // ⚠️ داخل attribute x-data هیچ double-quote خام مجاز نیست (attribute را می‌شکند)
         async submitForm() {
             this.loading = true;
             try {
@@ -66,7 +113,7 @@
             try {
                 const body = new FormData();
                 body.append('econtract', '1');
-                body.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+                body.append('_token', document.querySelector('meta[name=csrf-token]').content);
 
                 const res = await fetch(this.setEcontractUrl, {
                     method: 'POST',
@@ -237,24 +284,78 @@
                     <input type="text" name="website" value="{{ $seller->seller_info->website }}" class="ap-input w-full" dir="ltr">
                 </label>
 
-                <label class="block">
+                {{-- ⑨-۳ — استان با کامبوباکس جستجودار (name فرم کلاسیک حفظ شده) --}}
+                <div class="relative" x-on:click.outside="provOpen = false" x-on:keydown.escape.window="provOpen = false">
                     <span class="mb-1 block text-xs font-semibold text-ink-600 dark:text-night-ink-2">استان فروشگاه</span>
-                    <select name="state_id" class="ap-input w-full" x-model="stateId" x-on:change="fetchCities()">
-                        <option value="">انتخاب کنید</option>
-                        @foreach ($provinces as $province)
-                            <option value="{{ $province->id }}" @selected($seller->seller_info->state_id == $province->id)>{{ $province->name }}</option>
-                        @endforeach
-                    </select>
-                </label>
+                    <input type="hidden" name="state_id" x-model="stateId">
+                    <button type="button" class="ap-input flex w-full items-center justify-between gap-2 py-2.5! text-start"
+                            x-on:click="toggleProv()" aria-haspopup="listbox" x-bind:aria-expanded="String(provOpen)">
+                        <span class="truncate text-[13px]" x-bind:class="provTitle ? 'font-bold text-ink dark:text-night-ink' : 'font-semibold text-ink-3 dark:text-night-ink-2'"
+                              x-text="provTitle || 'جستجو و انتخاب استان…'"></span>
+                        <x-admin-panel::icon name="chevron-down" class="size-4 shrink-0 text-ink-3 transition-transform" x-bind:class="provOpen ? 'rotate-180' : ''" />
+                    </button>
+                    <div x-show="provOpen" x-cloak x-transition.opacity.duration.150ms
+                         class="absolute inset-x-0 top-full z-30 mt-1.5 overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl dark:border-night-line dark:bg-night-2"
+                         role="listbox" aria-label="فهرست استان‌ها">
+                        <div class="border-b border-line p-2 dark:border-night-line">
+                            <div class="relative">
+                                <x-admin-panel::icon name="search" class="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
+                                <input x-ref="provSearch" type="text" x-model="provQuery"
+                                       class="ap-input w-full py-2.5! pe-10! text-[13px]!" placeholder="جستجوی استان…" aria-label="جستجوی استان">
+                            </div>
+                        </div>
+                        <div class="max-h-56 overflow-y-auto p-1.5">
+                            <template x-for="option in provFiltered" :key="option.id">
+                                <button type="button" x-on:click="pickProv(option)" role="option"
+                                        class="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-start text-[13px] font-semibold transition-colors"
+                                        :class="String(stateId) === String(option.id)
+                                            ? 'bg-brand-50 font-bold text-brand-700 dark:bg-brand-500/10 dark:text-brand-300'
+                                            : 'text-ink-2 hover:bg-surface-2 dark:text-night-ink-2 dark:hover:bg-night-3'"
+                                        x-text="option.title"></button>
+                            </template>
+                            <p x-show="! provFiltered.length" class="px-3 py-6 text-center text-xs font-semibold text-ink-3 dark:text-night-ink-2" x-cloak>
+                                استانی با این نام پیدا نشد
+                            </p>
+                        </div>
+                    </div>
+                </div>
 
-                <label class="block">
+                {{-- ⑨-۳ — شهر با کامبوباکس جستجودار --}}
+                <div class="relative" x-on:click.outside="cityOpen = false" x-on:keydown.escape.window="cityOpen = false">
                     <span class="mb-1 block text-xs font-semibold text-ink-600 dark:text-night-ink-2">شهر فروشگاه</span>
-                    <select name="city_id" class="ap-input w-full">
-                        <template x-for="city in cities" :key="city.id">
-                            <option :value="city.id" x-text="city.name" :selected="city.id == {{ (int) $seller->seller_info->city_id }}"></option>
-                        </template>
-                    </select>
-                </label>
+                    <input type="hidden" name="city_id" x-model="cityId">
+                    <button type="button" class="ap-input flex w-full items-center justify-between gap-2 py-2.5! text-start"
+                            x-bind:class="! stateId && 'opacity-60 cursor-not-allowed'"
+                            x-on:click="toggleCity()" aria-haspopup="listbox" x-bind:aria-expanded="String(cityOpen)">
+                        <span class="truncate text-[13px]" x-bind:class="cityTitle ? 'font-bold text-ink dark:text-night-ink' : 'font-semibold text-ink-3 dark:text-night-ink-2'"
+                              x-text="stateId ? (cityTitle || 'جستجو و انتخاب شهر…') : 'ابتدا استان را انتخاب کنید'"></span>
+                        <x-admin-panel::icon name="chevron-down" class="size-4 shrink-0 text-ink-3 transition-transform" x-bind:class="cityOpen ? 'rotate-180' : ''" />
+                    </button>
+                    <div x-show="cityOpen" x-cloak x-transition.opacity.duration.150ms
+                         class="absolute inset-x-0 top-full z-30 mt-1.5 overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl dark:border-night-line dark:bg-night-2"
+                         role="listbox" aria-label="فهرست شهرها">
+                        <div class="border-b border-line p-2 dark:border-night-line">
+                            <div class="relative">
+                                <x-admin-panel::icon name="search" class="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
+                                <input x-ref="citySearch" type="text" x-model="cityQuery"
+                                       class="ap-input w-full py-2.5! pe-10! text-[13px]!" placeholder="جستجوی شهر…" aria-label="جستجوی شهر">
+                            </div>
+                        </div>
+                        <div class="max-h-56 overflow-y-auto p-1.5">
+                            <template x-for="city in cityFiltered" :key="city.id">
+                                <button type="button" x-on:click="pickCity(city)" role="option"
+                                        class="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-start text-[13px] font-semibold transition-colors"
+                                        :class="String(cityId) === String(city.id)
+                                            ? 'bg-brand-50 font-bold text-brand-700 dark:bg-brand-500/10 dark:text-brand-300'
+                                            : 'text-ink-2 hover:bg-surface-2 dark:text-night-ink-2 dark:hover:bg-night-3'"
+                                        x-text="city.name"></button>
+                            </template>
+                            <p x-show="! cityFiltered.length" class="px-3 py-6 text-center text-xs font-semibold text-ink-3 dark:text-night-ink-2" x-cloak>
+                                شهری با این نام پیدا نشد
+                            </p>
+                        </div>
+                    </div>
+                </div>
 
                 <label class="block">
                     <span class="mb-1 block text-xs font-semibold text-ink-600 dark:text-night-ink-2">موقعیت مکانی</span>

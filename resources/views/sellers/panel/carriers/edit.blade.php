@@ -3,7 +3,8 @@
 <div x-data="{
         loading: false,
         provinceId: '{{ $carrier->province_id }}',
-        cities: @json($carrier->province?->cities->map(fn ($c) => ['id' => $c->id, 'name' => $c->name])->values() ?? []),
+        {{-- @js نه @json — داخل attribute کوتیشن‌های خام attribute را می‌شکند --}}
+        cities: @js($carrier->province?->cities->map(fn ($c) => ['id' => $c->id, 'name' => $c->name])->values() ?? []),
         covered: '{{ $carrier->covered_cities }}',
         deliveryType: '{{ $carrier->delivery_time_type }}',
 
