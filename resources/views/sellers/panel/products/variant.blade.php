@@ -1,15 +1,38 @@
-{{-- مدیریت تنوع‌های قیمت محصول (فاز ۱۰۸) — پورت sellers-old/panel/products/variant.blade.php
-     فیلدها عین قدیمی: prices[i][attributes][] / [price] / [discount] / [cart_max] / [cart_min]
-     / [stock] / [published] / [discount_expire] — سطرها با Alpine اضافه می‌شوند.
-     ارسال: فرم کلاسیک POST به seller.products.variant.store (تمام منطق قدیمی همانجا است) --}}
+{{-- فاز ۱۱۹ — مدیریت تنوع‌های قیمت محصول با «ظاهر پنل مدیریت» (سندباکس ادمین:
+     فرم تنوع با چیپ‌های ویژگی، کارت رَوند با بَج «تنوع N»، انقضای تخفیف جلالی و
+     «قیمت نهایی»). منطق ارسال دست‌نخورده ماند: فرم کلاسیک POST به
+     seller.products.variant.store با فیلدهای عین قدیمی:
+     prices[i][attributes][] / [price] / [discount] / [discount_expire] /
+     [cart_max] / [cart_min] / [stock] / [published] --}}
 <div class="mx-auto max-w-7xl space-y-5"
      x-data="{
         rows: @js($rows),
+        attrGroups: @js($attrGroupsJs),
         addRow() {
-            this.rows.push({ id: null, attributes: {}, price: '', discount: '', cart_max: '', cart_min: '', stock: '', published: 1, discount_expire: '' });
+            this.rows.push({ id: null, attributes: [], price: '', discount: '', cart_max: '', cart_min: '', stock: '', published: 1, discount_expire: '' });
         },
         removeRow(i) {
             this.rows.splice(i, 1);
+        },
+        isPicked(row, groupId, attrId) {
+            return (row.attributes || []).includes(attrId);
+        },
+        toggleAttr(row, groupId, attrId) {
+            if (! Array.isArray(row.attributes)) row.attributes = [];
+            const idx = row.attributes.indexOf(attrId);
+            if (idx >= 0) {
+                row.attributes.splice(idx, 1);
+                return;
+            }
+            // تک‌انتخاب در هر گروه (رفتار pickAttribute ادمین): مقدار قبلیِ همان گروه حذف می‌شود
+            const group = this.attrGroups[String(groupId)] || this.attrGroups[groupId];
+            if (group) {
+                group.attrs.forEach((a) => {
+                    const gi = row.attributes.indexOf(a.id);
+                    if (gi >= 0) row.attributes.splice(gi, 1);
+                });
+            }
+            row.attributes.push(attrId);
         }
      }">
 
@@ -40,68 +63,111 @@
     <form method="POST" action="{{ route('seller.products.variant.store', $product) }}">
         @csrf
 
-        {{-- سطرهای تنوع --}}
+        {{-- سطرهای تنوع — همان کارت‌های فرم ادمین --}}
         <template x-for="(row, i) in rows" :key="i">
-            <div class="ap-card mb-4 p-5" x-cloak>
-                <div class="flex items-center justify-between gap-3">
-                    <p class="text-[13px] font-extrabold text-ink dark:text-night-ink">
-                        تنوع <span class="fa-digits" x-text="i + 1"></span>
-                    </p>
-                    <button type="button" class="flex min-h-9 items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10"
-                            x-on:click="removeRow(i)" x-show="rows.length > 1">
-                        <x-admin-panel::icon name="trash-2" class="size-3.5" />
-                        حذف سطر
+            <div class="mb-4 rounded-2xl border border-line bg-surface-2 p-4 dark:border-night-line dark:bg-night-3/60"
+                 x-data="apFinalPrice()" x-init="init(i)" x-cloak>
+
+                <div class="mb-4 flex items-center justify-between">
+                    <span class="ap-badge bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-400">
+                        تنوع <span class="fa-digits" x-text="ApFormat.faDigits(String(i + 1))"></span>
+                        <span x-show="row.id" class="fa-digits opacity-60" x-text="'#' + row.id"></span>
+                    </span>
+                    <button type="button" x-on:click="removeRow(i)" x-show="rows.length > 1"
+                            class="rounded-lg p-1.5 text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10"
+                            title="حذف تنوع" aria-label="حذف تنوع">
+                        <x-admin-panel::icon name="trash-2" class="size-4" />
                     </button>
                 </div>
 
+                {{-- ویژگی‌های انتخاب‌شده → hidden inputs (همان prices[i][attributes][] قدیمی) --}}
+                <template x-for="attrId in (row.attributes || [])" :key="'hid-' + i + '-' + attrId">
+                    <input type="hidden" x-bind:name="'prices[' + i + '][attributes][]'" x-bind:value="attrId">
+                </template>
+
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold">قیمت (تومان) <span class="text-red-500">*</span></label>
+                        <input type="number" min="0" required
+                               x-model="row.price" x-bind:name="'prices[' + i + '][price]'"
+                               data-price-input x-on:input="calc()"
+                               class="ap-input fa-digits">
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold">موجودی <span class="text-red-500">*</span></label>
+                        <input type="number" min="0" required
+                               x-model="row.stock" x-bind:name="'prices[' + i + '][stock]'"
+                               class="ap-input fa-digits">
+                    </div>
+                </div>
+
                 @if ($product->isPhysical())
-                    {{-- ویژگی‌ها (یک سلکت برای هر گروه — عین قدیمی) --}}
-                    <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {{-- ویژگی‌های این تنوع — چیپ‌های ویژگی مثل فرم ادمین --}}
+                    <div class="mt-4 space-y-3">
+                        <p class="text-xs font-bold text-ink-2 dark:text-night-ink-2">ویژگی‌های این تنوع:</p>
                         @foreach ($attributeGroups as $group)
-                            <div>
-                                <label class="mb-1.5 block text-xs font-bold" x-text="{{ \Illuminate\Support\Js::from($group->name) }}"></label>
-                                <select class="ap-input py-2.5!" x-bind:name="'prices[' + i + '][attributes][]'">
-                                    <option value="">انتخاب کنید</option>
+                            @if ($group->get_attributes->count())
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="min-w-24 text-[11px] font-semibold text-ink-3 dark:text-night-ink-2">{{ $group->name }}:</span>
                                     @foreach ($group->get_attributes as $attribute)
-                                        <option value="{{ $attribute->id }}"
-                                                x-text="{{ \Illuminate\Support\Js::from($attribute->name) }}"
-                                                x-bind:selected="(row.attributes || []).includes({{ $attribute->id }})"></option>
+                                        <button type="button"
+                                                x-on:click="toggleAttr(row, {{ $group->id }}, {{ (int) $attribute->id }})"
+                                                class="group flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-all"
+                                                x-bind:class="isPicked(row, {{ $group->id }}, {{ (int) $attribute->id }})
+                                                                ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/12 dark:text-brand-300'
+                                                                : 'border-line bg-surface text-ink-2 hover:border-brand-300 dark:border-night-line dark:bg-night-2 dark:text-night-ink-2'">
+                                            @if ($group->type === 'color')
+                                                <span class="size-3.5 rounded-full border border-black/10"
+                                                      x-bind:style="'background: ' + {{ \Illuminate\Support\Js::from($attribute->value) }}"></span>
+                                            @endif
+                                            {{ $attribute->name }}
+                                        </button>
                                     @endforeach
-                                </select>
-                            </div>
+                                </div>
+                            @endif
                         @endforeach
                     </div>
                 @endif
 
-                <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <div class="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-5">
                     <div>
-                        <label class="mb-1.5 block text-xs font-bold">قیمت (تومان) <span class="text-red-500">*</span></label>
-                        <input type="number" min="0" required class="ap-input py-2.5! fa-digits" x-model="row.price" x-bind:name="'prices[' + i + '][price]'">
+                        <label class="mb-1.5 block text-xs font-semibold">تخفیف (٪)</label>
+                        <input type="number" min="0" max="100"
+                               x-model="row.discount" x-bind:name="'prices[' + i + '][discount]'"
+                               data-discount-input x-on:input="calc()"
+                               class="ap-input fa-digits">
                     </div>
                     <div>
-                        <label class="mb-1.5 block text-xs font-bold">تخفیف (٪)</label>
-                        <input type="number" min="0" max="100" class="ap-input py-2.5! fa-digits" x-model="row.discount" x-bind:name="'prices[' + i + '][discount]'">
+                        <label class="mb-1.5 block text-xs font-semibold">انقضای تخفیف</label>
+                        <input type="text" autocomplete="off"
+                               x-model="row.discount_expire" x-bind:name="'prices[' + i + '][discount_expire]'"
+                               data-jdp placeholder="۱۴۰۴/۰۱/۰۱ ۱۲:۰۰"
+                               class="ap-input fa-digits text-center">
                     </div>
                     <div>
-                        <label class="mb-1.5 block text-xs font-bold">حداکثر در سبد</label>
-                        <input type="number" min="1" class="ap-input py-2.5! fa-digits" x-model="row.cart_max" x-bind:name="'prices[' + i + '][cart_max]'">
+                        <label class="mb-1.5 block text-xs font-semibold">حداکثر خرید</label>
+                        <input type="number" min="0"
+                               x-model="row.cart_max" x-bind:name="'prices[' + i + '][cart_max]'"
+                               class="ap-input fa-digits">
                     </div>
                     <div>
-                        <label class="mb-1.5 block text-xs font-bold">حداقل در سبد</label>
-                        <input type="number" min="1" class="ap-input py-2.5! fa-digits" x-model="row.cart_min" x-bind:name="'prices[' + i + '][cart_min]'">
+                        <label class="mb-1.5 block text-xs font-semibold">حداقل خرید</label>
+                        <input type="number" min="0"
+                               x-model="row.cart_min" x-bind:name="'prices[' + i + '][cart_min]'"
+                               class="ap-input fa-digits">
                     </div>
                     <div>
-                        <label class="mb-1.5 block text-xs font-bold">موجودی <span class="text-red-500">*</span></label>
-                        <input type="number" min="0" required class="ap-input py-2.5! fa-digits" x-model="row.stock" x-bind:name="'prices[' + i + '][stock]'">
-                    </div>
-                    <div>
-                        <label class="mb-1.5 block text-xs font-bold">وضعیت انتشار</label>
-                        <select class="ap-input py-2.5!" x-model="row.published" x-bind:name="'prices[' + i + '][published]'">
-                            <option value="1">منتشر شود</option>
-                            <option value="0">پیش‌نویس</option>
+                        <label class="mb-1.5 block text-xs font-semibold">وضعیت نمایش</label>
+                        <select x-model="row.published" x-bind:name="'prices[' + i + '][published]'" class="ap-input">
+                            <option value="1">نمایش</option>
+                            <option value="0">عدم نمایش</option>
                         </select>
                     </div>
                 </div>
+
+                <p class="mt-3 rounded-xl bg-brand-50 px-3.5 py-2 text-xs font-bold text-brand-700 dark:bg-brand-500/10 dark:text-brand-300">
+                    قیمت نهایی: <span class="fa-digits" data-final-price>—</span> تومان
+                </p>
             </div>
         </template>
 

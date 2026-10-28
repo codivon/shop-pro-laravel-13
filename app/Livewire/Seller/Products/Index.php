@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Seller\Products;
 
+use App\Livewire\Seller\Concerns\BuildsCategoryFilter;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\SellerVariant;
@@ -36,6 +37,7 @@ use Livewire\WithPagination;
 class Index extends Component
 {
     use WithPagination;
+    use BuildsCategoryFilter;
 
     /* ---------------- فیلترها — همان کلیدهای فرم قدیمی، در URL ---------------- */
 
@@ -227,6 +229,22 @@ class Index extends Component
 
             $variant_count_seller = $product->prices()->withTrashed()->where('seller_id', seller_info()->seller_id)->count();
 
+            /*
+             * فاز ۱۱۹ — قیمت/موجودی ستون‌های جدول باید «تنوع‌های خودِ فروشنده» باشند
+             * نه کل محصول (قبلاً sum('stock') روی همهٔ فروشندگان محاسبه می‌شد و
+             * lowestPrice هم کمترین قیمتِ سایت را نشان می‌داد).
+             * lowestSellerPrice = همان منطق lowestPrice (تنوع‌های موجود، ترتیب با
+             * احتساب انقضای تخفیف) ولی اسکوپ‌شده روی seller_id خودِ فروشنده.
+             */
+            $sellerOwnPrices = $product->prices()->where('seller_id', seller_info()->seller_id);
+
+            $seller_stock_count = (int) (clone $sellerOwnPrices)->sum('stock');
+
+            $lowestSellerPrice = (clone $sellerOwnPrices)
+                ->where('stock', '>', 0)
+                ->orderByRaw('CASE WHEN (discount_expire_at is null or date(discount_expire_at) > "' . now()->format('Y-m-d H:i:s') . '") THEN discount_price ELSE regular_price END')
+                ->first();
+
             return (object) [
                 'id' => $product->id,
                 'image' => $product->image ? asset($product->image) : asset('/empty.svg'),
@@ -235,9 +253,10 @@ class Index extends Component
                 'published' => $product->isPublished(),
                 'category' => $product->category,
                 'brand' => $product->brand,
-                'stock_count' => $product->prices()->sum('stock'),
-                'price' => number_format(@$product->lowestPrice->price),
-                'price_discount' => number_format(@$product->lowestPrice->discount_price),
+                // فاز ۱۱۹ — موجودی تنوع‌های خودِ فروشنده (نه موجودی کل محصول)
+                'stock_count' => $seller_stock_count,
+                'price' => number_format(@$lowestSellerPrice->regular_price),
+                'price_discount' => number_format(@$lowestSellerPrice->discount_price),
                 'addableToCart' => $product->addableToCart(),
                 'status' => $product->status,
                 // تعداد تنوع‌های این فروشنده روی محصول (شمارهٔ ستون جدول — مثل Resource قدیمی)
@@ -259,10 +278,16 @@ class Index extends Component
 
         $categories = Category::detectLang()->where('type', 'productcat')->orderBy('ordering')->get();
 
+        // فاز ۱۱۹ — داده‌های فیلتر مدرن دسته‌بندی (درخت + لیست تخت جستجو + چیپ‌ها)
+        $categoryFilter = $this->buildCategoryFilterData($categories);
+
         return view('sellers.panel.products.index', [
             'products' => $products,
             'rows' => $rows,
             'categories' => $categories,
+            'categoriesTree' => $categoryFilter['tree'],
+            'categoriesFlatJs' => $categoryFilter['flatJs'],
+            'categoryTitles' => $categoryFilter['titles'],
             'exportUrl' => MultiVendorSettings::productsExportEnabled()
                 ? route('seller.products.export')
                 : null,

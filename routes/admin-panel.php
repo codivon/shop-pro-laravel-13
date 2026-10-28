@@ -74,6 +74,7 @@ use App\Livewire\Admin\Posts\PostIndex;
 use App\Livewire\Admin\PriceAlert\PriceAlertIndex;
 use App\Livewire\Admin\Products\PriceGroupIndex;
 use App\Livewire\Admin\Products\PriceIndex;
+use App\Livewire\Admin\Products\StockIndex;
 use App\Livewire\Admin\Products\ProductForm;
 use App\Livewire\Admin\Products\ProductIndex;
 use App\Livewire\Admin\Profile;
@@ -222,6 +223,8 @@ Route::prefix('admin/'.admin_route_prefix())->name('np.')->group(function () {
         |----------------------
         */
         Route::get('products', ProductIndex::class)->name('products.index');
+        // فاز ۱۱۹ — نمای کلی موجودی کل + ریز تنوع‌ها + تنوع‌های فروشندگان
+        Route::get('products/stock', StockIndex::class)->name('products.stock');
         Route::get('products/create', ProductForm::class)->name('products.create');
         Route::get('products/{product}/edit', ProductForm::class)->name('products.edit');
 

@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\Products;
 use App\Models\Category;
 use App\Models\Price;
 use App\Models\Product;
+use App\Models\Seller;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
@@ -96,6 +97,33 @@ class PriceIndex extends Component
             ->where('type', 'productcat')
             ->orderBy('ordering')
             ->get();
+    }
+
+    /* ---------------- فاز ۱۱۹ — نام فروشگاه‌های صاحب تنوع (بَج فروشنده) ---------------- */
+
+    /** نقشهٔ seller_id → نام فروشگاه برای مشخص‌کردن تنوع‌های ایجادشدهٔ فروشندگان */
+    #[Computed]
+    public function sellerLabels(): array
+    {
+        $sellerIds = $this->products
+            ->flatMap(fn ($product) => $product->prices->pluck('seller_id'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($sellerIds->isEmpty()) {
+            return [];
+        }
+
+        return Seller::with('seller_info')
+            ->whereIn('id', $sellerIds)
+            ->get()
+            ->mapWithKeys(fn ($seller) => [
+                $seller->id => $seller->seller_info?->business_name
+                    ?: trim(($seller->seller_info?->first_name ?? '') . ' ' . ($seller->seller_info?->last_name ?? ''))
+                    ?: ('فروشنده #' . $seller->id),
+            ])
+            ->all();
     }
 
     /* ---------------- پرکردن ورودی‌ها ---------------- */

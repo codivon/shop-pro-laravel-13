@@ -117,6 +117,14 @@
                                         class="border-b border-line/60 last:border-0 dark:border-night-line/60">
                                         <td class="px-4 py-2.5">
                                             {{ $price->getAttributesName() ?: 'عادی' }}
+                                            {{-- فاز ۱۱۹ — مشخص‌کردن تنوع‌های ایجادشده توسط فروشندگان --}}
+                                            @if ($price->seller_id)
+                                                <span class="ap-badge ms-1.5 bg-sky-100 py-0.5 text-[10px] font-bold text-sky-700 dark:bg-sky-500/15 dark:text-sky-300"
+                                                      title="این تنوع توسط فروشنده ثبت شده است">
+                                                    <x-admin-panel::icon name="store" class="size-3" />
+                                                    فروشنده{{ isset($this->sellerLabels[$price->seller_id]) ? ': ' . $this->sellerLabels[$price->seller_id] : '' }}
+                                                </span>
+                                            @endif
                                         </td>
                                         <td class="px-4 py-2.5">
                                             <div class="relative">

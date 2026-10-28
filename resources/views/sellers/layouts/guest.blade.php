@@ -50,6 +50,8 @@
         </div>
     @endif
 </div>
+{{-- فاز ۱۱۹ — مصرف یک‌بارهٔ سشن‌توست‌ها (نمایش مجدد با رفرش ممنوع) --}}
+@php session()->forget(['toast-success', 'toast-error', 'toast-warning']); @endphp
 
 <div class="flex min-h-screen flex-col @if (! ($sellerGuestHideAside ?? false)) lg:flex-row @endif">
 

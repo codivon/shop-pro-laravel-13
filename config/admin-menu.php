@@ -100,6 +100,13 @@ return [
                             'permission' => 'products.index',
                             'icon' => 'list',
                         ],
+                        // فاز ۱۱۹ — نمای کلی موجودی کل + ریز تنوع‌ها + تنوع‌های فروشندگان
+                        [
+                            'label' => 'موجودی و تنوع‌ها',
+                            'route' => 'np.products.stock',
+                            'permission' => 'products.index',
+                            'icon' => 'boxes',
+                        ],
                         [
                             'label' => 'محصول جدید',
                             'route' => 'np.products.create',

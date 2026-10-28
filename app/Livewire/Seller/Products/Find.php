@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Seller\Products;
 
+use App\Livewire\Seller\Concerns\BuildsCategoryFilter;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\SellerVariant;
@@ -29,6 +30,7 @@ use Livewire\WithPagination;
 class Find extends Component
 {
     use WithPagination;
+    use BuildsCategoryFilter;
 
     /* ---------------- فیلترها — همان کلیدهای فرم قدیمی، در URL ---------------- */
 
@@ -163,10 +165,16 @@ class Find extends Component
 
         $categories = Category::detectLang()->where('type', 'productcat')->orderBy('ordering')->get();
 
+        // فاز ۱۱۹ — داده‌های فیلتر مدرن دسته‌بندی (درخت + لیست تخت جستجو + چیپ‌ها)
+        $categoryFilter = $this->buildCategoryFilterData($categories);
+
         return view('sellers.panel.products.find', [
             'products' => $products,
             'rows' => $rows,
             'categories' => $categories,
+            'categoriesTree' => $categoryFilter['tree'],
+            'categoriesFlatJs' => $categoryFilter['flatJs'],
+            'categoryTitles' => $categoryFilter['titles'],
             'createUrl' => route('seller.products.create'),
         ]);
     }

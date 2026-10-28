@@ -33,14 +33,10 @@
                     <input type="text" wire:model.live.debounce.400ms="title" placeholder="جستجوی عنوان محصول" class="ap-input w-full">
                 </label>
 
-                <label class="block">
-                    <span class="mb-1 block text-xs font-semibold text-ink-600 dark:text-night-ink-2">دسته بندی ها</span>
-                    <select multiple wire:model="category_id" size="6" class="ap-input h-auto w-full min-h-11">
-                        @foreach ($categories as $category)
-                            <option value="{{ $category->id }}">{{ $category->title }}</option>
-                        @endforeach
-                    </select>
-                </label>
+                {{-- فاز ۱۱۹ — فیلتر مدرن دسته‌بندی (جایگزین select multiple) --}}
+                <div>
+                    @include('sellers.panel.partials.category-filter')
+                </div>
 
                 <label class="block">
                     <span class="mb-1 block text-xs font-semibold text-ink-600 dark:text-night-ink-2">وضعیت موجودی</span>

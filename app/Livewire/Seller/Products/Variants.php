@@ -69,7 +69,10 @@ class Variants extends Component
                 'cart_min' => $price->cart_min,
                 'stock' => $price->stock,
                 'published' => $price->published,
-                'discount_expire' => $price->discount_expire,
+                // فاز ۱۱۹ — پیش‌فرض انقضای تخفیف با فرمت جلالی Y-m-d H:i:s (مثل فرم ادمین)
+                'discount_expire' => $price->discount_expire_at
+                    ? \Morilog\Jalali\Jalalian::fromDateTime($price->discount_expire_at)->format('Y-m-d H:i:s')
+                    : '',
             ];
         }
 
@@ -93,6 +96,29 @@ class Variants extends Component
 
     public function render()
     {
-        return view('sellers.panel.products.variant');
+        /*
+         * فاز ۱۱۹ — بازطراحی فرم تنوع فروشنده با ظاهر پنل مدیریت (چیپ‌های ویژگی).
+         * attrGroupsJs: نقشهٔ گروه → ویژگی‌ها برای «تک‌انتخاب در هر گروه»
+         * (انتخاب مقدار جدید از یک گروه، مقدار قبلی همان گروه را برمی‌دارد —
+         * دقیقاً همان رفتار pickAttribute فرم ادمین).
+         */
+        $attrGroupsJs = $this->attributeGroups
+            ->filter(fn ($group) => $group->get_attributes->count())
+            ->mapWithKeys(fn ($group) => [
+                $group->id => [
+                    'name' => $group->name,
+                    'type' => $group->type,
+                    'attrs' => $group->get_attributes->map(fn ($attribute) => [
+                        'id' => (int) $attribute->id,
+                        'name' => $attribute->name,
+                        'value' => $attribute->value,
+                    ])->values()->all(),
+                ],
+            ])
+            ->all();
+
+        return view('sellers.panel.products.variant', [
+            'attrGroupsJs' => $attrGroupsJs,
+        ]);
     }
 }
