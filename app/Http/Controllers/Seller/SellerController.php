@@ -20,6 +20,8 @@ use App\Models\Wallet;
 use App\Notifications\Seller\SellerCreated;
 use App\Notifications\Seller\SellerRegistered;
 use App\Notifications\Sms\NewSellerCodeSent;
+use App\Notifications\Sms\SellerPhoneOtp;
+use App\Support\SellerRegistrationFlow;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -286,6 +288,147 @@ class SellerController extends Controller
         return response([
             'status' => 'error',
             'message' => 'وضعیت ثبت‌نام نامعتبر است.',
+        ]);
+    }
+
+    /* ---------------------- ورود با کد تأیید (فاز ۱۱۲) ---------------------- */
+
+    /**
+     * روش دوم ورود: فقط شمارهٔ موبایل + کد ۶ رقمی (همان سازوکار ثبت‌نام مرحله‌ای؛
+     * کد در new_sellers ذخیره و با SellerPhoneOtp پیامک می‌شود).
+     * فروشندهٔ یافت‌نشده/مسدود همین‌جا رد می‌شود؛ فروشندهٔ نیمه‌کاره بعد از
+     * تأیید کد به مرحلهٔ خودش هدایت می‌شود (مثل login_check).
+     */
+    public function login_otp_send(Request $request)
+    {
+        $this->validate($request, [
+            'mobile' => 'required|digits:11|regex:/(09)[0-9]{9}/',
+        ], [
+            'mobile.required' => 'شمارهٔ موبایل را وارد کنید',
+            'mobile.digits' => 'شمارهٔ موبایل نادرست است',
+            'mobile.regex' => 'شمارهٔ موبایل نادرست است',
+        ]);
+
+        $mobile = (string) $request->input('mobile');
+
+        $seller = Seller::where('mobile', $mobile)->first();
+
+        if (! $seller) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'فروشنده‌ای با این شمارهٔ موبایل پیدا نشد؛ ابتدا ثبت‌نام کنید.',
+                'register_url' => route('seller.registration'),
+            ]);
+        }
+
+        if ($seller->status_register == self::REGISTER_STATUS_COMPLETE && $seller->status != 'ACTIVE') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'حساب کاربری شما مسدود شده است',
+            ]);
+        }
+
+        $newSeller = NewSeller::firstOrNew(['mobile' => $mobile]);
+        $newSeller->code_mobile_verification = random_int(100000, 999999);
+        $newSeller->save();
+
+        if (option('sms_to_verify_user', 'on') == 'on') {
+            Notification::send($newSeller, new SellerPhoneOtp((int) $newSeller->code_mobile_verification));
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'کد تأیید ۶ رقمی به شمارهٔ شما پیامک شد',
+        ]);
+    }
+
+    /** تأیید کد و ورود (همان شعبه‌بندی وضعیت login_check) */
+    public function login_otp_verify(Request $request)
+    {
+        $this->validate($request, [
+            'mobile' => 'required|digits:11|regex:/(09)[0-9]{9}/',
+            'verify_code' => 'required|digits:6',
+        ], [
+            'mobile.required' => 'شمارهٔ موبایل را وارد کنید',
+            'verify_code.required' => 'کد تأیید ۶ رقمی را وارد کنید',
+            'verify_code.digits' => 'کد تأیید ۶ رقمی است',
+        ]);
+
+        $mobile = (string) $request->input('mobile');
+
+        $seller = Seller::where('mobile', $mobile)->first();
+
+        if (! $seller) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'فروشنده‌ای با این شمارهٔ موبایل پیدا نشد؛ ابتدا ثبت‌نام کنید.',
+                'register_url' => route('seller.registration'),
+            ]);
+        }
+
+        $newSeller = NewSeller::where('mobile', $mobile)->first();
+
+        if (! $newSeller) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'کدی برای این شماره ارسال نشده است؛ دوباره تلاش کنید.',
+            ]);
+        }
+
+        $expired = $newSeller->updated_at->lt(now()->subMinutes(SellerRegistrationFlow::CODE_TTL_MINUTES));
+
+        if ($expired || (string) $newSeller->code_mobile_verification !== (string) $request->input('verify_code')) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'کد وارد شده اشتباه است یا منقضی شده است',
+            ]);
+        }
+
+        // شعبه‌بندی عین login_check — فروشندهٔ نیمه‌کاره به مرحلهٔ خودش می‌رود
+        if ($seller->status_register == self::REGISTER_STATUS_COMPLETE) {
+            if ($seller->status != 'ACTIVE') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'حساب کاربری شما مسدود شده است',
+                ]);
+            }
+
+            Seller::where('id', $seller->id)->update(['updated_at' => Carbon::now()->format('Y-m-d H:i:s')]);
+
+            $request->session()->regenerate();
+            Auth::guard('seller')->login($seller, $request->boolean('remember'));
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'با موفقیت وارد شدید',
+                'redirect' => route('seller.dashboard'),
+            ]);
+        }
+
+        if ($seller->status_register == self::REGISTER_STATUS_BUSINESS_DETAILS) {
+            session()->put(self::SESSION_KEY_DOCUMENTS, $seller->mobile);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'با موفقیت وارد شدید',
+                'redirect' => route('seller.registration_documents'),
+            ]);
+        }
+
+        if ($seller->status_register == self::REGISTER_STATUS_DOCUMENTS) {
+            session()->put(self::SESSION_KEY_CHECKOUT, $seller->mobile);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'با موفقیت وارد شدید',
+                'redirect' => route('seller.registration_checkout'),
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'error',
+            'message' => 'وضعیت ثبت‌نام نامعتبر است؛ از فرم ثبت‌نام ادامه دهید.',
+            'register_url' => route('seller.registration'),
         ]);
     }
 

@@ -46,6 +46,7 @@ use App\Livewire\Seller\Auth\Login;
 use App\Livewire\Seller\Auth\Register;
 use App\Livewire\Seller\Auth\RegisterMobile;
 use App\Livewire\Seller\Auth\SellerIdentity;
+use App\Livewire\Seller\Auth\SellerPassword;
 use App\Livewire\Seller\Auth\SellerType;
 use App\Livewire\Seller\Carriers\Create as CarrierCreate;
 use App\Livewire\Seller\Carriers\Edit as CarrierEdit;
@@ -93,6 +94,12 @@ Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
     Route::get('login', $modern ? Login::class : [SellerController::class, 'login'])->name('login');
     Route::post('login', [SellerController::class, 'login_check'])->name('login_check');
 
+    // فاز ۱۱۲ — روش دوم ورود: موبایل + کد تأیید ۶ رقمی (فقط پنل مدرن)
+    if ($modern) {
+        Route::post('login/otp/send', [SellerController::class, 'login_otp_send'])->name('login_otp_send');
+        Route::post('login/otp/verify', [SellerController::class, 'login_otp_verify'])->name('login_otp_verify');
+    }
+
     // ثبت‌نام (۵ گام — فرم‌های POST در هر دو حالت به همان کنترلر قدیمی می‌روند)
     Route::get('registration', $modern ? Register::class : [SellerController::class, 'registration'])->name('registration');
     Route::post('registration', [SellerController::class, 'registration_new_seller'])->name('registration_new_seller');
@@ -109,10 +116,14 @@ Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
         Route::post('registration/phone', [SellerRegistrationController::class, 'sendPhoneOtp'])->name('registration_phone_send');
         Route::post('registration/verify', [SellerRegistrationController::class, 'verifyPhoneOtp'])->name('registration_phone_verify');
         Route::post('registration/resend', [SellerRegistrationController::class, 'resendPhoneOtp'])->name('registration_phone_resend');
+        Route::post('registration/password', [SellerRegistrationController::class, 'savePassword'])->name('registration_password_store');
         Route::post('registration/type', [SellerRegistrationController::class, 'saveType'])->name('registration_type_store');
         Route::post('registration/identity', [SellerRegistrationController::class, 'saveIdentity'])->name('registration_identity_store');
         Route::post('registration/business', [SellerRegistrationController::class, 'saveBusiness'])->name('registration_business_store');
     }
+
+    // گام رمز عبور (فاز ۱۱۲ — فقط پنل مدرن؛ پنل قدیمی به ثبت‌نام برمی‌گردد)
+    Route::get('registration/password', $modern ? SellerPassword::class : [SellerController::class, 'registration'])->name('registration_password');
 
     // مرحله 1: اطلاعات کسب و کار
     Route::get('registration/business-details', $modern ? BusinessDetails::class : [SellerController::class, 'registration_business_details'])->name('registration_business_details');

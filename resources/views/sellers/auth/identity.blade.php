@@ -7,20 +7,24 @@
 @endphp
 <div class="space-y-5" x-data="{
         busy: false,
+        errors: {},
         gender: '{{ $draft['gender'] ?? 'male' }}',
         async submit() {
             this.busy = true;
+            this.errors = {};
             let fd = new FormData(this.$refs.form);
             try {
                 let data = await spPost('{{ route('seller.registration_identity_store') }}', fd);
                 if (data.warning) { spToast(data.warning, 'success'); }
-                if (data.redirect) { window.location.href = data.redirect; }
-                else { spToast(data.message || 'ثبت اطلاعات ناموفق بود', 'error'); this.busy = false; }
+                if (data.redirect) { window.location.href = data.redirect; return; }
+                this.errors = data.errors || {};
+                spToast(data.message || 'ثبت اطلاعات ناموفق بود', 'error');
+                this.busy = false;
             } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); this.busy = false; }
         }
     }">
     @include('sellers.auth.partials.sp-fetch')
-    @include('sellers.auth.partials.steps', ['active' => 4])
+    @include('sellers.auth.partials.steps', ['active' => 5])
 
     <div class="ap-card p-6 sm:p-8">
         <h1 class="text-lg font-extrabold text-ink dark:text-night-ink">اطلاعات تکمیلی</h1>
@@ -53,20 +57,23 @@
                         کد ملی <span class="text-red-500">*</span>
                     </label>
                     <input id="id-nin" type="text" name="national_code" inputmode="numeric" maxlength="10" required
-                           value="{{ $draft['national_code'] }}"
+                           value="{{ $draft['national_code'] }}" x-on:input="delete errors.national_code"
                            class="ap-input py-3! fa-digits" placeholder="کد ملی ۱۰ رقمی بدون خط تیره">
-                    <p class="mt-1.5 text-[11px] font-semibold text-ink-3 dark:text-night-ink-2">کد ملی باید متعلق به مالک شمارهٔ موبایل <span class="fa-digits font-bold">{{ $draft['mobile'] }}</span> باشد</p>
+                    <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.national_code" x-text="(errors.national_code || [])[0]" x-cloak></p>
+                    <p class="mt-1.5 text-[11px] font-semibold text-ink-3 dark:text-night-ink-2" x-show="! errors.national_code">کد ملی باید متعلق به مالک شمارهٔ موبایل <span class="fa-digits font-bold">{{ $draft['mobile'] }}</span> باشد</p>
                 </div>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="id-first">نام <span class="text-red-500">*</span></label>
-                        <input id="id-first" type="text" name="first_name" required value="{{ $draft['first_name'] }}"
+                        <input id="id-first" type="text" name="first_name" required value="{{ $draft['first_name'] }}" x-on:input="delete errors.first_name"
                                class="ap-input py-3!" placeholder="نام خود را وارد کنید">
+                        <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.first_name" x-text="(errors.first_name || [])[0]" x-cloak></p>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="id-last">نام خانوادگی <span class="text-red-500">*</span></label>
-                        <input id="id-last" type="text" name="last_name" required value="{{ $draft['last_name'] }}"
+                        <input id="id-last" type="text" name="last_name" required value="{{ $draft['last_name'] }}" x-on:input="delete errors.last_name"
                                class="ap-input py-3!" placeholder="نام خانوادگی خود را وارد کنید">
+                        <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.last_name" x-text="(errors.last_name || [])[0]" x-cloak></p>
                     </div>
                 </div>
             </section>
@@ -132,8 +139,9 @@
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                             <label class="mb-1.5 block text-xs font-bold" for="id-company">نام شرکت <span class="text-red-500">*</span></label>
-                            <input id="id-company" type="text" name="company_name" required value="{{ $draft['company_name'] }}"
+                            <input id="id-company" type="text" name="company_name" required value="{{ $draft['company_name'] }}" x-on:input="delete errors.company_name"
                                    class="ap-input py-3!" placeholder="نام شرکت را وارد کنید">
+                            <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.company_name" x-text="(errors.company_name || [])[0]" x-cloak></p>
                         </div>
                         <div>
                             <label class="mb-1.5 block text-xs font-bold" for="id-ctype">نوع شرکت <span class="text-red-500">*</span></label>
@@ -147,11 +155,13 @@
                             <label class="mb-1.5 block text-xs font-bold" for="id-crn">شمارهٔ ثبت <span class="text-red-500">*</span></label>
                             <input id="id-crn" type="text" name="company_registration_number" inputmode="numeric" required value="{{ $draft['company_registration_number'] }}"
                                    class="ap-input py-3! fa-digits">
+                            <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.company_registration_number" x-text="(errors.company_registration_number || [])[0]" x-cloak></p>
                         </div>
                         <div>
                             <label class="mb-1.5 block text-xs font-bold" for="id-cnin">شناسهٔ ملی شرکت <span class="text-red-500">*</span></label>
                             <input id="id-cnin" type="text" name="company_national_identity_number" inputmode="numeric" maxlength="11" required value="{{ $draft['company_national_identity_number'] }}"
                                    class="ap-input py-3! fa-digits">
+                            <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.company_national_identity_number" x-text="(errors.company_national_identity_number || [])[0]" x-cloak></p>
                         </div>
                         <div class="sm:col-span-2">
                             <label class="mb-1.5 block text-xs font-bold" for="id-cen">شمارهٔ اقتصادی</label>
@@ -165,18 +175,20 @@
             {{-- تأییدیه‌ها --}}
             <section class="space-y-2.5 rounded-2xl border border-line p-4 dark:border-night-line">
                 <label class="flex cursor-pointer items-start gap-2.5 text-[12px] font-semibold leading-6 text-ink-2 dark:text-night-ink-2">
-                    <input type="checkbox" name="ownership_confirm" value="1" required class="mt-1 size-4 shrink-0 rounded border-line accent-brand-600">
+                    <input type="checkbox" name="ownership_confirm" value="1" required x-on:change="delete errors.ownership_confirm" class="mt-1 size-4 shrink-0 rounded border-line accent-brand-600">
                     <span>
                         تأیید می‌کنم شمارهٔ موبایل <b class="fa-digits">{{ $draft['mobile'] }}</b> و کد ملی وارد شده
                         <b class="text-ink dark:text-night-ink">متعلق به یک نفر</b> است و فروش با اطلاعات دیگران انجام نمی‌شود.
                     </span>
                 </label>
+                <p class="text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.ownership_confirm" x-text="(errors.ownership_confirm || [])[0]" x-cloak></p>
                 <label class="flex cursor-pointer items-start gap-2.5 text-[12px] font-semibold leading-6 text-ink-2 dark:text-night-ink-2">
-                    <input type="checkbox" name="info_correct" value="1" required class="mt-1 size-4 shrink-0 rounded border-line accent-brand-600">
+                    <input type="checkbox" name="info_correct" value="1" required x-on:change="delete errors.info_correct" class="mt-1 size-4 shrink-0 rounded border-line accent-brand-600">
                     <span>
                         صحت اطلاعات وارد شده را تأیید می‌کنم و مسئولیت درستی آن با من است.
                     </span>
                 </label>
+                <p class="text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.info_correct" x-text="(errors.info_correct || [])[0]" x-cloak></p>
             </section>
 
             <button type="submit" class="ap-btn-primary w-full py-3.5!" :disabled="busy" x-bind:class="busy ? 'opacity-60' : ''">

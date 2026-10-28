@@ -7,15 +7,15 @@
 @endphp
 <div class="space-y-5" x-data="{
         busy: false,
+        errors: {},
         cities: [],
         async loadCities() {
             var pid = this.$refs.province.value;
             if (! pid) { this.cities = []; return; }
             try {
-                var r = await fetch('/api/v1/provinces/' + pid + '/cities', { headers: { 'Accept': 'application/json' } });
+                var r = await fetch('{{ route('provinces.get-cities') }}?id=' + pid, { headers: { 'Accept': 'application/json' } });
                 if (r.ok) {
-                    var j = await r.json();
-                    this.cities = (j.data && j.data.data) ? j.data.data : (j.data || []);
+                    this.cities = await r.json();
                     return;
                 }
             } catch (e) {}
@@ -23,16 +23,19 @@
         },
         async submit() {
             this.busy = true;
+            this.errors = {};
             let fd = new FormData(this.$refs.form);
             try {
                 let data = await spPost('{{ route('seller.registration_business_store') }}', fd);
-                if (data.redirect) { window.location.href = data.redirect; }
-                else { spToast(data.message || 'ثبت اطلاعات ناموفق بود', 'error'); this.busy = false; }
+                if (data.redirect) { window.location.href = data.redirect; return; }
+                this.errors = data.errors || {};
+                spToast(data.message || 'ثبت اطلاعات ناموفق بود', 'error');
+                this.busy = false;
             } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); this.busy = false; }
         }
     }">
     @include('sellers.auth.partials.sp-fetch')
-    @include('sellers.auth.partials.steps', ['active' => 5])
+    @include('sellers.auth.partials.steps', ['active' => 6])
 
     <div class="ap-card p-6 sm:p-8">
         <h1 class="text-lg font-extrabold text-ink dark:text-night-ink">اطلاعات کسب‌وکار</h1>
@@ -53,19 +56,26 @@
                         <div class="relative">
                             <x-admin-panel::icon name="mail" class="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
                             <input id="bd-email" type="email" name="email" dir="ltr" required value="{{ $draftEmail ?? '' }}"
+                                   x-on:input="delete errors.email"
                                    class="ap-input py-3! ps-10! text-start" placeholder="you@example.com" autocomplete="email">
                         </div>
-                        <p class="mt-1.5 text-[11px] font-semibold text-ink-3 dark:text-night-ink-2">این ایمیل برای ورود به پنل و ارتباط با شما استفاده می‌شود</p>
+                        <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.email" x-text="(errors.email || [])[0]" x-cloak></p>
+                        <p class="mt-1.5 text-[11px] font-semibold text-ink-3 dark:text-night-ink-2" x-show="! errors.email">این ایمیل برای ورود به پنل و ارتباط با شما استفاده می‌شود</p>
                     </div>
-                    <div>
-                        <label class="mb-1.5 block text-xs font-bold" for="bd-pass">رمز عبور <span class="text-red-500">*</span></label>
-                        <div class="relative">
-                            <x-admin-panel::icon name="lock" class="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
-                            <input id="bd-pass" type="password" name="password" required
-                                   class="ap-input py-3! pe-10!" placeholder="حداقل ۸ کاراکتر" autocomplete="new-password">
+                    @if (empty($draftPasswordSet))
+                        {{-- فاز ۱۱۲ — فقط پیش‌نویس‌های قدیمیِ قبل از گام رمز عبور اینجا رمز می‌گیرند --}}
+                        <div>
+                            <label class="mb-1.5 block text-xs font-bold" for="bd-pass">رمز عبور <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <x-admin-panel::icon name="lock" class="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
+                                <input id="bd-pass" type="password" name="password" required
+                                       x-on:input="delete errors.password"
+                                       class="ap-input py-3! pe-10!" placeholder="حداقل ۸ کاراکتر" autocomplete="new-password">
+                            </div>
+                            <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.password" x-text="(errors.password || [])[0]" x-cloak></p>
+                            <p class="mt-1.5 text-[11px] font-semibold text-ink-3 dark:text-night-ink-2" x-show="! errors.password">با این رمز به پنل فروشندگان وارد می‌شوید</p>
                         </div>
-                        <p class="mt-1.5 text-[11px] font-semibold text-ink-3 dark:text-night-ink-2">با این رمز به پنل فروشندگان وارد می‌شوید</p>
-                    </div>
+                    @endif
                 </div>
             </section>
 
@@ -79,36 +89,41 @@
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-state">استان <span class="text-red-500">*</span></label>
                         <select id="bd-state" name="state_id" x-ref="province" required
-                                x-on:change="loadCities()" class="ap-input py-3!">
+                                x-on:change="loadCities(); delete errors.state_id" class="ap-input py-3!">
                             <option value="">انتخاب استان…</option>
                             @foreach ($provinces as $province)
                                 <option value="{{ $province->id }}">{{ $province->name }}</option>
                             @endforeach
                         </select>
+                        <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.state_id" x-text="(errors.state_id || [])[0]" x-cloak></p>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-city">شهر <span class="text-red-500">*</span></label>
-                        <select id="bd-city" name="city_id" class="ap-input py-3!" required>
+                        <select id="bd-city" name="city_id" class="ap-input py-3!" required x-on:change="delete errors.city_id">
                             <option value="">ابتدا استان را انتخاب کنید</option>
                             <template x-for="city in cities" :key="city.id">
                                 <option x-text="city.name" x-bind:value="city.id"></option>
                             </template>
                         </select>
+                        <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.city_id" x-text="(errors.city_id || [])[0]" x-cloak></p>
                     </div>
                 </div>
                 <div>
                     <label class="mb-1.5 block text-xs font-bold" for="bd-address">آدرس کامل <span class="text-red-500">*</span></label>
-                    <input id="bd-address" type="text" name="address" required class="ap-input py-3!"
+                    <input id="bd-address" type="text" name="address" required x-on:input="delete errors.address" class="ap-input py-3!"
                            placeholder="محله - خیابان اصلی - کوچه - پلاک - واحد">
+                    <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.address" x-text="(errors.address || [])[0]" x-cloak></p>
                 </div>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-post">کد پستی <span class="text-red-500">*</span></label>
-                        <input id="bd-post" type="text" name="post_code" inputmode="numeric" maxlength="10" required class="ap-input py-3! fa-digits" placeholder="۱۲۳۴۵-۶۷۸۹۰">
+                        <input id="bd-post" type="text" name="post_code" inputmode="numeric" maxlength="10" required x-on:input="delete errors.post_code" class="ap-input py-3! fa-digits" placeholder="۱۲۳۴۵-۶۷۸۹۰">
+                        <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.post_code" x-text="(errors.post_code || [])[0]" x-cloak></p>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-phone">تلفن ثابت <span class="text-red-500">*</span></label>
-                        <input id="bd-phone" type="text" name="phone" inputmode="numeric" required class="ap-input py-3! fa-digits" placeholder="021-56000000">
+                        <input id="bd-phone" type="text" name="phone" inputmode="numeric" required x-on:input="delete errors.phone" class="ap-input py-3! fa-digits" placeholder="021-56000000">
+                        <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.phone" x-text="(errors.phone || [])[0]" x-cloak></p>
                     </div>
                 </div>
                 <div>
@@ -126,23 +141,26 @@
                 </h2>
                 <div>
                     <label class="mb-1.5 block text-xs font-bold" for="bd-bname">نام فروشگاه <span class="text-red-500">*</span></label>
-                    <input id="bd-bname" type="text" name="business_name" required class="ap-input py-3!"
+                    <input id="bd-bname" type="text" name="business_name" required x-on:input="delete errors.business_name" class="ap-input py-3!"
                            placeholder="نام فروشگاه شما در سایت {{ option('info_site_title', 'او پی شاپ') }}">
+                    <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.business_name" x-text="(errors.business_name || [])[0]" x-cloak></p>
                 </div>
                 <div>
                     <label class="mb-1.5 block text-xs font-bold" for="bd-shaba">شمارهٔ شبا (برای تسویه) <span class="text-red-500">*</span></label>
-                    <input id="bd-shaba" type="text" dir="ltr" name="shaba_number" required class="ap-input py-3! font-mono text-start" placeholder="IR______________________________">
-                    <p class="mt-1.5 text-[11px] font-semibold text-ink-3 dark:text-night-ink-2">شبا باید متعلق به همان شخص/شرکت باشد تا تسویه بدون مشکل انجام شود</p>
+                    <input id="bd-shaba" type="text" dir="ltr" name="shaba_number" required x-on:input="delete errors.shaba_number" class="ap-input py-3! font-mono text-start" placeholder="IR______________________________">
+                    <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.shaba_number" x-text="(errors.shaba_number || [])[0]" x-cloak></p>
+                    <p class="mt-1.5 text-[11px] font-semibold text-ink-3 dark:text-night-ink-2" x-show="! errors.shaba_number">شبا باید متعلق به همان شخص/شرکت باشد تا تسویه بدون مشکل انجام شود</p>
                 </div>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-cat">دستهٔ اصلی تأمین کالا <span class="text-red-500">*</span></label>
-                        <select id="bd-cat" name="main_supply_category_id" class="ap-input py-3!" required>
+                        <select id="bd-cat" name="main_supply_category_id" class="ap-input py-3!" required x-on:change="delete errors.main_supply_category_id">
                             <option value="">انتخاب کنید…</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}">{{ $category->name }}</option>
                             @endforeach
                         </select>
+                        <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.main_supply_category_id" x-text="(errors.main_supply_category_id || [])[0]" x-cloak></p>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-bold" for="bd-count">تعداد محصولات قابل ارائه <span class="text-red-500">*</span></label>

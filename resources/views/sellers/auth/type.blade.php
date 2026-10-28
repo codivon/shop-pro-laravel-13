@@ -2,19 +2,23 @@
      بزرگ مثل لندینگ مرجع؛ انتخاب حقوقی فیلدهای شرکت را به گام بعد اضافه می‌کند --}}
 <div class="space-y-5" x-data="{
         busy: false,
+        errors: {},
         async pick(type) {
             this.busy = true;
+            this.errors = {};
             let fd = new FormData();
             fd.append('type', type);
             try {
                 let data = await spPost('{{ route('seller.registration_type_store') }}', fd);
-                if (data.redirect) { window.location.href = data.redirect; }
-                else { spToast(data.message || 'ثبت وضعیت ناموفق بود', 'error'); this.busy = false; }
+                if (data.redirect) { window.location.href = data.redirect; return; }
+                this.errors = data.errors || {};
+                spToast(data.message || 'ثبت وضعیت ناموفق بود', 'error');
+                this.busy = false;
             } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); this.busy = false; }
         }
     }">
     @include('sellers.auth.partials.sp-fetch')
-    @include('sellers.auth.partials.steps', ['active' => 3])
+    @include('sellers.auth.partials.steps', ['active' => 4])
 
     <div class="ap-card p-6 sm:p-8">
         <h1 class="text-center text-lg font-extrabold text-ink dark:text-night-ink">وضعیت خود را انتخاب کنید</h1>

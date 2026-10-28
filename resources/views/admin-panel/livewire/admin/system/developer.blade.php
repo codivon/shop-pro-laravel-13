@@ -253,6 +253,67 @@
                         </button>
                     </div>
                 </div>
+
+                @if (count($pendingMigrations) > 0)
+                    {{-- فاز ۱۱۲ — مایگریشن‌های جدید (فقط وقتی مایگریشن اجرا نشده‌ای وجود دارد نمایش داده می‌شود) --}}
+                    <div class="border-t border-line pt-4 dark:border-night-line">
+                        <div class="rounded-2xl border border-emerald-300 bg-emerald-50 p-4 sm:p-5 dark:border-emerald-500/25 dark:bg-emerald-500/10">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div class="flex items-start gap-3">
+                                    <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-sm shadow-emerald-500/30">
+                                        <x-admin-panel::icon name="database" class="size-5" />
+                                    </span>
+                                    <div>
+                                        <p class="flex items-center gap-2 text-[13px] font-extrabold text-emerald-800 dark:text-emerald-200">
+                                            مایگریشن‌های جدید پیدا شد
+                                            <span class="ap-badge bg-emerald-500 px-2 font-extrabold text-white" dir="ltr">{{ count($pendingMigrations) }}</span>
+                                        </p>
+                                        <p class="mt-1 max-w-xl text-xs font-semibold leading-6 text-emerald-700 dark:text-emerald-300">
+                                            {{ count($pendingMigrations) }} مایگریشن اجرا نشده است؛ جداول و فیلدهای زیر هنوز در دیتابیس ساخته نشده‌اند. با کلیک روی دکمهٔ زیر این تغییرات به دیتابیس اعمال می‌شوند.
+                                        </p>
+                                    </div>
+                                </div>
+                                <button type="button" wire:click="runPendingMigrations"
+                                        wire:loading.attr="disabled" wire:target="runPendingMigrations"
+                                        class="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-[13px] font-bold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">
+                                    <x-admin-panel::icon name="plus" class="size-4" wire:loading.remove wire:target="runPendingMigrations" />
+                                    <x-admin-panel::icon name="refresh-cw" class="me-0.5 inline size-4 animate-spin" wire:loading wire:target="runPendingMigrations" />
+                                    افزودن جداول جدید
+                                </button>
+                            </div>
+
+                            <ul class="mt-4 space-y-2">
+                                @foreach ($pendingMigrations as $pending)
+                                    <li class="rounded-xl border border-emerald-200/80 bg-white/70 p-3 dark:border-emerald-500/20 dark:bg-night-2/60">
+                                        <p class="text-[11px] font-bold text-emerald-800 dark:text-emerald-200" dir="ltr">
+                                            <span class="inline-flex items-center gap-1 font-mono">
+                                                <x-admin-panel::icon name="file-code" class="size-3.5" />
+                                                {{ $pending['migration'] }}
+                                            </span>
+                                        </p>
+                                        <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                                            @foreach ($pending['creates'] as $table)
+                                                <span class="ap-badge bg-emerald-100 text-[10px] text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300">
+                                                    <x-admin-panel::icon name="table" class="me-1 inline size-3" />
+                                                    ایجاد جدول <b dir="ltr">{{ $table }}</b>
+                                                </span>
+                                            @endforeach
+                                            @foreach ($pending['alters'] as $table)
+                                                <span class="ap-badge bg-brand-50 text-[10px] text-brand-700 dark:bg-brand-500/12 dark:text-brand-300">
+                                                    <x-admin-panel::icon name="pencil" class="me-1 inline size-3" />
+                                                    تغییر جدول <b dir="ltr">{{ $table }}</b>
+                                                </span>
+                                            @endforeach
+                                            @if (empty($pending['creates']) && empty($pending['alters']))
+                                                <span class="ap-badge bg-surface-2 text-[10px] text-ink-3 dark:bg-night-3 dark:text-night-ink-2">تغییرات ساختاری دیتابیس</span>
+                                            @endif
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                @endif
             </div>
 
             {{-- ============ تب آپدیت‌کننده ============ --}}

@@ -15,7 +15,7 @@
         }
     }">
     @include('sellers.auth.partials.sp-fetch')
-    @include('sellers.auth.partials.steps', ['active' => 5])
+    @include('sellers.auth.partials.steps', ['active' => 8])
 
     <div class="ap-card p-6 text-center sm:p-10">
         <span class="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-500/12 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">

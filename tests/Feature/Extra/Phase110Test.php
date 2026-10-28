@@ -120,7 +120,7 @@ class Phase110Test extends TestCase
         return $mobile;
     }
 
-    /** جریان کامل تا گام داده‌شده: send → verify → (type) → (identity) → (business) */
+    /** جریان کامل تا گام داده‌شده: send → verify → password → (type) → (identity) → (business) */
     private function flowTo(string $step, string $type = 'real'): SellerRegistration
     {
         $mobile = $this->sendOtp();
@@ -133,6 +133,13 @@ class Phase110Test extends TestCase
 
         $draft = SellerRegistration::where('mobile', $mobile)->first();
         $this->assertNotNull($draft);
+
+        // فاز ۱۱۲ — گام رمز عبور بعد از تأیید کد
+        $this->post(route('seller.registration_password_store'), [
+            'password' => 'secret12345',
+            'password_confirmation' => 'secret12345',
+        ])->assertJsonPath('status', 'success');
+        $draft->refresh();
 
         if (in_array($step, ['type', 'identity', 'business', 'documents'], true)) {
             $this->post(route('seller.registration_type_store'), ['type' => $type])
@@ -191,7 +198,7 @@ class Phase110Test extends TestCase
     /* ================= ۱) گام موبایل و کد ۶ رقمی ================= */
 
     #[Test]
-    #[TestDox('صفحهٔ ثبت‌نام فقط فیلد موبایل دارد (ایمیل/رمز حذف شده) و ۷ گامی است')]
+    #[TestDox('صفحهٔ ثبت‌نام فقط فیلد موبایل دارد (ایمیل/رمز حذف شده) و ۸ گامی است')]
     public function registration_page_is_phone_only(): void
     {
         $this->enableVendor();
@@ -201,7 +208,7 @@ class Phase110Test extends TestCase
         $page->assertSee(route('seller.registration_phone_send'), false);
         $page->assertSee('شمارهٔ موبایل', false);
         $page->assertSee('گام', false);
-        $page->assertSee('۷', false);
+        $page->assertSee('۸', false);
         // فیلدهای قدیمی حذف شده‌اند (با کوتیشن انتهایی لنگر می‌شود تا با URL جدید قاطی نشود)
         $page->assertDontSee('name="email"', false);
         $page->assertDontSee('name="password"', false);
@@ -246,13 +253,15 @@ class Phase110Test extends TestCase
 
         $response = $this->post(route('seller.registration_phone_send'), ['mobile' => $seller->mobile]);
 
-        $response->assertOk()->assertJsonPath('status', 'error');
-        $this->assertStringContainsString('قبلاً ثبت شده', (string) $response->json('message'));
+        // فاز ۱۱۱/۱۱۲ — فروشندهٔ فعالِ تکمیل‌شده ⇒ exists + آدرس ورود (مودال دو‌دکمه‌ای فرانت)
+        $response->assertOk()->assertJsonPath('status', 'exists');
+        $this->assertStringContainsString('از قبل ثبت‌نام کرده', (string) $response->json('message'));
+        $this->assertSame(route('seller.login'), (string) $response->json('login_url'));
         Notification::assertNothingSent();
     }
 
     #[Test]
-    #[TestDox('تأیید کد درست پیش‌نویس را به گام وضعیت می‌برد؛ کد اشتباه رد می‌شود')]
+    #[TestDox('تأیید کد درست پیش‌نویس را به گام رمز عبور می‌برد؛ کد اشتباه رد می‌شود')]
     public function otp_verify_advances_to_type(): void
     {
         $this->enableVendor();
@@ -265,13 +274,22 @@ class Phase110Test extends TestCase
             'verify_code' => $code !== '000000' ? '000000' : '111111',
         ])->assertJsonPath('status', 'error');
 
-        // کد درست
+        // کد درست — فاز ۱۱۲: مقصد بعدی گام رمز عبور است
         $this->post(route('seller.registration_phone_verify'), [
             'mobile' => $mobile,
             'verify_code' => $code,
+        ])->assertJsonPath('redirect', route('seller.registration_password'));
+
+        $this->assertSame('password', SellerRegistration::where('mobile', $mobile)->value('step'));
+
+        // ذخیرهٔ رمز → گام وضعیت
+        $this->post(route('seller.registration_password_store'), [
+            'password' => 'secret12345',
+            'password_confirmation' => 'secret12345',
         ])->assertJsonPath('redirect', route('seller.registration_type'));
 
         $this->assertSame('type', SellerRegistration::where('mobile', $mobile)->value('step'));
+        $this->assertNotSame('', (string) SellerRegistration::where('mobile', $mobile)->value('password'));
     }
 
     #[Test]

@@ -207,8 +207,11 @@ class SellerRegistrationController extends Controller
             }
 
             $draft->step = $seller->status_register === 'documents' ? 'checkout' : 'documents';
-        } elseif (! $draft->reached('type')) {
-            $draft->step = 'type';
+        } elseif (! $draft->reached('password')) {
+            // فاز ۱۱۲ — جریان تازه بعد از تأیید کد، اول رمز عبور را تنظیم می‌کند؛
+            // پیش‌نویس‌هایی که قبلاً رمز را ست کرده‌اند (یا جلوترند) مرحله‌شان
+            // دست‌نخورده می‌ماند تا رمز دوباره از آنها پرسیده نشود
+            $draft->step = 'password';
         }
 
         $draft->save();
@@ -261,7 +264,46 @@ class SellerRegistrationController extends Controller
         ]);
     }
 
-    /* ================= گام ۳ — وضعیت فروشنده (حقیقی/حقوقی) ================= */
+    /* ================= گام ۳ — تنظیم رمز عبور (فاز ۱۱۲) ================= */
+
+    /**
+     * بعد از تأیید کد موبایل، فقط رمز عبور و تکرارش جمع می‌شود و هش‌شده در
+     * پیش‌نویس ذخیره می‌شود؛ در ساخت حساب مستقیم استفاده می‌شود. فروشنده‌ای که
+     * ثبت‌نام را نیمه‌کاره رها کند و بعداً با کد برگردد، این گام را دوباره نمی‌بیند
+     * (پیش‌نویس جلوتر از password رفته) و دقیقاً به مرحلهٔ خودش می‌رود.
+     */
+    public function savePassword(Request $request): JsonResponse|RedirectResponse
+    {
+        $draft = $this->requireDraft();
+
+        if (! $draft instanceof SellerRegistration) {
+            return $draft;
+        }
+
+        if (($blocked = $this->guardStep($draft, 'password')) !== null) {
+            return $blocked;
+        }
+
+        $this->validate($request, [
+            'password' => 'required|min:8|confirmed',
+        ], [
+            'password.required' => 'رمز عبور را وارد کنید',
+            'password.min' => 'رمز عبور حداقل ۸ کاراکتر باشد',
+            'password.confirmed' => 'تکرار رمز عبور با رمز عبور یکسان نیست',
+        ]);
+
+        $draft->update([
+            'password' => Hash::make((string) $request->input('password')),
+            'step' => 'type',
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'redirect' => route('seller.registration_type'),
+        ]);
+    }
+
+    /* ================= گام ۴ — وضعیت فروشنده (حقیقی/حقوقی) ================= */
 
     public function saveType(Request $request): JsonResponse|RedirectResponse
     {
@@ -426,7 +468,6 @@ class SellerRegistrationController extends Controller
 
         $rules = [
             'email' => 'required|email|unique:sellers',
-            'password' => 'required|min:8',
             'state_id' => 'required',
             'city_id' => 'required',
             'address' => 'required|'.($isLegal ? 'persian_alpha_num' : 'persian_alpha_eng_num'),
@@ -438,6 +479,12 @@ class SellerRegistrationController extends Controller
             'number_of_products' => 'required',
             'econtract' => 'required',
         ];
+
+        // فاز ۱۱۲ — رمز در گام «تنظیم رمز عبور» ست شده؛ برای پیش‌نویس‌های قدیمیِ
+        // بدون رمز (قبل از این فاز)، ورودی رمز همچنان پذیرفته می‌شود
+        if (! $draft->password) {
+            $rules['password'] = 'required|min:8';
+        }
 
         $this->validate($request, $rules, [
             'email.required' => 'ایمیل را وارد کنید',
@@ -469,9 +516,14 @@ class SellerRegistrationController extends Controller
             ]);
         }
 
-        // مثل جریان قدیمی: ایمیل/رمز روی new_sellers می‌نشیند و در ساخت حساب هش می‌شود
+        // مثل جریان قدیمی: ایمیل روی new_sellers می‌نشیند؛ رمز از گام «تنظیم رمز
+        // عبور» (هش‌شده در پیش‌نویس) می‌آید و فقط برای پیش‌نویس‌های قدیمی از ورودی هش می‌شود
         $newSeller->email = (string) $request->input('email');
-        $newSeller->password = (string) $request->input('password');
+
+        if ($request->filled('password')) {
+            $newSeller->password = (string) $request->input('password');
+        }
+
         $newSeller->save();
 
         $slug = $this->generateUniqueSlug((string) $request->input('business_name'));
@@ -480,7 +532,8 @@ class SellerRegistrationController extends Controller
         $seller->slug = $slug;
         $seller->email = $newSeller->email;
         $seller->mobile = $draft->mobile;
-        $seller->password = Hash::make($newSeller->password);
+        // فاز ۱۱۲ — رمزِ ست‌شده در گام رمز عبور از قبل هش است؛ پیش‌نویس قدیمیِ بدون رمز از ورودی هش می‌شود
+        $seller->password = $draft->password ?: Hash::make((string) $request->input('password'));
         $seller->mobile_verification = 'YES';
         $seller->remember_token = Str::random(60);
         $seller->save();

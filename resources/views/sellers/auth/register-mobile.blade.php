@@ -3,6 +3,7 @@
      با رفرش از دست نمی‌رود و ارسال مجدد هم با گیت ۲ دقیقه‌ای سمت سرور است --}}
 <div class="space-y-5" x-data="{
         busy: false,
+        errors: {},
         code: ['', '', '', '', '', ''],
         seconds: {{ $resendTime }},
         tick() {
@@ -32,14 +33,16 @@
         full() { return this.code.join('').length === 6; },
         async submit() {
             this.busy = true;
+            this.errors = {};
             let fd = new FormData();
             fd.append('mobile', '{{ $seller['mobile'] }}');
             fd.append('verify_code', this.code.join(''));
             try {
                 let data = await spPost('{{ route('seller.registration_phone_verify') }}', fd);
                 if (data.status === 'exists') { window.location.href = data.login_url || '{{ route('seller.login') }}'; return; }
-                if (data.redirect) { window.location.href = data.redirect; }
-                else { spToast(data.message || 'کد وارد شده اشتباه است', 'error'); this.busy = false; }
+                if (data.redirect) { window.location.href = data.redirect; return; }
+                this.errors = data.errors || {};
+                spToast(data.message || 'کد وارد شده اشتباه است', 'error'); this.busy = false;
             } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); this.busy = false; }
         },
         async resend() {
@@ -88,6 +91,7 @@
                                aria-label="رقم {{ $box + 1 }} کد تأیید">
                     @endforeach
                 </div>
+                <p class="mt-2 text-center text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.verify_code" x-text="(errors.verify_code || [])[0]" x-cloak></p>
             </div>
 
             <button type="submit" class="ap-btn-primary w-full py-3.5!" :disabled="busy" x-bind:class="busy ? 'opacity-60' : ''">

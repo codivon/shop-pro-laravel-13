@@ -4,9 +4,11 @@
      پاسخ status=exists (فروشندهٔ فعالِ تکمیل‌شده) مودال دو‌دکمه‌ای ورود/تغییر شماره را باز می‌کند --}}
 <div class="space-y-5" x-data="{
         busy: false,
+        errors: {},
         mobile: '{{ request()->query('mobile', '') }}',
         async submit() {
             this.busy = true;
+            this.errors = {};
             let fd = new FormData();
             fd.append('mobile', this.mobile);
             try {
@@ -16,8 +18,10 @@
                     this.busy = false;
                     return;
                 }
-                if (data.redirect) { window.location.href = data.redirect; }
-                else { spToast(data.message || 'ارسال کد ناموفق بود', 'error'); this.busy = false; }
+                if (data.redirect) { window.location.href = data.redirect; return; }
+                this.errors = data.errors || {};
+                spToast(data.message || 'ارسال کد ناموفق بود', 'error');
+                this.busy = false;
             } catch (e) { spToast('خطا در برقراری ارتباط', 'error'); this.busy = false; }
         }
     }">
@@ -41,10 +45,11 @@
                 <div class="relative">
                     <x-admin-panel::icon name="smartphone" class="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
                     <input id="sp-reg-mobile" type="tel" dir="ltr" inputmode="numeric" required autofocus
-                           x-model="mobile" maxlength="11"
+                           x-model="mobile" maxlength="11" x-on:input="delete errors.mobile"
                            class="ap-input py-3.5! ps-10! text-start fa-digits text-[15px]" placeholder="09xxxxxxxxx" autocomplete="tel">
                 </div>
-                <p class="mt-1.5 text-[11px] font-semibold text-ink-3 dark:text-night-ink-2">با وارد کردن شماره، کد تأیید ۶ رقمی برای شما پیامک می‌شود</p>
+                <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.mobile" x-text="(errors.mobile || [])[0]" x-cloak></p>
+                <p class="mt-1.5 text-[11px] font-semibold text-ink-3 dark:text-night-ink-2" x-show="! errors.mobile">با وارد کردن شماره، کد تأیید ۶ رقمی برای شما پیامک می‌شود</p>
             </div>
 
             <button type="submit" class="ap-btn-primary w-full py-3.5!" :disabled="busy" x-bind:class="busy ? 'opacity-60' : ''">

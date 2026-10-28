@@ -11,8 +11,11 @@ use App\Support\PulseSettings;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -196,9 +199,15 @@ class Developer extends Component
     /** حداقل مبلغ درخواست برداشت فروشنده (تومان) — ۰ یعنی بدون حد اضافه */
     public string $vendorMinWithdraw = '0';
 
+    /** فاز ۱۱۲ — مایگریشن‌های اجرا نشده (فایل موجود، رکورد/جدول موجود نیست) */
+    public array $pendingMigrations = [];
+
     public function mount(): void
     {
         $this->ensureCreator();
+
+        // فاز ۱۱۲ — بررسی مایگریشن‌های جدید (فقط برای نمایش بخش سبز)
+        $this->pendingMigrations = $this->detectPendingMigrations();
 
         // پورت showSettings
         $schedule_last_work = option('schedule_run');
@@ -561,6 +570,77 @@ class Developer extends Component
         Artisan::call('webpush:vapid');
 
         $this->dispatch('toast', message: 'کلیدهای وب پوش تنظیم شدند.', type: 'success');
+    }
+
+    /* ================= مایگریشن‌های جدید (فاز ۱۱۲) ================= */
+
+    /**
+     * فایل‌های مایگریشن موجود در database/migrations که در جدول migrations ثبت
+     * نشده‌اند. مبنای تشخیص جدول migrations است و برای دقت بیشتر، مایگریشن‌های
+     * «ساخت جدول» که جدولشان از قبل وجود دارد (رکورد جاافتاده ولی ساختار موجود)
+     * کنار گذاشته می‌شوند تا اجرای مجدد به خطای «جدول موجود» نخورد.
+     */
+    private function detectPendingMigrations(): array
+    {
+        // نصب تازه — جدول migrations هنوز ساخته نشده؛ مایگریشن‌ها در نصب اجرا می‌شوند
+        if (! Schema::hasTable('migrations')) {
+            return [];
+        }
+
+        $ran = DB::table('migrations')->pluck('migration')->all();
+
+        $pending = [];
+
+        foreach (glob(database_path('migrations/*.php')) ?: [] as $file) {
+            $name = basename($file, '.php');
+
+            if (in_array($name, $ran, true)) {
+                continue;
+            }
+
+            $content = (string) File::get($file);
+
+            preg_match_all("/Schema::create\\(\\s*['\"]([^'\"]+)['\"]/", $content, $creates);
+            $creates = array_values(array_unique($creates[1] ?? []));
+
+            // فقط جدول‌هایی که واقعاً در دیتابیس نیستند
+            $missingTables = array_values(array_filter($creates, fn ($table) => ! Schema::hasTable($table)));
+
+            // مایگریشنِ ساختِ جدول که همهٔ جدول‌هایش موجود است ⇒ عملاً اجرا شده
+            // ولی رکوردش ثبت نشده؛ اجرای مجددش فقط خطا می‌دهد → نمایش نده
+            if ($creates !== [] && $missingTables === []) {
+                continue;
+            }
+
+            preg_match_all("/Schema::table\\(\\s*['\"]([^'\"]+)['\"]/", $content, $alters);
+            $alters = array_values(array_unique($alters[1] ?? []));
+
+            $pending[] = [
+                'migration' => $name,
+                'creates' => $missingTables,
+                'alters' => $alters,
+            ];
+        }
+
+        return $pending;
+    }
+
+    /** ایجاد جداول/فیلدهای جدید — اجرای مایگریشن‌های معلق */
+    public function runPendingMigrations(): void
+    {
+        $this->ensureCreator();
+
+        try {
+            Artisan::call('migrate', ['--force' => true]);
+
+            $this->pendingMigrations = $this->detectPendingMigrations();
+
+            $this->dispatch('toast', message: 'جداول و فیلدهای جدید با موفقیت ایجاد شدند.', type: 'success');
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            $this->dispatch('toast', message: 'اجرای مایگریشن‌ها ناموفق بود: '.Str::limit($exception->getMessage(), 140), type: 'error');
+        }
     }
 
     /* ================= پاک‌کردن کش (پورت clearCache) ================= */

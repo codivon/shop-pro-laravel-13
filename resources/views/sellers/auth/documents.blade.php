@@ -58,7 +58,7 @@
         }
      }">
     @include('sellers.auth.partials.sp-fetch')
-    @include('sellers.auth.partials.steps', ['active' => 4])
+    @include('sellers.auth.partials.steps', ['active' => 7])
 
     <div class="ap-card p-6 sm:p-8">
         <h1 class="text-lg font-extrabold text-ink dark:text-night-ink">بارگذاری مدارک</h1>

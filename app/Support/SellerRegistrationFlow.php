@@ -65,6 +65,7 @@ class SellerRegistrationFlow
     public static function stepRoute(SellerRegistration $draft): string
     {
         return match ($draft->step) {
+            'password' => 'seller.registration_password',
             'type' => 'seller.registration_type',
             'identity' => 'seller.registration_identity',
             'business' => 'seller.registration_business_details',

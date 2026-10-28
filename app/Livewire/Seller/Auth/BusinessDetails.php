@@ -29,6 +29,9 @@ class BusinessDetails extends Component
     /** وضعیت انتخابی (حقیقی/حقوقی) از پیش‌نویس */
     public ?string $draftType = null;
 
+    /** آیا رمز عبور در گام «تنظیم رمز عبور» ست شده؟ (فاز ۱۱۲) */
+    public bool $draftPasswordSet = false;
+
     /** قرارداد الکترونیکی (رکورد ۱ — مثل قدیمی) */
     public ?object $econtract = null;
 
@@ -68,6 +71,7 @@ class BusinessDetails extends Component
         $this->seller = ['mobile' => $draft->mobile];
         $this->draftEmail = $draft->email;
         $this->draftType = $draft->type;
+        $this->draftPasswordSet = (bool) $draft->password;
         $this->econtract = SellerEcontract::find(1);
         $this->provinces = Province::all();
         $this->categories = Category::where('category_id', null)->get();
