@@ -38,7 +38,7 @@
             <div x-show="open" x-on:click.stop
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
-                 x-on:keydown.escape.window="if (open && !document.body.classList.contains('ap-ip-open')) { open = false; $wire.cancelForm() }"
+                 x-on:keydown.escape.window="if (open) { open = false; $wire.cancelForm() }"
                  class="fixed inset-4 z-[61] mx-auto flex w-auto max-w-3xl flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-pop sm:inset-x-auto sm:left-1/2 sm:w-[min(48rem,calc(100vw-2rem))] sm:-translate-x-1/2 dark:border-night-line dark:bg-night-2"
                  role="dialog" aria-modal="true" aria-labelledby="menu-form-title">
                 <div class="flex items-center justify-between gap-2 border-b border-line px-5 py-3.5 dark:border-night-line">

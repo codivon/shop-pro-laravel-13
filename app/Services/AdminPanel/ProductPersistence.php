@@ -77,7 +77,8 @@ class ProductPersistence
             $attributes = $this->validateAndFixDuplicateColors($attributes, $index);
 
             // اطلاعات پایه
-            $sellerId = $priceData['seller_id'] ?? null;
+            // فاز ۱۱۸ — دفاعی: '' → null (ستون‌های int sellers.id/attribute_price.seller_id مقدار خالی نمی‌پذیرند)
+            $sellerId = filled($priceData['seller_id'] ?? null) ? (int) $priceData['seller_id'] : null;
             $warehouseId = $priceData['warehouse'] ?? null;
             $newStock = (int) $priceData['stock'];
 

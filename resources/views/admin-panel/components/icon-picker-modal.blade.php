@@ -22,11 +22,11 @@
 ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
 
 {{-- فاز ۱۱۸ — z-[90]/z-[91]: ارجعیت بالاتر از همهٔ مودال‌های پنل (منو z-[60/61]، تنظیمات z-[80])
-     + x-effect: کلاس ap-ip-open روی body تا مودال‌های زیرین با Escape بسته نشوند وقتی پیکر باز است --}}
+     + Escape وقتی پیکر باز است فقط پیکر را می‌بندد: stopImmediatePropagation جلوی
+     هندلر Escape مودال‌های زیرین (که بعد از این کامپوننت روی window ثبت شده‌اند) را می‌گیرد --}}
 <div x-data="apIconPicker" x-cloak
      x-on:open-ap-icon-picker.window="openWith($event.detail.target, $event.detail.mode)"
-     x-on:keydown.escape.window="open = false"
-     x-effect="document.body.classList.toggle('ap-ip-open', open)"
+     x-on:keydown.escape.window="if (open) { $event.stopImmediatePropagation(); open = false }"
      class="ap-icon-picker-modal" aria-hidden="true">
     {{-- پوشش پس‌زمینه --}}
     <div x-show="open" x-transition.opacity class="fixed inset-0 z-[90] bg-black/50 backdrop-blur-sm"

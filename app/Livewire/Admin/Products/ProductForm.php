@@ -1195,7 +1195,8 @@ class ProductForm extends Component
                 'cart_min' => ($row['cart_min'] ?? '') !== '' ? (int) $row['cart_min'] : null,
                 'stock' => (int) $row['stock'],
                 'published' => (bool) ($row['published'] ?? true),
-                'seller_id' => $row['seller_id'] ?? null,
+                // فاز ۱۱۸ — سلکت خالی «''» → null (وگرنه '' به ستون int یعنی attribute_price می‌رود و خطا می‌دهد)
+                'seller_id' => filled($row['seller_id'] ?? null) ? (int) $row['seller_id'] : null,
             ];
         }
 
