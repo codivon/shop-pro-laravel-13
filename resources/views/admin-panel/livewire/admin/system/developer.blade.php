@@ -1136,6 +1136,20 @@
                                 </span>
                                 <x-admin-panel::toggle wire:model="vendorLoginCaptcha" size="sm" aria-label="ربات‌گیر ورود فروشنده" />
                             </div>
+
+                            {{-- فاز ۱۱۴ — انتخابگر آیکون پنل‌ها (قانون طلایی) --}}
+                            <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                                <span class="flex min-w-0 items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-3 dark:bg-night-2 dark:text-night-ink-2">
+                                        <x-admin-panel::icon name="shapes" class="size-4" />
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-[13px] font-bold">انتخابگر آیکون (Font Awesome / Material / Lucide)</span>
+                                        <span class="block text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">کنار فیلدهای آیکون پنل مدیریت (منوها، تنظیمات، لندینگ فروشندگان) دکمهٔ «انتخاب» رندر شود؛ با کلیک، مودال بزرگ آیکون‌ها با تب‌های Font Awesome و Material Design و Lucide + جستجو + تعیین رنگ و اندازه باز می‌شود. خاموش = فیلدها به‌صورت متن ساده</span>
+                                    </span>
+                                </span>
+                                <x-admin-panel::toggle wire:model="adminIconPicker" size="sm" aria-label="انتخابگر آیکون" />
+                            </div>
                         </div>
                     </section>
 

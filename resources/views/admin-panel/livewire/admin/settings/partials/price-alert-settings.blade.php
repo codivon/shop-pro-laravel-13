@@ -155,7 +155,8 @@
                         <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-ink-2 dark:bg-night-3 dark:text-night-ink">
                             <i class="{{ $dt_price_alert_button_icon ?: 'mdi mdi-bell-ring-outline' }}"></i>
                         </span>
-                        <input type="text" dir="ltr" wire:model.live.debounce.400ms="dt_price_alert_button_icon" class="ap-input font-mono" placeholder="mdi mdi-bell-ring-outline">
+                        <input id="dt-price-alert-button-icon" type="text" dir="ltr" wire:model.live.debounce.400ms="dt_price_alert_button_icon" class="ap-input font-mono" placeholder="mdi mdi-bell-ring-outline">
+                        <x-admin-panel::icon-picker for="dt-price-alert-button-icon" mode="class" />
                     </div>
                     <p class="mt-1.5 text-[11px] text-ink-3 dark:text-night-ink-2">پیش‌نمایش آیکون در کادر کناری — خالی = زنگوله</p>
                 </div>

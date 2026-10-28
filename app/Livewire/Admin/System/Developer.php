@@ -193,6 +193,9 @@ class Developer extends Component
     /** ربات‌گیر ورود فروشنده با رمز عبور (فاز ۱۱۳ — کد امنیتی تصویری؛ پیش‌فرض روشن) */
     public bool $vendorLoginCaptcha = true;
 
+    /** فاز ۱۱۴ — انتخابگر آیکون پنل‌ها (قانون طلایی) */
+    public bool $adminIconPicker = true;
+
     /** شناسهٔ کلاینت فینوتک (فاز ۱۱۰) */
     public string $vendorFinnotechClientId = '';
 
@@ -294,6 +297,7 @@ class Developer extends Component
         $this->vendorLandingPage = MultiVendorSettings::landingPageEnabled();
         $this->vendorKycMobileVerify = MultiVendorSettings::kycMobileVerifyEnabled();
         $this->vendorLoginCaptcha = option(MultiVendorSettings::KEY_LOGIN_CAPTCHA, '1') === '1';
+        $this->adminIconPicker = option('admin_icon_picker', '1') === '1';
         $this->vendorFinnotechClientId = trim((string) option('finnotech_client_id', ''));
         $this->vendorFinnotechClientSecret = trim((string) option('finnotech_client_secret', ''));
         $this->vendorDefaultCommission = (string) (MultiVendorSettings::defaultCommission() ?? '');
@@ -477,6 +481,8 @@ class Developer extends Component
         option_update(MultiVendorSettings::KEY_KYC_MOBILE, $this->vendorKycMobileVerify ? '1' : '0');
         // فاز ۱۱۳ — ربات‌گیر ورود فروشنده با رمز عبور
         option_update(MultiVendorSettings::KEY_LOGIN_CAPTCHA, $this->vendorLoginCaptcha ? '1' : '0');
+        // فاز ۱۱۴ — انتخابگر آیکون پنل‌ها
+        option_update('admin_icon_picker', $this->adminIconPicker ? '1' : '0');
         option_update('finnotech_client_id', trim((string) $this->vendorFinnotechClientId));
         option_update('finnotech_client_secret', trim((string) $this->vendorFinnotechClientSecret));
         option_update('multi_vendor_default_commission', trim((string) $this->vendorDefaultCommission) === '' ? '' : (string) max(0, min(100, (int) $this->vendorDefaultCommission)));

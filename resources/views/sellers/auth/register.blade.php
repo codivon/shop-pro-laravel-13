@@ -69,7 +69,8 @@
             <a href="{{ route('seller.login') }}" wire:navigate class="text-brand-600 transition-colors hover:underline dark:text-brand-400">ورود به پنل</a>
         </p>
     </div>
-</div>
 
-{{-- فاز ۱۱۱ — مودال «فروشنده با این شماره از قبل ثبت‌نام کرده است» (ورود / تغییر شماره) --}}
-@include('sellers.auth.partials.exists-modal')
+    {{-- فاز ۱۱۱ — مودال «فروشنده با این شماره از قبل ثبت‌نام کرده است» (ورود / تغییر شماره)
+         ⚠️ Livewire فقط یک المنت ریشه می‌پذیرد → مودال باید داخل ریشه باشد (فاز ۱۱۴) --}}
+    @include('sellers.auth.partials.exists-modal')
+</div>

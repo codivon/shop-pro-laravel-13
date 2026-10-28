@@ -79,8 +79,11 @@
                         </div>
                         <div>
                             <label class="mb-1.5 block text-xs font-semibold" for="menu-form-icon">آیکون (کلاس آیکون)</label>
-                            <input id="menu-form-icon" type="text" wire:model="formIcon" dir="ltr"
-                                   class="ap-input !py-2 font-mono !text-xs" placeholder="مثال: mdi mdi-menu">
+                            <div class="flex items-stretch gap-2">
+                                <input id="menu-form-icon" type="text" wire:model="formIcon" dir="ltr"
+                                       class="ap-input !py-2 font-mono !text-xs" placeholder="مثال: mdi mdi-menu">
+                                <x-admin-panel::icon-picker for="menu-form-icon" mode="class" />
+                            </div>
                             <p class="mt-1.5 text-[11px] text-ink-3 dark:text-night-ink-2">این فیلد اختیاری است</p>
                             @error('formIcon') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                         </div>
@@ -97,8 +100,11 @@
                         </div>
                         <div>
                             <label class="mb-1.5 block text-xs font-semibold" for="menu-form-category-icon">آیکون (کلاس آیکون)</label>
-                            <input id="menu-form-category-icon" type="text" wire:model="formCategoryIcon" dir="ltr"
-                                   class="ap-input !py-2 font-mono !text-xs" placeholder="مثال: mdi mdi-menu">
+                            <div class="flex items-stretch gap-2">
+                                <input id="menu-form-category-icon" type="text" wire:model="formCategoryIcon" dir="ltr"
+                                       class="ap-input !py-2 font-mono !text-xs" placeholder="مثال: mdi mdi-menu">
+                                <x-admin-panel::icon-picker for="menu-form-category-icon" mode="class" />
+                            </div>
                             <p class="mt-1.5 text-[11px] text-ink-3 dark:text-night-ink-2">این فیلد اختیاری است</p>
                             @error('formCategoryIcon') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                         </div>
@@ -133,8 +139,11 @@
                         </div>
                         <div>
                             <label class="mb-1.5 block text-xs font-semibold" for="menu-form-static-icon">آیکون (کلاس آیکون)</label>
-                            <input id="menu-form-static-icon" type="text" wire:model="formIcon" dir="ltr"
-                                   class="ap-input !py-2 font-mono !text-xs" placeholder="مثال: mdi mdi-menu">
+                            <div class="flex items-stretch gap-2">
+                                <input id="menu-form-static-icon" type="text" wire:model="formIcon" dir="ltr"
+                                       class="ap-input !py-2 font-mono !text-xs" placeholder="مثال: mdi mdi-menu">
+                                <x-admin-panel::icon-picker for="menu-form-static-icon" mode="class" />
+                            </div>
                             <p class="mt-1.5 text-[11px] text-ink-3 dark:text-night-ink-2">این فیلد اختیاری است</p>
                             @error('formIcon') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                         </div>

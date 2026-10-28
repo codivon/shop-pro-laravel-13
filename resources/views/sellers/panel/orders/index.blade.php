@@ -80,11 +80,13 @@
                 <label class="block">
                     <span class="mb-1 block text-xs font-semibold text-ink-600 dark:text-night-ink-2">از تاریخ</span>
                     <input type="text" wire:model.live.debounce.400ms="from_date" value="{{ $from_date }}"
+                           data-jdp data-jdp-only-date="true" autocomplete="off"
                            class="ap-input w-full fa-digits" placeholder="۱۴۰۴-۰۱-۰۱">
                 </label>
                 <label class="block">
                     <span class="mb-1 block text-xs font-semibold text-ink-600 dark:text-night-ink-2">تا تاریخ</span>
                     <input type="text" wire:model.live.debounce.400ms="to_date" value="{{ $to_date }}"
+                           data-jdp data-jdp-only-date="true" autocomplete="off"
                            class="ap-input w-full fa-digits" placeholder="{{ $todayJalali }}">
                 </label>
             </div>

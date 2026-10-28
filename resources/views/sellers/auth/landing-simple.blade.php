@@ -47,7 +47,7 @@
             <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($sellersCommissions as $commission)
                     <div class="flex items-start gap-3 rounded-2xl border border-line p-4 dark:border-night-line">
-                        <div class="shrink-0 [&>svg]:size-6">{!! $commission->icon !!}</div>
+                        <div class="shrink-0 [&>svg]:size-6 [&>i]:text-[24px]">{!! \App\Support\IconRegistry::render($commission->icon) !!}</div>
                         <div class="min-w-0">
                             <p class="text-[13px] font-extrabold text-ink dark:text-night-ink">{{ $commission->title }}</p>
                             <p class="mt-1 text-[11px] font-semibold leading-5 text-ink-3 dark:text-night-ink-2">{{ $commission->description }}</p>

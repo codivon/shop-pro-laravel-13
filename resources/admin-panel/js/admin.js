@@ -1489,3 +1489,150 @@ document.addEventListener('DOMContentLoaded', () => window.ApDnd.initAll());
     document.addEventListener('DOMContentLoaded', applyNovalidate);
     document.addEventListener('livewire:navigated', applyNovalidate);
 })();
+
+/* ------------------------------------------------------------------
+ | فاز ۱۱۴ — انتخابگر آیکون (Icon Picker)
+ | مودال مشترک: Font Awesome / Material Design (MDI) / Lucide با سرچ + رنگ/اندازه.
+ | داده‌ها یک‌بار به‌صورت JSON اینلاین در صفحه رندر می‌شوند (icon-picker-modal)
+ | و این درایور فقط در اولین باز شدن آن‌ها را می‌خواند.
+ | نوشتن مقدار: input مقصد ← رخداد input/change (سازگار با wire:model).
+ ------------------------------------------------------------------ */
+window.apIconPicker = () => ({
+    open: false,
+    targetId: '',
+    mode: 'class',
+    tab: 'fa',
+    q: '',
+    selected: null,
+    color: '',
+    size: 0,
+
+    data: null,
+    collections: {
+        fa: { label: 'Font Awesome', prefix: 'fa-solid fa-' },
+        mdi: { label: 'Material Design (MDI)', prefix: 'mdi mdi-' },
+        lucide: { label: 'Lucide', prefix: '' },
+    },
+    swatches: ['', '#18181b', '#16a34a', '#0d9488', '#dc2626', '#ea580c', '#d97706', '#7c3aed', '#db2777'],
+    sizes: [16, 20, 24, 32, 40, 48],
+    cap: 240,
+
+    init() {
+        this.$watch('q', () => {
+            if (this.selected) this.selected = null;
+            this.$nextTick(() => { if (this.$refs.grid) this.$refs.grid.scrollTop = 0; });
+        });
+    },
+
+    /* --- داده‌ها (تنبل) --- */
+    load() {
+        if (this.data) return;
+        const el = document.getElementById('ap-icon-picker-data');
+        let parsed = { fa: [], mdi: [], lucide: [] };
+        try { parsed = JSON.parse(el ? el.textContent : '{}'); } catch (e) { parsed = { fa: [], mdi: [], lucide: [] }; }
+        this.data = {
+            fa: (parsed.fa || []).map((n) => ({ tab: 'fa', key: 'fa-' + n, name: n, cls: 'fa-solid fa-' + n, inner: '' })),
+            mdi: (parsed.mdi || []).map((n) => ({ tab: 'mdi', key: 'mdi-' + n, name: n, cls: 'mdi mdi-' + n, inner: '' })),
+            lucide: (parsed.lucide || []).map((i) => ({ tab: 'lucide', key: 'lu-' + i.name, name: i.name, cls: i.name, inner: i.inner || '' })),
+        };
+    },
+
+    get allOfTab() {
+        this.load();
+        return (this.data && this.data[this.tab]) || [];
+    },
+    get totalOfTab() {
+        if (!this.q) return this.allOfTab.length;
+        const q = this.q.toLowerCase();
+        return this.allOfTab.filter((i) => i.name.includes(q)).length;
+    },
+    get filtered() {
+        const q = (this.q || '').toLowerCase();
+        const list = q ? this.allOfTab.filter((i) => i.name.includes(q)) : this.allOfTab;
+        return list.slice(0, this.cap);
+    },
+
+    openWith(targetId, mode) {
+        this.targetId = String(targetId || '');
+        this.mode = mode === 'html' ? 'html' : 'class';
+        this.open = true;
+        this.tab = 'lucide';
+        this.q = '';
+        this.selected = null;
+        this.color = '';
+        this.size = 0;
+        this.$nextTick(() => { this.load(); if (this.$refs.q) this.$refs.q.focus(); });
+    },
+
+    /* --- HTML پیش‌نمایش هر آیکون داخل شبکه --- */
+    preview(icon) {
+        if (icon.tab === 'lucide') {
+            return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (icon.inner || '') + '</svg>';
+        }
+        return '<i class="' + icon.cls + '" aria-hidden="true"></i>';
+    },
+
+    /* --- انتخاب آیکون → باز شدن بخش رنگ/اندازه --- */
+    pick(icon) {
+        this.selected = icon;
+        this.color = '';
+        this.size = 0;
+    },
+
+    resetSelection() {
+        this.selected = null;
+        this.color = '';
+        this.size = 0;
+    },
+
+    get selectedPreview() {
+        if (!this.selected) return '';
+        let html = this.preview(this.selected);
+        const style = this.buildStyle();
+        if (style) {
+            html = html.replace('<svg ', '<svg style="' + style + '" ');
+            html = html.replace('<i class="', '<i style="' + style + '" class="');
+        }
+        return html;
+    },
+
+    buildStyle() {
+        const parts = [];
+        if (this.color) parts.push('color:' + this.color);
+        if (this.size) parts.push('font-size:' + this.size + 'px');
+        return parts.join(';');
+    },
+
+    /* --- مقدار نهایی مطابق حالت فیلد (class|html) --- */
+    buildValue() {
+        if (!this.selected) return '';
+        const style = this.buildStyle();
+        const s = this.selected;
+
+        if (this.mode === 'class') {
+            return style ? (s.cls + '|' + style) : s.cls;
+        }
+
+        // حالت html — برای فیلدهایی که محتوای HTML (SVG/<i>) ذخیره می‌کنند
+        if (s.tab === 'lucide') {
+            return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
+                + (style ? ' style="' + style + '"' : '') + '>' + (s.inner || '') + '</svg>';
+        }
+        return '<i class="' + s.cls + '"' + (style ? ' style="' + style + '"' : '') + '></i>';
+    },
+
+    apply() {
+        const value = this.buildValue();
+        const input = this.targetId ? document.getElementById(this.targetId) : null;
+        if (input && value) {
+            input.value = value;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            input.focus();
+        }
+        if (window.ApToast) {
+            window.dispatchEvent(new CustomEvent('ap-toast', { detail: { message: 'آیکون انتخاب شد', type: 'success', duration: 2500 } }));
+        }
+        this.open = false;
+    },
+});

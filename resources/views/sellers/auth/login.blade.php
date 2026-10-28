@@ -178,7 +178,8 @@
             </div>
 
             @if ($loginCaptcha)
-                {{-- فاز ۱۱۳ — ربات‌گیر ورود با رمز عبور --}}
+                {{-- فاز ۱۱۳ — ربات‌گیر ورود با رمز عبور
+                     فاز ۱۱۴: دکمهٔ تولید کد جدید از روی تصویر جدا شد (کنار تصویر) تا حروف کپچا خوانا بمانند --}}
                 <div>
                     <label class="mb-1.5 block text-xs font-bold" for="sp-login-captcha">کد امنیتی <span class="text-red-500">*</span></label>
                     <div class="flex items-stretch gap-2">
@@ -188,13 +189,15 @@
                                    x-on:input="delete errors.captcha"
                                    class="ap-input pe-10! py-3! text-center font-mono tracking-widest" placeholder="ABCDX">
                         </div>
-                        <button type="button" x-on:click="refreshCaptcha()" title="تولید کد جدید — با کلیک روی تصویر هم کد تازه می‌آید"
-                                class="relative w-28 shrink-0 overflow-hidden rounded-xl border border-line bg-night-1 dark:border-night-line"
-                                aria-label="تولید کد امنیتی جدید">
+                        <button type="button" x-on:click="refreshCaptcha()" title="مشاهدهٔ کد امنیتی — با کلیک هم کد تازه می‌آید"
+                                class="w-24 shrink-0 overflow-hidden rounded-xl border border-line bg-night-1 dark:border-night-line"
+                                aria-label="تازه‌سازی تصویر کد امنیتی">
                             <img x-ref="captchaImg" src="{{ route('captcha.image') }}" alt="کد امنیتی" class="size-full object-cover">
-                            <span class="absolute bottom-1 end-1 flex size-6 items-center justify-center rounded-lg bg-white/15 text-white backdrop-blur">
-                                <x-admin-panel::icon name="refresh-cw" class="size-3.5" />
-                            </span>
+                        </button>
+                        <button type="button" x-on:click="refreshCaptcha()" title="تولید کد جدید"
+                                class="flex w-11 shrink-0 items-center justify-center rounded-xl border border-line bg-surface-2 text-ink-2 transition-colors hover:border-brand-400 hover:text-brand-600 dark:border-night-line dark:bg-night-3 dark:text-night-ink-2 dark:hover:text-brand-300"
+                                aria-label="تولید کد امنیتی جدید">
+                            <x-admin-panel::icon name="refresh-cw" class="size-4" />
                         </button>
                     </div>
                     <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.captcha" x-text="(errors.captcha || [])[0]" x-cloak></p>
@@ -228,7 +231,7 @@
                         <x-admin-panel::icon name="smartphone" class="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
                         <input id="sp-otp-login-mobile" x-ref="otpMobile" type="tel" dir="ltr" inputmode="numeric" maxlength="11" required
                                x-on:input="delete errors.mobile"
-                               class="ap-input pe-10! py-3! text-start fa-digits" placeholder="09xxxxxxxxx" autocomplete="tel">
+                               class="ap-input ps-10! py-3! text-start fa-digits" placeholder="09xxxxxxxxx" autocomplete="tel">
                     </div>
                     <p class="mt-1.5 text-[11px] font-bold text-red-600 dark:text-red-400" x-show="errors.mobile" x-text="(errors.mobile || [])[0]" x-cloak></p>
                     <p class="mt-1.5 text-[11px] font-semibold text-ink-3 dark:text-night-ink-2" x-show="! errors.mobile">کد تأیید ۶ رقمی به این شماره پیامک می‌شود</p>

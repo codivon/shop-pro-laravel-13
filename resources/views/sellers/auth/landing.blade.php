@@ -158,7 +158,7 @@
             <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($sellersHeroes as $heroItem)
                     <div class="ap-card p-5">
-                        <span class="flex size-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400 [&>svg]:size-5">{!! $heroItem->icon !!}</span>
+                        <span class="flex size-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400 [&>svg]:size-5 [&>i]:text-[20px]">{!! \App\Support\IconRegistry::render($heroItem->icon) !!}</span>
                         <p class="mt-3 text-[13px] font-extrabold text-ink dark:text-night-ink">{{ $heroItem->title }}</p>
                         <p class="mt-1.5 text-[12px] font-semibold leading-6 text-ink-3 dark:text-night-ink-2">{{ $heroItem->description }}</p>
                     </div>
@@ -174,7 +174,7 @@
             <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($sellersCommissions as $commission)
                     <div class="ap-card flex items-start gap-3 p-5">
-                        <span class="shrink-0 text-brand-600 dark:text-brand-400 [&>svg]:size-6">{!! $commission->icon !!}</span>
+                        <span class="shrink-0 text-brand-600 dark:text-brand-400 [&>svg]:size-6 [&>i]:text-[24px]">{!! \App\Support\IconRegistry::render($commission->icon) !!}</span>
                         <div class="min-w-0">
                             <p class="text-[13px] font-extrabold text-ink dark:text-night-ink">{{ $commission->title }}</p>
                             <p class="mt-1 text-[12px] font-semibold leading-6 text-ink-3 dark:text-night-ink-2">{{ $commission->description }}</p>
@@ -322,7 +322,8 @@
         <span class="mx-2 text-line dark:text-night-line">|</span>
         <a href="{{ route('front.index') }}" class="transition-colors hover:text-brand-600 dark:hover:text-brand-400">بازگشت به فروشگاه</a>
     </p>
-</div>
 
-{{-- فاز ۱۱۱ — مودال «فروشنده با این شماره از قبل ثبت‌نام کرده است» (ورود / تغییر شماره) --}}
-@include('sellers.auth.partials.exists-modal')
+    {{-- فاز ۱۱۱ — مودال «فروشنده با این شماره از قبل ثبت‌نام کرده است» (ورود / تغییر شماره)
+         ⚠️ Livewire فقط یک المنت ریشه می‌پذیرد → مودال باید داخل ریشه باشد (فاز ۱۱۴) --}}
+    @include('sellers.auth.partials.exists-modal')
+</div>

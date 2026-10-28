@@ -1119,3 +1119,155 @@ a.ap-clicking.icon-only span {
     color: #f87171;
     background: rgb(239 68 68 / 0.1);
 }
+
+/* ==========================================================================
+   فاز ۱۱۴ — تقویم شمسی (jalalidatepicker) — ظاهر مدرن هم‌خانوادهٔ ap-*
+   ساختار: المنت‌های سفارشی jdp-container/jdp-overlay + متغیرهای --jdp-*
+   ========================================================================== */
+jdp-overlay {
+    backdrop-filter: blur(3px) !important;
+    z-index: 80 !important;
+}
+jdp-container {
+    z-index: 81 !important;
+    border-radius: 1.1rem !important;
+    overflow: hidden;
+    box-shadow: 0 24px 60px -12px rgb(0 0 0 / 0.28), 0 0 0 1px var(--color-line, #e2e8f0) !important;
+    font-family: inherit !important;
+    /* برند: سبز ap-* به‌جای آبی پیش‌فرض */
+    --jdp-primary: var(--color-brand-500, #10b981);
+}
+@media only screen and (max-width: 481px) {
+    jdp-container {
+        border-radius: 1.1rem 1.1rem 0 0 !important;
+    }
+}
+jdp-container .jdp-days-header {
+    background: linear-gradient(135deg, var(--color-brand-500, #10b981), var(--color-brand-600, #059669)) !important;
+    border-radius: 0;
+    margin-top: 0 !important;
+    padding: 0.6rem 0.5rem;
+}
+jdp-container .jdp-days-header .jdp-year input,
+jdp-container .jdp-days-header .jdp-month input {
+    color: #fff !important;
+    font-weight: 800;
+}
+jdp-container .jdp-days-header .jdp-year input::selection,
+jdp-container .jdp-days-header .jdp-month input::selection {
+    background: rgb(255 255 255 / 0.35);
+}
+jdp-container .jdp-days-header .jdp-year input::-webkit-calendar-year-indicator,
+jdp-container .jdp-days-header .jdp-month input::-webkit-calendar-month-indicator {
+    filter: brightness(4);
+}
+jdp-container .jdp-icon-minus,
+jdp-container .jdp-icon-plus {
+    color: #fff !important;
+    border-radius: 0.6rem;
+    transition: background 0.15s ease;
+}
+jdp-container .jdp-icon-minus:hover,
+jdp-container .jdp-icon-plus:hover {
+    background: rgb(255 255 255 / 0.18) !important;
+}
+jdp-container .jdp-days {
+    background: var(--color-surface, #fff);
+}
+jdp-container .jdp-day-name {
+    color: var(--color-ink-3, #94a3b8) !important;
+    font-weight: 800;
+}
+jdp-container .jdp-day-name.holiday-day,
+jdp-container .jdp-day-name.holly-day {
+    color: var(--color-red-500, #ef4444) !important;
+}
+jdp-container .jdp-day {
+    border-radius: 0.65rem !important;
+    font-weight: 600;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+jdp-container .jdp-day.holiday-day,
+jdp-container .jdp-day.holly-day {
+    color: var(--color-red-500, #ef4444) !important;
+}
+jdp-container .jdp-day:not(.disabled-day):not(.selected):hover {
+    background: var(--color-brand-50, #ecfdf5) !important;
+    color: var(--color-brand-700, #047857) !important;
+}
+jdp-container .jdp-day.selected,
+jdp-container .jdp-day-name.selected {
+    border-radius: 0.65rem;
+}
+jdp-container .jdp-day.today:not(.selected) {
+    border: 1.5px solid var(--color-brand-400, #34d399) !important;
+}
+jdp-container .jdp-footer {
+    background: var(--color-surface-2, #f8fafc) !important;
+}
+jdp-container .jdp-btn-today,
+jdp-container .jdp-btn-empty,
+jdp-container .jdp-btn-close {
+    border-radius: 0.75rem !important;
+    font-weight: 700 !important;
+}
+jdp-container .jdp-btn-today {
+    background: var(--color-brand-600, #059669) !important;
+}
+
+/* حالت تاریک */
+.dark jdp-container {
+    --jdp-color-0: var(--color-night-2, #1e293b);
+    --jdp-color-1: var(--color-night-3, #0f172a);
+    --jdp-color-2: var(--color-night-line, #334155);
+    --jdp-color-3: #475569;
+    --jdp-color-4: #94a3b8;
+    --jdp-color-5: #f1f5f9;
+    box-shadow: 0 24px 60px -12px rgb(0 0 0 / 0.5), 0 0 0 1px var(--color-night-line, #334155) !important;
+}
+.dark jdp-container .jdp-days,
+.dark jdp-container .jdp-days-header,
+.dark jdp-container .jdp-footer {
+    background: var(--color-night-2, #1e293b);
+}
+.dark jdp-container .jdp-days-header {
+    background: linear-gradient(135deg, var(--color-brand-600, #059669), #047857) !important;
+}
+.dark jdp-container .jdp-day {
+    color: var(--color-night-ink, #f1f5f9) !important;
+}
+.dark jdp-container .jdp-day:not(.disabled-day):not(.selected):hover {
+    background: rgb(16 185 129 / 0.14) !important;
+    color: #6ee7b7 !important;
+}
+.dark jdp-container .jdp-footer {
+    background: var(--color-night-3, #0f172a) !important;
+}
+
+/* ==========================================================================
+   فاز ۱۱۴ — انتخابگر آیکون (icon-picker)
+   ========================================================================== */
+.ap-ip-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    font-size: 1.05rem;
+    line-height: 1;
+}
+.ap-ip-icon svg {
+    width: 100%;
+    height: 100%;
+}
+.ap-ip-preview .ap-ip-icon,
+.ap-ip-preview svg,
+.ap-ip-preview i {
+    font-size: 1.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+}
+.ap-ip-preview svg {
+    width: 1.75rem;
+    height: 1.75rem;
+}

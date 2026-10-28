@@ -16,7 +16,7 @@
         @case('megamenu')
 
             <li class="list-item">
-                <a class="nav-link" href="{{ $menu->link }}"><i class="{{ $menu->icon }}"></i>{{ $menu->title }}</a>
+                <a class="nav-link" href="{{ $menu->link }}"><i class="{{ icon_class($menu->icon) }}" @if(icon_style($menu->icon)) style="{{ icon_style($menu->icon) }}" @endif></i>{{ $menu->title }}</a>
             </li>
 
     @endswitch

@@ -43,7 +43,7 @@
                             <td class="max-w-96 px-3 py-3 text-ink-2 dark:text-night-ink-2"><p class="truncate">{{ \Illuminate\Support\Str::limit($item->description, 120) ?? '—' }}</p></td>
                             <td class="px-3 py-3">
                                 @if ($item->icon)
-                                    <x-admin-panel::icon name="{{ $item->icon }}" class="size-5 text-brand-600 dark:text-brand-400" />
+                                    {!! \App\Support\IconRegistry::render($item->icon, 'size-5 text-brand-600 dark:text-brand-400') !!}
                                 @else
                                     <span class="text-ink-3">—</span>
                                 @endif
@@ -103,7 +103,10 @@
                 </div>
                 <div>
                     <label class="mb-1.5 block text-xs font-semibold">آیکون (نام آیکون Lucide)</label>
-                    <input type="text" wire:model="icon" class="ap-input" dir="ltr" placeholder="sparkles">
+                    <div class="flex items-stretch gap-2">
+                        <input id="seller-icon-input" type="text" wire:model="icon" class="ap-input" dir="ltr" placeholder="sparkles">
+                        <x-admin-panel::icon-picker for="seller-icon-input" mode="html" />
+                    </div>
                     @error('icon') <p class="mt-1 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
                 </div>
             </div>

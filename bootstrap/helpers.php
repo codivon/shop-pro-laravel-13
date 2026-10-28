@@ -28,6 +28,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Models\UserOption;
 use App\Models\Viewer;
+use App\Support\IconRegistry;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
@@ -2783,5 +2784,38 @@ if (! function_exists('ap_clean_legacy_class')) {
         );
 
         return trim((string) preg_replace('/\s+/', ' ', (string) $clean));
+    }
+}
+
+if (! function_exists('icon_class')) {
+    /**
+     * فاز ۱۱۴ — بخش «کلاس» از مقدار آیکون (قرارداد class|style).
+     * مقدار کامل را برای سازگاری با <i class="{{ icon_class($menu->icon) }}"> می‌شکند.
+     */
+    function icon_class(?string $value): string
+    {
+        return IconRegistry::iconClass($value);
+    }
+}
+
+if (! function_exists('icon_style')) {
+    /**
+     * فاز ۱۱۴ — بخش «استایل» از مقدار آیکون (قرارداد class|style).
+     * رنگ/اندازهٔ انتخابگر آیکون: mdi mdi-store|color:#ef4444;font-size:24px
+     */
+    function icon_style(?string $value): string
+    {
+        return IconRegistry::iconStyle($value);
+    }
+}
+
+if (! function_exists('icon_render')) {
+    /**
+     * فاز ۱۱۴ — رندر هر مقدار آیکون (SVG خام / نام Lucide / کلاس FA یا MDI / class|style).
+     * مقدار ناشناخته → رشتهٔ خالی (هیچ‌وقت متن خام رندر نمی‌شود).
+     */
+    function icon_render(?string $value, string $class = ''): string
+    {
+        return IconRegistry::render($value, $class);
     }
 }

@@ -1,5 +1,5 @@
 <li class="item-list-menu megamenu-1 category nav-overlay">
-    <a href="{{ $menu->link }}" class="list-category first after" style="font-weight: bold;"><i class="{{$menu->icon}}"></i>
+    <a href="{{ $menu->link }}" class="list-category first after" style="font-weight: bold;"><i class="{{ icon_class($menu->icon) }}" @if(icon_style($menu->icon)) style="{{ icon_style($menu->icon) }}" @endif></i>
         {{ $menu->title }}</a>
     @if(count($menu->childrenmenus))
         <ul class="list-menu-level-2">
