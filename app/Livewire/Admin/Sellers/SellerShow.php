@@ -291,7 +291,7 @@ class SellerShow extends Component
                 'lastName' => ['required', new PersianAlpha],
                 'birthDay' => ['required'],
                 'gender' => ['required', 'in:male,female'],
-                'identityCardNumber' => ['required'],
+                'identityCardNumber' => ['nullable'], // فاز ۱۱۸ — شماره شناسنامه دیگر اجباری نیست
                 'nationalIdentityNumber' => ['required', 'digits:10'],
             ];
         }
@@ -335,7 +335,7 @@ class SellerShow extends Component
             'birthDay.required' => 'تاریخ تولد الزامی است.',
             'nationalIdentityNumber.required' => 'کد ملی الزامی است.',
             'nationalIdentityNumber.digits' => 'کد ملی باید ۱۰ رقم باشد.',
-            'identityCardNumber.required' => 'شماره شناسنامه الزامی است.',
+            // فاز ۱۱۸ — شماره شناسنامه اختیاری شد؛ پیام الزام حذف شد
             'companyName.required' => 'نام شرکت الزامی است.',
             'companyType.required' => 'نوع شرکت الزامی است.',
             'companyRegistrationNumber.required' => 'شماره ثبت شرکت الزامی است.',

@@ -21,17 +21,20 @@
     'lucide' => $lucideList,
 ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
 
+{{-- فاز ۱۱۸ — z-[90]/z-[91]: ارجعیت بالاتر از همهٔ مودال‌های پنل (منو z-[60/61]، تنظیمات z-[80])
+     + x-effect: کلاس ap-ip-open روی body تا مودال‌های زیرین با Escape بسته نشوند وقتی پیکر باز است --}}
 <div x-data="apIconPicker" x-cloak
      x-on:open-ap-icon-picker.window="openWith($event.detail.target, $event.detail.mode)"
      x-on:keydown.escape.window="open = false"
+     x-effect="document.body.classList.toggle('ap-ip-open', open)"
      class="ap-icon-picker-modal" aria-hidden="true">
     {{-- پوشش پس‌زمینه --}}
-    <div x-show="open" x-transition.opacity class="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm"
+    <div x-show="open" x-transition.opacity class="fixed inset-0 z-[90] bg-black/50 backdrop-blur-sm"
          x-on:click="open = false" aria-hidden="true"></div>
 
     {{-- پنجرهٔ اصلی --}}
     <div x-show="open" x-transition.scale.origin.center
-         class="fixed inset-4 z-[71] mx-auto flex max-h-[92vh] w-auto max-w-4xl flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-2xl sm:inset-x-auto sm:left-1/2 sm:w-[min(56rem,calc(100vw-2rem))] sm:-translate-x-1/2 dark:border-night-line dark:bg-night-1"
+         class="fixed inset-4 z-[91] mx-auto flex max-h-[92vh] w-auto max-w-4xl flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-2xl sm:inset-x-auto sm:left-1/2 sm:w-[min(56rem,calc(100vw-2rem))] sm:-translate-x-1/2 dark:border-night-line dark:bg-night-1"
          role="dialog" aria-modal="true" aria-label="انتخاب آیکون">
 
         {{-- سربرگ: عنوان + سرچ + تب‌ها --}}

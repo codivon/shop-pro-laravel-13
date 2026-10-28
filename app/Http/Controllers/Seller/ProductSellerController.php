@@ -397,7 +397,9 @@ class ProductSellerController extends Controller
             return redirect()->back();
         }
 
-        $currentSellerId = seller_info()->id;
+        // فاز ۱۱۸ — یکدست‌سازی: همهٔ seller_id ها (prices / seller_variants / attribute_price)
+        // باید sellers.id باشند — قبلاً prices.seller_id اشتباهاً sellers_info.id می‌گرفت
+        $currentSellerId = seller_info()->seller_id;
         $currentSellerIdForAttr = seller_info()->seller_id;
 
         $pricesToKeep = [];
@@ -660,7 +662,8 @@ class ProductSellerController extends Controller
             return;
         }
 
-        $currentSellerId = seller_info()->id;
+        // فاز ۱۱۸ — یکدست‌سازی: prices.seller_id هم باید sellers.id باشد
+        $currentSellerId = seller_info()->seller_id;
         $currentSellerIdForAttr = seller_info()->seller_id;
 
         $pricesToKeep = [];

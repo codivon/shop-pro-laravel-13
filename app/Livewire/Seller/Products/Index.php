@@ -221,10 +221,11 @@ class Index extends Component
         $products = $this->baseQuery()->paginate(10);
 
         // پورت Resource قدیمی (App\Http\Resources\Datatable\Product\Product) برای رندر جدول
+        // فاز ۱۱۸ — seller_id ها یکدست روی sellers.id
         $rows = $products->getCollection()->map(function (Product $product) {
-            $sellerVariant = SellerVariant::where(['product_id' => $product->id, 'seller_id' => seller_info()->id])->first();
+            $sellerVariant = SellerVariant::where(['product_id' => $product->id, 'seller_id' => seller_info()->seller_id])->first();
 
-            $variant_count_seller = $product->prices()->withTrashed()->where('seller_id', seller_info()->id)->count();
+            $variant_count_seller = $product->prices()->withTrashed()->where('seller_id', seller_info()->seller_id)->count();
 
             return (object) [
                 'id' => $product->id,

@@ -4,6 +4,13 @@
 @endphp
 <div class="mx-auto max-w-5xl space-y-5">
 
+    {{-- فاز ۱۱۸ — مودال آیکون‌پیکر در سطح ریشهٔ صفحه رندر می‌شود، نه داخل مودال منو.
+         علت: مودال منو ترنسفرم دائمی (sm:-translate-x-1/2) و overflow-hidden دارد که
+         موقعیت‌دهی fixedِ فرزند را به خودش قفل می‌کند و پیکر داخل مودال کلیپ می‌شد.
+         گارد استاتیک IconPickerModal::$rendered مانع رندر مجدد توسط دکمه‌های داخل فرم می‌شود.
+         z-index پیکر (z-[90/91]) از مودال منو (z-[60/61]) بالاتر است و روی آن باز می‌شود. --}}
+    <x-admin-panel::icon-picker-modal />
+
     {{-- سربرگ --}}
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-2">
@@ -31,7 +38,7 @@
             <div x-show="open" x-on:click.stop
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
-                 x-on:keydown.escape.window="if (open) { open = false; $wire.cancelForm() }"
+                 x-on:keydown.escape.window="if (open && !document.body.classList.contains('ap-ip-open')) { open = false; $wire.cancelForm() }"
                  class="fixed inset-4 z-[61] mx-auto flex w-auto max-w-3xl flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-pop sm:inset-x-auto sm:left-1/2 sm:w-[min(48rem,calc(100vw-2rem))] sm:-translate-x-1/2 dark:border-night-line dark:bg-night-2"
                  role="dialog" aria-modal="true" aria-labelledby="menu-form-title">
                 <div class="flex items-center justify-between gap-2 border-b border-line px-5 py-3.5 dark:border-night-line">

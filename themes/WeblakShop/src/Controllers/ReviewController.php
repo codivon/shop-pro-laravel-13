@@ -50,6 +50,24 @@ class ReviewController extends Controller
             ]);
 
             $data['suggest'] = $request->suggest;
+
+            // فاز ۱۱۸ — اتصال نظر خریدار واقعی به فروشنده و تنوعِ خریداری‌شده:
+            // از آخرین سفارشِ پرداخت‌شدهٔ همین کاربر برای همین محصول، seller_id و
+            // price_id استخراج می‌شود تا امتیاز نظر به همان فروشگاه تزریق شود.
+            // (اگر تنوعِ خرید مالِ فروشِ خودِ سایت باشد seller_id = null می‌ماند)
+            $purchase = \App\Models\OrderItem::query()
+                ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                ->where('orders.user_id', $request->user()->id)
+                ->where('orders.status', 'paid')
+                ->where('order_items.product_id', $product->id)
+                ->orderByDesc('order_items.id')
+                ->select('order_items.seller_id', 'order_items.price_id')
+                ->first();
+
+            if ($purchase) {
+                $data['seller_id'] = $purchase->seller_id;
+                $data['price_id'] = $purchase->price_id;
+            }
         }
 
         $data['status'] = 'pending';

@@ -73,6 +73,8 @@
                         <th class="w-16 px-3 py-3 text-start font-bold">ID</th>
                         <th class="px-3 py-3 text-start font-bold">محصول</th>
                         <th class="px-3 py-3 text-start font-bold">کاربر</th>
+                        {{-- فاز ۱۱۸ — فروشگاهی که خریدار واقعاً از آن خریده --}}
+                        <th class="px-3 py-3 text-start font-bold">فروشگاه خرید</th>
                         <th class="w-32 px-3 py-3 text-start font-bold">امتیاز</th>
                         <th class="w-28 px-3 py-3 text-center font-bold">وضعیت</th>
                         <th class="w-32 px-3 py-3 text-center font-bold">توصیه به خرید</th>
@@ -104,6 +106,16 @@
                                     </span>
                                 @else
                                     <span class="ap-badge bg-red-50 text-red-600 dark:bg-red-500/12 dark:text-red-400">حذف شده</span>
+                                @endif
+                            </td>
+                            <td class="max-w-36 px-3 py-3">
+                                @if ($review->seller?->seller_info?->business_name)
+                                    <span class="flex items-center gap-1 font-semibold">
+                                        <x-admin-panel::icon name="store" class="size-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                                        <span class="truncate" title="نظر خریدارِ واقعی از این فروشگاه">{{ $review->seller->seller_info->business_name }}</span>
+                                    </span>
+                                @else
+                                    <span class="text-[11px] text-ink-3 dark:text-night-ink-2">— فروش خودِ سایت</span>
                                 @endif
                             </td>
                             <td class="px-3 py-3">

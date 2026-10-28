@@ -93,7 +93,7 @@ class ReviewIndex extends Component
             ->when($this->status !== '', fn ($query) => $query->where('status', $this->status))
             // پورت switch(ordering) قدیمی
             ->when($this->ordering === 'oldest', fn ($query) => $query->oldest(), fn ($query) => $query->latest())
-            ->with(['user', 'product', 'points']);
+            ->with(['user', 'product', 'points', 'seller.seller_info']);
     }
 
     #[Computed]

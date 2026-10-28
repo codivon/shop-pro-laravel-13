@@ -308,7 +308,7 @@ class ProductController extends Controller
             ->published()
             ->count();
 
-        $reviews = $product->reviews()->accepted()->latest()->paginate(20);
+        $reviews = $product->reviews()->accepted()->with(['points', 'user', 'seller.seller_info'])->latest()->paginate(20);
 
         $show_prices_chart = option('dt_show_price_change_chart', 'yes') == 'yes';
 
@@ -730,14 +730,14 @@ class ProductController extends Controller
         $product = Product::find($request->product_id);
         $Buyerscomments = 'no';
         if ($request->sortComment == "new") {
-            $reviews = $product->reviews()->accepted()->latest()->paginate(20);
+            $reviews = $product->reviews()->accepted()->with(['points', 'user', 'seller.seller_info'])->latest()->paginate(20);
         }
         if ($request->sortComment == "moreLike") {
-            $reviews = $product->reviews()->accepted()->orderby('likes_count', 'desc')->paginate(20);
+            $reviews = $product->reviews()->accepted()->with(['points', 'user', 'seller.seller_info'])->orderby('likes_count', 'desc')->paginate(20);
         }
         if ($request->sortComment == "Buyerscomments") {
             $Buyerscomments = "yes";
-            $reviews = $product->reviews()->accepted()->latest()->paginate(20);
+            $reviews = $product->reviews()->accepted()->with(['points', 'user', 'seller.seller_info'])->latest()->paginate(20);
         }
         return view('front::products.partials.reviews-comments', ['reviews' => $reviews, 'Buyerscomments' => $Buyerscomments]);
     }

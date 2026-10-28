@@ -290,6 +290,8 @@ class AppServiceProvider extends ServiceProvider
         Category::observe(CategoryObserver::class);
         // فاز ۱۱۷ — باطل‌سازی کش درخت منوی فرانت هنگام هر تغییر منو
         Menu::observe(\App\Observers\MenuObserver::class);
+        // فاز ۱۱۸ — امتیاز واقعی فروشنده (operation/satisfaction) از نظرهای خریدارها
+        \App\Models\Review::observe(\App\Observers\ReviewObserver::class);
     }
 
     public static function loadTheme()

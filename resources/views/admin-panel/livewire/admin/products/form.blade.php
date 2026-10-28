@@ -461,7 +461,7 @@
                                     </button>
                                 </div>
 
-                                <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                                <div class="grid grid-cols-1 gap-4 {{ $multiVendor ? 'lg:grid-cols-4' : 'lg:grid-cols-3' }}">
                                     <div>
                                         <label class="mb-1.5 block text-xs font-semibold">انبار <span class="text-red-500">*</span></label>
                                         <select wire:model="prices.{{ $i }}.warehouse" class="ap-input">
@@ -472,6 +472,23 @@
                                         </select>
                                         @error("prices.{$i}.warehouse") <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                                     </div>
+                                    {{-- فاز ۱۱۸ — فروشندهٔ این تنوع در حالت چندفروشندگی --}}
+                                    @if ($multiVendor)
+                                        <div>
+                                            <label class="mb-1.5 block text-xs font-semibold">فروشندهٔ تنوع</label>
+                                            <select wire:model="prices.{{ $i }}.seller_id" class="ap-input">
+                                                <option value="">— فروش خودِ سایت —</option>
+                                                @foreach ($this->sellers as $seller)
+                                                    @php
+                                                        $sellerLabel = $seller->seller_info?->business_name
+                                                            ?? trim(($seller->seller_info?->first_name ?? '') . ' ' . ($seller->seller_info?->last_name ?? ''));
+                                                    @endphp
+                                                    <option value="{{ $seller->id }}">{{ $seller->id }} - {{ $sellerLabel }}</option>
+                                                @endforeach
+                                            </select>
+                                            @error("prices.{$i}.seller_id") <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                        </div>
+                                    @endif
                                     <div>
                                         <label class="mb-1.5 block text-xs font-semibold">قیمت (تومان) <span class="text-red-500">*</span></label>
                                         <input type="number" min="0" wire:model.blur="prices.{{ $i }}.price" data-price-input

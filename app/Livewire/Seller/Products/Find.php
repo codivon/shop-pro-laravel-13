@@ -151,7 +151,8 @@ class Find extends Component
                 'price_discount' => number_format(@$product->lowestPrice->discount_price),
                 'addableToCart' => $product->addableToCart(),
                 // فروشندهٔ فعلی از قبل تنوع دارد؟ (پورت SellerVariant check در Resource)
-                'isSeller' => (bool) SellerVariant::where(['product_id' => $product->id, 'seller_id' => seller_info()->id])->first(),
+                // فاز ۱۱۸ — seller_id ها یکدست روی sellers.id (نظیر seller_info()->seller_id)
+                'isSeller' => (bool) SellerVariant::where(['product_id' => $product->id, 'seller_id' => seller_info()->seller_id])->first(),
                 'frontUrl' => Route::has('front.products.show')
                     ? route('front.products.show', ['product' => $product])
                     : null,

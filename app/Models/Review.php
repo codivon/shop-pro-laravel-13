@@ -17,6 +17,17 @@ class Review extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    // فاز ۱۱۸ — فروشنده و تنوعی که خریدار واقعاً از آن‌ها خرید کرده (برای امتیاز فروشنده)
+    public function seller()
+    {
+        return $this->belongsTo(Seller::class);
+    }
+
+    public function price()
+    {
+        return $this->belongsTo(Price::class);
+    }
     public function reviews()
     {
         return $this->hasMany(Review::class);

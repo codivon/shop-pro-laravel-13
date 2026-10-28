@@ -50,7 +50,8 @@ class Variants extends Component
         $this->attributeGroups = AttributeGroup::detectLang()->orderBy('ordering')->get();
 
         // پیش‌فرض: یک سطر خالی + تنوع‌های موجود فروشنده (مثل فرم قدیمی که با JS سطر می‌سازد)
-        $currentSellerId = seller_info()->id;
+        // فاز ۱۱۸ — یکدست‌سازی: هر دو شناسه sellers.id (قبلاً prices.seller_id اشتباهاً sellers_info.id می‌گرفت)
+        $currentSellerId = seller_info()->seller_id;
         $currentSellerIdForAttr = seller_info()->seller_id;
 
         $sellerPrices = $product->prices()

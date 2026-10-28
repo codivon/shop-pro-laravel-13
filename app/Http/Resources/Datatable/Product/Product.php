@@ -19,7 +19,8 @@ class Product extends JsonResource
     {
 
         if (seller_info()) {
-            $seller_info_id = seller_info()->id;
+            // فاز ۱۱۸ — یکدست‌سازی: seller_variants/prices روی sellers.id هستند نه sellers_info.id
+            $seller_info_id = seller_info()->seller_id;
         } else {
             $seller_info_id = null;
         }

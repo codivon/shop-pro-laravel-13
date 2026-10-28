@@ -653,6 +653,8 @@ class ProductForm extends Component
                 'prices.*.cart_max' => 'nullable|integer',
                 'prices.*.discount' => 'nullable|min:0|max:100',
                 'prices.*.discount_expire_at' => 'nullable',
+                // فاز ۱۱۸ — فروشندهٔ هر تنوع (در حالت چندفروشندگی؛ خالی = فروش خودِ سایت)
+                'prices.*.seller_id' => 'nullable|exists:sellers,id',
             ]);
         }
 

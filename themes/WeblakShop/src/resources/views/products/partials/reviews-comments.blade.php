@@ -17,6 +17,10 @@
                                         @if ($review->suggest)
                                             <b class="badge badge-secondary">خریدار</b>
                                         @endif
+                                        {{-- فاز ۱۱۸ — نام فروشگاهی که خریدار واقعاً از آن خریده --}}
+                                        @if ($review->seller?->seller_info?->business_name)
+                                            <b class="badge badge-info">از فروشگاه {{ $review->seller->seller_info->business_name }}</b>
+                                        @endif
                                                                                 </span>
 
 
@@ -106,6 +110,10 @@
                                     <span> توسط {{ $fullname }} در تاریخ {{ jdate($review->created_at)->format('%d %B %Y') }}
                                         @if ($review->suggest)
                                             <b class="badge badge-secondary">خریدار</b>
+                                        @endif
+                                        {{-- فاز ۱۱۸ — نام فروشگاهی که خریدار واقعاً از آن خریده --}}
+                                        @if ($review->seller?->seller_info?->business_name)
+                                            <b class="badge badge-info">از فروشگاه {{ $review->seller->seller_info->business_name }}</b>
                                         @endif
                                                                                 </span>
 
