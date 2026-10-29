@@ -6,6 +6,7 @@ use App\Jobs\UpdatePackageJob;
 use App\Livewire\Admin\Packages\Concerns\InteractsWithPackages;
 use App\Models\InstalledModule;
 use App\Models\InstalledTheme;
+use App\Services\ModuleRecoveryService;
 use App\Services\PackageInstallerService;
 use App\Support\MarketplaceSettings;
 use Livewire\Attributes\Title;
@@ -150,6 +151,52 @@ class PackageInstalled extends Component
         } catch (Throwable $e) {
             $this->dispatch('toast', message: $e->getMessage(), type: 'error');
         }
+    }
+
+    /* ---------------- بازیابی از پوشهٔ ماژول‌ها (فاز ۱۲۲ — گزارش کاربر) ---------------- */
+
+    /**
+     * بعد از ریست/بازیابی دیتابیس هاست، رکوردهای installed_modules خالی می‌شوند ولی
+     * پوشه‌های Modules/ سر جایشان می‌مانند — نتیجه: بدون منوی پکیج‌ها و با لیست
+     * نصب‌شدهٔ خالی. این اکشن ماژول‌های روی دیسک را اسکن و رکوردهای گم‌شده را
+     * بازسازی می‌کند (نسخه از module.json + لایسنس از آخرین خرید پرداخت‌شده).
+     */
+    public function recoverFromDisk(): void
+    {
+        auth('adminPanel')->user()?->can('packages.installed') ?: abort(403);
+
+        try {
+            $report = app(ModuleRecoveryService::class)->recover(auth('adminPanel')->id());
+        } catch (Throwable $e) {
+            report($e);
+
+            $this->dispatch('toast', message: 'بازیابی ناموفق بود: '.$e->getMessage(), type: 'error');
+
+            return;
+        }
+
+        $restored = count($report['restored']);
+
+        if ($restored === 0) {
+            $this->dispatch(
+                'toast',
+                message: 'ماژولی برای بازیابی پیدا نشد — همهٔ ماژول‌های روی دیسک رکورد دیتابیس دارند.',
+                type: 'info'
+            );
+
+            return;
+        }
+
+        $message = $restored.' ماژول از پوشهٔ ماژول‌ها بازیابی شد.';
+
+        if ($report['statuses_rebuilt']) {
+            $message .= ' فایل وضعیت ماژول‌ها بازسازی و کش‌ها پاک شد — منوی پکیج‌ها برمی‌گردد.';
+        }
+
+        $this->dispatch('toast', message: $message, type: 'success');
+
+        // سایدبار (منوی پکیج‌ها) سمت سرور رندر می‌شود — رفرش کامل لازم است
+        $this->js('setTimeout(() => window.location.reload(), 1500)');
     }
 
     /* ---------------- ابزار ---------------- */

@@ -12,10 +12,20 @@
                 <p class="text-xs text-ink-3 dark:text-night-ink-2">مدیریت، آپدیت و حذف ماژول‌های نصب‌شده</p>
             </div>
         </div>
-        <a href="{{ route('np.packages.index') }}" class="ap-btn-outline !py-2">
-            <x-admin-panel::icon name="package" class="size-4" />
-            بازار
-        </a>
+        <div class="flex flex-wrap items-center gap-2">
+            {{-- فاز ۱۲۲ — بازیابی رکوردهای گم‌شدهٔ installed_modules از پوشهٔ Modules/ (بعد از ریست دیتابیس هاست) --}}
+            <button type="button" wire:click="recoverFromDisk"
+                    wire:loading.attr="disabled" wire:target="recoverFromDisk"
+                    class="ap-btn-outline !py-2"
+                    title="اسکن پوشهٔ ماژول‌ها و بازسازی رکوردهای گم‌شدهٔ دیتابیس (برای بعد از ریست/بازیابی دیتابیس هاست)">
+                <x-admin-panel::icon name="history" class="size-4" />
+                بازیابی از پوشهٔ ماژول‌ها
+            </button>
+            <a href="{{ route('np.packages.index') }}" class="ap-btn-outline !py-2">
+                <x-admin-panel::icon name="package" class="size-4" />
+                بازار
+            </a>
+        </div>
     </div>
 
     {{-- جدول --}}
@@ -115,6 +125,14 @@
                                 </span>
                                 <p class="text-sm font-bold">ماژولی نصب نشده است</p>
                                 <p class="mt-1 text-xs text-ink-3 dark:text-night-ink-2">پکیج‌های موردنظر را از بازار نصب کنید.</p>
+                                {{-- فاز ۱۲۲ — اگر پوشهٔ ماژول‌ها پر است ولی جدول خالی (ریست دیتابیس هاست)، یک‌کلیک بازیابی --}}
+                                <button type="button" wire:click="recoverFromDisk"
+                                        wire:loading.attr="disabled" wire:target="recoverFromDisk"
+                                        class="ap-btn mx-auto mt-4 !py-2">
+                                    <x-admin-panel::icon name="history" class="size-4" />
+                                    بازیابی از پوشهٔ ماژول‌ها
+                                </button>
+                                <p class="mt-2 text-[11px] text-ink-3 dark:text-night-ink-2">اگر بعد از ریست/تمدید دیتابیس، پوشهٔ ماژول‌ها سر جای خودش است، با یک کلیک رکوردها و منوها بازمی‌گردند.</p>
                             </td>
                         </tr>
                     @endforelse
@@ -195,7 +213,7 @@
     </div>
 
     {{-- لودینگ --}}
-    <div wire:loading wire:target="updateModule, uninstall, toggleActivation, previousPage, nextPage, gotoPage"
+    <div wire:loading wire:target="updateModule, uninstall, toggleActivation, recoverFromDisk, previousPage, nextPage, gotoPage"
          class="pointer-events-none fixed bottom-6 start-6 z-[65] flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 shadow-pop dark:border-night-line dark:bg-night-3">
         <svg class="size-4 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />
