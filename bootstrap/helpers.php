@@ -1197,11 +1197,27 @@ function aparat_iframe($string)
 
 function module_asset(string $module, string $path): string
 {
-    $moduleLower = strtolower($module);
     $path = ltrim($path, '/');
 
-    // مسیر صحیح برای فایل‌های assets
-    return asset('modules/'.$moduleLower.'/'.$path);
+    /*
+     * فاز ۱۲۳ — نام پوشهٔ public ماژول‌ها یکدست نیست:
+     *   • AssetInjector پکیج AI فایل‌ها را در «artificial-intelligence» (kebab) کپی می‌کند
+     *   • برخی استقرارها پوشه را با نام خام ماژول («artificialintelligence») دارند
+     * گزینهٔ موجود روی دیسک انتخاب می‌شود تا CSS/JS صفحه‌های ادمین هرگز ۴۰۴ نشود.
+     */
+    $candidates = array_values(array_unique([
+        \Illuminate\Support\Str::kebab($module),
+        strtolower($module),
+        str_replace('_', '-', strtolower($module)),
+    ]));
+
+    foreach ($candidates as $name) {
+        if (is_file(public_path('modules/'.$name.'/'.$path))) {
+            return asset('modules/'.$name.'/'.$path);
+        }
+    }
+
+    return asset('modules/'.$candidates[0].'/'.$path);
 }
 function theme_asset($path)
 {
