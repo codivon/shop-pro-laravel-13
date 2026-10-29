@@ -63,7 +63,7 @@
                 border-radius: 13px; overflow: hidden; background: #0f172a;
                 border: 1.5px solid #1e293b; box-shadow: inset 0 2px 8px rgba(0, 0, 0, .35);
             }
-            .cap-image__img { width: 100%; height: 100%; display: block; }
+            .cap-image__img { width: 100%; height: 100%; display: block; object-fit: contain; }
 
             .cap-image__refresh {
                 position: absolute; bottom: 4px; inset-inline-start: 4px;

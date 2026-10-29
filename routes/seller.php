@@ -77,7 +77,6 @@ use App\Livewire\Seller\Tickets\Create as TicketCreate;
 use App\Livewire\Seller\Tickets\Index as TicketIndex;
 use App\Livewire\Seller\Tickets\Show as TicketShow;
 use App\Livewire\Seller\Wallet\Commission;
-use App\Livewire\Seller\Wallet\CommissionGuide;
 use App\Livewire\Seller\Wallet\Index as WalletIndex;
 use App\Livewire\Seller\Wallet\Settlements;
 use App\Livewire\Seller\Wallet\Show as WalletShow;
@@ -172,9 +171,9 @@ Route::group(['as' => 'seller.', 'prefix' => 'seller'], function () {
 
         // ========== کیف پول و کمیسیون ==========
         Route::get('commission', $modern ? Commission::class : [WalletSellerController::class, 'commission'])->name('commission');
-        // فاز ۱۰۶ الف — نام روت قبلاً 'seller.commission.guide' بود که با پیشوند گروه بیرونی
-        // ('seller.') دو-پیشوندی می‌شد (seller.seller.….) و route('seller.commission.guide') می‌شکست.
-        Route::get('/commission-guide', $modern ? CommissionGuide::class : [WalletSellerController::class, 'showCommissionRates'])->name('commission.guide');
+        // فاز ۱۲۱ — صفحهٔ تکراری «نرخ کمیسیون» (commission-guide) حذف شد؛ از ابتدا
+        // عیناً همان دادهٔ «کمیسیون و هزینه‌ها» را سرو می‌کرد (کنترلر قدیمی هم
+        // showCommissionRates() را به commission() وصل می‌کرد). منبع واحد: seller.commission.
 
         Route::prefix('wallet')->name('wallet.')->group(function () use ($modern) {
             Route::get('/', $modern ? WalletIndex::class : [WalletSellerController::class, 'index'])->name('index');

@@ -288,7 +288,10 @@
                 <div>
                     <label class="mb-1.5 block text-xs font-bold" for="bd-mob">شمارهٔ موبایل (تأیید شده)</label>
                     <input id="bd-mob" type="tel" dir="ltr" disabled value="{{ $seller['mobile'] }}"
-                           class="ap-input py-3! cursor-not-allowed bg-surface-2 opacity-70 fa-digits text-start">
+                           class="ap-input py-3! cursor-not-allowed fa-digits text-start
+                                  bg-surface-2! text-ink-2! opacity-100
+                                  dark:bg-night-2! dark:text-night-ink! dark:border-night-line!">
+                    <p class="mt-1.5 text-[11px] font-semibold text-ink-3 dark:text-night-ink-2">این شماره در مرحلهٔ تأیید ثبت شده و قابل ویرایش نیست.</p>
                 </div>
             </section>
 

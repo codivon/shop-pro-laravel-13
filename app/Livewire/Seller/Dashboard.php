@@ -72,7 +72,9 @@ class Dashboard extends Component
             ->whereNotIn('product_id', $sellerCompetitor)
             ->count();
         $this->variantsCount = $sellerVariants->count();
-        $this->productsCount = Product::where('seller_id', seller_info()->seller_id)->count();
+        // فاز ۱۲۱ — seller_info() برای فروشندهٔ تازه (بدون رکورد SellerInfo) null است؛
+        // به‌جای کرش، مقادیر امن پیش‌فرض استفاده می‌شود.
+        $this->productsCount = Product::where('seller_id', seller_info()?->seller_id ?? sellerID())->count();
 
         // ========== آمار بازدید فروشگاه ==========
         $sellerSlug = seller()->slug;
@@ -92,7 +94,7 @@ class Dashboard extends Component
             'Reject' => ['key' => 'danger', 'label' => 'رد شده'],
             default => ['key' => 'warning', 'label' => 'در حال بررسی'],
         };
-        $contract = seller_info()->econtract == '1'
+        $contract = (seller_info()?->econtract == '1')
             ? ['key' => 'success', 'label' => 'تایید شده']
             : ['key' => 'warning', 'label' => 'در انتظار تایید'];
         $work = match (seller()->status_work) {

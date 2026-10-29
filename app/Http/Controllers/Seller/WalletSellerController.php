@@ -304,17 +304,6 @@ class WalletSellerController extends Controller
         return view('sellers-old.panel.commission.index', compact('categoriesWithCommission'));
     }
 
-    /**
-     * فاز ۱۰۶ الف — روت seller.commission.guide از ابتدا به متدی اشاره می‌کرد که
-     * هرگز نوشته نشده بود (500). «راهنمای کمیسیون» همان نرخ‌های مؤثرِ صفحهٔ کمیسیون
-     * است (override فروشنده > جدول دسته‌بندی‌ها > پیش‌فرض سراسری)؛ پس همان ویو با
-     * همان منطق سرو می‌شود (DRY — دو منبع حقیقت برای نرخ‌ها ساخته نمی‌شود).
-     */
-    public function showCommissionRates()
-    {
-        return $this->commission();
-    }
-
     private function buildCategoryTree($category)
     {
         // دریافت کمیسیون مؤثر با ارث‌بری

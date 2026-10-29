@@ -197,17 +197,6 @@
                     <span class="flex-1">کمیسیون و هزینه‌ها</span>
                 </a>
             </li>
-            <li>
-                <a href="{{ route('seller.commission.guide') }}" wire:navigate
-                   class="flex min-h-11 items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200
-                          {{ request()->routeIs('seller.commission.guide')
-                              ? 'bg-brand-500/15 font-bold text-emerald-300'
-                              : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
-                   @if(request()->routeIs('seller.commission.guide')) aria-current="page" @endif>
-                    <x-admin-panel::icon name="badge-percent" class="size-[18px] shrink-0 opacity-80" />
-                    <span class="flex-1">نرخ کمیسیون</span>
-                </a>
-            </li>
         </ul>
 
         {{-- حمل و نقل --}}

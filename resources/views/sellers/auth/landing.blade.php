@@ -31,11 +31,20 @@
             <a href="#sp-testimonials" class="rounded-lg px-3 py-1.5 text-[12px] font-bold text-ink-2 transition-colors hover:bg-surface-2 hover:text-brand-600 dark:text-night-ink-2 dark:hover:bg-night-3">تجربهٔ فروشندگان</a>
             <a href="#sp-faq" class="rounded-lg px-3 py-1.5 text-[12px] font-bold text-ink-2 transition-colors hover:bg-surface-2 hover:text-brand-600 dark:text-night-ink-2 dark:hover:bg-night-3">سوالات متداول</a>
         </div>
-        <a href="{{ route('seller.registration') }}" wire:navigate
-           class="ap-btn-primary px-4 py-2! text-[12px]">
-            <x-admin-panel::icon name="rocket" class="size-4" />
-            ثبت‌نام
-        </a>
+        <div class="flex items-center gap-2">
+            <a href="{{ route('seller.login') }}" wire:navigate
+               class="rounded-lg border border-line px-3 py-1.5 text-[12px] font-bold text-ink-2 transition-colors hover:border-brand-400 hover:text-brand-600 dark:border-night-line dark:text-night-ink-2 dark:hover:border-brand-500/50 dark:hover:text-brand-300">
+                <span class="flex items-center gap-1.5">
+                    <x-admin-panel::icon name="log-in" class="size-3.5" />
+                    ورود به پنل
+                </span>
+            </a>
+            <a href="{{ route('seller.registration') }}" wire:navigate
+               class="ap-btn-primary px-4 py-2! text-[12px]">
+                <x-admin-panel::icon name="rocket" class="size-4" />
+                ثبت‌نام
+            </a>
+        </div>
     </nav>
 
     {{-- ===== هیرو: فرم ثبت‌نام سریع + تصویر ===== --}}
@@ -100,6 +109,12 @@
                             <x-admin-panel::icon name="clock" class="size-3.5" />
                             {{ $hero['response_time'] }}
                         </p>
+                        {{-- فروشندگان قبلی — ورود مستقیم به پنل --}}
+                        <a href="{{ route('seller.login') }}" wire:navigate
+                           class="flex items-center justify-center gap-1.5 py-1 text-[12px] font-bold text-ink-3 transition-colors hover:text-brand-600 dark:text-night-ink-2 dark:hover:text-brand-300">
+                            <x-admin-panel::icon name="log-in" class="size-3.5" />
+                            قبلاً فروشنده شده‌اید؟ ورود به پنل فروشندگان
+                        </a>
                     </div>
                 </div>
             </div>
@@ -266,11 +281,18 @@
                     @endforeach
                 </div>
             </div>
-            <a href="{{ $app['link'] ?: route('seller.registration') }}" @if (preg_match('~^https?://~', (string) $app['link'])) target="_blank" rel="noopener" @endif
-               class="ap-btn-primary px-8 py-3!">
-                <x-admin-panel::icon name="rocket" class="size-4.5" />
-                {{ $app['button'] }}
-            </a>
+            <div class="flex flex-col items-center gap-2.5 sm:flex-row md:items-center">
+                <a href="{{ $app['link'] ?: route('seller.registration') }}" @if (preg_match('~^https?://~', (string) $app['link'])) target="_blank" rel="noopener" @endif
+                   class="ap-btn-primary px-8 py-3!">
+                    <x-admin-panel::icon name="rocket" class="size-4.5" />
+                    {{ $app['button'] }}
+                </a>
+                <a href="{{ route('seller.login') }}" wire:navigate
+                   class="ap-btn-outline px-6 py-3!">
+                    <x-admin-panel::icon name="log-in" class="size-4.5" />
+                    ورود به پنل
+                </a>
+            </div>
         </div>
     </section>
 

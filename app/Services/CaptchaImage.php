@@ -4,9 +4,9 @@ namespace App\Services;
 
 class CaptchaImage
 {
-    private int $width = 200;
+    private int $width = 240;
 
-    private int $height = 64;
+    private int $height = 72;
 
     private ?string $font = null;
 
@@ -97,7 +97,8 @@ class CaptchaImage
     {
         $len = mb_strlen($code);
         // فاز ۲۸: حاشیه بیشتر در ابتدا/انتها تا حرف اول و آخر با چرخش/موج بریده نشوند
-        $slot = ($this->width - 32) / $len;
+        // فاز ۱۲۱: بوم ۲۴۰×۷۲ و فونت درشت‌تر (۲۷–۳۳) — خوانایی و جا شدن ۵ کاراکتر
+        $slot = ($this->width - 36) / $len;
 
         if ($this->font) {
             foreach (mb_str_split($code) as $i => $ch) {
@@ -105,10 +106,10 @@ class CaptchaImage
                 $solid = imagecolorallocate($im, $color[0], $color[1], $color[2]);
                 $glow = imagecolorallocatealpha($im, $color[0], $color[1], $color[2], 72);
 
-                $size = random_int(24, 29);
+                $size = random_int(27, 33);
                 $angle = random_int(-13, 13);
-                $x = (int) (14 + $slot * $i + random_int(-2, 4));
-                $y = (int) ($this->height / 2 + $size / 2.7 + random_int(-6, 6));
+                $x = (int) (16 + $slot * $i + random_int(-2, 4));
+                $y = (int) ($this->height / 2 + $size / 2.7 + random_int(-7, 7));
 
                 // هاله (دو بار نیمه‌شفاف) + متن اصلی
                 imagettftext($im, $size, $angle, $x, $y, $glow, $this->font, $ch);
@@ -120,17 +121,17 @@ class CaptchaImage
         }
 
         // ---------- fallback بدون TTF: بوم کوچک + بزرگ‌نمایی نرم ----------
-        $sh = 36;
+        $sh = 40;
         $small = imagecreatetruecolor($this->width, $sh);
         imagefill($small, 0, 0, imagecolorallocate($small, 22, 31, 51));
 
         foreach (mb_str_split($code) as $i => $ch) {
             $p = self::NEON[random_int(0, count(self::NEON) - 1)];
-            imagestring($small, 5, (int) (14 + $slot * $i), random_int(2, 12), $ch,
+            imagestring($small, 5, (int) (16 + $slot * $i), random_int(3, 14), $ch,
                 imagecolorallocate($small, $p[0], $p[1], $p[2]));
         }
 
-        $dh = 58;
+        $dh = 64;
         imagecopyresampled($im, $small, 0, (int) (($this->height - $dh) / 2), 0, 0,
             $this->width, $dh, $this->width, $sh);
         imagedestroy($small);

@@ -187,12 +187,13 @@
                             <x-admin-panel::icon name="shield" class="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
                             <input id="sp-login-captcha" x-ref="captcha" type="text" dir="ltr" maxlength="5" autocomplete="off" autocapitalize="off" spellcheck="false"
                                    x-on:input="delete errors.captcha"
-                                   class="ap-input pe-10! py-3! text-center font-mono tracking-widest" placeholder="ABCDX">
+                                   class="ap-input pe-10! py-3! text-center font-mono tracking-widest" placeholder="ABCDE">
                         </div>
                         <button type="button" x-on:click="refreshCaptcha()" title="مشاهدهٔ کد امنیتی — با کلیک هم کد تازه می‌آید"
-                                class="w-24 shrink-0 overflow-hidden rounded-xl border border-line bg-night-1 dark:border-night-line"
+                                class="w-36 shrink-0 overflow-hidden rounded-xl border border-line bg-night-1 p-0.5 dark:border-night-line sm:w-40"
                                 aria-label="تازه‌سازی تصویر کد امنیتی">
-                            <img x-ref="captchaImg" src="{{ route('captcha.image') }}" alt="کد امنیتی" class="size-full object-cover">
+                            {{-- فاز ۱۲۱: object-contain — با object-cover کاراکتر پنجم از سمت راست تصویر بریده می‌شد --}}
+                            <img x-ref="captchaImg" src="{{ route('captcha.image') }}" alt="کد امنیتی" class="size-full object-contain">
                         </button>
                         <button type="button" x-on:click="refreshCaptcha()" title="تولید کد جدید"
                                 class="flex w-11 shrink-0 items-center justify-center rounded-xl border border-line bg-surface-2 text-ink-2 transition-colors hover:border-brand-400 hover:text-brand-600 dark:border-night-line dark:bg-night-3 dark:text-night-ink-2 dark:hover:text-brand-300"

@@ -12,8 +12,8 @@ use Livewire\Component;
  *
  * جدول کمیسیون دسته‌بندی‌ها برای فروشنده — همان ساخت درخت دسته‌ها و
  * کمیسیونِ مؤثر با ارث‌بری (override دسته > والد > پیش‌فرض صفر).
- * متد کمکی commissionData() مشترک میان این صفحه و «نرخ کمیسیون» (CommissionGuide)
- * است — عیناً همان الگوی قدیمی که showCommissionRates() را به commission() وصل می‌کرد.
+ * فاز ۱۲۱ — صفحهٔ تکراری «نرخ کمیسیون» (CommissionGuide) حذف شد؛ این صفحه
+ * تنها منبع نمایش نرخ‌هاست (مسیر seller/commission).
  */
 #[Layout('sellers.layouts.panel')]
 #[Title('کمیسیون و هزینه‌ها')]
