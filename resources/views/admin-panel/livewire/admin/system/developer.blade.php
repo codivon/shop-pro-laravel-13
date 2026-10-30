@@ -1409,10 +1409,15 @@
                                 @endif
                             @endforeach
 
-                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line bg-surface p-3 dark:border-night-line dark:bg-night-3">
-                                <span class="text-[12px] font-bold">تست زنده‌بودن رله</span>
+                            <div class="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-line bg-surface p-3 dark:border-night-line dark:bg-night-3">
+                                <a href="{{ $relayDomain }}/relay.php/health" target="_blank" rel="noopener noreferrer"
+                                   class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3.5 py-2 text-[12px] font-bold text-white shadow-sm transition hover:bg-emerald-700 hover:shadow active:scale-[.98]"
+                                   aria-label="تست زنده‌بودن رله — در تب جدید باز می‌شود" title="در تب جدید باز می‌شود">
+                                    <x-admin-panel::icon name="external-link" class="size-4" />
+                                    تست زنده‌بودن رله (کلیک کنید)
+                                </a>
                                 <code class="rounded-lg bg-surface-2 px-2 py-1 font-mono text-[11px] text-emerald-700 dark:bg-night-2 dark:text-emerald-300" dir="ltr">{{ $relayDomain }}/relay.php/health</code>
-                                <span class="text-[10.5px] text-ink-3 dark:text-night-ink-2">← در مرورگر باز کنید؛ پاسخ <b dir="ltr">"ok": true</b> یعنی فایل نصب است ✓</span>
+                                <span class="text-[10.5px] text-ink-3 dark:text-night-ink-2">← در تب جدید باز می‌شود؛ پاسخ <b dir="ltr">"ok": true</b> یعنی فایل نصب است ✓</span>
                             </div>
                         </div>
                     </section>
@@ -1452,8 +1457,8 @@
                     @foreach ([
                         ['t' => 'یک سرور رلهٔ خارج از ایران آماده کنید', 'd' => 'هر سروری با PHP 7.4+ و cURL کافی است: VPS ارزان (آلمان، ترکیه، هلند) یا هاست سی‌پنلی معمولی. همان سروری که برای کارهای دیگر دارید هم می‌شود. رله را روی هاست ایرانِ فروشگاه قرار ندهید — دوباره 401 می‌گیرید.'],
                         ['t' => 'سرویس‌ها را انتخاب و ذخیره کنید', 'd' => 'در تب «رلهٔ هوش مصنوعی» هر تعداد سرویس را می‌خواهید فعال کنید (OpenAI، Claude، Gemini، DeepSeek و ...) — همه داخل یک فایل قرار می‌گیرند. کلید واقعی هر سرویس را وارد کنید یا با «برداشت از پکیج AI» کلید ذخیره‌شده را بیاورید، سپس ذخیره کنید.'],
-                        ['t' => 'فایل relay.php را دانلود و آپلود کنید', 'd' => 'دکمهٔ «دانلود relay.php آماده» را بزنید — همهٔ مقادیر (کلید رله، سرویس‌ها، IPهای مجاز) از قبل داخل فایل پر شده‌اند. فایل را در public_html هاست خارجی آپلود کنید.'],
-                        ['t' => 'زنده‌بودن رله را تست کنید', 'd' => 'آدرس https://دامنه-رله.ir/relay.php/health را در مرورگر باز کنید — اگر پاسخ "ok": true دیدید، فایل نصب است ✓'],
+                        ['t' => 'فایل relay.php را دانلود و آپلود کنید', 'd' => 'دکمهٔ «دانلود relay.php آماده» را بزنید — همهٔ مقادیر (کلید رله، سرویس‌ها، IPهای مجاز) از قبل داخل فایل پر شده‌اند. کلیدهای واقعی به‌صورت رمزگذاری‌شده (enc) ذخیره می‌شوند تا حتی در صورت نشست احتمالی سورس، قابل استفاده نباشند. فایل را در public_html هاست خارجی آپلود کنید.'],
+                        ['t' => 'زنده‌بودن رله را تست کنید', 'd' => 'روی دکمهٔ سبز «تست زنده‌بودن رله» کلیک کنید تا آدرس health در تب جدید باز شود — اگر پاسخ "ok": true دیدید، فایل نصب است ✓ (اگر فایل را عوض کردید، دوباره دانلود و آپلود کنید).'],
                         ['t' => 'پکیج‌ها را به رله وصل کنید', 'd' => 'در تنظیمات هر پکیج (مثلاً هوش مصنوعی ← تب سرویس‌ها): آدرس پایهٔ سرویس را به https://دامنه-رله.ir/relay.php/{provider}/v1 تغییر دهید و در فیلد کلید API، همان کلید دسترسی رله را بگذارید. مدل را همان مدل سرویس مقصد انتخاب کنید.'],
                         ['t' => 'Fallback اطمینان (اختیاری ولی پیشنهادی)', 'd' => 'یک سرویس دوم (مثل DeepSeek یا OpenRouter که معمولاً از ایران در دسترس‌اند) را هم روشن نگه دارید تا اگر رله موقتاً در دسترس نبود، زنجیرهٔ Fallback خودکار سراغ آن برود.'],
                     ] as $stepIndex => $step)
@@ -1468,7 +1473,7 @@
 
                     <div class="flex items-start gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5 text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300">
                         <x-admin-panel::icon name="shield" class="size-4 shrink-0 mt-0.5" />
-                        <p class="text-[11px] leading-6"><b>امنیت:</b> کلیدهای واقعی فقط داخل فایل روی رله می‌مانند و از فروشگاه پنهان‌اند · رله فقط HTTPS پاسخ می‌دهد · فقط مسیرهای مجاز فوروارد می‌شوند · IP هاست فروشگاه را در «IPهای مجاز» بگذارید.</p>
+                        <p class="text-[11px] leading-6"><b>امنیت:</b> کلیدهای واقعی فقط داخل فایل روی رله می‌مانند و از فروشگاه پنهان‌اند · کلیدها به‌صورت رمزگذاری‌شده (enc) در فایل ذخیره می‌شوند و سورس از وب قابل دانلود نیست — اجرای PHP همیشه پاسخ JSON می‌دهد، نه کد · خطاهای PHP هرگز با HTML/مسیر سرور نمایش داده نمی‌شوند · رله فقط HTTPS پاسخ می‌دهد · فقط مسیرهای مجاز فوروارد می‌شوند · IP هاست فروشگاه را در «IPهای مجاز» بگذارید.</p>
                     </div>
                 </div>
 

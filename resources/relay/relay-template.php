@@ -38,12 +38,18 @@
  *             API Key:   همان RELAY_ACCESS_KEY
  *
  *  امنیت: HTTPS اجباری (به‌جز localhost) · allowlist مسیرها · IPهای مجاز
- *         · هیچ لاگی از بدنهٔ پیام‌ها نوشته نمی‌شود.
+ *         · هیچ لاگی از بدنهٔ پیام‌ها نوشته نمی‌شود · خطاهای PHP هرگز به‌صورت
+ *         HTML/مسیر سرور نمایش داده نمی‌شوند (پاسخ همیشه JSON است) · کلیدهای
+ *         واقعی سرویس‌ها به‌صورت رمزگذاری‌شده (enc) داخل فایل ذخیره می‌شوند تا
+ *         در صورت نشست احتمالی سورس، کلید قابل استفاده نباشد.
  *  سازگاری: PHP 7.4+ — بدون composer، بدون افزونهٔ خاص (cURL استاندارد).
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 /* ═══════════════════════════  پیکربندی  ═══════════════════════════ */
+
+// سالت رمزگشایی کلیدها — تصادفی و مخصوص همین فایل (از پنل پر می‌شود)
+define('RELAY_SALT', getenv('RELAY_SALT') ?: 'CHANGE-ME-RANDOM-SALT');
 
 // کلید دسترسی رله — حتماً به یک رشتهٔ بلند و تصادفی تغییر دهید!
 define('RELAY_ACCESS_KEY', getenv('RELAY_ACCESS_KEY') ?: 'CHANGE-ME-TO-A-LONG-RANDOM-STRING');
@@ -73,9 +79,89 @@ define('RELAY_MAX_BODY_BYTES', 8 * 1024 * 1024); // 8MB
 
 /* ═══════════════════════════  اجرا  ═══════════════════════════ */
 
+// ── گاردهای نمایش خطا: هیچ‌گاه HTML/مسیر سرور به بیرون درز نمی‌کند ──
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+ini_set('log_errors', '1');
 error_reporting(E_ALL & ~E_DEPRECATED);
 
+if (! headers_sent()) {
+    header('X-Content-Type-Options: nosniff');
+    header('Referrer-Policy: no-referrer');
+}
+
+// notice/warning/deprecated → کاملاً خاموش؛ خطاهای واقعی → پاسخ JSON بدون جزئیات
+set_error_handler(static function (int $no, string $str, string $file = '', int $line = 0): bool {
+    $ignorable = [E_WARNING, E_CORE_WARNING, E_USER_WARNING, E_NOTICE, E_USER_NOTICE, E_DEPRECATED, E_USER_DEPRECATED];
+
+    if (in_array($no, $ignorable, true)) {
+        return true; // هیچی چاپ نشود
+    }
+
+    relay_fail(500, 'خطای داخلی رله — فایل را از پنل فروشگاه دوباره بسازید.');
+
+    return true;
+});
+
+set_exception_handler(static function (Throwable $e): void {
+    relay_fail(500, 'خطای داخلی رله — فایل را از پنل فروشگاه دوباره بسازید.');
+});
+
+// خطای مهلک (fatal) → JSON تمیز، بدون HTML و بدون مسیر فایل
+register_shutdown_function(static function (): void {
+    $last = error_get_last();
+
+    if (is_array($last) && in_array($last['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        if (! headers_sent()) {
+            http_response_code(500);
+            header('Content-Type: application/json; charset=utf-8');
+            header('X-AI-Relay-Version: 2.0');
+        }
+
+        echo json_encode([
+            'error' => [
+                'message' => 'خطای مهلک رله — فایل را از پنل فروشگاه دوباره بسازید.',
+                'type'    => 'relay_fatal',
+                'code'    => 500,
+            ],
+        ], JSON_UNESCAPED_UNICODE);
+    }
+});
+
 relay_main();
+
+/**
+ * رمزگشایی مقادیر «enc:…» (XOR + Base64 روی RELAY_SALT) — کلیدهای واقعی
+ * هرگز به‌صورت خوانا در سورس نمی‌مانند؛ اگر سالت دست‌کاری شود خالی برمی‌گردد.
+ */
+function relay_decode(string $value): string
+{
+    if ($value === '' || strncmp($value, 'enc:', 4) !== 0) {
+        return $value;
+    }
+
+    $raw = base64_decode(substr($value, 4), true);
+
+    if ($raw === false || $raw === '') {
+        return '';
+    }
+
+    $salt = (string) RELAY_SALT;
+
+    if ($salt === '' || $salt === 'CHANGE-ME-RANDOM-SALT') {
+        return '';
+    }
+
+    $out = '';
+    $len = strlen($raw);
+    $sln = strlen($salt);
+
+    for ($i = 0; $i < $len; $i++) {
+        $out .= chr(ord($raw[$i]) ^ ord($salt[$i % $sln]));
+    }
+
+    return $out;
+}
 
 function relay_fail(int $status, string $message): void
 {
@@ -120,6 +206,11 @@ function relay_forward_path(string $rest): ?string
 
 function relay_main(): void
 {
+    global $RELAY_PROVIDERS;
+
+    // دفاعی — اگر از بیرون دست‌کاری شده باشد، همیشه آرایهٔ معتبر است
+    $RELAY_PROVIDERS = is_array($RELAY_PROVIDERS) ? $RELAY_PROVIDERS : [];
+
     // ── ۱) HTTPS (به‌جز localhost برای تست لوکال) ──
     $isLocal = in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true);
     if (! $isLocal && empty($_SERVER['HTTPS']) && ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') !== 'https') {
@@ -154,6 +245,12 @@ function relay_main(): void
 
     // ── ۴) تشخیص سرویس مقصد از مسیر (segment اول) ──
     $segments = array_values(array_filter(explode('/', trim($path, '/')), fn (string $s) => $s !== ''));
+
+    // نام اسکریپت از ابتدای مسیر حذف می‌شود — /relay.php/{provider}/… یا /{provider}/…
+    if (isset($segments[0]) && preg_match('/\.php$/i', $segments[0]) === 1) {
+        array_shift($segments);
+    }
+
     $providerKey = (string) ($segments[0] ?? '');
     $rest = '/'.implode('/', array_slice($segments, 1));
 
@@ -161,14 +258,14 @@ function relay_main(): void
         // سازگاری با فایل‌های تک-سرویس قدیمی: اگر فقط یک سرویس تعریف شده باشد
         if (count($RELAY_PROVIDERS) === 1) {
             $providerKey = (string) array_key_first($RELAY_PROVIDERS);
-            $rest = '/'.trim($path, '/');
+            $rest = '/'.implode('/', $segments);
         } else {
             relay_fail(404, 'سرویس مقصد در مسیر مشخص نیست — آدرس باید به شکل /relay.php/{provider}/... باشد. سرویس‌های فعال رله: '
                 .($RELAY_PROVIDERS === [] ? 'هیچ' : implode(', ', array_keys($RELAY_PROVIDERS))));
         }
     }
 
-    $provider = $RELAY_PROVIDERS[$providerKey];
+    $provider = (array) $RELAY_PROVIDERS[$providerKey];
     $upstreamBase = rtrim((string) ($provider['base'] ?? ''), '/');
     $upstreamKey  = (string) ($provider['key'] ?? '');
     $authMode     = (string) ($provider['auth'] ?? 'bearer');

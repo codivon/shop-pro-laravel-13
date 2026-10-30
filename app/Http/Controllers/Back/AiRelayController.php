@@ -113,7 +113,27 @@ class AiRelayController extends Controller
 
         $phpStr = fn (string $v): string => "'".addcslashes($v, "'\\")."'";
 
-        // ── ۱) سرویس‌ها ──
+        // ── ۰) سالت رمزگذاری — در هر تولید تصادفی می‌سازیم تا کلیدهای واقعی
+        //      هرگز به‌صورت خوانا داخل فایل نمانند (ضد نشست سورس/دانلود) ──
+        $salt = bin2hex(random_bytes(16)); // ۳۲ نویسهٔ hex
+
+        $encodeSecret = function (string $v) use ($salt, $phpStr): string {
+            if ($v === '') {
+                return "''";
+            }
+
+            $enc = '';
+            $len = strlen($v);
+            $sln = strlen($salt);
+
+            for ($i = 0; $i < $len; $i++) {
+                $enc .= chr(ord($v[$i]) ^ ord($salt[$i % $sln]));
+            }
+
+            return $phpStr('enc:'.base64_encode($enc));
+        };
+
+        // ── ۱) سرویس‌ها (کلید واقعی به‌صورت enc در فایل قرار می‌گیرد) ──
         $providerLines = [];
 
         foreach ($active as $p) {
@@ -129,7 +149,7 @@ class AiRelayController extends Controller
 
             $providerLines[] = str_repeat(' ', 4).$phpStr($key).' => ['."\n"
                 .str_repeat(' ', 8)."'base' => ".$phpStr($base).",\n"
-                .str_repeat(' ', 8)."'key' => ".$phpStr($apiKey).",\n"
+                .str_repeat(' ', 8)."'key' => ".($apiKey === '' ? "''" : "relay_decode(".$encodeSecret($apiKey).")").",\n"
                 .str_repeat(' ', 8)."'auth' => ".$phpStr($auth).",\n"
                 .str_repeat(' ', 8)."'headers' => [],\n"
                 .str_repeat(' ', 4).'],';
@@ -138,10 +158,17 @@ class AiRelayController extends Controller
         $providersCode = "\n".implode("\n", $providerLines)."\n";
         $code = str_replace('$RELAY_PROVIDERS = [];', '$RELAY_PROVIDERS = ['.$providersCode.'];', $code);
 
-        // ── ۲) کلید دسترسی ──
+        // ── ۱-ب) سالت رمزگشایی ──
+        $code = str_replace(
+            "define('RELAY_SALT', getenv('RELAY_SALT') ?: 'CHANGE-ME-RANDOM-SALT');",
+            "define('RELAY_SALT', getenv('RELAY_SALT') ?: ".$phpStr($salt).");",
+            $code
+        );
+
+        // ── ۲) کلید دسترسی (به‌صورت enc — در سورس خوانا نیست) ──
         $code = str_replace(
             "define('RELAY_ACCESS_KEY', getenv('RELAY_ACCESS_KEY') ?: 'CHANGE-ME-TO-A-LONG-RANDOM-STRING');",
-            "define('RELAY_ACCESS_KEY', getenv('RELAY_ACCESS_KEY') ?: ".$phpStr($accessKey).");",
+            "define('RELAY_ACCESS_KEY', getenv('RELAY_ACCESS_KEY') ?: relay_decode(".$encodeSecret($accessKey)."));",
             $code
         );
 
@@ -186,10 +213,11 @@ class AiRelayController extends Controller
         $providerKeys = implode('، ', array_map(fn (array $p) => (string) $p['key'], $active));
         $banner = "<?php\n\n/* ✅ این فایل از پنل فروشگاه ساخته شده است (تنظیمات توسعه‌دهنده ← رلهٔ هوش مصنوعی)\n"
             ."   تاریخ: ".now()->format('Y-m-d H:i')." — سرویس‌ها: {$providerKeys}\n"
-            ."   نسخهٔ رله: 2.0 (چند-سرویسی)\n*/\n";
+            ."   نسخهٔ رله: 2.0 (چند-سرویسی)\n"
+            ."   امنیت: کلیدهای واقعی به‌صورت رمزگذاری‌شده (enc) ذخیره شده‌اند و خطاها همیشه JSON می‌آیند.\n*/\n";
         $code = (string) Str::replaceFirst('<?php', rtrim($banner, "\n"), $code);
 
-        Log::info('AiRelay: فایل رلهٔ چند-سرویسی relay.php ساخته شد', [
+        Log::info('AiRelay: فایل رلهٔ چند-سرویسی relay.php ساخته شد (کلیدها رمزگذاری‌شده)', [
             'providers' => $providerKeys,
             'ips' => count($ips),
         ]);

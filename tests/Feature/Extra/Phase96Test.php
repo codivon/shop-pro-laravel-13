@@ -182,9 +182,9 @@ class Phase96Test extends TestCase
         $registry = app(AiProviderRegistry::class);
         $all = $registry->allProviders();
 
-        $this->assertCount(9, $all, 'رجیستری باید دقیقاً ۹ سرویس داشته باشد (openai/openrouter/deepseek/anthropic/gemini/mistral/groq/cohere/ollama).');
+        $this->assertCount(10, $all, 'رجیستری باید ۱۰ سرویس داشته باشد (۹ سرویس فاز ۹۴ + سرویس سفارشی custom فاز ۱۲۲).');
 
-        foreach (['openai', 'openrouter', 'deepseek', 'anthropic', 'gemini', 'mistral', 'groq', 'cohere', 'ollama'] as $key) {
+        foreach (['openai', 'openrouter', 'deepseek', 'anthropic', 'gemini', 'mistral', 'groq', 'cohere', 'ollama', 'custom'] as $key) {
             $this->assertArrayHasKey($key, $all);
             $this->assertNotSame($key, $all[$key], 'عنوان سرویس باید فارسی/خوانا باشد نه کلید خام.');
         }

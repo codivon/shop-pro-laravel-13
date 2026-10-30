@@ -355,7 +355,8 @@ class Developer extends Component
                 'auth' => (string) $def['auth'],
                 'base_url' => (string) ($row['base_url'] ?? $def['base']),
                 'api_key' => (string) ($row['api_key'] ?? ''),
-                'headers' => (string) ($row['headers'] ?? ''),
+                // دفاعی — headers همیشه رشتهٔ متنی است؛ اگر جایی آرایه ذخیره شده باشد، خالی در نظر گرفته می‌شود
+                'headers' => is_array($row['headers'] ?? null) ? '' : (string) ($row['headers'] ?? ''),
                 'enabled' => (bool) ($row['enabled'] ?? false),
                 // آیا کلید API در تنظیمات پکیج هوش مصنوعی ذخیره شده؟ (برای پیش‌پرکردن)
                 'package_key' => $this->aiPackageKeyFor($key),
