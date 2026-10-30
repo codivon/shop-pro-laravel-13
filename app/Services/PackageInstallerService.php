@@ -251,6 +251,19 @@ class PackageInstallerService
             $this->step('remove_assets', 'حذف فایل‌های استاتیک ماژول');
             $this->removePublishedAssets($moduleName);
 
+            // فاز ۱۲۸ — پیش از حذف فایل‌ها، ماژول غیرفعال شود تا
+            // ① بوت بعدی، پرووایدر/شنونده‌های ماژول را ثبت نکند
+            // ② modules_statuses.json همگام شود (بدون آن ماژولِ حذف‌شده
+            //     هنوز «فعال» است و بوتِ درخواست بعدی به کلاس‌های حذف‌شده برخورد می‌کند)
+            try {
+                Artisan::call('module:disable', ['module' => $moduleName]);
+            } catch (\Throwable $e) {
+                Log::warning('module:disable before uninstall failed', [
+                    'module' => $moduleName,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             // حذف پوشه ماژول
             $this->step('remove_files', 'حذف فایل‌های ماژول');
             $modulePath = config('packages.modules.path').'/'.$moduleName;
@@ -260,6 +273,27 @@ class PackageInstallerService
 
             // رفرش کش
             $this->refreshCaches();
+
+            // فاز ۱۲۸ — تازه‌سازی classmap پس از حذف فایل‌ها: روی هاست‌های
+            // با autoload بهینه (composer install -o / classmap-authoritative)
+            // مسیر کلاس‌های حذف‌شده تا dump-autoload بعدی در classmap می‌ماند و
+            // هر class_exists روی آن‌ها warning «Failed to open stream» می‌دهد که
+            // لاراول به ErrorException تبدیل می‌کند. composer در دسترس نبود،
+            // روش جایگزین (پاک‌سازی کش‌های autoload) اجرا می‌شود — هر دو non-fatal.
+            try {
+                $composer = $this->findComposerPath();
+
+                if ($composer !== null) {
+                    (new Process([$composer, 'dump-autoload'], base_path()))
+                        ->setTimeout(180)
+                        ->run();
+                    Log::info('✅ composer dump-autoload after uninstall completed');
+                } else {
+                    $this->runComposerDumpAutoloadAlternative();
+                }
+            } catch (\Throwable $e) {
+                Log::warning('⚠️ autoload refresh after uninstall failed', ['error' => $e->getMessage()]);
+            }
 
             // حذف رکورد
             $installed->delete();
