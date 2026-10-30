@@ -40,6 +40,22 @@ class UpdaterAfter extends Command
         $this->call('optimize:clear');
         $this->call('migrate');
         $this->call('db:seed', ['class' => 'PermissionSeeder']);
+
+        // فاز ۱۳۲ — بیمهٔ پرمیژن‌های پکیج‌ها: بعد از اجرای PermissionSeeder،
+        // پرمیژن‌های همهٔ ماژول‌های نصب‌شده بازسازی می‌شوند (idempotent).
+        // قبلاً اگر seeder نسخهٔ قدیمی بود یا db:seed دستی اجرا می‌شد،
+        // پرمیژن‌های پکیج‌ها پاک می‌ماندند و منو/گیت‌های پکیج ناپدید می‌شدند.
+        try {
+            $restored = app(\App\Services\PackageInstallerService::class)
+                ->reinstallPermissionsForInstalledModules();
+
+            if ($restored > 0) {
+                $this->info("✅ Package permissions ensured for {$restored} module(s).");
+            }
+        } catch (\Throwable $e) {
+            $this->warn('⚠️ Package permission reinstall failed: '.$e->getMessage());
+        }
+
         $this->call('app:fix');
         $this->call('shop:link');
         $this->call('queue:restart');

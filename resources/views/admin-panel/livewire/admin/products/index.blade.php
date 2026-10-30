@@ -289,6 +289,15 @@
                                        title="کپی کردن" aria-label="کپی محصول">
                                         <x-admin-panel::icon name="copy" class="size-4" />
                                     </a>
+                                    @if (function_exists('module_is_active') && module_is_active('SeoAudit'))
+                                        @can('products.details')
+                                            <a href="{{ route('admin.seo-audit.products.details', $product->slug) }}" target="_blank" rel="noopener"
+                                               class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-500/10"
+                                               title="جزئیات سئو" aria-label="جزئیات سئو محصول">
+                                                <x-admin-panel::icon name="search-check" class="size-4" />
+                                            </a>
+                                        @endcan
+                                    @endif
                                     <a href="{{ $product->link() }}" target="_blank" rel="noopener"
                                        class="hidden rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-surface-3 hover:text-ink sm:block dark:hover:bg-night-3"
                                        title="مشاهده در سایت" aria-label="مشاهده در سایت">

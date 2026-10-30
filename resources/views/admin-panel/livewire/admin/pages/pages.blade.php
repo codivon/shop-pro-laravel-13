@@ -114,6 +114,15 @@
                                             <x-admin-panel::icon name="pencil" class="size-4" />
                                         </a>
                                     @endcan
+                                    @if (function_exists('module_is_active') && module_is_active('SeoAudit'))
+                                        @can('pages.details')
+                                            <a href="{{ route('admin.seo-audit.pages.details', ['page' => $page]) }}" target="_blank" rel="noopener"
+                                               class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-500/10"
+                                               title="جزئیات سئو" aria-label="جزئیات سئو صفحه">
+                                                <x-admin-panel::icon name="search-check" class="size-4" />
+                                            </a>
+                                        @endcan
+                                    @endif
                                     @can('pages.delete')
                                         <button type="button" wire:click="confirmDelete({{ $page->id }})"
                                                 class="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"

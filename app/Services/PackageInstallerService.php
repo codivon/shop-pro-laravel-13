@@ -316,6 +316,20 @@ class PackageInstallerService
     {
         $installed = InstalledModule::where('slug', $slug)->firstOrFail();
 
+        // فاز ۱۳۲ — nwidart v13 لیست ماژول‌ها را در یک استاتیک process-lifetime
+        // کش می‌کند (FileRepository::$modules). در worker صفِ «گرم» که پیش‌تر
+        // پکیج دیگری را اسکن/نصب کرده، ماژولِ تازه استخراج‌شده در این کش نیست و
+        // module:enable با «Module [X] does not exist!» شکست می‌خورد (لاگ پروداکشن).
+        // قبل از فراخوانی artisan، کش اسکن را ریست می‌کنیم تا اسکن تازه انجام شود.
+        try {
+            $repo = app('modules');
+            if (method_exists($repo, 'resetModules')) {
+                $repo->resetModules();
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Module repository reset failed (non-fatal)', ['error' => $e->getMessage()]);
+        }
+
         try {
             Artisan::call(
                 $installed->is_active ? 'module:disable' : 'module:enable',
@@ -328,10 +342,107 @@ class PackageInstallerService
             ]);
         }
 
+        // فاز ۱۳۲ — بیمه: مستقل از نتیجهٔ artisan، وضعیت مستقیماً در
+        // modules_statuses.json نوشته می‌شود (FileActivator::setActiveByName)
+        // تا ماژول هرگز بی‌وضعیت نماند (نبودِ سطر در این فایل = provider ثبت
+        // نمی‌شود + از manifest حذف می‌شود = پکیج «ناپدید» به نظر می‌رسد).
+        try {
+            app(\Nwidart\Modules\Contracts\ActivatorInterface::class)
+                ->setActiveByName($installed->name, ! $installed->is_active);
+        } catch (\Throwable $e) {
+            Log::warning('Direct module status write failed', [
+                'module' => $installed->name,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         $installed->update(['is_active' => ! $installed->is_active]);
         $this->refreshCaches();
 
         return $installed->refresh();
+    }
+
+    /* ===================================================================
+     *  بیمهٔ پرمیژن‌ها بعد از آپدیت (فاز ۱۳۲)
+     * =================================================================== */
+
+    /**
+     * نصب مجدد پرمیژن‌های همهٔ ماژول‌های نصب‌شده.
+     *
+     * updater:after بعد از هر آپدیت PermissionSeeder را اجرا می‌کند؛ اگر به
+     * هر دلیلی (نسخهٔ قدیمی seeder یا اجرای دستی db:seed) پرمیژن‌های پکیج‌ها
+     * حذف شده باشند، این متد آن‌ها را بازسازی می‌کند — idempotent است چون
+     * هر ماژول از updateOrCreate استفاده می‌کند.
+     */
+    public function reinstallPermissionsForInstalledModules(): int
+    {
+        $restored = 0;
+
+        $modules = InstalledModule::query()
+            ->where('status', 'installed')
+            ->where('is_active', true)
+            ->pluck('name');
+
+        foreach ($modules as $moduleName) {
+            if (! $moduleName) {
+                continue;
+            }
+
+            try {
+                // ثبت autoloader ماژول (اگر classmap بهینه مسیر را بلد نیست)
+                $this->registerModuleAutoloader($moduleName);
+
+                $before = $this->countModulePermissions($moduleName);
+                $this->installModulePermissions($moduleName);
+                $after = $this->countModulePermissions($moduleName);
+
+                if ($after > 0) {
+                    $restored++;
+
+                    if ($before === 0) {
+                        Log::info("✅ Module permissions restored after update: {$moduleName}", [
+                            'permissions' => $after,
+                        ]);
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning("Module permission reinstall failed: {$moduleName}", [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $restored;
+    }
+
+    /**
+     * شمارش پرمیژن‌های یک ماژول در جدول permissions بر اساس ریشهٔ نام.
+     * (نام ریشهٔ SmartAssembly = smart-assembly و برای سازگاری snake هم چک
+     * می‌شود؛ اگر کلاس فرمان نصب پرمیژن ماژول موجود نباشد، صفر برمی‌گردد.)
+     */
+    private function countModulePermissions(string $moduleName): int
+    {
+        $commandClass = "Modules\\{$moduleName}\\Console\\Commands\\InstallPermissionsCommand";
+
+        if (! class_exists($commandClass)) {
+            return 0;
+        }
+
+        try {
+            $snake = \Illuminate\Support\Str::snake(str_replace('-', '_', $moduleName));
+            $aliases = array_values(array_unique([$snake, str_replace('_', '-', $snake)]));
+
+            return \App\Models\Permission::query()
+                ->where(function ($q) use ($aliases) {
+                    foreach ($aliases as $alias) {
+                        $q->orWhere('name', $alias)
+                            ->orWhere('name', 'like', $alias.'.%');
+                    }
+                })
+                ->count();
+        } catch (\Throwable $e) {
+            return 0;
+        }
     }
 
     /* ===================================================================
