@@ -3,7 +3,7 @@
 /**
  * ─────────────────────────────────────────────────────────────────────────────
  *  رلهٔ سراسری هوش مصنوعی (AI Relay) — تک‌فایل، چند-سرویسی، بدون وابستگی
- *  نسخه ۲.۰ — همهٔ سرویس‌ها با یک فایل (فاز ۱۲۴)
+ *  نسخه ۲.۱ — همهٔ سرویس‌ها با یک فایل (فاز ۱۲۴) + تولید تصویر (فاز ۱۲۷)
  * ─────────────────────────────────────────────────────────────────────────────
  *
  *  چرا؟  OpenAI، Anthropic و Google درخواست‌های IPهای ایران را مسدود می‌کنند
@@ -20,6 +20,8 @@
  *        …/completions    …/embeddings    …/responses
  *        …/models        (GET لیست / GET تک مدل)
  *        …/messages                             (Claude / Anthropic)
+ *        …/images/generations                   (تولید تصویر — dall-e-3 / gpt-image-1)
+ *        …/images/edits                         (ویرایش تصویر)
  *        …/models/{model}:generateContent       (Gemini)
  *        …/models/{model}:streamGenerateContent (Gemini استریم)
  *
@@ -115,7 +117,7 @@ register_shutdown_function(static function (): void {
         if (! headers_sent()) {
             http_response_code(500);
             header('Content-Type: application/json; charset=utf-8');
-            header('X-AI-Relay-Version: 2.0');
+            header('X-AI-Relay-Version: 2.1');
         }
 
         echo json_encode([
@@ -167,7 +169,7 @@ function relay_fail(int $status, string $message): void
 {
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');
-    header('X-AI-Relay-Version: 2.0');
+    header('X-AI-Relay-Version: 2.1');
     echo json_encode([
         'error' => [
             'message' => $message,
@@ -187,6 +189,8 @@ function relay_forward_path(string $rest): ?string
         '#/embeddings$#',
         '#/responses$#',
         '#/messages$#',
+        '#/images/generations$#',   // تولید تصویر (OpenAI Images API — dall-e-3 / gpt-image-1)
+        '#/images/edits$#',         // ویرایش تصویر
         '#/models/[^/]+:streamGenerateContent$#',
         '#/models/[^/]+:generateContent$#',
         '#/models/[^/:]+$#',
@@ -224,11 +228,11 @@ function relay_main(): void
     // ── ۲) مسیر سلامت — بدون احراز (برای تست نصب فایل) ──
     if ($path === '/health' || $path === '/relay.php/health') {
         header('Content-Type: application/json; charset=utf-8');
-        header('X-AI-Relay-Version: 2.0');
+        header('X-AI-Relay-Version: 2.1');
         echo json_encode([
             'ok'        => true,
             'relay'     => 'ai-relay',
-            'version'   => '2.0',
+            'version'   => '2.1',
             'providers' => array_keys($RELAY_PROVIDERS),
             'secured'   => RELAY_ACCESS_KEY !== 'CHANGE-ME-TO-A-LONG-RANDOM-STRING',
         ], JSON_UNESCAPED_UNICODE);
@@ -278,7 +282,7 @@ function relay_main(): void
     $forwardPath = relay_forward_path($rest);
 
     if ($forwardPath === null) {
-        relay_fail(404, 'مسیر رله پشتیبانی نمی‌شود — مجاز: chat/completions، completions، embeddings، responses، models، messages و models/{model}:generateContent.');
+        relay_fail(404, 'مسیر رله پشتیبانی نمی‌شود — مجاز: chat/completions، completions، embeddings، responses، messages، images/generations، models و models/{model}:generateContent.');
     }
 
     // ── ۶) احراز کلاینت (فروشگاه) — چهار حالت پذیرفته می‌شود ──
@@ -486,7 +490,7 @@ function relay_main(): void
     http_response_code($status !== 0 ? $status : 502);
     header('Content-Type: application/json; charset=utf-8');
     header('X-AI-Relay-Provider: '.$providerKey);
-    header('X-AI-Relay-Version: 2.0');
+    header('X-AI-Relay-Version: 2.1');
     echo $responseBody;
     exit;
 }
