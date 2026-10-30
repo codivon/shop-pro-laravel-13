@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\System;
 
 use App\Jobs\ProcessUpdateJob;
+use App\Http\Controllers\Back\AiRelayController;
 use App\Models\BotTrap;
 use App\Services\SecuritySettings;
 use App\Support\MarketplaceSettings;
@@ -208,6 +209,24 @@ class Developer extends Component
     /** فاز ۱۱۲ — مایگریشن‌های اجرا نشده (فایل موجود، رکورد/جدول موجود نیست) */
     public array $pendingMigrations = [];
 
+    /* ---------------- رلهٔ سراسری هوش مصنوعی (فاز ۱۲۴) ---------------- */
+
+    /** کلید دسترسی رله (RELAY_ACCESS_KEY) — همهٔ سرویس‌ها با یک کلید */
+    public string $aiRelayAccessKey = '';
+
+    /** دامنهٔ نصب رله — مثل https://relay.example.com (برای نمایش آدرس‌های آماده) */
+    public string $aiRelayDomain = '';
+
+    /** IPهای مجاز — با کاما/خط جدید */
+    public string $aiRelayAllowedIps = '';
+
+    /** هدرهای عمومی به همهٔ سرویس‌ها — هر خط «Name: value» */
+    public string $aiRelayHeaders = '';
+
+    /** سرویس‌های رله — [{key,title,base,auth,base_url,api_key,headers,enabled,configured_key}] */
+    public array $aiRelayProviders = [];
+
+
     public function mount(): void
     {
         $this->ensureCreator();
@@ -302,7 +321,140 @@ class Developer extends Component
         $this->vendorFinnotechClientSecret = trim((string) option('finnotech_client_secret', ''));
         $this->vendorDefaultCommission = (string) (MultiVendorSettings::defaultCommission() ?? '');
         $this->vendorMinWithdraw = (string) MultiVendorSettings::minWithdrawAmount();
+
+        // فاز ۱۲۴ — رلهٔ سراسری هوش مصنوعی
+        $this->loadAiRelay();
     }
+
+    /* ================= رلهٔ سراسری هوش مصنوعی (فاز ۱۲۴) ================= */
+
+    /** بارگذاری تنظیمات رله از options + پیش‌فرض‌های منطقی از config/ai-relay.php */
+    protected function loadAiRelay(): void
+    {
+        $this->aiRelayAccessKey = trim((string) option(AiRelayController::OPT_ACCESS_KEY, ''));
+        $this->aiRelayDomain = trim((string) option(AiRelayController::OPT_DOMAIN, ''));
+        $this->aiRelayAllowedIps = (string) option(AiRelayController::OPT_ALLOWED_IPS, '');
+        $this->aiRelayHeaders = (string) option(AiRelayController::OPT_HEADERS, '');
+
+        // کلید پیشنهادی — فقط برای نمایش؛ با ذخیره ثبت می‌شود
+        if ($this->aiRelayAccessKey === '') {
+            $this->aiRelayAccessKey = 'rl-'.Str::random(40);
+        }
+
+        $saved = collect(AiRelayController::savedProviders())->keyBy('key');
+
+        $this->aiRelayProviders = [];
+
+        foreach (config('ai-relay.providers', []) as $key => $def) {
+            $row = $saved->get($key, []);
+
+            $this->aiRelayProviders[] = [
+                'key' => $key,
+                'title' => (string) $def['title'],
+                'base' => (string) $def['base'],
+                'auth' => (string) $def['auth'],
+                'base_url' => (string) ($row['base_url'] ?? $def['base']),
+                'api_key' => (string) ($row['api_key'] ?? ''),
+                'headers' => (string) ($row['headers'] ?? ''),
+                'enabled' => (bool) ($row['enabled'] ?? false),
+                // آیا کلید API در تنظیمات پکیج هوش مصنوعی ذخیره شده؟ (برای پیش‌پرکردن)
+                'package_key' => $this->aiPackageKeyFor($key),
+            ];
+        }
+    }
+
+    /** کلید API ذخیره‌شدهٔ سرویس در پکیج هوش مصنوعی — برای دکمهٔ «برداشت از پکیج» */
+    protected function aiPackageKeyFor(string $key): string
+    {
+        try {
+            $model = '\Modules\ArtificialIntelligence\Models\AiSetting';
+
+            if (! class_exists($model)) {
+                return '';
+            }
+
+            return trim((string) $model::get($key.'_api_key', ''));
+        } catch (\Throwable $e) {
+            return '';
+        }
+    }
+
+    /** کلید API یک سرویس را از پکیج هوش مصنوعی برمی‌دارد به فیلد رله */
+    public function pullAiRelayKey(string $key): void
+    {
+        foreach ($this->aiRelayProviders as $i => $row) {
+            if ($row['key'] === $key && ($row['package_key'] ?? '') !== '') {
+                $this->aiRelayProviders[$i]['api_key'] = $row['package_key'];
+                $this->dispatch('toast', message: 'کلید '.$row['title'].' از پکیج هوش مصنوعی برداشت شد — فراموش نکنید ذخیره کنید.', type: 'info');
+
+                return;
+            }
+        }
+    }
+
+    /** تولید کلید دسترسی جدید */
+    public function generateAiRelayKey(): void
+    {
+        $this->aiRelayAccessKey = 'rl-'.Str::random(40);
+    }
+
+    /** انتخاب/لغو همهٔ سرویس‌ها */
+    public function toggleAllAiRelayProviders(bool $on): void
+    {
+        foreach ($this->aiRelayProviders as $i => $row) {
+            $this->aiRelayProviders[$i]['enabled'] = $on;
+        }
+    }
+
+    public function saveAiRelay(): void
+    {
+        $this->ensureCreator();
+
+        $this->validate([
+            'aiRelayAccessKey' => ['required', 'string', 'min:16', 'max:128'],
+            'aiRelayDomain' => ['nullable', 'string', 'max:200', 'regex:/^https?:\/\/[a-zA-Z0-9.\-]+(:\d+)?$/u'],
+            'aiRelayAllowedIps' => ['nullable', 'string', 'max:2000'],
+            'aiRelayHeaders' => ['nullable', 'string', 'max:2000'],
+            'aiRelayProviders.*.base_url' => ['nullable', 'string', 'max:300'],
+            'aiRelayProviders.*.api_key' => ['nullable', 'string', 'max:300'],
+        ], [
+            'aiRelayAccessKey.required' => 'کلید دسترسی رله لازم است.',
+            'aiRelayAccessKey.min' => 'کلید دسترسی رله باید حداقل ۱۶ نویسه باشد.',
+            'aiRelayDomain.regex' => 'دامنهٔ رله باید یک آدرس معتبر باشد (مثل https://relay.example.com).',
+        ]);
+
+        option_update(AiRelayController::OPT_ACCESS_KEY, trim($this->aiRelayAccessKey));
+        option_update(AiRelayController::OPT_DOMAIN, rtrim(trim($this->aiRelayDomain), '/'));
+        option_update(AiRelayController::OPT_ALLOWED_IPS, (string) $this->aiRelayAllowedIps);
+        option_update(AiRelayController::OPT_HEADERS, (string) $this->aiRelayHeaders);
+
+        $list = [];
+
+        foreach ($this->aiRelayProviders as $row) {
+            $list[] = [
+                'key' => (string) $row['key'],
+                'base_url' => rtrim(trim((string) $row['base_url']), '/'),
+                'api_key' => trim((string) $row['api_key']),
+                'headers' => (string) $row['headers'],
+                'enabled' => (bool) $row['enabled'],
+            ];
+        }
+
+        option_update(AiRelayController::OPT_PROVIDERS, (string) json_encode($list, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+        // بازخوانی — تا وضعیت ذخیره‌شده و پیش‌نمایش آدرس‌ها تازه شود
+        $this->loadAiRelay();
+        $this->aiRelayAccessKey = trim($this->aiRelayAccessKey);
+
+        $this->dispatch('toast', message: 'تنظیمات رلهٔ هوش مصنوعی ذخیره شد — حالا می‌توانید relay.php را دانلود کنید.', type: 'success');
+    }
+
+    /** شمار سرویس‌های فعال رله (برای نشان تب) */
+    public function getAiRelayActiveCountProperty(): int
+    {
+        return count(array_filter($this->aiRelayProviders, fn (array $row) => $row['enabled']));
+    }
+
 
     /* ================= گیت ================= */
 

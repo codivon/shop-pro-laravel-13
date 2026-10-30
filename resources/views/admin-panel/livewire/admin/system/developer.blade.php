@@ -18,7 +18,7 @@
         <span class="ap-badge bg-red-50 text-red-600 dark:bg-red-500/12 dark:text-red-400">فقط سازنده</span>
     </div>
 
-    <div x-data="{ tab: 'cron' }" class="space-y-5">
+    <div x-data="{ tab: 'cron', relayHelp: false }" class="space-y-5">
 
         {{-- تب‌ها --}}
         <div class="ap-card overflow-hidden">
@@ -59,6 +59,15 @@
                         x-bind:class="tab === 'vendors' ? 'is-active' : ''">
                     <x-admin-panel::icon name="store" class="size-4" />
                     چندفروشندگی
+                </button>
+                {{-- فاز ۱۲۴ — رلهٔ سراسری هوش مصنوعی --}}
+                <button type="button" class="ap-tab relative whitespace-nowrap" x-on:click="tab = 'ai-relay'"
+                        x-bind:class="tab === 'ai-relay' ? 'is-active' : ''">
+                    <x-admin-panel::icon name="radio" class="size-4" />
+                    رلهٔ هوش مصنوعی
+                    @if ($this->aiRelayActiveCount > 0)
+                        <span class="absolute -top-0.5 end-0 rounded-full bg-emerald-100 px-1.5 text-[9px] font-bold leading-4 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" dir="ltr">{{ $this->aiRelayActiveCount }}</span>
+                    @endif
                 </button>
             </div>
 
@@ -1197,6 +1206,280 @@
                         </button>
                     </div>
                 </form>
+            </div>
+
+            {{-- ============ تب رلهٔ سراسری هوش مصنوعی (فاز ۱۲۴) ============ --}}
+            <div x-show="tab === 'ai-relay'" x-cloak class="animate-fade-in space-y-4 p-5 sm:p-6">
+
+                {{-- معرفی --}}
+                <div class="overflow-hidden rounded-2xl border border-violet-200 bg-gradient-to-l from-violet-50 via-white to-white dark:border-violet-500/20 dark:from-violet-500/10 dark:via-night-2 dark:to-night-2">
+                    <div class="flex flex-wrap items-start justify-between gap-3 p-4 sm:p-5">
+                        <div class="flex min-w-0 items-start gap-3">
+                            <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">
+                                <x-admin-panel::icon name="radio" class="size-5" />
+                            </span>
+                            <div class="min-w-0">
+                                <h3 class="text-sm font-bold">رلهٔ سراسری هوش مصنوعی — رفع ارور 401/403 هاست‌های داخل ایران</h3>
+                                <p class="mt-1 text-xs leading-6 text-ink-3 dark:text-night-ink-2">
+                                    اگر هاست فروشگاه در ایران است، OpenAI / Claude / Gemini درخواست‌هایش را مسدود می‌کنند (حتی با کلید معتبر).
+                                    این فایل رله را روی یک سرور «خارج از ایران» بگذارید؛ <b>چندین سرویس AI با همین یک فایل</b> رله می‌شوند و
+                                    <b>همهٔ پکیج‌های فروشگاه</b> (هوش مصنوعی و پکیج‌های آینده) از همین رله استفاده می‌کنند — یک بار تنظیم، همیشه استفاده.
+                                </p>
+                            </div>
+                        </div>
+                        <button type="button" x-on:click="relayHelp = true" class="ap-btn-secondary !py-2 shrink-0">
+                            <x-admin-panel::icon name="help-circle" class="size-4" />
+                            آموزش گام‌به‌گام
+                        </button>
+                    </div>
+
+                    {{-- گام‌ها --}}
+                    <div class="grid grid-cols-2 gap-2.5 border-t border-violet-100 p-4 sm:grid-cols-4 sm:p-5 dark:border-violet-500/15">
+                        <div class="rounded-xl border border-line bg-surface p-3 dark:border-night-line dark:bg-night-3">
+                            <span class="flex size-6 items-center justify-center rounded-lg bg-violet-100 text-[11px] font-bold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">۱</span>
+                            <p class="mt-2 text-[12px] font-bold">تنظیم و ذخیره</p>
+                            <p class="mt-0.5 text-[10.5px] leading-5 text-ink-3 dark:text-night-ink-2">سرویس‌ها و کلیدها را این‌جا انتخاب و ذخیره کنید</p>
+                        </div>
+                        <div class="rounded-xl border border-line bg-surface p-3 dark:border-night-line dark:bg-night-3">
+                            <span class="flex size-6 items-center justify-center rounded-lg bg-violet-100 text-[11px] font-bold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">۲</span>
+                            <p class="mt-2 text-[12px] font-bold">دانلود relay.php</p>
+                            <p class="mt-0.5 text-[10.5px] leading-5 text-ink-3 dark:text-night-ink-2">همهٔ تنظیمات داخل فایل پر شده است</p>
+                        </div>
+                        <div class="rounded-xl border border-line bg-surface p-3 dark:border-night-line dark:bg-night-3">
+                            <span class="flex size-6 items-center justify-center rounded-lg bg-violet-100 text-[11px] font-bold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">۳</span>
+                            <p class="mt-2 text-[12px] font-bold">آپلود روی هاست خارج</p>
+                            <p class="mt-0.5 text-[10.5px] leading-5 text-ink-3 dark:text-night-ink-2">public_html هاست خارج از ایران (PHP 7.4+ با cURL)</p>
+                        </div>
+                        <div class="rounded-xl border border-line bg-surface p-3 dark:border-night-line dark:bg-night-3">
+                            <span class="flex size-6 items-center justify-center rounded-lg bg-violet-100 text-[11px] font-bold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">۴</span>
+                            <p class="mt-2 text-[12px] font-bold">اتصال پکیج‌ها</p>
+                            <p class="mt-0.5 text-[10.5px] leading-5 text-ink-3 dark:text-night-ink-2">در تنظیمات پکیج، آدرس رله + کلید رله را بدهید</p>
+                        </div>
+                    </div>
+
+                    <div class="mx-4 mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-800 sm:mx-5 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
+                        <x-admin-panel::icon name="triangle-alert" class="size-4 shrink-0 mt-0.5" />
+                        <p class="text-[11px] leading-6">رله را روی همان هاست ایرانِ فروشگاه قرار <b>ندهید</b> — IP همان ایران است و دوباره 401 می‌گیرید. سرور رله باید PHP 7.4+ با cURL و خارج از ایران باشد.</p>
+                    </div>
+                </div>
+
+                {{-- سرویس‌ها — چند-انتخابی --}}
+                <section class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
+                    <div class="flex flex-wrap items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">
+                        <x-admin-panel::icon name="plug" class="size-4.5 text-violet-600 dark:text-violet-400" />
+                        <h3 class="text-[13px] font-bold">سرویس‌های رله — هر تعداد که می‌خواهید انتخاب کنید</h3>
+                        <span class="ms-auto flex items-center gap-1.5">
+                            <button type="button" wire:click="toggleAllAiRelayProviders(true)" class="rounded-lg border border-line px-2 py-1 text-[10.5px] font-bold text-ink-2 transition hover:bg-surface dark:border-night-line dark:text-night-ink-1 dark:hover:bg-night-3">انتخاب همه</button>
+                            <button type="button" wire:click="toggleAllAiRelayProviders(false)" class="rounded-lg border border-line px-2 py-1 text-[10.5px] font-bold text-ink-2 transition hover:bg-surface dark:border-night-line dark:text-night-ink-1 dark:hover:bg-night-3">هیچ‌کدام</button>
+                        </span>
+                    </div>
+
+                    <div class="space-y-2.5 p-4">
+                        @foreach ($aiRelayProviders as $i => $prov)
+                            <div wire:key="ai-relay-{{ $prov['key'] }}"
+                                 class="rounded-xl border transition {{ $prov['enabled'] ? 'border-violet-300 bg-violet-50/40 dark:border-violet-500/30 dark:bg-violet-500/5' : 'border-line bg-surface dark:border-night-line dark:bg-night-3/40' }}">
+                                <div class="flex flex-wrap items-center gap-2.5 p-3">
+                                    <label class="flex shrink-0 cursor-pointer items-center gap-2">
+                                        {{-- wire:model.live — با تیک‌زدن، فیلدهای آدرس/کلید همان لحظه باز شوند (فاز ۱۲۵) --}}
+                                        <input type="checkbox" wire:model.live="aiRelayProviders.{{ $i }}.enabled"
+                                               class="size-4 rounded border-line accent-violet-600" aria-label="فعال‌سازی {{ $prov['title'] }}">
+                                        <span class="text-[13px] font-bold">{{ $prov['title'] }}</span>
+                                        <span class="rounded-md bg-surface-2 px-1.5 py-0.5 text-[9px] font-bold text-ink-3 dark:bg-night-2 dark:text-night-ink-2" dir="ltr">{{ $prov['key'] }}</span>
+                                    </label>
+
+                                    <span class="ms-auto text-[9.5px] font-semibold text-ink-3 dark:text-night-ink-2">
+                                        @if ($prov['auth'] === 'bearer') احراز: Bearer
+                                        @elseif ($prov['auth'] === 'x-api-key') احراز: x-api-key (Claude)
+                                        @else احراز: ?key= (Gemini)
+                                        @endif
+                                    </span>
+                                </div>
+
+                                @if ($prov['enabled'])
+                                    <div class="grid gap-2.5 border-t border-violet-100 p-3 sm:grid-cols-2 dark:border-violet-500/15">
+                                        <div>
+                                            <label class="mb-1 block text-[11px] font-bold text-ink-2 dark:text-night-ink-1">آدرس پایهٔ مقصد</label>
+                                            <input type="text" dir="ltr" wire:model="aiRelayProviders.{{ $i }}.base_url" class="ap-input !py-2 font-mono text-[11.5px]" aria-label="آدرس پایهٔ {{ $prov['title'] }}">
+                                            @error("aiRelayProviders.{$i}.base_url") <p class="mt-1 text-[10px] font-bold text-red-500">{{ $message }}</p> @enderror
+                                        </div>
+                                        <div>
+                                            <label class="mb-1 flex items-center justify-between text-[11px] font-bold text-ink-2 dark:text-night-ink-1">
+                                                <span>کلید API واقعی سرویس</span>
+                                                @if ($prov['package_key'])
+                                                    <button type="button" wire:click="pullAiRelayKey('{{ $prov['key'] }}')" wire:loading.attr="disabled" wire:target="pullAiRelayKey"
+                                                            class="text-[10px] font-bold text-violet-600 underline decoration-dotted dark:text-violet-400">
+                                                        برداشت از پکیج AI ✓
+                                                    </button>
+                                                @endif
+                                            </label>
+                                            <input type="password" dir="ltr" wire:model="aiRelayProviders.{{ $i }}.api_key" autocomplete="new-password"
+                                                   placeholder="کلید واقعی — فقط داخل فایل رله می‌ماند" class="ap-input !py-2 font-mono text-[11.5px]" aria-label="کلید API {{ $prov['title'] }}">
+                                            @error("aiRelayProviders.{$i}.api_key") <p class="mt-1 text-[10px] font-bold text-red-500">{{ $message }}</p> @enderror
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+
+                        <p class="text-[10.5px] leading-5 text-ink-3 dark:text-night-ink-2">
+                            <b>چند-سرویسی:</b> هر سرویس فعال داخل «همین یک فایل» relay.php قرار می‌گیرد — نیازی به فایل جداگانه برای هر سرویس نیست.
+                            سرویس سفارشی (custom) برای هر گیت‌وی دیگرِ سازگار با OpenAI است؛ آدرس پایهٔ آن را دستی وارد کنید.
+                        </p>
+                    </div>
+                </section>
+
+                {{-- کلید و دامنه و امنیت --}}
+                <section class="overflow-hidden rounded-2xl border border-line dark:border-night-line">
+                    <div class="flex items-center gap-2 border-b border-line bg-surface-2 px-4 py-3 dark:border-night-line dark:bg-night-3/50">
+                        <x-admin-panel::icon name="key-round" class="size-4.5 text-violet-600 dark:text-violet-400" />
+                        <h3 class="text-[13px] font-bold">کلید دسترسی، دامنه و امنیت</h3>
+                    </div>
+                    <div class="grid gap-3 p-4 sm:grid-cols-2">
+                        <div class="sm:col-span-2">
+                            <label class="mb-1 block text-[11px] font-bold text-ink-2 dark:text-night-ink-1">کلید دسترسی رله (RELAY_ACCESS_KEY) — همهٔ سرویس‌ها با همین یک کلید</label>
+                            <div class="flex gap-2">
+                                <input type="text" dir="ltr" wire:model="aiRelayAccessKey" spellcheck="false" class="ap-input !py-2 font-mono text-[12px]" aria-label="کلید دسترسی رله">
+                                <button type="button" wire:click="generateAiRelayKey" class="ap-btn-secondary !py-2 shrink-0">
+                                    <x-admin-panel::icon name="refresh-cw" class="size-3.5" />
+                                    کلید جدید
+                                </button>
+                            </div>
+                            <p class="mt-1 text-[10.5px] text-ink-3 dark:text-night-ink-2">این کلید در فیلد «کلید API» هر سرویسِ پکیج‌ها وارد می‌شود؛ کلیدهای واقعی sk- فقط داخل فایل رله می‌مانند.</p>
+                            @error('aiRelayAccessKey') <p class="mt-1 text-[10px] font-bold text-red-500">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="mb-1 block text-[11px] font-bold text-ink-2 dark:text-night-ink-1">دامنهٔ نصب رله (پس از آپلود)</label>
+                            <input type="text" dir="ltr" wire:model="aiRelayDomain" placeholder="https://relay.example.com" class="ap-input !py-2 font-mono text-[12px]" aria-label="دامنهٔ رله">
+                            <p class="mt-1 text-[10.5px] text-ink-3 dark:text-night-ink-2">برای نمایش آدرس‌های آمادهٔ اتصال — اختیاری.</p>
+                            @error('aiRelayDomain') <p class="mt-1 text-[10px] font-bold text-red-500">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="mb-1 block text-[11px] font-bold text-ink-2 dark:text-night-ink-1">IPهای مجاز (اختیاری — پیشنهادشده)</label>
+                            <textarea rows="2" dir="ltr" wire:model="aiRelayAllowedIps" placeholder="IP پابلیک هاست فروشگاه&#10;5.160.x.x , 79.127.x.x" class="ap-input !py-2 font-mono text-[12px]" aria-label="IPهای مجاز رله"></textarea>
+                            <p class="mt-1 text-[10.5px] text-ink-3 dark:text-night-ink-2">خالی = همه با کلید مجازند. IP هاست فروشگاه را بگذارید تا فقط همان IP اجازه داشته باشد.</p>
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="mb-1 block text-[11px] font-bold text-ink-2 dark:text-night-ink-1">هدرهای عمومی به همهٔ سرویس‌ها (اختیاری)</label>
+                            <textarea rows="2" dir="ltr" wire:model="aiRelayHeaders" placeholder="HTTP-Referer: https://your-shop.ir&#10;X-Title: ShopPro" class="ap-input !py-2 font-mono text-[12px]" aria-label="هدرهای عمومی رله"></textarea>
+                            <p class="mt-1 text-[10.5px] text-ink-3 dark:text-night-ink-2">هر خط «Name: value» — مثلاً برای OpenRouter. هدرهای مخصوص هر سرویس داخل فایل قابل ویرایش است.</p>
+                        </div>
+                    </div>
+                </section>
+
+                {{-- ذخیره و دانلود --}}
+                <div class="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface-2 p-4 dark:border-night-line dark:bg-night-3/50">
+                    <button type="button" wire:click="saveAiRelay" wire:loading.attr="disabled" wire:target="saveAiRelay"
+                            class="ap-btn-primary !py-2.5">
+                        <x-admin-panel::icon name="check-circle" class="size-4" />
+                        ذخیرهٔ تنظیمات رله
+                    </button>
+
+                    <a href="{{ route('np.developer.ai-relay.download') }}" class="ap-btn-secondary !py-2.5">
+                        <x-admin-panel::icon name="download" class="size-4" />
+                        دانلود relay.php آماده
+                    </a>
+
+                    <span class="text-[10.5px] font-semibold text-ink-3 dark:text-night-ink-2">اول «ذخیره»، بعد «دانلود» — فایل از مقادیر ذخیره‌شده ساخته می‌شود.</span>
+                </div>
+
+                {{-- آدرس‌های استفاده در فروشگاه --}}
+                @php
+                    $relayDomain = rtrim(trim((string) \App\Http\Controllers\Back\AiRelayController::summary()['domain']), '/');
+                @endphp
+                @if ($relayDomain !== '' && $this->aiRelayActiveCount > 0)
+                    <section class="overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50/50 dark:border-emerald-500/20 dark:bg-emerald-500/5">
+                        <div class="flex items-center gap-2 border-b border-emerald-100 px-4 py-3 dark:border-emerald-500/15">
+                            <x-admin-panel::icon name="circle-check" class="size-4.5 text-emerald-600 dark:text-emerald-400" />
+                            <h3 class="text-[13px] font-bold">اتصال پکیج‌ها به رله — این مقادیر را در تنظیمات پکیج وارد کنید</h3>
+                        </div>
+                        <div class="space-y-2 p-4">
+                            @foreach ($aiRelayProviders as $prov)
+                                @if ($prov['enabled'])
+                                    @php
+                                        $shopPath = $prov['key'] === 'gemini' ? '/relay.php/'.$prov['key'].'/v1beta' : '/relay.php/'.$prov['key'].'/v1';
+                                    @endphp
+                                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line bg-surface p-3 dark:border-night-line dark:bg-night-3">
+                                        <span class="text-[12px] font-bold">{{ $prov['title'] }}</span>
+                                        <code class="rounded-lg bg-surface-2 px-2 py-1 font-mono text-[11px] text-emerald-700 dark:bg-night-2 dark:text-emerald-300" dir="ltr">{{ $relayDomain.$shopPath }}</code>
+                                        <span class="text-[10.5px] text-ink-3 dark:text-night-ink-2">→ Base URL سرویس؛ کلید API = کلید دسترسی رله</span>
+                                    </div>
+                                @endif
+                            @endforeach
+
+                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line bg-surface p-3 dark:border-night-line dark:bg-night-3">
+                                <span class="text-[12px] font-bold">تست زنده‌بودن رله</span>
+                                <code class="rounded-lg bg-surface-2 px-2 py-1 font-mono text-[11px] text-emerald-700 dark:bg-night-2 dark:text-emerald-300" dir="ltr">{{ $relayDomain }}/relay.php/health</code>
+                                <span class="text-[10.5px] text-ink-3 dark:text-night-ink-2">← در مرورگر باز کنید؛ پاسخ <b dir="ltr">"ok": true</b> یعنی فایل نصب است ✓</span>
+                            </div>
+                        </div>
+                    </section>
+                @endif
+            </div>
+        </div>
+
+        {{-- ═══════════ مودال آموزش رلهٔ هوش مصنوعی (فاز ۱۲۴) ═══════════ --}}
+        <div x-show="relayHelp" x-cloak x-on:keydown.escape.window="relayHelp = false"
+             class="fixed inset-0 z-[99999] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="آموزش رلهٔ هوش مصنوعی">
+            <div class="absolute inset-0 bg-black/55 backdrop-blur-sm" x-show="relayHelp" x-transition.opacity.duration.200ms x-on:click="relayHelp = false"></div>
+            <div x-show="relayHelp" x-transition:enter="transition duration-300 ease-out" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition duration-150 ease-in" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0 scale-95"
+                 class="relative flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-2xl dark:border-night-line dark:bg-night-2">
+
+                {{-- سربرگ مودال --}}
+                <div class="flex items-start justify-between gap-3 border-b border-line bg-gradient-to-l from-violet-50 to-transparent p-5 dark:border-night-line dark:from-violet-500/10">
+                    <div class="flex items-start gap-3">
+                        <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">
+                            <x-admin-panel::icon name="radio" class="size-5" />
+                        </span>
+                        <div>
+                            <h4 class="text-sm font-bold">آموزش نصب رلهٔ سراسری هوش مصنوعی</h4>
+                            <p class="mt-0.5 text-[11px] text-ink-3 dark:text-night-ink-2">رفع ارور 401/403 هاست‌های داخل ایران — ۶ گام ساده، حدود ۱۰ دقیقه</p>
+                        </div>
+                    </div>
+                    <button type="button" x-on:click="relayHelp = false" class="rounded-lg p-1.5 text-ink-3 transition hover:bg-surface-2 dark:text-night-ink-2 dark:hover:bg-night-3" aria-label="بستن">
+                        <x-admin-panel::icon name="x" class="size-4" />
+                    </button>
+                </div>
+
+                {{-- بدن مودال --}}
+                <div class="space-y-3 overflow-y-auto p-5">
+                    @php
+                        $faDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+                    @endphp
+                    @foreach ([
+                        ['t' => 'یک سرور رلهٔ خارج از ایران آماده کنید', 'd' => 'هر سروری با PHP 7.4+ و cURL کافی است: VPS ارزان (آلمان، ترکیه، هلند) یا هاست سی‌پنلی معمولی. همان سروری که برای کارهای دیگر دارید هم می‌شود. رله را روی هاست ایرانِ فروشگاه قرار ندهید — دوباره 401 می‌گیرید.'],
+                        ['t' => 'سرویس‌ها را انتخاب و ذخیره کنید', 'd' => 'در تب «رلهٔ هوش مصنوعی» هر تعداد سرویس را می‌خواهید فعال کنید (OpenAI، Claude، Gemini، DeepSeek و ...) — همه داخل یک فایل قرار می‌گیرند. کلید واقعی هر سرویس را وارد کنید یا با «برداشت از پکیج AI» کلید ذخیره‌شده را بیاورید، سپس ذخیره کنید.'],
+                        ['t' => 'فایل relay.php را دانلود و آپلود کنید', 'd' => 'دکمهٔ «دانلود relay.php آماده» را بزنید — همهٔ مقادیر (کلید رله، سرویس‌ها، IPهای مجاز) از قبل داخل فایل پر شده‌اند. فایل را در public_html هاست خارجی آپلود کنید.'],
+                        ['t' => 'زنده‌بودن رله را تست کنید', 'd' => 'آدرس https://دامنه-رله.ir/relay.php/health را در مرورگر باز کنید — اگر پاسخ "ok": true دیدید، فایل نصب است ✓'],
+                        ['t' => 'پکیج‌ها را به رله وصل کنید', 'd' => 'در تنظیمات هر پکیج (مثلاً هوش مصنوعی ← تب سرویس‌ها): آدرس پایهٔ سرویس را به https://دامنه-رله.ir/relay.php/{provider}/v1 تغییر دهید و در فیلد کلید API، همان کلید دسترسی رله را بگذارید. مدل را همان مدل سرویس مقصد انتخاب کنید.'],
+                        ['t' => 'Fallback اطمینان (اختیاری ولی پیشنهادی)', 'd' => 'یک سرویس دوم (مثل DeepSeek یا OpenRouter که معمولاً از ایران در دسترس‌اند) را هم روشن نگه دارید تا اگر رله موقتاً در دسترس نبود، زنجیرهٔ Fallback خودکار سراغ آن برود.'],
+                    ] as $stepIndex => $step)
+                        <div class="flex gap-3 rounded-2xl border border-line p-3.5 dark:border-night-line">
+                            <span class="flex size-7 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-xs font-bold text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">{{ $faDigits[$stepIndex] ?? ($stepIndex + 1) }}</span>
+                            <div class="min-w-0">
+                                <p class="text-[12.5px] font-bold">{{ $step['t'] }}</p>
+                                <p class="mt-1 text-[11.5px] leading-6 text-ink-3 dark:text-night-ink-2">{{ $step['d'] }}</p>
+                            </div>
+                        </div>
+                    @endforeach
+
+                    <div class="flex items-start gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5 text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300">
+                        <x-admin-panel::icon name="shield" class="size-4 shrink-0 mt-0.5" />
+                        <p class="text-[11px] leading-6"><b>امنیت:</b> کلیدهای واقعی فقط داخل فایل روی رله می‌مانند و از فروشگاه پنهان‌اند · رله فقط HTTPS پاسخ می‌دهد · فقط مسیرهای مجاز فوروارد می‌شوند · IP هاست فروشگاه را در «IPهای مجاز» بگذارید.</p>
+                    </div>
+                </div>
+
+                {{-- پایین مودال --}}
+                <div class="flex items-center justify-between gap-3 border-t border-line bg-surface-2 p-4 dark:border-night-line dark:bg-night-3/50">
+                    <p class="text-[10.5px] text-ink-3 dark:text-night-ink-2">این رله سراسری است — همهٔ پکیج‌های AI فروشگاه از همان استفاده می‌کنند و نیازی به تکرار در هیچ پکیجی نیست.</p>
+                    <button type="button" x-on:click="relayHelp = false" class="ap-btn-primary !py-2 shrink-0">
+                        <x-admin-panel::icon name="check-circle" class="size-4" />
+                        متوجه شدم
+                    </button>
+                </div>
             </div>
         </div>
     </div>

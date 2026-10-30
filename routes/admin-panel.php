@@ -12,6 +12,7 @@
 
 use App\Http\Controllers\AdminPanel\LogoutController;
 use App\Http\Controllers\AdminPanel\MediaController;
+use App\Http\Controllers\Back\AiRelayController;
 use App\Http\Controllers\Back\FormController as LegacyFormController;
 use App\Http\Controllers\Back\OrderController as LegacyOrderController;
 use App\Http\Controllers\Back\RequestDepositAdmin as LegacyRequestDepositController;
@@ -592,6 +593,8 @@ Route::prefix('admin/'.admin_route_prefix())->name('np.')->group(function () {
         Route::get('settings/others', Others::class)->name('settings.others');
         Route::get('settings/sms', SmsSettings::class)->name('settings.sms');
         Route::get('developer', Developer::class)->name('developer.index');
+        // فاز ۱۲۴ — رلهٔ سراسری هوش مصنوعی (چند-سرویسی؛ همهٔ پکیج‌ها از آن استفاده می‌کنند)
+        Route::get('developer/ai-relay/download', [AiRelayController::class, 'download'])->name('developer.ai-relay.download');
         Route::get('bale-settings', BaleSettings::class)->name('bale-settings.index');
 
         /*
