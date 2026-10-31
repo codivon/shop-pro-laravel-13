@@ -682,6 +682,8 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin-old/' . admin_route_prefix(),
 
         // --- آپدیت‌ها ---
         Route::post('check-updates', [PackageController::class, 'checkUpdates'])->name('check-updates');
+        // فاز ۱۳۳ — بررسی نسخه جدید یک ماژول (مودال آپدیت)
+        Route::get('{slug}/check-version', [PackageController::class, 'checkVersion'])->name('check-version');
         Route::post('{slug}/check-purchase', [PackageController::class, 'checkPurchase'])->name('check-purchase');
         // --- نصب ---
         Route::post('{slug}/install', [PackageController::class, 'startInstall'])->name('install');

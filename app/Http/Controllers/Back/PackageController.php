@@ -462,6 +462,66 @@ class PackageController extends Controller
     }
 
     /* ===================================================================
+     *  فاز ۱۳۳ — بررسی نسخه جدید «یک» ماژول (مودال آپدیت صفحهٔ نصب‌شده‌ها)
+     *
+     *  جریان کاربر: کلیک روی «بررسی نسخه جدید» در مودال آپدیت → اتصال به API
+     *  بازار → اگر نسخهٔ جدید بود، دکمه به «بروزرسانی» تبدیل می‌شود.
+     *
+     *  پاسخ متا (نام/تصویر) اختیاری است: شکستِ getPackage نباید جلوی
+     *  نتیجهٔ قطعی checkUpdate را بگیرد (تصویر/نام از کش بازار جایگزین می‌شود).
+     * =================================================================== */
+    public function checkVersion(string $slug): JsonResponse
+    {
+        $installed = InstalledModule::with('cache')->where('slug', $slug)->first();
+
+        if (! $installed) {
+            return response()->json([
+                'success' => false,
+                'message' => 'ماژول نصب نشده است.',
+            ], 404);
+        }
+
+        try {
+            $check = $this->api->checkUpdate($slug, $installed->version);
+
+            $hasUpdate = (bool) ($check['has_update'] ?? false);
+            $latestVersion = $hasUpdate
+                ? (string) ($check['latest_version'] ?? $installed->version)
+                : $installed->version;
+
+            // متای جانبی (نام/تصویر) — fail-safe
+            $meta = null;
+            try {
+                $fresh = $this->api->getPackage($slug);
+                $fresh = $fresh['data'] ?? $fresh;
+                $meta = [
+                    'name'          => $fresh['name'] ?? null,
+                    'thumbnail_url' => $fresh['thumbnail_url'] ?? ($fresh['thumbnail'] ?? null),
+                ];
+            } catch (\Throwable $metaError) {
+                Log::info('Update modal: package meta fetch skipped', [
+                    'slug'  => $slug,
+                    'error' => $metaError->getMessage(),
+                ]);
+            }
+
+            return response()->json([
+                'success'         => true,
+                'has_update'      => $hasUpdate,
+                'current_version' => $installed->version,
+                'latest_version'  => $latestVersion,
+                'changelog'       => $check['changelog'] ?? null,
+                'package'         => $meta,
+            ]);
+        } catch (RuntimeException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /* ===================================================================
      *  Private Helpers
      * =================================================================== */
     private function dispatchInstall(string $slug, ?string $version, ?string $licenseKey, ?int $pricingPlanId): JsonResponse

@@ -175,6 +175,16 @@
                                 @endif
 
                                 <div class="pkg-installed-actions">
+                                    {{-- فاز ۱۳۳ — دکمهٔ «آپدیت ماژول» → مودال بررسی و بروزرسانی --}}
+                                    <button type="button"
+                                            class="pkg-modal-btn pkg-modal-btn-warning btn-update-module"
+                                            data-slug="{{ $module->slug }}"
+                                            data-name="{{ $module->displayName() }}"
+                                            data-version="{{ $module->version }}"
+                                            data-thumbnail="{{ $module->cache->thumbnail ?? '' }}"
+                                            @if ($module->status === 'updating') disabled @endif>
+                                        <i class="feather icon-refresh-cw"></i> آپدیت ماژول
+                                    </button>
                                     <button type="button"
                                             class="pkg-modal-btn pkg-modal-btn-outline btn-show-modal"
                                             data-slug="{{ $module->slug }}">
@@ -241,6 +251,86 @@
         </div>
     </div>
 
+    {{-- ======================
+         فاز ۱۳۳ — مودال آپدیت ماژول (بررسی نسخه جدید ← بروزرسانی)
+         ====================== --}}
+    <div class="modal fade pkg-update-modal" id="package-update-modal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content pkg-upm-content">
+
+                {{-- Header --}}
+                <div class="pkg-upm-header">
+                    <div class="pkg-upm-header-glow"></div>
+                    <div class="pkg-upm-header-icon">
+                        <i class="feather icon-refresh-cw"></i>
+                    </div>
+                    <div class="pkg-upm-header-text">
+                        <h5 class="pkg-upm-title">آپدیت ماژول</h5>
+                        <small class="pkg-upm-subtitle">بررسی نسخه جدید و بروزرسانی پکیج</small>
+                    </div>
+                    <button type="button" class="pkg-upm-close" data-dismiss="modal" aria-label="بستن">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                {{-- Body --}}
+                <div class="pkg-upm-body">
+
+                    {{-- کارت پکیج: تصویر + نام + نسخه --}}
+                    <div class="pkg-upm-package">
+                        <div class="pkg-upm-thumb" id="upm-thumb">
+                            <i class="feather icon-package"></i>
+                        </div>
+                        <div class="pkg-upm-package-info">
+                            <h6 class="pkg-upm-package-name" id="upm-name">—</h6>
+                            <div class="pkg-upm-versions">
+                                <span class="pkg-upm-version-chip" id="upm-version-chip">
+                                    <i class="feather icon-git-commit"></i>
+                                    نسخه نصب‌شده: <strong>v<span id="upm-version">—</span></strong>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ناحیه وضعیت (state-driven) --}}
+                    <div class="pkg-upm-state" id="upm-state">
+                        <div class="pkg-upm-hint">
+                            <div class="pkg-upm-hint-icon">
+                                <i class="feather icon-search"></i>
+                            </div>
+                            <div class="pkg-upm-hint-text">
+                                <strong>بررسی نسخه جدید</strong>
+                                <span>برای اتصال به سرور پکیج‌ها و اطلاع از وجود نسخه جدید، روی دکمه «بررسی نسخه جدید» کلیک کنید.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- تغییرات نسخه جدید (بعد از بررسی) --}}
+                    <div class="pkg-upm-changelog" id="upm-changelog" style="display:none;">
+                        <div class="pkg-upm-changelog-title">
+                            <i class="feather icon-file-text"></i> تغییرات نسخه جدید
+                        </div>
+                        <div class="pkg-upm-changelog-body" id="upm-changelog-body"></div>
+                    </div>
+
+                </div>
+
+                {{-- Footer --}}
+                <div class="pkg-upm-footer">
+                    <button type="button" class="pkg-upm-btn pkg-upm-btn-ghost" data-dismiss="modal" id="upm-btn-cancel">
+                        <i class="feather icon-x"></i> انصراف
+                    </button>
+                    <button type="button" class="pkg-upm-btn pkg-upm-btn-check" id="upm-btn-check" data-slug="">
+                        <span class="pkg-upm-btn-spinner spinner-border spinner-border-sm" style="display:none;"></span>
+                        <i class="feather icon-search"></i>
+                        <span id="upm-btn-check-text">بررسی نسخه جدید</span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
     {{-- Confirm uninstall modal --}}
     <div class="modal fade" id="uninstall-modal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
@@ -278,19 +368,25 @@
 
 @include('back.partials.plugins', ['plugins' => ['sweetalert2']])
 
+@push('styles')
+    <link rel="stylesheet" type="text/css" href="{{ asset('back/assets/css/pages/packages/update-modal.css') }}?v=1">
+@endpush
+
 @push('scripts')
     <script>
         window.csrfToken = '{{ csrf_token() }}';
         window.routes = {
-            show:      '{{ route("admin.packages.show", ":slug") }}',
-            install:   '{{ route("admin.packages.install", ":slug") }}',
-            update:    '{{ route("admin.packages.update", ":slug") }}',
-            uninstall: '{{ route("admin.packages.uninstall", ":slug") }}',
-            toggle:    '{{ route("admin.packages.toggle", ":slug") }}',
-            status:    '{{ route("admin.packages.status", ":slug") }}',
+            show:          '{{ route("admin.packages.show", ":slug") }}',
+            install:       '{{ route("admin.packages.install", ":slug") }}',
+            update:        '{{ route("admin.packages.update", ":slug") }}',
+            uninstall:     '{{ route("admin.packages.uninstall", ":slug") }}',
+            toggle:        '{{ route("admin.packages.toggle", ":slug") }}',
+            status:        '{{ route("admin.packages.status", ":slug") }}',
+            'check-version': '{{ route("admin.packages.check-version", ":slug") }}',
         };
     </script>
     <script src="{{ asset('back/assets/js/pages/packages/installed.js') }}?v=3"></script>
-    <script src="{{ asset('back/assets/js/pages/packages/modal.js') }}?v=4"></script>
+    <script src="{{ asset('back/assets/js/pages/packages/modal.js') }}?v=5"></script>
     <script src="{{ asset('back/assets/js/pages/packages/progress.js') }}?v=1"></script>
+    <script src="{{ asset('back/assets/js/pages/packages/update-modal.js') }}?v=1"></script>
 @endpush

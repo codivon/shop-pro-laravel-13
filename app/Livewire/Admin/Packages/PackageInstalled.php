@@ -7,6 +7,7 @@ use App\Livewire\Admin\Packages\Concerns\InteractsWithPackages;
 use App\Models\InstalledModule;
 use App\Models\InstalledTheme;
 use App\Services\ModuleRecoveryService;
+use App\Services\PackageApiService;
 use App\Services\PackageInstallerService;
 use App\Support\MarketplaceSettings;
 use Livewire\Attributes\Title;
@@ -24,6 +25,28 @@ class PackageInstalled extends Component
 
     /** حذف ماژول (پورت uninstall قدیمی) */
     public ?string $confirmingUninstall = null;
+
+    /* ---------------- فاز ۱۳۳ — مودال آپدیت ماژول ---------------- */
+
+    /** باز بودن مودال آپدیت (entangle با Alpine) */
+    public bool $updatingModal = false;
+
+    /** ماژولی که مودال آپدیتش باز است */
+    public ?string $updatingSlug = null;
+
+    /**
+     * دادهٔ مودال آپدیت — state:
+     *   idle (اول کار) | has_update (نسخهٔ جدید یافت شد) | up_to_date (به‌روز) | error
+     */
+    public array $updateModal = [
+        'name'           => '',
+        'version'        => '',
+        'thumbnail'      => '',
+        'latest_version' => null,
+        'changelog'      => [],
+        'state'          => 'idle',
+        'message'        => null,
+    ];
 
     public function mount(): void
     {
@@ -45,16 +68,25 @@ class PackageInstalled extends Component
     {
         auth('adminPanel')->user()?->can('packages.installed') ?: abort(403);
 
+        $this->dispatchUpdateJob($slug);
+    }
+
+    /**
+     * گیت‌های آپدیت + dispatch جاب — نتیجه: true = جاب در صف قرار گرفت.
+     * (updateModule قدیمی و مودال جدید هر دو از همین مسیر می‌روند — فاز ۱۳۳)
+     */
+    private function dispatchUpdateJob(string $slug): bool
+    {
         $installed = InstalledModule::where('slug', $slug)->first();
 
         if (!$installed) {
             $this->dispatch('toast', message: 'ماژول نصب نشده است.', type: 'error');
-            return;
+            return false;
         }
 
         if ($installed->status === InstalledModule::STATUS_UPDATING) {
             $this->dispatch('toast', message: 'آپدیت قبلی همچنان در حال اجراست.', type: 'error');
-            return;
+            return false;
         }
 
         /*
@@ -63,7 +95,7 @@ class PackageInstalled extends Component
          */
         if (! MarketplaceSettings::marketEnabled() || ! MarketplaceSettings::allowInstall()) {
             $this->dispatch('toast', message: MarketplaceSettings::installDisabledMessage(), type: 'error');
-            return;
+            return false;
         }
 
         /*
@@ -82,17 +114,145 @@ class PackageInstalled extends Component
 
         if ($locked) {
             $this->dispatch('toast', message: 'یک نصب دیگر در جریان است؛ تا پایان آن امکان شروع نصب پکیج یا قالب دیگری وجود ندارد.', type: 'error');
-            return;
+            return false;
         }
 
         if ($installed->isExpired()) {
             $this->dispatch('toast', message: 'لایسنس ماژول منقضی شده است. ابتدا آن را تمدید کنید.', type: 'error');
-            return;
+            return false;
         }
 
         UpdatePackageJob::dispatch($slug, auth('adminPanel')->id());
 
         $this->dispatch('toast', message: 'آپدیت در صف پردازش قرار گرفت.', type: 'success');
+
+        return true;
+    }
+
+    /* ---------------- فاز ۱۳۳ — جریان مودال آپدیت (بررسی نسخه ← بروزرسانی) ---------------- */
+
+    /** باز کردن مودال آپدیت — نمایش نام/تصویر/نسخهٔ پکیج (از کش بازار) */
+    public function openUpdateModal(string $slug): void
+    {
+        auth('adminPanel')->user()?->can('packages.installed') ?: abort(403);
+
+        $installed = InstalledModule::with('cache')->where('slug', $slug)->first();
+
+        if (! $installed) {
+            $this->dispatch('toast', message: 'ماژول نصب نشده است.', type: 'error');
+            return;
+        }
+
+        $this->updatingSlug = $slug;
+        $this->updateModal = [
+            'name'           => $installed->displayName(),
+            'version'        => (string) $installed->version,
+            'thumbnail'      => (string) ($installed->cache->thumbnail ?? ''),
+            'latest_version' => $installed->cache->latest_version ?? null,
+            'changelog'      => [],
+            'state'          => 'idle',
+            'message'        => null,
+        ];
+        $this->updatingModal = true;
+    }
+
+    /**
+     * «بررسی نسخه جدید» — اتصال به API بازار برای یک ماژول.
+     * نتیجه در state مودال ثبت می‌شود: has_update / up_to_date / error.
+     */
+    public function checkNewVersion(): void
+    {
+        auth('adminPanel')->user()?->can('packages.installed') ?: abort(403);
+
+        $slug = (string) $this->updatingSlug;
+
+        if ($slug === '') {
+            return;
+        }
+
+        $installed = InstalledModule::where('slug', $slug)->first();
+
+        if (! $installed) {
+            $this->updatingModal = false;
+            $this->dispatch('toast', message: 'ماژول نصب نشده است.', type: 'error');
+            return;
+        }
+
+        try {
+            $check = app(PackageApiService::class)->checkUpdate($slug, $installed->version);
+
+            $hasUpdate = (bool) ($check['has_update'] ?? false);
+
+            $this->updateModal['state']          = $hasUpdate ? 'has_update' : 'up_to_date';
+            $this->updateModal['latest_version'] = $hasUpdate
+                ? (string) ($check['latest_version'] ?? $installed->version)
+                : $installed->version;
+            $this->updateModal['changelog']      = $hasUpdate
+                ? $this->normalizeChangelog($check['changelog'] ?? null)
+                : [];
+            $this->updateModal['message']        = null;
+        } catch (Throwable $e) {
+            $this->updateModal['state']   = 'error';
+            $this->updateModal['message'] = $e->getMessage();
+        }
+    }
+
+    /**
+     * «بروزرسانی» — همان گیت‌ها و dispatch جاب updateModule؛
+     * با موفقیت مودال بسته می‌شود.
+     */
+    public function confirmUpdate(): void
+    {
+        $slug = (string) $this->updatingSlug;
+
+        if ($slug === '') {
+            $this->updatingModal = false;
+            return;
+        }
+
+        if ($this->dispatchUpdateJob($slug)) {
+            $this->updatingModal = false;
+            $this->updatingSlug  = null;
+        }
+    }
+
+    /** آیا ماژولی در وضعیت «در حال بروزرسانی» است؟ (برای wire:poll زندهٔ جدول) */
+    public function getHasUpdatingProperty(): bool
+    {
+        return InstalledModule::query()
+            ->where('status', InstalledModule::STATUS_UPDATING)
+            ->exists();
+    }
+
+    /** نرمال‌سازی changelog API به آرایه‌ای از رشته‌ها برای نمایش در مودال */
+    private function normalizeChangelog(mixed $changelog): array
+    {
+        if (empty($changelog)) {
+            return [];
+        }
+
+        if (is_string($changelog)) {
+            return [$changelog];
+        }
+
+        $toStr = fn ($item) => is_string($item) ? $item : (string) json_encode($item, JSON_UNESCAPED_UNICODE);
+
+        $out = [];
+
+        if (array_is_list($changelog)) {
+            foreach ($changelog as $item) {
+                $out[] = $toStr($item);
+            }
+
+            return $out;
+        }
+
+        foreach ($changelog as $ver => $items) {
+            $text = is_array($items) ? implode(' — ', array_map($toStr, $items)) : $toStr($items);
+            $out[] = 'نسخه '.$ver.': '.$text;
+        }
+
+        return $out;
     }
 
     /* ---------------- حذف ماژول (پورت ۱:۱ uninstall قدیمی) ---------------- */

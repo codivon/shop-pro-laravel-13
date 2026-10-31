@@ -157,18 +157,28 @@
 
         $(document).on('click', '#modal-btn-update', function () {
             const slug = $(this).data('slug');
-            Swal.fire({ title: 'در حال ارسال...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            $.ajax({
-                url: route('update', slug), method: 'POST', data: { _token: csrfToken },
-                success: function (resp) {
-                    Swal.close();
-                    if (resp.success) {
-                        Swal.fire({ icon: 'success', title: 'موفق', text: resp.message, timer: 1500, showConfirmButton: false });
-                        setTimeout(function () { openDetailModal(slug); }, 1600);
-                    } else { Swal.fire({ icon: 'error', title: 'خطا', text: resp.message }); }
-                },
-                error: function (xhr) { Swal.close(); Swal.fire({ icon: 'error', title: 'خطا', text: xhr.responseJSON?.message }); }
-            });
+            // فاز ۱۳۳ — جریان یکپارچه: دکمهٔ آپدیت مودال جزئیات هم مودال
+            // «بررسی نسخه جدید ← بروزرسانی» را باز می‌کند (نه dispatch مستقیم)
+            hideModal($('#package-detail-modal'));
+            setTimeout(function () {
+                if (window.PkgUpdateModal) {
+                    window.PkgUpdateModal.open(slug);
+                } else {
+                    // fallback: رفتار قدیمی
+                    Swal.fire({ title: 'در حال ارسال...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    $.ajax({
+                        url: route('update', slug), method: 'POST', data: { _token: csrfToken },
+                        success: function (resp) {
+                            Swal.close();
+                            if (resp.success) {
+                                Swal.fire({ icon: 'success', title: 'موفق', text: resp.message, timer: 1500, showConfirmButton: false });
+                                setTimeout(function () { openDetailModal(slug); }, 1600);
+                            } else { Swal.fire({ icon: 'error', title: 'خطا', text: resp.message }); }
+                        },
+                        error: function (xhr) { Swal.close(); Swal.fire({ icon: 'error', title: 'خطا', text: xhr.responseJSON?.message }); }
+                    });
+                }
+            }, 300);
         });
 
         $(document).on('click', '#modal-btn-toggle', function () {
