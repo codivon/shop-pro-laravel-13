@@ -24,6 +24,7 @@ use Illuminate\Support\Str;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestDox;
+use Symfony\Component\Routing\Exception\RouteNotFoundException;
 use Tests\Support\ShopTestSetup;
 use Tests\TestCase;
 
@@ -120,19 +121,18 @@ class Phase106Test extends TestCase
     /* ================= 1) راهنمای کمیسیون ================= */
 
     #[Test]
-    #[TestDox('روت seller.commission.guide دیگر 500 نمی‌دهد و نرخ‌های کمیسیون را نشان می‌دهد')]
+    #[TestDox('روت تکراری seller.commission.guide (فاز ۱۲۱ حذف شد) دیگر وجود ندارد و منبع واحد seller.commission سبز است')]
     public function seller_commission_guide_renders(): void
     {
         $seller = $this->newSeller();
         $this->actingAs($seller, 'seller');
 
-        $response = $this->get(route('seller.commission.guide'));
+        // فاز ۱۲۱ — صفحهٔ تکراری «نرخ کمیسیون» (commission-guide) عمداً حذف شد؛
+        // منبع واحد نرخ‌ها فقط seller.commission است. (مسیر روت‌ها: routes/seller.php)
+        $this->expectException(RouteNotFoundException::class);
+        route('seller.commission.guide');
 
-        $response->assertOk();
-        // همان محتوای صفحهٔ کمیسیون (نرخ‌های مؤثر دسته‌بندی‌ها)
-        $response->assertSee('جدول کمیسیون دسته‌بندی‌ها', false);
-
-        // و روت اصلی کمیسیون هم سرِ جای خودش سبز بماند
+        // و روت اصلی کمیسیون با نرخ‌های مؤثر دسته‌بندی‌ها سرِ جای خودش سبز بماند
         $this->get(route('seller.commission'))->assertOk();
     }
 

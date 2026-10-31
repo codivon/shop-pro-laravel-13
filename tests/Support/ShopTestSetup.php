@@ -18,6 +18,7 @@ use App\Models\Tariff;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -44,6 +45,17 @@ trait ShopTestSetup
         // کش options بین تست‌ها (array driver) را پاک می‌کنیم تا تغییرات
         // یک تست روی تست بعدی اثر نگذارد
         Cache::flush();
+
+        // درس CI (فاز ۱۴۰): سفارش‌ها/پرداخت‌ها به province_id=1 و city_id=1
+        // تکیه دارند که فقط روی دیتابیس سیدشده برقرار است. این گارد تست‌ها را
+        // مستقل از وضعیت seed میزبان می‌کند (فلسفهٔ همین trait: «مستقل از seed»).
+        // insertOrIgnore + explicit id = داخل تراکنش هر تست و rollback کامل.
+        DB::table('provinces')->insertOrIgnore([
+            ['id' => 1, 'name' => 'تهران', 'latitude' => '35.55', 'longitude' => '51.79'],
+        ]);
+        DB::table('cities')->insertOrIgnore([
+            ['id' => 1, 'province_id' => 1, 'name' => 'تهران', 'latitude' => '35.55', 'longitude' => '51.79'],
+        ]);
     }
 
     /**
@@ -55,16 +67,16 @@ trait ShopTestSetup
         $password = $attributes['password'] ?? 'secret1234';
         unset($attributes['password']);
 
-        $mobile = '0912' . str_pad((string) random_int(0, 9999999), 7, '0', STR_PAD_LEFT);
+        $mobile = '0912'.str_pad((string) random_int(0, 9999999), 7, '0', STR_PAD_LEFT);
 
         $defaults = [
-            'username'     => $attributes['username'] ?? $mobile,
-            'mobile'       => $attributes['mobile'] ?? $mobile,
-            'email'        => $attributes['email'] ?? $mobile . '@test.ir',
-            'password'     => Hash::make($password),
-            'level'        => 'user',
-            'status'       => 1,
-            'verified_at'  => now(),
+            'username' => $attributes['username'] ?? $mobile,
+            'mobile' => $attributes['mobile'] ?? $mobile,
+            'email' => $attributes['email'] ?? $mobile.'@test.ir',
+            'password' => Hash::make($password),
+            'level' => 'user',
+            'status' => 1,
+            'verified_at' => now(),
         ];
 
         return User::create(array_merge($defaults, $attributes));
@@ -86,9 +98,9 @@ trait ShopTestSetup
     protected function newCategory(array $attributes = []): Category
     {
         return Category::create(array_merge([
-            'title'     => 'دسته تست ' . Str::random(6),
-            'slug'      => 'cat-' . Str::random(8),
-            'type'      => 'productcat',
+            'title' => 'دسته تست '.Str::random(6),
+            'slug' => 'cat-'.Str::random(8),
+            'type' => 'productcat',
             'published' => true,
         ], $attributes));
     }
@@ -102,21 +114,21 @@ trait ShopTestSetup
         unset($attributes['category']);
 
         $defaults = [
-            'product_id'        => 'P' . Str::random(10),
-            'title'             => 'محصول تست ' . Str::random(8),
-            'title_en'          => 'Test Product ' . Str::random(6),
-            'slug'              => 'product-' . Str::random(10),
-            'type'              => 'physical',
-            'category_id'       => $category->id,
-            'price_type'        => 'single-price',
-            'weight'            => 500,
-            'description'       => 'توضیحات محصول تستی',
+            'product_id' => 'P'.Str::random(10),
+            'title' => 'محصول تست '.Str::random(8),
+            'title_en' => 'Test Product '.Str::random(6),
+            'slug' => 'product-'.Str::random(10),
+            'type' => 'physical',
+            'category_id' => $category->id,
+            'price_type' => 'single-price',
+            'weight' => 500,
+            'description' => 'توضیحات محصول تستی',
             'short_description' => 'خلاصه محصول تستی',
-            'special'           => false,
-            'published'         => true,
-            'status'            => 'Accept',
-            'sell'              => 0,
-            'view'              => 0,
+            'special' => false,
+            'published' => true,
+            'status' => 'Accept',
+            'sell' => 0,
+            'view' => 0,
         ];
 
         $product = Product::create(array_merge($defaults, $attributes));
@@ -126,9 +138,9 @@ trait ShopTestSetup
         $product->categories()->attach($category->id);
 
         $this->newPrice($product, array_merge([
-            'price'     => 100000,
-            'discount'  => 0,
-            'stock'     => 10,
+            'price' => 100000,
+            'discount' => 0,
+            'stock' => 10,
             'published' => true,
         ], $priceAttributes));
 
@@ -153,14 +165,14 @@ trait ShopTestSetup
         $price = $attributes['price'] ?? 100000;
 
         return Price::create(array_merge([
-            'product_id'     => $product->id,
-            'price'          => $price,
+            'product_id' => $product->id,
+            'price' => $price,
             'discount_price' => $price,
-            'regular_price'  => $price,
-            'discount'       => 0,
-            'stock'          => 10,
-            'published'      => true,
-            'seller_id'      => null,
+            'regular_price' => $price,
+            'discount' => 0,
+            'stock' => 10,
+            'published' => true,
+            'seller_id' => null,
         ], $attributes));
     }
 
@@ -170,8 +182,8 @@ trait ShopTestSetup
     protected function newBrand(array $attributes = []): Brand
     {
         return Brand::create(array_merge([
-            'name' => 'برند تست ' . Str::random(6),
-            'slug' => 'brand-' . Str::random(8),
+            'name' => 'برند تست '.Str::random(6),
+            'slug' => 'brand-'.Str::random(8),
         ], $attributes));
     }
 
@@ -181,11 +193,11 @@ trait ShopTestSetup
     protected function newCity(): array
     {
         $province = Province::create([
-            'name' => 'استان تست ' . Str::random(6),
+            'name' => 'استان تست '.Str::random(6),
         ]);
 
         $city = City::create([
-            'name'        => 'شهر تست ' . Str::random(6),
+            'name' => 'شهر تست '.Str::random(6),
             'province_id' => $province->id,
         ]);
 
@@ -198,25 +210,25 @@ trait ShopTestSetup
      */
     protected function newAddress(User $user, array $attributes = [], ?Province $province = null, ?City $city = null): Address
     {
-        if (!$province || !$city) {
+        if (! $province || ! $city) {
             [$province, $city] = $this->newCity();
         }
 
         return Address::create(array_merge([
-            'user_id'        => $user->id,
-            'fullname'       => 'کاربر تست',
-            'mobile'         => substr($user->username, 0, 11),
-            'province_id'    => $province->id,
-            'city_id'        => $city->id,
-            'province_name'  => $province->name,
-            'city_name'      => $city->name,
-            'postal_code'    => '1234567890',
-            'address'        => 'آدرس کامل تستی',
+            'user_id' => $user->id,
+            'fullname' => 'کاربر تست',
+            'mobile' => substr($user->username, 0, 11),
+            'province_id' => $province->id,
+            'city_id' => $city->id,
+            'province_name' => $province->name,
+            'city_name' => $city->name,
+            'postal_code' => '1234567890',
+            'address' => 'آدرس کامل تستی',
             'buildingNumber' => 1,
-            'unit'           => 2,
-            'lat'            => '35.7',
-            'lng'            => '51.4',
-            'active'         => 1,
+            'unit' => 2,
+            'lat' => '35.7',
+            'lng' => '51.4',
+            'active' => 1,
         ], $attributes));
     }
 
@@ -228,31 +240,31 @@ trait ShopTestSetup
         [$province, $city] = $this->newCity();
 
         $carrier = Carrier::create(array_merge([
-            'title'              => 'پست تست ' . Str::random(4),
-            'province_id'        => $province->id,
-            'city_id'            => $city->id,
-            'is_active'          => true,
+            'title' => 'پست تست '.Str::random(4),
+            'province_id' => $province->id,
+            'city_id' => $city->id,
+            'is_active' => true,
             'max_package_weight' => 10000,
-            'extra_cost'         => null,
-            'carrige_forward'    => false,
-            'covered_cities'     => 'all',
+            'extra_cost' => null,
+            'carrige_forward' => false,
+            'covered_cities' => 'all',
             'delivery_time_type' => 'default',
             'start_days_after_order' => 1,
         ], $attributes));
 
         // تعرفه درون استانی: تا ۱۰ کیلوگرم — 40,000 تومان
         Tariff::create(array_merge([
-            'carrier_id'    => $carrier->id,
-            'type'          => 'within_province',
-            'max_weight'    => 10000,
+            'carrier_id' => $carrier->id,
+            'type' => 'within_province',
+            'max_weight' => 10000,
             'shipping_cost' => 40000,
         ], $tariffAttributes));
 
         // تعرفه برون استانی: تا ۱۰ کیلوگرم — 60,000 تومان
         Tariff::create(array_merge([
-            'carrier_id'    => $carrier->id,
-            'type'          => 'extra_province',
-            'max_weight'    => 10000,
+            'carrier_id' => $carrier->id,
+            'type' => 'extra_province',
+            'max_weight' => 10000,
             'shipping_cost' => 60000,
         ], $tariffAttributes));
 
@@ -265,7 +277,7 @@ trait ShopTestSetup
     protected function newGateway(string $key = 'zarinpal'): Gateway
     {
         $gateway = Gateway::firstOrNew(['key' => $key]);
-        $gateway->name = 'درگاه تست ' . $key;
+        $gateway->name = 'درگاه تست '.$key;
         $gateway->is_active = true;
         $gateway->save();
 
@@ -278,13 +290,13 @@ trait ShopTestSetup
     protected function newDiscount(array $attributes = []): Discount
     {
         return Discount::create(array_merge([
-            'title'      => 'تخفیف تست ' . Str::random(4),
-            'code'       => 'SAVE-' . Str::random(6),
+            'title' => 'تخفیف تست '.Str::random(4),
+            'code' => 'SAVE-'.Str::random(6),
             'start_date' => now()->subDay(),
-            'end_date'   => now()->addDays(7),
-            'type'       => 'percent',
-            'amount'     => 10,
-            'published'  => true,
+            'end_date' => now()->addDays(7),
+            'type' => 'percent',
+            'amount' => 10,
+            'published' => true,
             'include_type' => 'all',
             'exclude_type' => 'none',
         ], $attributes));
@@ -315,8 +327,8 @@ trait ShopTestSetup
             $cart->products()->attach([
                 $product->id => [
                     'product_id' => $product->id,
-                    'quantity'   => $quantity,
-                    'price_id'   => $price->id,
+                    'quantity' => $quantity,
+                    'price_id' => $price->id,
                 ],
             ]);
         }
@@ -330,7 +342,7 @@ trait ShopTestSetup
     protected function newReturnReason(): ReturnReason
     {
         return ReturnReason::create([
-            'title'   => 'مغایرت کالا',
+            'title' => 'مغایرت کالا',
             'is_active' => true,
         ]);
     }
@@ -343,26 +355,26 @@ trait ShopTestSetup
         $price = $product->prices()->first();
 
         $order = $user->orders()->create(array_merge([
-            'name'         => 'خریدار تست',
-            'mobile'       => $user->username,
-            'province_id'  => 1,
-            'city_id'      => 1,
-            'postal_code'  => '1234567890',
-            'address'      => 'آدرس تست',
+            'name' => 'خریدار تست',
+            'mobile' => $user->username,
+            'province_id' => 1,
+            'city_id' => 1,
+            'postal_code' => '1234567890',
+            'address' => 'آدرس تست',
             'shipping_cost' => 0,
-            'price'        => $price->salePrice(),
-            'status'       => 'paid',
-            'paid_at'      => now(),
+            'price' => $price->salePrice(),
+            'status' => 'paid',
+            'paid_at' => now(),
         ], $orderAttributes));
 
         $item = $order->items()->create(array_merge([
             'product_id' => $product->id,
-            'title'      => $product->title,
-            'price'      => $price->salePrice(),
+            'title' => $product->title,
+            'price' => $price->salePrice(),
             'real_price' => $price->price,
-            'quantity'   => 1,
-            'discount'   => 0,
-            'price_id'   => $price->id,
+            'quantity' => 1,
+            'discount' => 0,
+            'price_id' => $price->id,
             'product_type' => $product->type,
             'shipping_status' => 'w-pending',
         ], $itemAttributes));

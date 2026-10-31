@@ -12,6 +12,8 @@ use App\Services\PackageInstallerService;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
@@ -45,7 +47,7 @@ class ThemeMarketTest extends TestCase
 
         // مسیر قالب‌ها و به‌روزرسانی فریم‌ورک در تست‌ها ایزوله می‌شود
         config([
-            'packages.themes.path'               => $this->workspace.'/themes',
+            'packages.themes.path' => $this->workspace.'/themes',
             'packages.themes.refresh_after_install' => false,
         ]);
 
@@ -75,12 +77,12 @@ class ThemeMarketTest extends TestCase
     {
         return Admin::create([
             'first_name' => 'تست',
-            'last_name'  => 'سازنده',
-            'username'   => 'creator-'.random_int(10000, 99999),
-            'email'      => 'creator-'.random_int(10000, 99999).'@test.ir',
-            'password'   => \Illuminate\Support\Facades\Hash::make('secret1234'),
-            'level'      => 'creator',
-            'status'     => 'ACTIVE',
+            'last_name' => 'سازنده',
+            'username' => 'creator-'.random_int(10000, 99999),
+            'email' => 'creator-'.random_int(10000, 99999).'@test.ir',
+            'password' => Hash::make('secret1234'),
+            'level' => 'creator',
+            'status' => 'ACTIVE',
         ]);
     }
 
@@ -169,7 +171,7 @@ class ThemeMarketTest extends TestCase
             '*/api/v1/templates/download/dl_token' => Http::response($zipBytes),
         ]);
 
-        $installer = new PackageInstallerService(new PackageApiService, new \Illuminate\Filesystem\Filesystem);
+        $installer = new PackageInstallerService(new PackageApiService, new Filesystem);
 
         $installed = $installer->installTemplate('test-theme', 'dl_token', null, 'normal', null);
 
@@ -195,7 +197,7 @@ class ThemeMarketTest extends TestCase
             '*/api/v1/templates/download/dl_evil' => Http::response($zipBytes),
         ]);
 
-        $installer = new PackageInstallerService(new PackageApiService, new \Illuminate\Filesystem\Filesystem);
+        $installer = new PackageInstallerService(new PackageApiService, new Filesystem);
 
         try {
             $installer->installTemplate('evil-theme', 'dl_evil', null, 'normal', null);
@@ -218,7 +220,7 @@ class ThemeMarketTest extends TestCase
             '*/api/v1/templates/download/dl_hash' => Http::response($zipBytes),
         ]);
 
-        $installer = new PackageInstallerService(new PackageApiService, new \Illuminate\Filesystem\Filesystem);
+        $installer = new PackageInstallerService(new PackageApiService, new Filesystem);
 
         try {
             $installer->installTemplate('hash-theme', 'dl_hash', str_repeat('a', 64), 'normal', null);
@@ -238,7 +240,7 @@ class ThemeMarketTest extends TestCase
             '*/api/v1/templates/download/*' => Http::response($zipBytes),
         ]);
 
-        $installer = new PackageInstallerService(new PackageApiService, new \Illuminate\Filesystem\Filesystem);
+        $installer = new PackageInstallerService(new PackageApiService, new Filesystem);
         $installer->installTemplate('backup-theme', 'dl_1', null, 'normal', null);
         $installer->installTemplate('backup-theme', 'dl_2', null, 'normal', null);
 
@@ -256,7 +258,7 @@ class ThemeMarketTest extends TestCase
         $this->actingAs($creator, 'adminPanel');
 
         // گیت‌های پرمیشن در کنسول ثبت نمی‌شوند — مثل منطق واقعی creator همه‌چیز مجاز
-        \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
+        Gate::before(function ($user, $ability) {
             return $user instanceof Admin ? true : null;
         });
 
@@ -274,6 +276,7 @@ class ThemeMarketTest extends TestCase
                     ['slug' => 'pkg-a', 'name' => 'پکیج الف', 'is_free' => true],
                 ],
                 'meta' => ['current_page' => 1, 'last_page' => 1, 'total' => 1],
+                'subscription_summary' => $this->activeSubscriptionSummary(),
             ]),
         ]);
 
@@ -301,6 +304,7 @@ class ThemeMarketTest extends TestCase
                     ['slug' => 'pkg-a', 'name' => 'پکیج الف', 'is_free' => true],
                 ],
                 'meta' => ['current_page' => 1, 'last_page' => 1, 'total' => 1],
+                'subscription_summary' => $this->activeSubscriptionSummary(),
             ]),
         ]);
 
@@ -323,16 +327,18 @@ class ThemeMarketTest extends TestCase
             '*/api/v1/templates*' => Http::response([
                 'data' => [
                     [
-                        'id'              => 5,
-                        'name'            => 'قالب ماه‌تاب',
-                        'slug'            => 'moonlight',
-                        'is_purchased'    => false,
+                        'id' => 5,
+                        'name' => 'قالب ماه‌تاب',
+                        'slug' => 'moonlight',
+                        'is_purchased' => false,
                         'purchases_count' => 12,
-                        'latest_version'  => ['version' => '1.4.2'],
+                        'latest_version' => ['version' => '1.4.2'],
                     ],
                 ],
                 'meta' => ['current_page' => 1, 'last_page' => 1, 'total' => 1],
             ]),
+            // فاز ۱۰۹ — گیت اشتراک در تب قالب‌ها هم خلاصهٔ اشتراک را از listPackages می‌خواند
+            '*/api/v1/packages*' => Http::response($this->packagesListResponse($this->activeSubscriptionSummary())),
         ]);
 
         Livewire::withQueryParams(['type' => 'template'])
@@ -360,6 +366,20 @@ class ThemeMarketTest extends TestCase
         ];
     }
 
+    /**
+     * فاز ۱۰۹ — گیت اشتراک بازار: بدون خلاصهٔ اشتراکِ فعال، رندر به‌جای کارت‌ها
+     * فقط کارت گیت «اشتراک ندارید» است. تست‌هایی که «رندر کارت‌ها» را گارد می‌کنند
+     * باید در fake پاسخ API، اشتراک فعال بدهند تا گیت باز بماند.
+     */
+    private function activeSubscriptionSummary(): array
+    {
+        return [
+            'has_active_subscription' => true,
+            'plan_name' => 'طرح طلایی',
+            'days_remaining' => 30,
+        ];
+    }
+
     #[Test]
     public function bazaar_all_tab_shows_active_subscription_banner(): void
     {
@@ -368,8 +388,8 @@ class ThemeMarketTest extends TestCase
         $this->fakeHttp([
             '*/api/v1/packages*' => Http::response($this->packagesListResponse([
                 'has_active_subscription' => true,
-                'plan_name'               => 'طرح طلایی',
-                'expires_at'              => now()->addDays(2)->format('Y-m-d H:i:s'),
+                'plan_name' => 'طرح طلایی',
+                'expires_at' => now()->addDays(2)->format('Y-m-d H:i:s'),
             ])),
         ]);
 
@@ -390,8 +410,8 @@ class ThemeMarketTest extends TestCase
         $this->fakeHttp([
             '*/api/v1/packages*' => Http::response($this->packagesListResponse([
                 'has_active_subscription' => true,
-                'plan_name'               => 'طرح طلایی',
-                'expires_at'              => now()->addDays(2)->format('Y-m-d H:i:s'),
+                'plan_name' => 'طرح طلایی',
+                'expires_at' => now()->addDays(2)->format('Y-m-d H:i:s'),
             ])),
         ]);
 
@@ -416,6 +436,8 @@ class ThemeMarketTest extends TestCase
                 ],
                 'meta' => ['current_page' => 1, 'last_page' => 1, 'total' => 1],
             ]),
+            // فاز ۱۰۹ — اشتراکِ فعال تا گیت بازار باز بماند و کارت قالب‌ها رندر شود
+            '*/api/v1/packages*' => Http::response($this->packagesListResponse($this->activeSubscriptionSummary())),
         ]);
 
         Livewire::withQueryParams(['type' => 'template'])
@@ -423,7 +445,7 @@ class ThemeMarketTest extends TestCase
             ->assertOk()
             ->assertSee('قالب ماه‌تاب', false)
             ->assertDontSee('اشتراک فعال:', false)
-            ->assertDontSee('اشتراک فعالی ندارید', false);
+            ->assertDontSee('اشتراک ندارید', false);
     }
 
     #[Test]
@@ -434,15 +456,18 @@ class ThemeMarketTest extends TestCase
         $this->fakeHttp([
             '*/api/v1/packages*' => Http::response($this->packagesListResponse([
                 'has_active_subscription' => false,
-                'plan_name'               => null,
-                'expires_at'              => null,
+                'plan_name' => null,
+                'expires_at' => null,
             ])),
         ]);
 
+        // فاز ۱۰۹ — بدون اشتراک فعال، گیت بازار جای کارت‌ها کارت وضعیت را نشان می‌دهد
+        // (متن «اشتراک ندارید» + CTA خرید/تمدید) — تفکیک از بنرِ «اشتراک فعال:»
         Livewire::withQueryParams(['type' => 'package'])
             ->test(PackageIndex::class)
             ->assertOk()
-            ->assertSee('اشتراک فعالی ندارید', false)
+            ->assertSee('اشتراک ندارید', false)
+            ->assertSee('خرید یا تمدید اشتراک', false)
             ->assertDontSee('اشتراک فعال:', false);
     }
 
@@ -454,7 +479,7 @@ class ThemeMarketTest extends TestCase
         // API پرچم has_active_subscription را نفرستاده ولی انقضا آینده است → باید فعال استنتاج شود
         $this->fakeHttp([
             '*/api/v1/packages*' => Http::response($this->packagesListResponse([
-                'plan_name'  => 'طرح طلایی',
+                'plan_name' => 'طرح طلایی',
                 'expires_at' => now()->addDays(2)->format('Y-m-d H:i:s'),
             ])),
         ]);
@@ -477,10 +502,10 @@ class ThemeMarketTest extends TestCase
 
         $this->fakeHttp([
             '*/api/v1/templates/moonlight/purchase' => Http::response([
-                'payment_url'    => 'https://pay.example/redirect',
+                'payment_url' => 'https://pay.example/redirect',
                 'transaction_id' => 'tr_tpl_1',
-                'amount'         => 980000,
-                'gateway'        => 'zarinpal',
+                'amount' => 980000,
+                'gateway' => 'zarinpal',
             ]),
         ]);
 
@@ -528,9 +553,9 @@ class ThemeMarketTest extends TestCase
 
         $this->fakeHttp([
             '*/api/v1/templates/moonlight/purchase' => Http::response([
-                'is_free'        => true,
+                'is_free' => true,
                 'download_token' => 'dl_repeat',
-                'version'        => '1.4.2',
+                'version' => '1.4.2',
             ]),
         ]);
 
@@ -553,24 +578,24 @@ class ThemeMarketTest extends TestCase
         $this->actingCreator();
 
         $purchase = PackagePurchase::create([
-            'type'           => 'template',
-            'admin_id'       => $this->actingCreator()->id,
-            'package_slug'   => 'moonlight',
-            'package_name'   => 'قالب ماه‌تاب',
-            'version'        => '1.4.2',
-            'amount'         => 980000,
+            'type' => 'template',
+            'admin_id' => $this->actingCreator()->id,
+            'package_slug' => 'moonlight',
+            'package_name' => 'قالب ماه‌تاب',
+            'version' => '1.4.2',
+            'amount' => 980000,
             'transaction_id' => 'tr_tpl_9',
-            'status'         => PackagePurchase::STATUS_PENDING,
-            'meta'           => ['purchase_type' => 'normal'],
+            'status' => PackagePurchase::STATUS_PENDING,
+            'meta' => ['purchase_type' => 'normal'],
         ]);
 
         $this->fakeHttp([
             '*/api/v1/templates/payments/tr_tpl_9/verify' => Http::response([
-                'paid'           => true,
+                'paid' => true,
                 'download_token' => 'dl_cb',
-                'version'        => '1.4.2',
-                'signature'      => str_repeat('e', 64),
-                'message'        => 'پرداخت با موفقیت تأیید شد.',
+                'version' => '1.4.2',
+                'signature' => str_repeat('e', 64),
+                'message' => 'پرداخت با موفقیت تأیید شد.',
             ]),
         ]);
 
@@ -597,14 +622,14 @@ class ThemeMarketTest extends TestCase
         $this->actingCreator();
 
         PackagePurchase::create([
-            'type'           => 'template',
-            'admin_id'       => $this->actingCreator()->id,
-            'package_slug'   => 'moonlight',
-            'package_name'   => 'قالب ماه‌تاب',
-            'version'        => '1.4.2',
+            'type' => 'template',
+            'admin_id' => $this->actingCreator()->id,
+            'package_slug' => 'moonlight',
+            'package_name' => 'قالب ماه‌تاب',
+            'version' => '1.4.2',
             'transaction_id' => 'tr_tpl_fail',
-            'status'         => PackagePurchase::STATUS_PENDING,
-            'meta'           => ['purchase_type' => 'normal'],
+            'status' => PackagePurchase::STATUS_PENDING,
+            'meta' => ['purchase_type' => 'normal'],
         ]);
 
         $this->fakeHttp([
@@ -631,11 +656,11 @@ class ThemeMarketTest extends TestCase
 
         Livewire::test(PackageIndex::class)
             ->set('tDetail', [
-                'slug'              => 'moonlight',
-                'name'              => 'قالب ماه‌تاب',
-                'price'             => 980000,
+                'slug' => 'moonlight',
+                'name' => 'قالب ماه‌تاب',
+                'price' => 980000,
                 'short_description' => '<p>معرفی <strong>کوتاه</strong></p>',
-                'description'       => '<h2>ویژگی‌های قالب</h2><ul><li>اسلایدر</li></ul><p style="color:red">پشتیبانی کامل</p>',
+                'description' => '<h2>ویژگی‌های قالب</h2><ul><li>اسلایدر</li></ul><p style="color:red">پشتیبانی کامل</p>',
             ])
             ->set('tDetailOpen', true)
             ->assertSee('جزئیات قالب')
@@ -655,9 +680,9 @@ class ThemeMarketTest extends TestCase
 
         Livewire::test(PackageIndex::class)
             ->set('tDetail', [
-                'slug'        => 'moonlight',
-                'name'        => 'قالب ماه‌تاب',
-                'price'       => 0,
+                'slug' => 'moonlight',
+                'name' => 'قالب ماه‌تاب',
+                'price' => 0,
                 'description' => '<p>توضیحات قالب رایگان</p>',
             ])
             ->set('tDetailOpen', true)
@@ -676,9 +701,9 @@ class ThemeMarketTest extends TestCase
 
         Livewire::test(PackageIndex::class)
             ->set('tDetail', [
-                'slug'            => 'moonlight',
-                'name'            => 'قالب ماه‌تاب',
-                'price'           => 980000,
+                'slug' => 'moonlight',
+                'name' => 'قالب ماه‌تاب',
+                'price' => 980000,
                 'exclusive_price' => 2900000,
             ])
             ->set('tDetailOpen', true)
@@ -696,9 +721,9 @@ class ThemeMarketTest extends TestCase
 
         $this->fakeHttp([
             '*/api/v1/templates/moonlight/purchase' => Http::response([
-                'is_free'        => true,
+                'is_free' => true,
                 'download_token' => 'dl_free',
-                'version'        => '1.4.2',
+                'version' => '1.4.2',
             ]),
         ]);
 
@@ -729,12 +754,12 @@ class ThemeMarketTest extends TestCase
 
         Livewire::test(PackageIndex::class)
             ->set('tDetail', [
-                'slug'          => 'moonlight',
-                'name'          => 'قالب ماه‌تاب',
-                'price'         => 980000,
+                'slug' => 'moonlight',
+                'name' => 'قالب ماه‌تاب',
+                'price' => 980000,
                 'thumbnail_url' => 'https://cdn.example/cover.png',
-                'description'   => '<p>توضیحات</p>',
-                'gallery'       => [
+                'description' => '<p>توضیحات</p>',
+                'gallery' => [
                     'https://cdn.example/shot-1.png',
                     ['url' => 'https://cdn.example/shot-2.png'],
                 ],
@@ -784,8 +809,8 @@ class ThemeMarketTest extends TestCase
             '*/api/v1/templates/moonlight' => Http::response([
                 'result' => [
                     'template' => [
-                        'slug'  => 'moonlight',
-                        'name'  => 'قالب ماه‌تاب',
+                        'slug' => 'moonlight',
+                        'name' => 'قالب ماه‌تاب',
                         'price' => 980000,
                     ],
                 ],
@@ -826,14 +851,16 @@ class ThemeMarketTest extends TestCase
             '*/api/v1/templates*' => Http::response([
                 'data' => [
                     [
-                        'id'            => 5,
-                        'name'          => 'قالب ماه‌تاب',
-                        'slug'          => 'moonlight',
+                        'id' => 5,
+                        'name' => 'قالب ماه‌تاب',
+                        'slug' => 'moonlight',
                         'thumbnail_url' => 'https://cdn.example/card.png',
                     ],
                 ],
                 'meta' => ['current_page' => 1, 'last_page' => 1, 'total' => 1],
             ]),
+            // فاز ۱۰۹ — گیت اشتراک باید باز بماند تا کارت‌ها رندر شوند
+            '*/api/v1/packages*' => Http::response($this->packagesListResponse($this->activeSubscriptionSummary())),
         ]);
 
         Livewire::withQueryParams(['type' => 'template'])
@@ -856,13 +883,13 @@ class ThemeMarketTest extends TestCase
         $this->fakeHttp([
             '*/api/v1/templates/moonlight' => Http::response([
                 'data' => [
-                    'slug'          => 'moonlight',
-                    'name'          => 'قالب ماه‌تاب',
-                    'price'         => 980000,
-                    'author'        => ['id' => 3, 'name' => 'استودیو قالب'],
-                    'category'      => ['id' => 7, 'title' => 'فروشگاهی'],
+                    'slug' => 'moonlight',
+                    'name' => 'قالب ماه‌تاب',
+                    'price' => 980000,
+                    'author' => ['id' => 3, 'name' => 'استودیو قالب'],
+                    'category' => ['id' => 7, 'title' => 'فروشگاهی'],
                     'thumbnail_url' => ['url' => 'https://cdn.example/cover.png'],
-                    'description'   => ['html' => '<h2>ویژگی‌های قالب</h2>'],
+                    'description' => ['html' => '<h2>ویژگی‌های قالب</h2>'],
                 ],
             ]),
         ]);
@@ -886,12 +913,12 @@ class ThemeMarketTest extends TestCase
         $this->fakeHttp([
             '*/api/v1/templates/moonlight' => Http::response([
                 'data' => [
-                    'slug'              => 'moonlight',
-                    'name'              => 'قالب ماه‌تاب',
-                    'price'             => 980000,
+                    'slug' => 'moonlight',
+                    'name' => 'قالب ماه‌تاب',
+                    'price' => 980000,
                     'short_description' => ['<p>معرفی کوتاه</p>'],
-                    'description'       => ['<p>پاراگراف اول</p>', '<p>پاراگراف دوم</p>'],
-                    'gallery'           => [
+                    'description' => ['<p>پاراگراف اول</p>', '<p>پاراگراف دوم</p>'],
+                    'gallery' => [
                         ['url' => 'https://cdn.example/shot-1.png'],
                         ['path' => 'https://cdn.example/shot-2.png'],
                         'https://cdn.example/shot-3.png',
@@ -930,6 +957,7 @@ class ThemeMarketTest extends TestCase
                     ['slug' => 'pkg-a', 'name' => 'پکیج الف', 'is_free' => true],
                 ],
                 'meta' => ['current_page' => 1, 'last_page' => 1, 'total' => 1],
+                'subscription_summary' => $this->activeSubscriptionSummary(),
             ]),
         ]);
 
@@ -957,15 +985,15 @@ class ThemeMarketTest extends TestCase
     {
         $creator = $this->actingCreator();
 
-        $installer = new PackageInstallerService(new PackageApiService, new \Illuminate\Filesystem\Filesystem);
+        $installer = new PackageInstallerService(new PackageApiService, new Filesystem);
 
         $themeDir = $this->workspace.'/themes/ActiveTheme';
         mkdir($themeDir.'/config', 0777, true);
         file_put_contents($themeDir.'/config/general.php', "<?php return ['theme_name' => 'ActiveTheme'];");
 
         InstalledTheme::create([
-            'slug'   => 'active-theme',
-            'name'   => 'ActiveTheme',
+            'slug' => 'active-theme',
+            'name' => 'ActiveTheme',
             'status' => InstalledTheme::STATUS_INSTALLED,
         ]);
 
@@ -982,8 +1010,8 @@ class ThemeMarketTest extends TestCase
 
         // حذف قالب غیرفعال موفق است
         InstalledTheme::create([
-            'slug'   => 'old-theme',
-            'name'   => 'OldTheme',
+            'slug' => 'old-theme',
+            'name' => 'OldTheme',
             'status' => InstalledTheme::STATUS_INSTALLED,
         ]);
         mkdir($this->workspace.'/themes/OldTheme/config', 0777, true);

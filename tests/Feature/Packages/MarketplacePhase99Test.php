@@ -9,6 +9,7 @@ use App\Livewire\Admin\System\Developer;
 use App\Models\Admin;
 use App\Models\InstalledModule;
 use App\Support\MarketplaceSettings;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
@@ -64,12 +65,12 @@ class MarketplacePhase99Test extends TestCase
 
         $creator = Admin::create([
             'first_name' => 'تست',
-            'last_name'  => 'بازارچه ۹۹',
-            'username'   => 'mkt99-'.Str::random(6),
-            'email'      => 'mkt99-'.Str::random(6).'@test.ir',
-            'password'   => Hash::make('secret1234'),
-            'level'      => 'creator',
-            'status'     => 'ACTIVE',
+            'last_name' => 'بازارچه ۹۹',
+            'username' => 'mkt99-'.Str::random(6),
+            'email' => 'mkt99-'.Str::random(6).'@test.ir',
+            'password' => Hash::make('secret1234'),
+            'level' => 'creator',
+            'status' => 'ACTIVE',
         ]);
 
         $this->actingAs($creator, 'adminPanel');
@@ -81,18 +82,18 @@ class MarketplacePhase99Test extends TestCase
     private function fakePackage(): array
     {
         return [
-            'slug'                => 'market-test-package',
-            'name'                => 'پکیج تست بازارچه',
-            'description'         => 'توضیح پکیج فیک برای تست فاز ۹۹',
-            'author'              => 'تست',
-            'category'            => 'shop',
-            'is_free'             => true,
-            'price'               => 0,
-            'default_price'       => 0,
-            'version'             => '1.0.0',
-            'latest_version'      => ['version' => '1.0.0'],
-            'active_versions'     => [['version' => '1.0.0']],
-            'active_pricing_plans'=> [['id' => 1, 'price' => 0, 'discount_price' => 0, 'duration_months' => 0]],
+            'slug' => 'market-test-package',
+            'name' => 'پکیج تست بازارچه',
+            'description' => 'توضیح پکیج فیک برای تست فاز ۹۹',
+            'author' => 'تست',
+            'category' => 'shop',
+            'is_free' => true,
+            'price' => 0,
+            'default_price' => 0,
+            'version' => '1.0.0',
+            'latest_version' => ['version' => '1.0.0'],
+            'active_versions' => [['version' => '1.0.0']],
+            'active_pricing_plans' => [['id' => 1, 'price' => 0, 'discount_price' => 0, 'duration_months' => 0]],
         ];
     }
 
@@ -100,10 +101,10 @@ class MarketplacePhase99Test extends TestCase
     private function fakeTemplate(): array
     {
         return [
-            'slug'           => 'market-test-template',
-            'name'           => 'قالب تست بازارچه',
-            'is_free'        => true,
-            'price'          => 0,
+            'slug' => 'market-test-template',
+            'name' => 'قالب تست بازارچه',
+            'is_free' => true,
+            'price' => 0,
             'latest_version' => ['version' => '1.0.0'],
         ];
     }
@@ -111,7 +112,7 @@ class MarketplacePhase99Test extends TestCase
     /** فیک کامل API سرور بازار + ثبت همهٔ URLها برای راستی‌آزمایی گیت‌ها */
     private function fakeMarketApi(): void
     {
-        Http::fake(function (\Illuminate\Http\Client\Request $request) {
+        Http::fake(function (Request $request) {
             $this->httpRequests[] = $request->url();
 
             $url = $request->url();
@@ -122,8 +123,8 @@ class MarketplacePhase99Test extends TestCase
 
             if (str_contains($url, '/purchase')) {
                 return Http::response([
-                    'license_key'    => 'LIC-TEST-99',
-                    'amount'         => 0,
+                    'license_key' => 'LIC-TEST-99',
+                    'amount' => 0,
                     'transaction_id' => 'TX-TEST-99',
                 ]);
             }
@@ -136,7 +137,13 @@ class MarketplacePhase99Test extends TestCase
                 return Http::response([
                     'data' => [$this->fakePackage()],
                     'meta' => ['current_page' => 1, 'last_page' => 1, 'per_page' => MarketplaceSettings::itemsPerPage(), 'total' => 1],
-                    'subscription_summary' => [],
+                    // فاز ۱۰۹ — گیت اشتراک بازار: برای رندر کارت‌ها در تست‌های مرور،
+                    // پاسخ fake باید «اشتراک فعال» بدهد (پیش‌تر [] بود که گیت را می‌بست)
+                    'subscription_summary' => [
+                        'has_active_subscription' => true,
+                        'plan_name' => 'طرح طلایی',
+                        'days_remaining' => 30,
+                    ],
                 ]);
             }
 
@@ -164,12 +171,12 @@ class MarketplacePhase99Test extends TestCase
     private function fakeInstalledModule(array $attributes = []): InstalledModule
     {
         return InstalledModule::create(array_merge([
-            'slug'         => 'fake-mod-'.Str::random(6),
-            'name'         => 'FakeMod'.Str::random(4),
-            'version'      => '1.0.0',
-            'status'       => InstalledModule::STATUS_INSTALLED,
-            'is_active'    => true,
-            'license_key'  => 'LIC-FAKE-99',
+            'slug' => 'fake-mod-'.Str::random(6),
+            'name' => 'FakeMod'.Str::random(4),
+            'version' => '1.0.0',
+            'status' => InstalledModule::STATUS_INSTALLED,
+            'is_active' => true,
+            'license_key' => 'LIC-FAKE-99',
             'installed_at' => now(),
         ], $attributes));
     }

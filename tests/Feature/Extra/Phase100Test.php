@@ -134,9 +134,10 @@ class Phase100Test extends TestCase
         $this->assertStringContainsString('نمایش پکیج‌ها به اشتراک فعال نیاز دارد', $view);
         $this->assertStringContainsString('به دلیل نداشتن اشتراک فعال', $view);
 
-        // بنر انقضا (تفکیک از «اصلاً اشتراک ندارید»)
-        $this->assertStringContainsString('اشتراک شما منقضی شده است', $view);
-        $this->assertStringContainsString("is_expired'] ?? false", $view);
+        // بنر انقضا (تفکیک از «اصلاً اشتراک ندارید») — فاز ۱۰۹: حالت‌های «ندارید/منقضی»
+        // به کارت گیت اشتراک بالای صفحه منتقل شدند؛ تفکیک دو حالت با subscriptionGate حفظ شده
+        $this->assertStringContainsString('اشتراک شما به پایان رسیده', $view);
+        $this->assertStringContainsString("subscriptionGate === 'expired'", $view);
     }
 
     #[Test]

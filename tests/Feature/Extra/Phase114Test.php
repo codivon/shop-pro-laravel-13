@@ -8,7 +8,7 @@ use App\Models\Menu;
 use App\Models\Permission;
 use App\Models\SellerHero;
 use App\Support\IconRegistry;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
@@ -18,7 +18,15 @@ use Tests\TestCase;
 
 class Phase114Test extends TestCase
 {
-    use RefreshDatabase;
+    /*
+     * فاز ۱۴۰ — از RefreshDatabase به DatabaseTransactions:
+     * این کلاس هیچ نیازی به اسکیمای تازه ندارد و RefreshDatabase وسط مجموعهٔ
+     * الفبایی، با migrate:fresh همهٔ دادهٔ سیدشدهٔ (provinces/cities/permissions/…)
+     * را برای «بقیهٔ تست‌های بعد از خودش» نابود می‌کرد → آبشار ۳۴ خطا + ۱۵ شکست
+     * در CI (Order/Payment/Security + بازار). قرارداد مجموعه: DatabaseTransactions
+     * روی دیتابیس سیدشدهٔ میزبان — عین بقیهٔ کلاس‌ها.
+     */
+    use DatabaseTransactions;
 
     /* ---------------- IconRegistry ---------------- */
 
