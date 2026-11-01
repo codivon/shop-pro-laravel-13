@@ -1,8 +1,9 @@
 @extends('sellers-old.auth.layouts', ['title' => 'اطلاعات فروشنده'])
 
 @push('styles')
-    <link href="https://unpkg.com/filepond/dist/filepond.css" rel="stylesheet">
-    <link href="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css" rel="stylesheet">
+    {{-- فاز ۱۳۹ — خودمیزبانی filepond: unpkg روی IPهای ایران کند است + فایل‌های محلی در plugins/filepond موجودند --}}
+    <link href="{{ asset('back/app-assets/plugins/filepond/filepond-1.css') }}" rel="stylesheet">
+    <link href="{{ asset('back/app-assets/plugins/filepond/filepond-plugin-image-preview.css') }}" rel="stylesheet">
 @endpush
 
 @section('content')
@@ -166,11 +167,11 @@
 
 @endsection
 @push('scripts')
-    <script src="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.js"></script>
-    <script src="https://unpkg.com/filepond-plugin-image-resize/dist/filepond-plugin-image-resize.js"></script>
-    <script src="https://unpkg.com/filepond-plugin-image-transform/dist/filepond-plugin-image-transform.js"></script>
+    {{-- فاز ۱۳۹ — خودمیزبانی پلاگین‌های filepond (resize/transform دانلود و در plugins/filepond میزبانی شدند) --}}
+    <script src="{{ asset('back/app-assets/plugins/filepond/filepond-plugin-image-preview.js') }}"></script>
+    <script src="{{ asset('back/app-assets/plugins/filepond/filepond-plugin-image-resize.js') }}"></script>
+    <script src="{{ asset('back/app-assets/plugins/filepond/filepond-plugin-image-transform.js') }}"></script>
 
-    <script src="{{asset('back/app-assets/plugins/filepond/filepond-plugin-image-preview.js')}}"></script>
     <script src="{{asset('back/app-assets/plugins/filepond/filepond.js')}}"></script>
     <script src="{{ theme_asset('js/pages/sellers/register/documents.js') }}"></script>
 

@@ -36,26 +36,40 @@ class MainController extends Controller
             return Order::where('status', 'paid')->sum('price');
         });
 
-        $orders=Order::orderby('id','desc')->get()->take(10);
-        $reviews = Review::filter()->get()->take(10);
-        $view_products=Product::published()->where('view','!=',0)->orderBy('view', 'desc')->take(20)->get();
-        $sale_products=Product::published()->where('sell','!=',0)->orderBySale('desc')->take(20)->get();
-        $questions=Comment::whereNull('comment_id')->latest()->where(['status'=>'accepted','commentable_type'=>'App\Models\Product'])->take(20)->get();
+        /*
+         * فاز ۱۳۹ — بهینه‌سازی بارگذاری داشبورد پنل قدیمی (قاتل اصلی سرعت اولین صفحه):
+         * ① قبلاً Order::orderby('id','desc')->get() و Review::filter()->get() «همهٔ»
+         *    ردیف‌های سفارش/نظر را از دیتابیس می‌کشیدند و بعد در PHP با take(10)
+         *    برش می‌خوردند — روی فروشگاهِ پرسفارش یعنی انتقال ده‌ها هزار ردیف در هر
+         *    باز شدن داشبورد (سرور کم‌رم + swap = چندثانیه‌ای) → LIMIT سطح کوئری.
+         * ② حلقه‌های foreach کاربران/فروشندگان فعال به‌ازای هر عضو یک کوئری Viewer
+         *    جدا اجرا می‌کردند (۲۰+۲۰ کوئری در هر رندر) → یک کوئری groupBy_latest
+         *    با unique روی کالکشن.
+         * ③ رابطهٔ user/seller برای رندر ویو eager شد تا خود لیست هم N+1 نزند.
+         */
+        $orders = Order::latest('id')->take(10)->get();
+        $reviews = Review::filter()->take(10)->get();
+        $view_products = Product::published()->where('view', '!=', 0)->orderBy('view', 'desc')->take(20)->get();
+        $sale_products = Product::published()->where('sell', '!=', 0)->orderBySale('desc')->take(20)->get();
+        $questions = Comment::whereNull('comment_id')->latest()->where(['status' => 'accepted', 'commentable_type' => 'App\Models\Product'])->take(20)->get();
 
-        $active_users=[];
-        foreach (User::take(20)->get() as $active_user_id){
-            $users=Viewer::where('user_id','!=',null)->where('user_id',$active_user_id->id)->orderby('id','desc')->first();
-            if ($users){
-                array_push($active_users,$users);
-            }
-        }
-        $active_sellers=[];
-        foreach (Seller::take(20)->get() as $active_seller_id){
-            $sellers=Viewer::where('seller_id','!=',null)->where('seller_id',$active_seller_id->id)->orderby('id','desc')->first();
-            if ($sellers){
-                array_push($active_sellers,$sellers);
-            }
-        }
+        $active_users = Viewer::whereNotNull('user_id')
+            ->whereIn('user_id', User::query()->take(20)->pluck('id'))
+            ->with('user')
+            ->latest('id')
+            ->get()
+            ->unique('user_id')
+            ->take(10)
+            ->values();
+
+        $active_sellers = Viewer::whereNotNull('seller_id')
+            ->whereIn('seller_id', Seller::query()->take(20)->pluck('id'))
+            ->with('seller')
+            ->latest('id')
+            ->get()
+            ->unique('seller_id')
+            ->take(10)
+            ->values();
 
         return view('back.index', compact(
             'users_count',

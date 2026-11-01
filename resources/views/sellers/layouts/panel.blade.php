@@ -14,7 +14,8 @@
     @livewireStyles
 
     {{-- Font Awesome — همان منبع پنل ادمین/قدیمی (برای آیکون‌های متنی خروج و ...) --}}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE40xsADsfeQoEypE+enwcOiGjk/bSuGGKHEyjSoQ1zVisanQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    {{-- فاز ۱۳۹ — خودمیزبانی FA: cdnjs روی IPهای ایران کند است --}}
+    <link rel="stylesheet" href="{{ asset('vendor/fontawesome/css/all.min.css') }}" referrerpolicy="no-referrer" />
 
     {{-- ثبت درایورهای Alpine پنل فروشنده (خودکفا — بدون وابستگی به JS ادمین) --}}
     <script>

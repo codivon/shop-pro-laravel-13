@@ -49,7 +49,8 @@
     {{-- Styles --}}
     @stack('befor-styles')
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
+    {{-- فاز ۱۳۹ — خودمیزبانی FA: cdnjs روی IPهای ایران کند است و رندر را بلاک می‌کرد --}}
+    <link rel="stylesheet" href="{{ asset('vendor/fontawesome/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('css/font-awesome.min.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('css/materialdesignicons.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('js/plugins/toastr/toastr.css') }}">

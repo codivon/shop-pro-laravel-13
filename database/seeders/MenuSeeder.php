@@ -16,7 +16,13 @@ class MenuSeeder extends Seeder
     {
         $ordering = 1;
 
-        Menu::create([
+        /*
+         * فاز ۱۳۹ — id والد را هاردکد نکن: قبلاً فرزندها با menu_id='1' ساخته می‌شدند
+         * که فقط روی جدولِ کاملاً خالی درست بود؛ روی هر دیتابیس غیر-بدوی (نصب مجدد،
+         * اجرای دوبارهٔ سیدر، دیتابیس‌های با رکورد قبلی) کلید خارجی menus_menu_id_foreign
+         * می‌شکست و کل سیدر با Integrity constraint violation ناکام می‌شد.
+         */
+        $megamenu = Menu::create([
             'title'       => 'دسته بندی کالاها',
             'type'        => 'megamenu',
             'link'        => '/search',
@@ -29,7 +35,7 @@ class MenuSeeder extends Seeder
             'type'        => 'category',
             'static_type' => 'products',
             'icon'        => 'fa fa-laptop',
-            'menu_id'     => '1',
+            'menu_id'     => $megamenu->id,
             'menuable_id'     => '1',
             'children'     => '1',
             'ordering'    => $ordering++,
@@ -39,7 +45,7 @@ class MenuSeeder extends Seeder
             'type'        => 'category',
             'static_type' => 'products',
             'icon'        => 'fa fa-wrench',
-            'menu_id'     => '1',
+            'menu_id'     => $megamenu->id,
             'menuable_id' => '18',
             'children'    => '1',
             'ordering'    => $ordering++,
@@ -49,7 +55,7 @@ class MenuSeeder extends Seeder
             'type'        => 'category',
             'static_type' => 'products',
             'icon'        => 'fa-solid fa-shirt',
-            'menu_id'     => '1',
+            'menu_id'     => $megamenu->id,
             'menuable_id' => '21',
             'children'    => '1',
             'ordering'    => $ordering++,
@@ -59,7 +65,7 @@ class MenuSeeder extends Seeder
             'type'        => 'category',
             'static_type' => 'products',
             'icon'        => 'fa fa-basket-shopping',
-            'menu_id'     => '1',
+            'menu_id'     => $megamenu->id,
             'menuable_id' => '22',
             'children'    => '1',
             'ordering'    => $ordering++,
@@ -69,7 +75,7 @@ class MenuSeeder extends Seeder
             'type'        => 'category',
             'static_type' => 'products',
             'icon'        => 'fa-solid fa-person-breastfeeding',
-            'menu_id'     => '1',
+            'menu_id'     => $megamenu->id,
             'menuable_id' => '23',
             'children'    => '1',
             'ordering'    => $ordering++,
@@ -79,7 +85,7 @@ class MenuSeeder extends Seeder
             'type'        => 'category',
             'static_type' => 'products',
             'icon'        => 'fa-brands fa-square-pied-piper',
-            'menu_id'     => '1',
+            'menu_id'     => $megamenu->id,
             'menuable_id' => '24',
             'children'    => '1',
             'ordering'    => $ordering++,
@@ -89,7 +95,7 @@ class MenuSeeder extends Seeder
             'type'        => 'category',
             'static_type' => 'products',
             'icon'        => 'fa-solid fa-heart',
-            'menu_id'     => '1',
+            'menu_id'     => $megamenu->id,
             'menuable_id' => '25',
             'children'    => '1',
             'ordering'    => $ordering++,
@@ -99,7 +105,7 @@ class MenuSeeder extends Seeder
             'type'        => 'category',
             'static_type' => 'products',
             'icon'        => 'fa fa-laptop',
-            'menu_id'     => '1',
+            'menu_id'     => $megamenu->id,
             'menuable_id' => '26',
             'children'    => '1',
             'ordering'    => $ordering++,
@@ -109,7 +115,7 @@ class MenuSeeder extends Seeder
             'type'        => 'category',
             'static_type' => 'products',
             'icon'        => 'fa fa-couch',
-            'menu_id'     => '1',
+            'menu_id'     => $megamenu->id,
             'menuable_id' => '27',
             'children'    => '1',
             'ordering'    => $ordering++,
@@ -119,7 +125,7 @@ class MenuSeeder extends Seeder
             'type'        => 'category',
             'static_type' => 'products',
             'icon'        => 'fa-solid fa-tent',
-            'menu_id'     => '1',
+            'menu_id'     => $megamenu->id,
             'menuable_id' => '28',
             'children'    => '1',
             'ordering'    => $ordering++,

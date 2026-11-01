@@ -47,6 +47,7 @@
     <script>
         var redirect_url = '{{ route("front.user.profile") }}';
     </script>
-    <script src="https://github.com/malsup/blockui/blob/master/jquery.blockUI.js"></script>
+    {{-- فاز ۱۳۹ — خط blockUI از GitHub حذف شد: URL به صفحهٔ HTML اشاره می‌کرد (نه JS) و
+         layout پنل احراز هویت (auth/layouts/master) از قبل نسخهٔ محلی js/plugins/jquery.blockUI.js را لود می‌کند --}}
     <script src="{{ theme_asset('js/pages/reset.js') }}"></script>
 @endpush

@@ -1,8 +1,8 @@
 @extends('sellers-old.auth.layouts', ['title' => 'اطلاعات فروشنده'])
 
 @push('styles')
-    <link rel="stylesheet" href="https://cdn.map.ir/web-sdk/1.4.2/css/mapp.min.css" />
-    <link rel="stylesheet" href="https://cdn.map.ir/web-sdk/1.4.2/css/fa/style.css" />
+    <link rel="stylesheet" href="{{ asset('vendor/mapir/css/mapp.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('vendor/mapir/css/fa/style.css') }}" />
     <link rel="stylesheet" href="{{theme_asset('css/map-selected-styles.css')}}" />
 @endpush
 

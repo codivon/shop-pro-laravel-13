@@ -1,10 +1,12 @@
 {{-- ★ فاز ۲۲: Auth::check() روی گارد پیش‌فرض چک می‌کرد که روی مسیرهای پنل ( ResolveDefaultGuard )
    به adminPanel تغییر می‌کند → ادمین وارد شاخه می‌شد ولی auth('web')->user() null بود و صفحه ۵۰۰ می‌داد --}}
 @if(auth('web')->check())
-    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    {{-- فاز ۱۳۹ — خودمیزبانی pusher.min.js: js.pusher.com روی IPهای ایران کند است --}}
+    <script src="{{ asset('vendor/pusher/pusher.min.js') }}"></script>
     <audio id="alert-sound" src="{{ asset('back/app-assets/sounds/notification.ogg') }}" preload="auto"></audio>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script>
+    {{-- فاز ۱۳۹ — خودمیزبانی jquery.qrcode: cdnjs کند روی IP ایران --}}
+    <script src="{{ asset('vendor/jquery-qrcode/jquery.qrcode.min.js') }}"></script>
 
     @php
         $notifications = auth('web')->user()->unreadNotifications;

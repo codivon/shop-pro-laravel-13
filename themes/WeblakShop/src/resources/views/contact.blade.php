@@ -102,7 +102,8 @@
     <script type="text/javascript" src="{{ theme_asset('mapp/js/mapp.env.js') }}"></script>
     <script type="text/javascript" src="{{ theme_asset('mapp/js/mapp.min.js?v=1') }}"></script>
     @elseif(option('info_map_type')=='google')
-            <script src="https://maps.googleapis.com/maps/api/js?key={{ option('map_api') }}"></script>
+        {{-- فاز ۱۳۹ — defer: اسکریپت گوگل‌مپ روی IP ایران چندثانیه پارس را قفل می‌کند؛ contact.js گارد typeof google دارد --}}
+        <script src="https://maps.googleapis.com/maps/api/js?key={{ option('map_api') }}" defer></script>
 
         @endif
 

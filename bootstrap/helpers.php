@@ -163,6 +163,13 @@ function user_option_update($option_name, $option_value, $user_id = null)
 
     $option->option_value = $option_value;
     $option->save();
+
+    // فاز ۱۳۹ — write-through: اگر مموِ سطح درخواست (user_option) ساخته شده باشد،
+    // همان‌جا هم به‌روز شود تا خواندنِ بعدی در «همین درخواست» (مثلاً پس از ذخیرهٔ
+    // تنظیمات کاربر در یک اکشن Livewire و رندر مجدد) مقدار کهنه نگیرد.
+    if (app()->bound('memo.user_options')) {
+        app('memo.user_options')->offsetSet($user_id.'|'.$option_name, $option_value);
+    }
 }
 
 function user_option($option_name, $default_value = '', $user_id = null)
@@ -175,7 +182,31 @@ function user_option($option_name, $default_value = '', $user_id = null)
         $user_id = auth('adminPanel')->user()->id;
     }
 
+    /*
+     * فاز ۱۳۹ — مموای سطح درخواست: قبلاً هر فراخوانی user_option() یک کوئری جداگانه
+     * به user_options می‌زد؛ لایوت‌های پنل قدیمی/پل/فروشنده (global-css + sidebar +
+     * master) روی هر بارگذاری صفحه ۴ تا ۶ بار آن را صدا می‌زنند (theme_font ×۲-۳،
+     * theme_color، sidebar_collapsed و ...) یعنی ۴-۶ کوئری تکراری به‌ازای هر رندر.
+     * ممو در «کانتینر» ساکن می‌شود که در php-fpm به‌ازای هر درخواست از نو ساخته
+     * می‌شود ⇒ همیشه دادهٔ تازهٔ همین درخواست (برخلاف static تابعی که بین
+     * درخواست‌های همان worker می‌ماند و تغییر تم را با تأخیر نمایش می‌داد).
+     */
+    if (! app()->bound('memo.user_options')) {
+        app()->instance('memo.user_options', new \ArrayObject);
+    }
+    $memo = app('memo.user_options');
+
+    $key = $user_id.'|'.$option_name;
+
+    if ($memo->offsetExists($key)) {
+        $value = $memo->offsetGet($key);
+
+        return ($value === null || $value === '' || $value === false) ? $default_value : $value;
+    }
+
     $option = UserOption::where('option_name', $option_name)->where('admin_id', $user_id)->first();
+
+    $memo->offsetSet($key, $option ? $option->option_value : null);
 
     return $option ? $option->option_value : $default_value;
 }

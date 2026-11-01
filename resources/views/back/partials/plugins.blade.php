@@ -139,10 +139,15 @@
                     {{--<link rel="stylesheet" href="{{ asset('back/app-assets/mapp/css/map-selected-styles.css') }}">--}}
                 @endpush
 
-
-                @push('plugin-scripts')
-                    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDdbCAXvJIl7CKZwfpTswAIHvqJmZTUPwQ"></script>
-                @endpush
+                {{-- فاز ۱۳۹ — Google Maps فقط وقتی «نوع نقشه = گوگل» انتخاب شده لود شود؛
+                     قبلاً بدون شرط و با کلید هاردکد لود می‌شد که روی IP ایران چندثانیه‌ای
+                     رندر صفحهٔ تنظیمات را معطل می‌کرد (maps.googleapis.com کند/فیلتر است).
+                     کلید هم از تنظیمات (option map_api) خوانده می‌شود --}}
+                @if(option('info_map_type') == 'google')
+                    @push('plugin-scripts')
+                        <script src="https://maps.googleapis.com/maps/api/js?key={{ option('map_api') }}" defer></script>
+                    @endpush
+                @endif
 
 
 
