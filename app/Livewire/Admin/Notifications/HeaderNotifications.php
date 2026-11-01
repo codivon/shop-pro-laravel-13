@@ -89,6 +89,9 @@ class HeaderNotifications extends Component
         $this->unread = $admin->unreadNotifications()->count();
         $this->open = false;
 
+        // فاز ۱۴۰ — بستن دراپ‌داون سمت کلاینت (بدون entangle — رکورد بالای ویو)
+        $this->dispatch('ap-bell-close');
+
         $this->redirect($url, navigate: true);
     }
 
@@ -104,6 +107,10 @@ class HeaderNotifications extends Component
         $count = $admin->unreadNotifications()->count();
         $admin->unreadNotifications->markAsRead();
         $this->unread = 0;
+        $this->open = false;
+
+        // فاز ۱۴۰ — بستن دراپ‌داون سمت کلاینت (بدون entangle — رکورد بالای ویو)
+        $this->dispatch('ap-bell-close');
 
         $this->dispatch('toast', message: "همه اعلان‌ها ({$count} مورد) خوانده‌شده علامت‌گذاری شدند.", type: 'success');
     }

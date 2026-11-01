@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use ZipArchive;
 use Exception;
+use Throwable;
 
 class ProcessUpdateJob implements ShouldQueue
 {
@@ -124,9 +125,27 @@ class ProcessUpdateJob implements ShouldQueue
             Cache::put('update_step', 'اجرای دستورات پس از بروزرسانی', now()->addHours(2));
             Cache::put('update_progress', 98, now()->addHours(2));
 
+            /*
+             * فاز ۱۴۰ — نردبان کاملِ پاک‌سازی کش پس از جایگذاری فایل‌ها.
+             * قبلاً فقط cache/config/view پاک می‌شد؛ «route:cache» قدیمی از نسخهٔ
+             * قبلی باقی می‌ماند و بعد از آپدیت، مسیرهای کدِ جدید با روت‌کشِ کدِ
+             * قدیمی قاطی می‌شد (وضعیت ترکیبی = دقیقاً همان کلاس خطاهای
+             * «Undefined variable» در ویوهای نیمه‌به‌روز پروداکشن).
+             */
             Artisan::call('cache:clear');
             Artisan::call('config:clear');
+            Artisan::call('route:clear');
             Artisan::call('view:clear');
+
+            // بازسازی کش کانفیگ فقط در production (هم‌قرارداد با saveGeneral فاز ۱۳۸)
+            // تا سرعت production حفظ شود؛ شکستش هم هرگز آپدیت را قرمز نمی‌کند.
+            if (app()->environment('production')) {
+                try {
+                    Artisan::call('config:cache');
+                } catch (Throwable $e) {
+                    report($e);
+                }
+            }
 
             // موفقیت - پاک کردن تمام فلگ‌ها
             Cache::put('update_status', 'success', now()->addHours(24));

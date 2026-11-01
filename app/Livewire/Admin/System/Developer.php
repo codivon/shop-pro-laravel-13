@@ -546,10 +546,19 @@ class Developer extends Component
 
         // فاز ۱۳۸ — بازسازی «یک‌بارهٔ» کش کانفیگ پس از همهٔ نوشتن‌های env:
         // production ⇒ کش بماند (سرعت)؛ بقیهٔ محیط‌ها ⇒ بدون کش تا تغییرها فوراً در dev دیده شود.
-        if ($this->appEnv === 'production') {
-            Artisan::call('config:cache');
-        } else {
-            Artisan::call('config:clear');
+        // فاز ۱۴۰ — دفاعی: اگر بازسازی کش به هر دلیل شکست خورد (دیسک پر، دسترسی
+        // نوشتن، env تزریقیِ هاست مثل DATABASE_URL و…)، خودِ «ذخیره» نباید ۵۰۰ بدهد —
+        // خطا گزارش و به کاربر پیام واضح داده می‌شود؛ مقادیر env قبلاً نوشته شده‌اند.
+        try {
+            if ($this->appEnv === 'production') {
+                Artisan::call('config:cache');
+            } else {
+                Artisan::call('config:clear');
+            }
+        } catch (\Throwable $e) {
+            report($e);
+
+            $this->dispatch('toast', message: 'تنظیمات ذخیره شد، اما بازسازی کش کانفیگ ناموفق بود: '.Str::limit($e->getMessage(), 120), type: 'warning');
         }
 
         $this->dispatch('toast', message: 'تنظیمات توسعه‌دهنده ذخیره شد.', type: 'success');

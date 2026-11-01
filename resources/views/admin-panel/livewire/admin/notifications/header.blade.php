@@ -1,11 +1,21 @@
 {{-- فاز ۱۶ — زنگوله اعلان‌ها در هدر پنل جدید (جایگزین لینک به پنل قدیمی) --}}
+{{-- فاز ۱۴۰ — حذف ‎@entangle (مسابقهٔ Alpine/Livewire):
+     قبلاً x-data="{ open: @entangle('open') }" در زمان init،
+     window.Livewire.find(id).entangle(...) را صدا می‌زد؛ اگر ثبتِ کامپوننت
+     در همان صفحه (پس از navigate/آپدیت ناموفق/بازگردانی کش history) هنوز
+     انجام نشده بود، find(id) → undefined و کنسول با
+     «Cannot read properties of undefined (reading 'entangle')» می‌شکست.
+     حالا «باز/بسته» فقط استیت کلاینتی Alpine است و گیتِ محتوای لیست همان
+     پراپرتی سروری $open می‌ماند (کوئری اعلان‌ها فقط هنگام باز بودن — فاز ۳۵). --}}
 <div class="relative"
-     x-data="{ open: @entangle('open') }"
+     x-data="{ open: false }"
      x-on:click.outside="open = false"
-     x-on:keydown.escape.window="open = false">
+     x-on:keydown.escape.window="open = false"
+     x-on:ap-bell-close.window="open = false">
 
     <button type="button"
             wire:click="toggle"
+            x-on:click="open = ! open"
             class="relative rounded-xl p-2.5 text-ink-2 transition-colors hover:bg-surface-3 hover:text-ink dark:text-night-ink-2 dark:hover:bg-night-3 dark:hover:text-night-ink"
             :aria-expanded="open.toString()"
             aria-haspopup="true"
