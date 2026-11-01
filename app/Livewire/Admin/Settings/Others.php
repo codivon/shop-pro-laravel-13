@@ -287,13 +287,15 @@ class Others extends Component
                     'title' => $this->getOthersFieldTitle($key),
                 ];
             }
-            change_env($key, $value);
+            // فاز ۱۴۱ — cacheConfig=false: قبلاً هر کلید تغییرکرده یک config:cache کامل
+            // (بوت Application دوم وسط چرخهٔ Livewire) اجرا می‌کرد؛ تا ۹ کلید یعنی تا ۹ بوت!
+            change_env($key, $value, false);
         }
 
         // بررسی BROADCAST_DRIVER (پورت دقیق)
         $oldBroadcastDriver = env('BROADCAST_DRIVER');
         if ($this->PUSHER_APP_ID && $this->PUSHER_APP_KEY && $this->PUSHER_APP_SECRET) {
-            change_env('BROADCAST_DRIVER', 'pusher');
+            change_env('BROADCAST_DRIVER', 'pusher', false); // فاز ۱۴۱
             if ($oldBroadcastDriver != 'pusher') {
                 $envChanges['BROADCAST_DRIVER'] = [
                     'old' => $oldBroadcastDriver ?: 'خالی',
@@ -302,7 +304,7 @@ class Others extends Component
                 ];
             }
         } else {
-            change_env('BROADCAST_DRIVER', 'log');
+            change_env('BROADCAST_DRIVER', 'log', false); // فاز ۱۴۱
             if ($oldBroadcastDriver != 'log') {
                 $envChanges['BROADCAST_DRIVER'] = [
                     'old' => $oldBroadcastDriver ?: 'خالی',
@@ -315,6 +317,10 @@ class Others extends Component
         if (! empty($envChanges)) {
             $allChanges['env_settings'] = $envChanges;
         }
+
+        // فاز ۱۴۱ — بازسازی کش کانفیگ پس از ارسال پاسخ (بوت اپ دوم وسط چرخهٔ Livewire
+        // ممنوع؛ رکورد فاز ۱۴۱ در ADMIN_PANEL_PROGRESS.md). قانون فاز ۱۳۸: production کش بماند.
+        defer_config_rebuild();
 
         // ========== 2. فایل‌ها (انتخاب از File Manager — مثل قدیمی مسیر رشته‌ای در option) ==========
         $file_inputs = [

@@ -787,6 +787,44 @@ function change_env($key, $value, bool $cacheConfig = true)
 }
 
 /**
+ * فاز ۱۴۱ — بازسازی کش کانفیگ «بعد از ارسال پاسخ»، نه وسط چرخهٔ درخواست
+ *
+ * ریشهٔ ارور پروداکشن «Undefined variable $start» (Livewire HandleComponents.php:584):
+ * ConfigCacheCommand::getFreshConfiguration() یک نمونه‌ی دوم Application را کامل بوت
+ * می‌کند (ConsoleKernel bootstrap ⇒ RegisterFacades روی اپ دوم ست می‌شود). به‌محض
+ * بازگشتِ Artisan::call('config:cache')، Facadeهای همان درخواست فعال به اپِ دوم — که
+ * .env «تازه» را خوانده — جابه‌جا می‌شوند. نتیجه: اگر در همان فراخوانی APP_DEBUG در
+ * env نوشته شده باشد، خروجی config('app.debug') بین دو بررسی متوالی لایووایر
+ * (خط ۵۸۲ قبل از متد و خط ۵۸۴ بعد از آن) برعکس می‌شود؛ در مسیرِ خاموش→روشن،
+ * $start فقط در شاخهٔ اول تعریف می‌شود و ارزیابیِ آرگومان trigger() در شاخهٔ دوم
+ * ErrorException می‌دهد ⇒ پاسخ ۵۰۰ ⇒ توست هم هرگز به مرورگر نمی‌رسد.
+ *
+ * راه‌حل: نوشتن envها داخل متد با change_env(..., false) و سپس صدور فرمان بازسازی
+ * از طریق همین هلپر — کلیدهای آن با app()->terminating() بعد از send() شدن پاسخ
+ * (kernel->terminate) اجرا می‌شوند؛ در آن نقطه جابه‌جایی Facade بی‌ضرر است.
+ *
+ * قانون بازسازی (اتحاد با فاز ۱۳۸): production ⇒ config:cache (سرعت)؛ سایر محیط‌ها
+ * ⇒ config:clear تا تغییرها فوراً در dev دیده شود. اگر $appEnv صریح داده نشود، از
+ * config('app.env') همان لحظه خوانده می‌شود.
+ *
+ * ⚠ این هلپر فقط در جریان HTTP/Livewire استفاده شود (پس از آن پاسخ ارسال می‌شود).
+ * در مسیرهای کنسولی/نصاب که پاسخی ارسال نمی‌شود، بازسازی را صریح و همگام انجام دهید.
+ */
+function defer_config_rebuild(?string $appEnv = null): void
+{
+    $appEnv ??= (string) config('app.env');
+    $command = $appEnv === 'production' ? 'config:cache' : 'config:clear';
+
+    app()->terminating(function () use ($command) {
+        try {
+            Artisan::call($command);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    });
+}
+
+/**
  * فاز ۱۳۸ — hasColumn با کش استاتیکِ سطح پروسه
  *
  * Schema::hasColumn روی MySQL هر بار به information_schema کوئری می‌زند (رفت‌وبرگشت

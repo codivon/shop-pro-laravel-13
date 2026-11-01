@@ -546,20 +546,13 @@ class Developer extends Component
 
         // فاز ۱۳۸ — بازسازی «یک‌بارهٔ» کش کانفیگ پس از همهٔ نوشتن‌های env:
         // production ⇒ کش بماند (سرعت)؛ بقیهٔ محیط‌ها ⇒ بدون کش تا تغییرها فوراً در dev دیده شود.
-        // فاز ۱۴۰ — دفاعی: اگر بازسازی کش به هر دلیل شکست خورد (دیسک پر، دسترسی
-        // نوشتن، env تزریقیِ هاست مثل DATABASE_URL و…)، خودِ «ذخیره» نباید ۵۰۰ بدهد —
-        // خطا گزارش و به کاربر پیام واضح داده می‌شود؛ مقادیر env قبلاً نوشته شده‌اند.
-        try {
-            if ($this->appEnv === 'production') {
-                Artisan::call('config:cache');
-            } else {
-                Artisan::call('config:clear');
-            }
-        } catch (\Throwable $e) {
-            report($e);
-
-            $this->dispatch('toast', message: 'تنظیمات ذخیره شد، اما بازسازی کش کانفیگ ناموفق بود: '.Str::limit($e->getMessage(), 120), type: 'warning');
-        }
+        // فاز ۱۴۰ — دفاعی: شکست بازسازی هرگز خودِ «ذخیره» را ۵۰۰ نکند.
+        // فاز ۱۴۱ — بازسازی به «بعد از ارسال پاسخ» موکول شد (defer_config_rebuild):
+        // Artisan::call('config:cache') وسط چرخهٔ Livewire یک Application دوم را بوت
+        // و Facadeها را به اپی با .env تازه جابه‌جا می‌کرد ⇒ config('app.debug') بین دو
+        // بررسیِ متوالی لایووایر برعکس می‌شد ⇒ «Undefined variable $start» و ۵۰۰ شدن
+        // ذخیره (و در نتیجه نرسیدن هیچ توست موفق/ناموفق به مرورگر).
+        defer_config_rebuild($this->appEnv);
 
         $this->dispatch('toast', message: 'تنظیمات توسعه‌دهنده ذخیره شد.', type: 'success');
     }

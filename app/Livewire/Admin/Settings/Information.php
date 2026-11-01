@@ -263,7 +263,10 @@ class Information extends Component
 
         if ($oldAdminRoutePrefix != $newAdminRoutePrefix) {
             $admin_route_prefix_changed = true;
-            change_env('ADMIN_ROUTE_PREFIX', $newAdminRoutePrefix);
+            // فاز ۱۴۱ — cacheConfig=false + بازسازی مؤجل: config:cache وسط چرخهٔ Livewire
+            // اپ دوم را بوت و Facadeها را جابه‌جا می‌کند (منشأ ارور $start) — ممنوع.
+            change_env('ADMIN_ROUTE_PREFIX', $newAdminRoutePrefix, false);
+            defer_config_rebuild();
             // قدیمی: Artisan::call('route:cache') — با Livewire/روت‌های closure ناسازگار است؛ اجرا نمی‌شود (اسپک فاز ۷)
 
             $allChanges['env_settings'] = [

@@ -64,9 +64,16 @@ class DeveloperController extends Controller
         }
 
         if ($scope === 'general') {
+            /*
+             * فاز ۱۴۱ — cacheConfig=false + بازسازی مؤجل (defer_config_rebuild):
+             * قبلاً هر change_env یک config:cache کامل (بوت Application دوم وسط درخواست)
+             * اجرا می‌کرد و انتهای متد هم config:clear — یعنی ۳ بوت اضافه + کشِ نهاییِ پاک‌شده
+             * (پروداکشن بدون کش کانفیگ می‌ماند). حالا فقط env نوشته می‌شود و بازسازی
+             * پس از ارسال پاسخ، یک‌بار و طبق قانون فاز ۱۳۸ انجام می‌شود.
+             */
             // Update APP_DEBUG in env
             $appDebug = $request->input('app_debug_mode') === 'true' ? 'true' : 'false';
-            change_env('APP_DEBUG', $appDebug);
+            change_env('APP_DEBUG', $appDebug, false);
 
             // Update enable_help_videos option
             $helpVideos = $request->input('enable_help_videos') === 'true' ? 'true' : 'false';
@@ -74,16 +81,16 @@ class DeveloperController extends Controller
 
             // Update updater token in env
             option_update('SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN', $request->input('SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN'));
-            change_env('SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN', $request->input('SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN'));
+            change_env('SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN', $request->input('SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN'), false);
 
             // Update DEBUGBAR_ENABLED in env
             $debugbar = $request->input('debugbar_enabled') === 'true' ? 'true' : 'false';
-            change_env('DEBUGBAR_ENABLED', $debugbar);
+            change_env('DEBUGBAR_ENABLED', $debugbar, false);
 
             // Update enable_old_updates option
             $oldUpdates = $request->input('enable_old_updates') === 'true' ? 'true' : 'false';
             option_update('enable_old_updates', $oldUpdates);
-            Artisan::call('config:clear');
+            defer_config_rebuild();
 
             return response('success');
         }
