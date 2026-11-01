@@ -18,6 +18,10 @@ class SpecType extends Model
 
     public function specifications()
     {
-        return $this->belongsToMany(Specification::class)->withPivot(['specification_group_id', 'group_ordering', 'specification_ordering'])->withTimestamps()->orderBy('specification_ordering');
+        // صریح‌سازی نام جدول و کلیدها (قبلاً بر حدسِ قراردادی لاراول تکیه داشت)
+        return $this->belongsToMany(Specification::class, 'spec_type_specification', 'spec_type_id', 'specification_id')
+            ->withPivot(['specification_group_id', 'group_ordering', 'specification_ordering'])
+            ->withTimestamps()
+            ->orderBy('specification_ordering');
     }
 }

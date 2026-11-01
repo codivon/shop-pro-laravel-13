@@ -43,7 +43,14 @@ return [
     |
     */
 
-    'enabled' => env('PULSE_ENABLED', true),
+    /*
+     * فاز ۱۳۷ — پیش‌فرض: خاموش.
+     * رکوردرهای Pulse روی «هر ریکوئست» چند INSERT (usage/user requests/cache
+     * interactions/slow queries...) روی MySQL می‌زنند؛ روی هاست اشتراکی همین
+     * نوشتن‌های اضافه، پنل و فروشگاه را محسوس کند می‌کند. برای مشاهدهٔ
+     * «سنجه‌های سیستمی» در پنل، موقتاً PULSE_ENABLED=true کنید.
+     */
+    'enabled' => env('PULSE_ENABLED', false),
 
     /*
     |--------------------------------------------------------------------------

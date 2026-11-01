@@ -86,6 +86,19 @@ class AppServiceProvider extends ServiceProvider
 
         Schema::defaultStringLength(191);
 
+        /*
+         * فاز ۱۳۷ — بیمهٔ سرعت production:
+         * barryvdh/laravel-debugbar به‌اشتباه در require (نه require-dev) است؛
+         * اگر روی سرور APP_DEBUG=true باشد، دیباگ‌بار برای «هر ریکوئست» تمام
+         * کوئری‌ها/ویوها را جمع می‌کند و نوار ابزار را به پاسخ تزریق می‌کند —
+         * پنل عملاً ۲ تا ۵ برابر کند می‌شود. در محیط production همیشه
+         * سخت‌افزارانه خاموشش می‌کنیم (مستقل از APP_DEBUG)؛ در local/staging
+         * رفتار قبلی (وابسته به APP_DEBUG/DEBUGBAR_ENABLED) حفظ می‌شود.
+         */
+        if ($this->app->isProduction() && class_exists(\Barryvdh\Debugbar\LaravelDebugbar::class)) {
+            \Barryvdh\Debugbar\Facades\Debugbar::disable();
+        }
+
         $this->registerRateLimiters();
 
         // مسیر build پنل جدید (خروجی Vite جدا از Mix)

@@ -159,6 +159,17 @@ class GlobalActivityObserver
     ];
 
     /**
+     * فاز ۱۳۷ — کش استاتیک وجود ستون‌ها (در سطح ترکیب جدول/فیلد، در هر ریکوئست فقط یک‌بار)
+     *
+     * قبلاً modelHasField برای «هر رویداد لاگ‌شده» تا ۹ کوئری SHOW COLUMNS روی
+     * information_schema می‌زد (برای فیلد name/title/... ) و چون getDisplayName
+     * در logActivity دو بار صدا زده می‌شد، تا ۱۸ کوئری در هر لاگ اجرا می‌شد.
+     * روی هاست اشتراکی هر کوئری information_schema چند ده میلی‌ثانیه طول می‌کشد؛
+     * همین تک‌باگ، ذخیره‌سازی هر رکورد در پنل را چند صد میلی‌ثانیه کند می‌کرد.
+     */
+    protected static array $columnExistsCache = [];
+
+    /**
      * Handle the created event for all models.
      */
     public function created(Model $model): void
@@ -235,11 +246,12 @@ class GlobalActivityObserver
      */
     protected function logActivity(Model $model, string $event): void
     {
-        // دریافت نام مدل و نام نمایشی
+        // دریافت نام مدل و نام نمایشی (فاز ۱۳۷ — فقط یک بار محاسبه می‌شود؛ قبلاً دوبار getDisplayName صدا زده می‌شد)
         $modelName = class_basename($model);
         $displayName = $this->getDisplayName($model);
 
-        // دریافت تغییرات
+        // دریافت کاربر انجام دهنده
+        $causer = $this->getCauser();
         $changes = [];
 
         if ($event === 'updated') {
@@ -295,14 +307,6 @@ class GlobalActivityObserver
             return;
         }
 
-
-        // دریافت نام مدل و نام نمایشی
-        $modelName = class_basename($model);
-        $displayName = $this->getDisplayName($model);
-
-        // دریافت کاربر انجام دهنده
-        $causer = $this->getCauser();
-
         // ساخت نام انجام دهنده
         $actorName = 'سیستم';
         if ($causer) {
@@ -320,10 +324,10 @@ class GlobalActivityObserver
         // ثبت لاگ
         activity()
             ->performedOn($model)
-            ->causedBy($this->getCauser())
+            ->causedBy($causer)
             ->withProperties($changes)
             ->event($event)
-            ->log($this->getDescription($event, $modelName, $displayName,$actorName));
+            ->log($this->getDescription($event, $modelName, $displayName, $actorName));
     }
 
     /**
@@ -372,15 +376,25 @@ class GlobalActivityObserver
 
     protected function modelHasField(Model $model, string $field): bool
     {
-        // روش اول: استفاده از schema
-        try {
-            return \Schema::connection($model->getConnectionName())->hasColumn($model->getTable(), $field);
-        } catch (\Exception $e) {
-            // اگر خطا رخ داد، از روش دوم استفاده کن
+        // روش اول: attributes بارگذاری‌شده — رایگان، بدون هیچ کوئری (فاز ۱۳۷)
+        if (array_key_exists($field, $model->getAttributes())) {
+            return true;
         }
 
-        // روش دوم: بررسی attributes
-        return array_key_exists($field, $model->getAttributes());
+        // روش دوم: کش استاتیک — برای هر ترکیب جدول/فیلد فقط یک بار در هر ریکوئست
+        // کوئری اسکیما می‌زند (قبلاً هر بار SHOW COLUMNS می‌زد)
+        $key = $model->getTable().'|'.$field;
+
+        if (array_key_exists($key, self::$columnExistsCache)) {
+            return self::$columnExistsCache[$key];
+        }
+
+        try {
+            return self::$columnExistsCache[$key] = \Schema::connection($model->getConnectionName())->hasColumn($model->getTable(), $field);
+        } catch (\Exception $e) {
+            // اگر خطا رخ داد (اتصال، جدول ناموجود و...) false کش می‌شود تا دوباره تلاش نشود
+            return self::$columnExistsCache[$key] = false;
+        }
     }
 
     /**

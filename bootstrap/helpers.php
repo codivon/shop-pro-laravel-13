@@ -2273,6 +2273,59 @@ if (! function_exists('shop_delete_previous_upload')) {
     }
 }
 
+if (! function_exists('shop_image_optimizer_enabled')) {
+    /**
+     * فاز ۱۳۷ — آیا بهینه‌ساز spatie/image-optimizer اصلاً باید اجرا شود؟
+     *
+     * زنجیرهٔ بهینه‌ساز برای هر تصویر چند پروسهٔ shell (jpegoptim/pngquant/
+     * optipng/gifsicle/svgo) می‌سازد؛ اگر باینری‌ها روی هاست نصب نباشند (حالت
+     * غالبِ هاست اشتراکی) هر spawn شکست می‌خورد و آپلود تصویر چند صد
+     * میلی‌ثانیه اضافه کند می‌شود — حتی وقتی خروجی نهایی همان فایلِ بدون
+     * بهینه‌سازی است.
+     *
+     * تصمیم (یک‌بار در هر ریکوئست، static):
+     *   1) env IMAGE_OPTIMIZER_ENABLED اگر ست شده باشد → حرف نهایی همان است
+     *   2) proc_open بسته باشد → بهینه‌ساز عملاً کار نمی‌کند → خاموش
+     *   3) هیچ‌کدام از باینری‌ها در PATH نباشد → خاموش (بدون spawnِ بی‌فایده)
+     *   4) در غیر این صورت فعال (رفتار قبلی)
+     */
+    function shop_image_optimizer_enabled(): bool
+    {
+        static $enabled = null;
+
+        if ($enabled !== null) {
+            return $enabled;
+        }
+
+        $forced = env('IMAGE_OPTIMIZER_ENABLED');
+
+        // مقدار خالی در .env یعنی «auto» (تشخیص خودکار) — فقط مقدار صریح، حرف نهایی است
+        if ($forced !== null && trim((string) $forced) !== '') {
+            return $enabled = in_array(strtolower(trim((string) $forced)), ['1', 'true', 'on', 'yes'], true);
+        }
+
+        if (! function_exists('proc_open')) {
+            return $enabled = false;
+        }
+
+        foreach (['jpegoptim', 'pngquant', 'optipng', 'gifsicle', 'svgo', 'cwebp'] as $bin) {
+            try {
+                $process = \Symfony\Component\Process\Process::fromShellCommandline('command -v '.$bin);
+                $process->run();
+
+                if ($process->isSuccessful()) {
+                    return $enabled = true;
+                }
+            } catch (Throwable) {
+                // شل در دسترس نیست — ادامهٔ جست‌وجو بی‌معناست
+                break;
+            }
+        }
+
+        return $enabled = false;
+    }
+}
+
 function uploadOptimizedImage($file, $storagePath, $postId = null, $options = [])
 {
     // فاز ۷۵ — تلهٔ تشخیصی برای کرش‌های Fatal مربوط به Intervention (لاگ درمان‌محور)
@@ -2343,8 +2396,8 @@ function uploadOptimizedImage($file, $storagePath, $postId = null, $options = []
     // ذخیره تصویر در مسیر تعیین‌شده
     Storage::disk('public')->put($filePath, $encodedImage);
 
-    // بهینه‌سازی تصویر
-    if ($options['optimize']) {
+    // بهینه‌سازی تصویر (فاز ۱۳۷ — فقط وقتی باینری‌ها واقعاً در دسترس‌اند)
+    if ($options['optimize'] && shop_image_optimizer_enabled()) {
         $optimizerChain = OptimizerChainFactory::create();
         $optimizerChain->optimize(public_path($filePath));
     }
@@ -2673,7 +2726,8 @@ if (! function_exists('upload_optimized_image_via_gd')) {
 
         Storage::disk('public')->put($filePath, $encoded);
 
-        if ($options['optimize']) {
+        // فاز ۱۳۷ — بهینه‌ساز فقط وقتی باینری‌ها واقعاً در دسترس‌اند
+        if ($options['optimize'] && shop_image_optimizer_enabled()) {
             try {
                 OptimizerChainFactory::create()->optimize(public_path($filePath));
             } catch (Throwable) {

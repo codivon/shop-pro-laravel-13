@@ -441,7 +441,7 @@ class ProductForm extends Component
             return;
         }
 
-        $specType = SpecType::where('name', $this->spec_type)->with('specificationGroups.specifications')->first();
+        $specType = SpecType::where('name', $this->spec_type)->first();
 
         if (! $specType) {
             $this->addError('spec_type', 'قالبی با این نام یافت نشد. به صورت خودکار هنگام ذخیره ساخته می‌شود.');
@@ -449,14 +449,30 @@ class ProductForm extends Component
             return;
         }
 
+        // گروه‌های قالب — رابطهٔ خودِ spec_type با پیوت spec_type_specification (مرتب با group_ordering)
+        $groups = $specType->specificationGroups()->get()->unique('id');
+
+        // مشخصه‌های همین نوع مشخصات — رابطهٔ محدودشده به spec_type (بدون جدول پیوت خیالی specification_specification_group)
+        $specs = $specType->specifications()->get()->unique('id');
+
         $this->specificationGroup = [];
 
-        foreach ($specType->specificationGroups as $group) {
-            $specs = [];
-            foreach ($group->specifications as $spec) {
-                $specs[] = ['name' => $spec->name, 'value' => '', 'special' => false];
+        foreach ($groups as $group) {
+            $rows = [];
+
+            foreach ($specs as $spec) {
+                if ((int) $spec->pivot->specification_group_id === (int) $group->id) {
+                    // ترتیب درون‌گروهی از specification_ordering پیوت حفظ می‌شود
+                    $rows[] = ['name' => $spec->name, 'value' => '', 'special' => false];
+                }
             }
-            $this->specificationGroup[] = ['name' => $group->name, 'specifications' => $specs];
+
+            // مثل ذخیره: گروه بدون مشخصه نادیده گرفته می‌شود
+            if ($rows === []) {
+                continue;
+            }
+
+            $this->specificationGroup[] = ['name' => $group->name, 'specifications' => $rows];
         }
     }
 
