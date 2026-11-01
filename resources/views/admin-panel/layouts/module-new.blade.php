@@ -177,7 +177,8 @@
         @import url("{{ asset('back/app-assets/vendors/css/extensions/toastr.css') }}") layer(legacy);
         @import url("{{ asset('back/app-assets/vendors/css/forms/select/select2.min.css') }}") layer(legacy);
         @import url("{{ asset('back/app-assets/plugins/select2totree/select2totree.css') }}") layer(legacy);
-        @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css") layer(legacy);
+        {{-- فاز ۱۳۸ — خودمیزبانی FA: cdnjs روی IPهای ایران کند/مسدود است و رندر را بلاک می‌کرد --}}
+        @import url("{{ asset('vendor/fontawesome/css/all.min.css') }}") layer(legacy);
         @import url("{{ asset('back/app-assets/css-rtl/bootstrap.css') }}") layer(legacy);
         @import url("{{ asset('back/app-assets/css-rtl/bootstrap-extended.css') }}") layer(legacy);
         @import url("{{ asset('back/app-assets/css-rtl/colors.css') }}") layer(legacy);

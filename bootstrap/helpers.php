@@ -755,6 +755,35 @@ function change_env($key, $value, bool $cacheConfig = true)
     return true;
 }
 
+/**
+ * فاز ۱۳۸ — hasColumn با کش استاتیکِ سطح پروسه
+ *
+ * Schema::hasColumn روی MySQL هر بار به information_schema کوئری می‌زند (رفت‌وبرگشت
+ * کامل به دیتابیس). اسکوپ‌های مرتب‌سازی لیست‌های پنل (Order/User/Admin/City/Province/
+ * Transaction و ترِیت‌های Seller/Product) در «هر بارگذاری صفحهٔ لیست با پارامتر sort»
+ * این چک را اجرا می‌کردند ⇒ یک کوئری اسکیما به‌ازای هر بارگذاری.
+ *
+ * نتیجه در هر پروسه کش می‌شود؛ php-fpm بین درخواست‌ها همان پراسس worker را نگه
+ * می‌دارد ⇒ در عمل کش حتی بین درخواست‌ها هم گرم می‌ماند.
+ *
+ * ⚠ فقط برای چک‌های «ساختارِ پایدار» اسکیما استفاده شود (وجود ستونی که با
+ * مایگریشنِ استاندارد ساخته می‌شود). تغییر اسکیما در میانهٔ یک پراسس فقط در
+ * تست‌های خاص رخ می‌دهد و چون اسکیمای یک اجرای تست ثابت است، ماندنِ نتیجه در
+ * کش بی‌خطر است.
+ */
+function schema_has_column(string $table, string $column): bool
+{
+    static $cache = [];
+
+    $key = $table.'.'.$column;
+
+    if (! array_key_exists($key, $cache)) {
+        $cache[$key] = \Illuminate\Support\Facades\Schema::hasColumn($table, $column);
+    }
+
+    return $cache[$key];
+}
+
 function get_current_theme()
 {
     $current_theme = config('general.current_theme');

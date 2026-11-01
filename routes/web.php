@@ -704,12 +704,11 @@ Route::post('subscriptions', [PushSubscriptionController::class, 'update']);
 Route::post('subscriptions/delete', [PushSubscriptionController::class, 'destroy']);
 
 // Manifest file (optional if VAPID is used)
-Route::get('manifest.json', function () {
-    return [
-        'name' => config('app.name'),
-        'gcm_sender_id' => config('webpush.gcm.sender_id')
-    ];
-});
+// فاز ۱۳۸ — از Closure به کنترلر منتقل شد تا route:cache در پروداکشن ممکن شود
+Route::get('manifest.json', [
+    \App\Http\Controllers\SystemUtilityController::class,
+    'manifest',
+]);
 
 
 /*
@@ -734,11 +733,9 @@ foreach ([
 }
 
 // به‌روزرسانی خودکار csrf برای اسکریپت‌های داخلی — دیگر توکن به بیرون درز نمی‌کند
-Route::get('refresh-csrf', function () {
-    abort_unless(auth('web')->check() || auth('adminPanel')->check(), 403);
-
-    return csrf_token();
-})->name('csrf')->middleware('throttle:30,1');
+// فاز ۱۳۸ — از Closure به کنترلر منتقل شد تا route:cache در پروداکشن ممکن شود
+Route::get('refresh-csrf', [\App\Http\Controllers\SystemUtilityController::class, 'refreshCsrf'])
+    ->name('csrf')->middleware('throttle:30,1');
 
 Route::get('/captcha/image', [\App\Http\Controllers\CaptchaController::class, 'image'])
     ->name('captcha.image')

@@ -61,6 +61,19 @@ class Developer extends Component
 
     public bool $appDebugMode = false;
 
+    /**
+     * فاز ۱۳۸ — محیط برنامه (APP_ENV) — از پنل تغییر می‌کند تا تنظیمِ سرعت
+     * (production = کش‌ها فعال، خطاها مخفی) به SSH/ویرایش دستی .env نیاز نداشته باشد.
+     */
+    public string $appEnv = 'production';
+
+    /**
+     * فاز ۱۳۸ — کلید اصلی شروع Pulse (PULSE_ENABLED) — recoreدرهای پایش سرعت.
+     * (تفاوت با pulseAdminAccess: آن سوییچ «دسترسی مدیران به داشبورد /pulse» است؛
+     * این سوییچ «خودِ ثبت متریک‌ها» است که سربار کمی روی هر درخواست دارد.)
+     */
+    public bool $pulseEnabled = false;
+
     /** فاز ۱۰۴ — داشبورد Pulse برای مدیران پنل (گیت viewPulse در AuthServiceProvider) */
     public bool $pulseAdminAccess = true;
 
@@ -256,6 +269,11 @@ class Developer extends Component
         // تنظیمات عمومی
         $this->updaterToken = (string) option('SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN');
         $this->appDebugMode = config('app.debug') == true;
+
+        // فاز ۱۳۸ — محیط و کلید اصلی Pulse (هر دو در env زندگی می‌کنند)
+        $this->appEnv = app()->environment();
+        $this->pulseEnabled = (bool) config('pulse.enabled');
+
         $this->debugbarEnabled = config('debugbar.enabled') == true;
         $this->enableOldUpdates = option('enable_old_updates', 'true') == 'true';
         $this->enableHelpVideos = option('enable_help_videos', 'true') == 'true';
@@ -482,9 +500,30 @@ class Developer extends Component
     {
         $this->ensureCreator();
 
+        $this->validate([
+            'appEnv' => ['required', 'in:production,staging,local'],
+        ], [
+            'appEnv.in' => 'محیط برنامه فقط می‌تواند production، staging یا local باشد.',
+        ], [
+            'appEnv' => 'محیط برنامه',
+        ]);
+
+        /*
+         * فاز ۱۳۸ — همهٔ envها با cacheConfig=false نوشته می‌شوند و در پایان «یک‌بار»
+         * کش کانفیگ بازسازی می‌شود. قبلاً هر change_env یک config:cache کامل (بوتِ یک
+         * Application دوم) اجرا می‌کرد و در پایان هم config:clear کل کش را می‌کُشت —
+         * یعنی پروداکشن بعد از «اولین ذخیرهٔ همین صفحه» تا ابد بدون کش کانفیگ و کند
+         * کار می‌کرد (یکی از ریشه‌های پنهانِ افت سرعت پنل).
+         */
+
         // APP_DEBUG در env
-        $appDebug = $this->appDebugMode ? 'true' : 'false';
-        change_env('APP_DEBUG', $appDebug);
+        change_env('APP_DEBUG', $this->appDebugMode ? 'true' : 'false', false);
+
+        // فاز ۱۳۸ — محیط برنامه در env (تغییر از پنل، بدون SSH)
+        change_env('APP_ENV', $this->appEnv, false);
+
+        // فاز ۱۳۸ — کلید اصلی Pulse در env (در «سنجه‌های سیستمی» پنل لازم است)
+        change_env('PULSE_ENABLED', $this->pulseEnabled ? 'true' : 'false', false);
 
         // enable_help_videos در option
         $helpVideos = $this->enableHelpVideos ? 'true' : 'false';
@@ -492,11 +531,11 @@ class Developer extends Component
 
         // توکن آپدیت‌کننده: option + env (پورت دقیق — هر دو)
         option_update('SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN', $this->updaterToken);
-        change_env('SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN', $this->updaterToken);
+        change_env('SELF_UPDATER_HTTP_PRIVATE_ACCESS_TOKEN', $this->updaterToken, false);
 
         // DEBUGBAR_ENABLED در env
         $debugbar = $this->debugbarEnabled ? 'true' : 'false';
-        change_env('DEBUGBAR_ENABLED', $debugbar);
+        change_env('DEBUGBAR_ENABLED', $debugbar, false);
 
         // enable_old_updates در option
         $oldUpdates = $this->enableOldUpdates ? 'true' : 'false';
@@ -505,7 +544,13 @@ class Developer extends Component
         // فاز ۱۰۴ — سوییچ دسترسی مدیران به داشبورد Pulse (/pulse)
         PulseSettings::setAdminAccess($this->pulseAdminAccess);
 
-        Artisan::call('config:clear');
+        // فاز ۱۳۸ — بازسازی «یک‌بارهٔ» کش کانفیگ پس از همهٔ نوشتن‌های env:
+        // production ⇒ کش بماند (سرعت)؛ بقیهٔ محیط‌ها ⇒ بدون کش تا تغییرها فوراً در dev دیده شود.
+        if ($this->appEnv === 'production') {
+            Artisan::call('config:cache');
+        } else {
+            Artisan::call('config:clear');
+        }
 
         $this->dispatch('toast', message: 'تنظیمات توسعه‌دهنده ذخیره شد.', type: 'success');
     }

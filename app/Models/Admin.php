@@ -208,7 +208,7 @@ class Admin extends Authenticatable
                     break;
                 }
                 default: {
-                    if ($this->getConnection()->getSchemaBuilder()->hasColumn($this->getTable(), $request->sort['field'])) {
+                    if (schema_has_column($this->getTable(), $request->sort['field'])) {
                         $query->orderBy($request->sort['field'], $request->sort['sort']);
                     }
                 }

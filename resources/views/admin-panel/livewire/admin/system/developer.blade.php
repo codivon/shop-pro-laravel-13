@@ -207,15 +207,37 @@
                         <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
                             <span>
                                 <span class="block text-[13px] font-bold">حالت توسعه</span>
-                                <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">APP_DEBUG — در حالت توسعه فایل‌ها کامپایل نشده‌اند</span>
+                                <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">APP_DEBUG — در پروداکشن خاموش بماند (سرعت + امنیت)</span>
                             </span>
                             <x-admin-panel::toggle wire:model="appDebugMode" size="sm" aria-label="حالت توسعه (APP_DEBUG)" />
+                        </div>
+
+                        <div class="rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                            <label for="app-env-select" class="block text-[13px] font-bold">محیط برنامه</label>
+                            <span class="mb-2 block text-[11px] text-ink-3 dark:text-night-ink-2">APP_ENV — در پروداکشن کش‌ها فعال و خطاها مخفی می‌شوند</span>
+                            <select id="app-env-select" wire:model="appEnv" class="ap-input w-full" dir="ltr">
+                                <option value="production">production</option>
+                                <option value="staging">staging</option>
+                                <option value="local">local</option>
+                            </select>
+                            <p class="mt-2 text-[11px] font-semibold leading-5 text-amber-700 dark:text-amber-400">
+                                <x-admin-panel::icon name="triangle-alert" class="me-1 inline size-3.5" />
+                                برای سرعت، سایت فعال باید روی production باشد.
+                            </p>
+                        </div>
+
+                        <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
+                            <span>
+                                <span class="block text-[13px] font-bold">Pulse (سنجه‌های سیستمی)</span>
+                                <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">PULSE_ENABLED — ثبت متریک‌های سرعت در دیتابیس؛ فقط هنگام تحلیل روشن کنید (سربار جزئی روی هر درخواست)</span>
+                            </span>
+                            <x-admin-panel::toggle wire:model="pulseEnabled" size="sm" aria-label="کلید اصلی Pulse" />
                         </div>
 
                         <div class="flex items-center justify-between gap-2.5 rounded-xl border border-line bg-surface-2 p-3.5 dark:border-night-line dark:bg-night-3">
                             <span>
                                 <span class="block text-[13px] font-bold">دیباگ بار</span>
-                                <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">DEBUGBAR_ENABLED</span>
+                                <span class="block text-[11px] text-ink-3 dark:text-night-ink-2">DEBUGBAR_ENABLED — در پروداکشن باید خاموش باشد (۲ تا ۵ برابر کندی)</span>
                             </span>
                             <x-admin-panel::toggle wire:model="debugbarEnabled" size="sm" aria-label="دیباگ بار" />
                         </div>

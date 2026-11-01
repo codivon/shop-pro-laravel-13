@@ -13,7 +13,8 @@
         $lucideList[] = ['name' => $name, 'inner' => $inner];
     }
 @endphp
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/MaterialDesign-Webfont/7.4.47/css/materialdesignicons.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+{{-- فاز ۱۳۸ — خودمیزبانی MDI: cdnjs روی IPهای ایران کند/مسدود است --}}
+<link rel="stylesheet" href="{{ asset('vendor/mdi/css/materialdesignicons.min.css') }}" referrerpolicy="no-referrer" />
 
 <script type="application/json" id="ap-icon-picker-data">{!! json_encode([
     'fa' => $faList,

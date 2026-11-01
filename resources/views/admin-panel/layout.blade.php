@@ -23,7 +23,8 @@
     @livewireStyles
 
     {{-- فاز ۳۴ — Font Awesome برای آیکون‌های منوی پکیج‌ها (همان منبعی که پنل قدیمی/پل استفاده می‌کند) --}}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE40xsADsfeQoEypE+enwcOiGjk/bSuGGKHEyjSoQ1zVisanQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    {{-- فاز ۱۳۸ — خودمیزبانی FA: cdnjs روی IPهای ایران کند/مسدود است و رندر همهٔ صفحات پنل را بلاک می‌کرد --}}
+    <link rel="stylesheet" href="{{ asset('vendor/fontawesome/css/all.min.css') }}" referrerpolicy="no-referrer" />
 
     {{-- فاز ۳۸ — پاک‌سازی استایل‌های پل بعد از SPA-navigate (عیناً مثل module-new — dedupe در
         mergeNewHead). اگر از صفحه‌ی پکیج (پل) به اینجا ناوبری SPA شده باشد، بلوک‌های

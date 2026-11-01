@@ -97,7 +97,7 @@ class Transaction extends Model
                 ->orderBy('users.first_name', $request->sort['sort'])
                 ->orderBy('users.last_name', $request->sort['sort'])
                 ->select('transactions.*');
-        } else if ($request->sort && $this->getConnection()->getSchemaBuilder()->hasColumn($this->getTable(), $request->sort['field'])) {
+        } else if ($request->sort && schema_has_column($this->getTable(), $request->sort['field'])) {
             $query->orderBy($request->sort['field'], $request->sort['sort']);
         }
 

@@ -19,6 +19,7 @@ use App\Http\Controllers\Back\RequestDepositAdmin as LegacyRequestDepositControl
 use App\Http\Controllers\Back\SellerControllers as LegacySellerController;
 use App\Http\Controllers\Back\TagController as LegacyTagController;
 use App\Http\Controllers\Back\UserController as LegacyUserController;
+use App\Http\Controllers\SystemUtilityController;
 use App\Http\Middleware\AdminPanel;
 use App\Http\Middleware\GuestAdminPanel;
 use App\Livewire\Admin\Admins\AdminIndex;
@@ -202,21 +203,8 @@ Route::prefix('admin/'.admin_route_prefix())->name('np.')->group(function () {
         |----------------------
         */
         Route::get('profile', Profile::class)->name('profile');
-        Route::get('cache-clear', function () {
-            if (auth('adminPanel')->id() !== 1) {
-                abort(403);
-            }
-
-            Artisan::call('config:clear');
-            Artisan::call('cache:clear');
-            Artisan::call('route:clear');
-            Artisan::call('view:clear');
-
-            return redirect()->route('np.dashboard')->with('np-toast', [
-                'type' => 'success',
-                'message' => 'کش سیستم با موفقیت پاک شد.',
-            ]);
-        })->name('cache-clear');
+        // فاز ۱۳۸ — از Closure به کنترلر منتقل شد تا route:cache در پروداکشن ممکن شود
+        Route::get('cache-clear', [SystemUtilityController::class, 'cacheClear'])->name('cache-clear');
 
         /*
         |----------------------
