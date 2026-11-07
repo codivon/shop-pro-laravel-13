@@ -3363,3 +3363,22 @@ DigiPay v1.3.0 (اسنپ‌پی + ری‌برندینگ) پوش شد؛ CreditPay
 - `public/vendor/installer/fonts/roboto/Roboto-Variable-latin.woff2` + `roboto-local.css` — فونت محلی جدید
 - `public/vendor/installer/css/scss/_variables.scss` + `sass/_variables.sass` — اشارهٔ $url_0 به فایل محلی
 - مستندات: ADMIN_PANEL_PROGRESS.md (رکورد فاز ۱۴۳ — بازسازی‌شده)
+
+---
+
+## فاز ۱۴۴ — ممیزی سرعت لایهٔ Livewire پنل ادمین (۱۵۷ کامپوننت): یک یافتهٔ عملیاتی و رفع آن + تأیید سلامت کامل معماری
+
+> **زمینه:** درخواست کاربر «بله انجام بده» — گسترش ممیزی سرعت به لایهٔ Livewire پنل جدید (اسنپ‌شات/رندرها). اسکن ایستا روی هر ۱۵۷ کامپوننت `app/Livewire/Admin/**` و ویوهای `resources/views/admin-panel/**` + الگوهای ضدالگوی کلاسیک.
+
+| موضوع | شرح |
+|---|---|
+| یافتهٔ عملیاتی — ۶ اینپوت زندهٔ بدون debounce | سه صفحه ۶ اینپوت متنی با `wire:model.live` بدون debounce داشتند: **orders/index** و **sellers/orders** (از تاریخ/تا تاریخ با data-jdp) و **orders/create** (هزینهٔ ارسال/مبلغ تخفیف). هر ضربهٔ کلید = یک راندتریپ کامل لایووایر (آپدیت اکپوینت + render سرور + morph) — تایپ «۱۲۰۰۰۰۰» یعنی ۷ رفت‌وبرگشت! روی اتصال ایران هرکدام ۰.۵-۲ ثانیه. **فیکس: `.debounce.300ms`** روی هر ۶ مورد — تایپ جفت‌رشته‌ای به یک راندتریپ تبدیل می‌شود؛ برای تاریخ‌پیکر هم رویداد input همان است (فقط با تأخیر ۳۰۰ms). |
+| تأییدهای سلامت (بدون اقدام) | pagination: **صفر** `render()` با `->get()` بدون محدودیت/کش (اسکن پایتونی هر ۱۵۷ کامپوننت)؛ داشبورد کاملاً کش‌شده (np-dashboard-* با TTL 60/300 ثانیه)؛ `#[Computed]` در ۹۸ کامپوننت؛ state عمومی فقط اسکالر (بدون کالکشن در اسنپ‌شات)؛ wire:pollها شرطی/early-return با فواصل منطقی (2s/4s/10s/60s — refreshPending با pendingSlugs خالی فوراً برمی‌گردد)؛ wire:loading در ۱۲۴/۱۴۲ صفحه؛ eager loading درست در ProductIndex (`->with(['category','brand','lowestPrice'])`) و OrderIndex (`->with(['user','items.seller'])`)؛ جست‌وجوهای متنی بقیهٔ صفحات از قبل `.debounce.400ms` دارند؛ checkbox/select های `wire:model.live` رویداد change دارند و debounce نمی‌خواهند. |
+| راستی‌آزمایی | تغییرات این فاز فقط attribute بلید است (بدون منطق PHP — `wire:model.live.debounce.300ms` نحو استاندارد Livewire v4)؛ `php -l` روی فایل‌های فاز ۱۴۳ سبز. سوئیت کامل به DB نیاز دارد و سندباکس پس از ریست، MariaDB/composer ندارد — دیف‌های فاز ۱۴۳ (کد واقعی) قبلاً روی اجرای یکسان سبز شده‌اند (رکورد فاز ۱۴۳). |
+| جمع‌بندی معماری | لایهٔ Livewire پنل ادمین پس از فازهای ۱۳۹-۱۴۴ از نظر کارایی سالم است: صفحه‌بندی، کش داشبورد، computed، eager loading، poll شرطی، debounce جست‌وجو و loading-state همگی رعایت شده‌اند. قاتل‌های باقی‌ماندهٔ سرعتِ حس‌شده از بیرونِ این لایه‌اند (شبکه/فونت‌های خارجی که فاز ۱۴۳ حذف کرد + Pulse انتخابی کاربر). |
+
+### فایل‌های فاز ۱۴۴
+- `resources/views/admin-panel/livewire/admin/orders/index.blade.php` — debounce برای fromDate/toDate
+- `resources/views/admin-panel/livewire/admin/sellers/orders.blade.php` — debounce برای fromDate/toDate
+- `resources/views/admin-panel/livewire/admin/orders/create.blade.php` — debounce برای shippingCost/discountAmount
+- مستندات: ADMIN_PANEL_PROGRESS.md (رکورد فاز ۱۴۴)

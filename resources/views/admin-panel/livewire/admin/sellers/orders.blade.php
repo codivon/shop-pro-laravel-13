@@ -85,11 +85,11 @@
                 <div class="grid grid-cols-2 gap-2.5">
                     <div>
                         <label class="mb-1.5 block text-xs font-semibold">از تاریخ</label>
-                        <input type="text" wire:model.live="fromDate" data-jdp data-jdp-only-date="true" class="ap-input !py-2 fa-digits text-center" placeholder="۱۴۰۴/۰۱/۰۱">
+                        <input type="text" wire:model.live.debounce.300ms="fromDate" data-jdp data-jdp-only-date="true" class="ap-input !py-2 fa-digits text-center" placeholder="۱۴۰۴/۰۱/۰۱">
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-semibold">تا تاریخ</label>
-                        <input type="text" wire:model.live="toDate" data-jdp data-jdp-only-date="true" class="ap-input !py-2 fa-digits text-center" placeholder="۱۴۰۴/۰۱/۳۱">
+                        <input type="text" wire:model.live.debounce.300ms="toDate" data-jdp data-jdp-only-date="true" class="ap-input !py-2 fa-digits text-center" placeholder="۱۴۰۴/۰۱/۳۱">
                     </div>
                 </div>
                 <div class="flex items-end">

@@ -240,13 +240,13 @@
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-semibold">هزینه ارسال (تومان)</label>
-                        <input type="text" wire:model.live="shippingCost" class="ap-input fa-digits" placeholder="۰"
+                        <input type="text" wire:model.live.debounce.300ms="shippingCost" class="ap-input fa-digits" placeholder="۰"
                                x-on:input="$el.value = $el.value.replace(/[^\d]/g, '')">
                         @error('shippingCost') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="mb-1.5 block text-xs font-semibold">مبلغ تخفیف (تومان)</label>
-                        <input type="text" wire:model.live="discountAmount" class="ap-input fa-digits" placeholder="۰"
+                        <input type="text" wire:model.live.debounce.300ms="discountAmount" class="ap-input fa-digits" placeholder="۰"
                                x-on:input="$el.value = $el.value.replace(/[^\d]/g, '')">
                         @error('discountAmount') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
