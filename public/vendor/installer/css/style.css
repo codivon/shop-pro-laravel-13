@@ -5,7 +5,15 @@
  */
 /* FONT PATH
  * -------------------------- */
-@import url("https://fonts.googleapis.com/css?family=Roboto:400,300,500,700,900");
+/* فاز ۱۴۳ — بومی‌سازی فونت: @import گوگل (fonts.googleapis.com) روی IP ایران رندر صفحهٔ نصاب را معطل می‌کرد؛
+   Roboto متغیر (بازهٔ وزن 300..900) از قبل در فایل محلی زیر ذخیره شده است */
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap;
+  src: url("../fonts/roboto/Roboto-Variable-latin.woff2") format('woff2');
+}
 @font-face {
   font-family: 'FontAwesome';
   src: url("../fonts/fontawesome-webfont.eot?v=4.7.0");

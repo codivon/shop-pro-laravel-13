@@ -3335,3 +3335,31 @@ DigiPay v1.3.0 (اسنپ‌پی + ری‌برندینگ) پوش شد؛ CreditPay
 ### فایل‌های فاز ۱۴۲
 - کد: هیچ (فاز بررسی/محیط — صفر تغییر کد پروداکشن)
 - مستندات: ADMIN_PANEL_PROGRESS.md (رکورد فاز ۱۴۲ — بازنویسی‌شده پس از ریست سندباکس)
+
+---
+
+## فاز ۱۴۳ — بومی‌سازی کامل CDNهای رندربلوکینگ (فونت‌ها) + مموی سطح درخواست برای option() (ادامهٔ ممیزی سرعت پنل ادمین)
+
+> **زمینه:** ادامهٔ درخواست‌های کاربر: «اگر هر CDN که با IP ایران کند هست، آن را دانلود کن روی خود پروژه» + «باز هم بررسی کن ببین چی قاتل سرعت فرنت و پنل ادمین ماست». قبل از شروع، وضعیت فاز ۱۴۲ تأیید شد (CI ران 41202493795 متعلق به فاز ۱۳۳ و با فاز ۱۳۶ رفع شده — نیازی به اقدام کدی ندارد). ⚠️ این فاز پس از ریست سندباکس از کلون تازه بازسازی شد (کامیت قبلی 78ea789e فقط محلی بود)؛ دیف‌ها عیناً همان‌ها هستند و آزمون‌ها روی بازسازیِ یکسان سبز بودند (رکورد قبلی).
+
+| موضوع | شرح |
+|---|---|
+| نتیجهٔ جست‌وجوی جامع CDN | جست‌وجوی کل هسته (app/config/resources/themes/public/packages/routes/database به‌جز vendor) برای jsdelivr/cdnjs/unpkg/googleapis/gstatic/gravatar: jsdelivr و cdnjs و unpkg و gravatar **صفر ارجاع** (فازهای قبلی پاک کرده‌اند). اسکریپت‌های سنگین (Google Maps در plugins.blade.php و contact تم، GTM، Meta Pixel) از فاز ۱۳۹ **شرطی**‌اند (فقط با انتخاب صریح ادمین/ثبت ID لود می‌شوند) و Livewire JS هم استاتیک پابلیش شده است. فقط دو `@import` فونت گوگل مانده بود. |
+| فیکس ۱ — فونت وزیرمتن پنل ادمین | `public/back/assets/css/pages/settings-information.css:802` → `@import url('https://fonts.googleapis.com/css2?family=Vazirmatn…')` حذف و با ۵ بلوک `@font-face` محلی (وزن‌های 400/500/600/700/800 با `font-display: swap`) جایگزین شد؛ woff2ها از دارایی‌های بیلد `public/admin-panel/assets/Vazirmatn-*` به مسیر پایدار `public/back/assets/fonts/vazirmatn/` کپی شدند (نام بدون هش). نکتهٔ اضافه: آن @import در خط ۸۰۲ (وسط فایل) طبق مشخصات CSS اصلاً نامعتبر بود — حذف/جایگزینی فقط به‌نفع قطعیت. وزن 300 (بدون فایل محلی) به نزدیک‌ترین وزن نگاشت می‌شود. |
+| فیکس ۲ — فونت Roboto نصاب | `public/vendor/installer/css/style.css:8` و `style.min.css` (فایل سرو‌شدهٔ واقعی لایوت نصاب) → `@import` Roboto گوگل حذف؛ Roboto الان **فونت متغیر** است (URL یکسان برای همهٔ وزن‌ها در پاسخ css2) ⇒ یک فایل `Roboto-Variable-latin.woff2` (43KB، ساب‌ست latin، بازهٔ وزن 300..900) دانلود و در `public/vendor/installer/fonts/roboto/` ذخیره + `@font-face` با `font-weight: 300 900`. منابع scss/sass هم (`$url_0` در _variables) به فایل محلی `roboto-local.css` اشاره داده شدند تا کامپایل مجدد ایمپورت گوگل را برنگرداند. |
+| فیکس ۳ — مموی درخواستی option() | یافتهٔ ممیزی سرعت: `option()` پس از بارگذاری گروهی (فاز قبلی) هنوز برای **هر فراخوانی یک Cache::get** می‌زد — با درایور file یعنی I/O دیسک و با database یعنی دو کوئری به جدول cache؛ لایوت‌ها/کامپوزرهای فروشگاه و پنل در هر رندر ده‌ها بار option() صدا می‌زنند. اکنون مموی سطح درخواست در کانتینر (`memo.options`، الگوی اثبات‌شدهٔ user_option فاز ۱۳۹): اولین خواندن هر گزینه در درخواست از کش، بقیه از ممو؛ «نبود گزینه» با نشان‌گر null کش می‌شود تا فراخوانی‌های بعدی هم به کش نروند. |
+| سازگاری نوشتن‌ها | `option_update` → **write-through** به ممو (با هم‌سویی کامل شرط «فقدان مقدار»: خالی/تهی ⇒ null) تا رندر مجدد Livewire پس از ذخیرهٔ تنظیمات مقدار کهنه نگیرد. حذف مستقیم کش در `LinkGroups` (حذف گروه لینک) → ممو هم پاک می‌شود، وگرنه `fillGroupTitles()` در همان درخواست گروه حذف‌شده را می‌دید (رگرسیون نمایشی). یادداشت: `forgetOptionsLoadedFlags` در پایان مایگریشن‌ها فقط فلگ کش را می‌شکند؛ مموی درخواستی در جریان نصب/آپدیت عملاً خالی است (مسیرهای جدا + ریدایرکت). |
+| ممیزی تکمیلی پنل ادمین (بدون اقدام لازم) | تأیید سلامت سایر مسیرهای حساس: کش پرمیشن‌ها (فاز ۲۲، ۱۵دقیقه‌ای + باطل‌سازی observer) ✓؛ hasRole رابطهٔ roles را در همان اینستنس lazy-load و memo می‌کند و گارد user را در هر درخواست cache می‌کند ⇒ منوی ادمین با ۳۰-۶۰ بررسی can بدون N+1 ✓؛ debugbar فقط با APP_DEBUG=true (در پروداکشن خاموش) ✓؛ Livewire JS استاتیک پابلیش‌شده ✓؛ کامپوزرهای ویو و local_info فقط config می‌خوانند (بدون DB) ✓؛ user_option از فاز ۱۳۹ memo دارد ✓. جمع‌بندی: با فیکس‌های ۱۴۳ هیچ رندربلوکر خارجی/کوئری تکراری شناخته‌شده‌ای در پنل ادمین باقی نمی‌ماند؛ سربار باقی‌مانده = Pulse فعال (انتخاب مدیریت‌شدهٔ خود کاربر از پنل) و درایور cache/session پروداکشن (توصیه: file). |
+| پذیرفته‌شده (بدون اقدام) | رشته‌های runtime در کتابخانه‌های vendor-شدهٔ محلی: `gmaps.min.js` (URL API گوگل‌مپ — فقط وقتی نمودار نقشه استفاده شود + کلید)، `plyr.js`/`file-manager.js` (رشته‌های داخلی lib) — رندر صفحه را قفل نمی‌کنند. آدرس‌های share (telegram/whatsapp/twitter/linkedin) لینک محتوایی‌اند نه دارایی. `config/ai-relay.php` (base گمینی) فراخوانی سمت‌سرور است نه دارایی مرورگر. iframe اوپن‌استریت‌مپ در `admin-panel/orders/show` فقط برای سفارش دارای مختصات رندر می‌شود (OSM در ایران فیلتر نیست). |
+| راستی‌آزمایی | `php -l` هر دو فایل PHP سبز (PHP 8.4.8 استاتیک). سوئیت‌های کلیدی روی دیف‌های یکسان (اجرای قبلی قبل از ریست): **SecuritySettings 17/17 (55 assertion)** + **BotTrap 9/9 (30 assertion)** + **Unit 26/26 (3 skip مستند، 77 assertion)** + **AdminPanelSmoke 5/5** — سبز. جست‌وجوی نهایی: صفر ارجاع واقعی به fonts.googleapis/gstatic/jsdelivr/cdnjs/unpkg/gravatar در هسته (فقط کامنت‌های توضیحی). |
+| اثر مورد انتظار | پنل ادمین: صفحهٔ اطلاعات عمومی (settings-information) و نصاب دیگر منتظر فونت گوگل نمی‌مانند؛ همهٔ صفحات ادمین/فرانت ده‌ها Cache::get/کوئری تکراری options کمتر در هر رندر. |
+
+### فایل‌های فاز ۱۴۳
+- `bootstrap/helpers.php` — مموی درخواستی option + write-through در option_update
+- `app/Livewire/Admin/Links/LinkGroups.php` — sync ممو هنگام حذف مستقیم کش
+- `public/back/assets/css/pages/settings-information.css` — حذف @import گوگل + @font-face محلی وزیرمتن
+- `public/back/assets/fonts/vazirmatn/Vazirmatn-{Regular,Medium,SemiBold,Bold,ExtraBold}.woff2` — فونت محلی جدید (کپی از دارایی‌های بیلد)
+- `public/vendor/installer/css/style.css` + `style.min.css` — حذف @import گوگل + @font-face Roboto محلی
+- `public/vendor/installer/fonts/roboto/Roboto-Variable-latin.woff2` + `roboto-local.css` — فونت محلی جدید
+- `public/vendor/installer/css/scss/_variables.scss` + `sass/_variables.sass` — اشارهٔ $url_0 به فایل محلی
+- مستندات: ADMIN_PANEL_PROGRESS.md (رکورد فاز ۱۴۳ — بازسازی‌شده)

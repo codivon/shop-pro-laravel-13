@@ -216,6 +216,18 @@ class LinkGroups extends Component
 
         Cache::forget('options.' . app()->getLocale() . '.link_groups_' . $key);
 
+        // فاز ۱۴۳ — هم‌گام‌سازی مموی درخواستی option() با حذف مستقیم کش؛
+        // در غیر این صورت fillGroupTitles() در همین درخواست گروه حذف‌شده را می‌بیند.
+        if (app()->bound('memo.options')) {
+            $memoOptions = app('memo.options');
+            foreach ([app()->getLocale(), 'fa'] as $memoLang) {
+                $memoKey = $memoLang . '|link_groups_' . $key;
+                if ($memoOptions->offsetExists($memoKey)) {
+                    $memoOptions->offsetUnset($memoKey);
+                }
+            }
+        }
+
         $this->confirmingDelete = null;
         $this->fillGroupTitles();
 

@@ -1,0 +1,9 @@
+/* فاز ۱۴۳ — بومی‌سازی فونت Roboto نصاب
+   (جایگزین @import گوگل — fonts.googleapis.com روی IP ایران رندر را معطل می‌کند) */
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap;
+  src: url('Roboto-Variable-latin.woff2') format('woff2');
+}

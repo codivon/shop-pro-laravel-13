@@ -102,6 +102,17 @@ function option_update($option_name, $option_value)
     $option->save();
 
     Cache::forever('options.'.app()->getLocale().'.'.$option_name, $option_value);
+
+    // فاز ۱۴۳ — write-through به مموی درخواستی (مثل user_option فاز ۱۳۹) تا
+    // خواندن بعدی در همین درخواست (رندر مجدد Livewire پس از ذخیره) کهنه نماند.
+    if (app()->bound('memo.options')) {
+        $nonLanguageOptions = (array) config('general.non_language_options', []);
+        $language = in_array($option_name, $nonLanguageOptions) ? 'fa' : app()->getLocale();
+
+        // هم‌سو با شرط «فقدان مقدار» در option(): خالی/تهی ⇒ نشان‌گر null
+        $memoValue = (is_null($option_value) || $option_value === false || $option_value == '') ? null : $option_value;
+        app('memo.options')->offsetSet($language.'|'.$option_name, $memoValue);
+    }
 }
 
 function option($option_name, $default_value = '')
@@ -131,6 +142,28 @@ function option($option_name, $default_value = '')
 
     $prefix = 'options.'.$language.'.';
 
+    /*
+     * فاز ۱۴۳ — مموی سطح درخواست (همان الگوی user_option در فاز ۱۳۹):
+     * پس از بارگذاری گروهی، هر option() یک Cache::get است — با درایور file یعنی
+     * I/O دیسک و با درایور database یعنی دو کوئری به جدول cache؛ در حالی‌که
+     * لایوت‌ها/کامپوزرهای فروشگاه و پنل در هر رندر ده‌ها بار option() صدا می‌زنند.
+     * ممو در «کانتینر» ساکن می‌شود که در php-fpm به‌ازای هر درخواست از نو ساخته
+     * می‌شود ⇒ همیشه هم‌گام با کشِ همان درخواست. «نبودِ گزینه» با null نشان‌گذاری
+     * می‌شود تا فراخوانی‌های بعدی هم به کش نروند. نوشتن‌ها با write-through در
+     * option_update هم‌گام می‌مانند (و حذف مستقیمِ کش در LinkGroups هم ممو را می‌پاکاند).
+     */
+    if (! app()->bound('memo.options')) {
+        app()->instance('memo.options', new \ArrayObject);
+    }
+    $memo = app('memo.options');
+    $memoKey = $language.'|'.$option_name;
+
+    if ($memo->offsetExists($memoKey)) {
+        $memoValue = $memo->offsetGet($memoKey);
+
+        return $memoValue === null ? $default_value : $memoValue;
+    }
+
     // بهینه‌سازی کارایی: همه گزینه‌های این زبان با «یک» کوئری بارگذاری و کش
     // می‌شوند (فلگ __loaded__). قبلاً هر option() یک کوئری جدا اجرا می‌کرد
     // و صفحات پنل/فروشگاه ده‌ها کوئری تکراری options داشتند.
@@ -144,8 +177,12 @@ function option($option_name, $default_value = '')
     $value = Cache::get($prefix.$option_name, '__option_missing__');
 
     if ($value === '__option_missing__' || is_null($value) || $value === false || $value == '') {
+        $memo->offsetSet($memoKey, null);
+
         return $default_value;
     }
+
+    $memo->offsetSet($memoKey, $value);
 
     return $value;
 }

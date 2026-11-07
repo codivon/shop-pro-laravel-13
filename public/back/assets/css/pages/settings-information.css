@@ -798,8 +798,45 @@ textarea:focus-visible {
     .tabs-list { flex-wrap: wrap; }
 }
 
-/* ── فونت ── */
-@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap');
+/* ── فونت ──
+   فاز ۱۴۳ — بومی‌سازی: @import گوگل (fonts.googleapis.com) روی IP ایران کند/فیلتر است
+   و @import وسط فایل هم نامعتبر بود. وزیرمتن (وزن‌های 400..800) اکنون از فایل‌های محلی
+   پروژه خوانده می‌شود؛ وزن 300 به نزدیک‌ترین وزن (400) نگاشت می‌شود. */
+@font-face {
+    font-family: 'Vazirmatn';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('../../fonts/vazirmatn/Vazirmatn-Regular.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Vazirmatn';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('../../fonts/vazirmatn/Vazirmatn-Medium.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Vazirmatn';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('../../fonts/vazirmatn/Vazirmatn-SemiBold.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Vazirmatn';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('../../fonts/vazirmatn/Vazirmatn-Bold.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Vazirmatn';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url('../../fonts/vazirmatn/Vazirmatn-ExtraBold.woff2') format('woff2');
+}
 
 /* ─────────────────────────────────────────────
    پایه
