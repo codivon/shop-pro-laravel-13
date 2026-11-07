@@ -86,6 +86,24 @@ class Kernel extends ConsoleKernel
         })->everyMinute();
 
         /*
+         * فاز ۱۴۵ — پشتیبان‌گیری خودکار فقط-دیتابیس (جداول + دیتا).
+         *
+         * هر دقیقه صدا زده می‌شود اما خودِ AutoBackupRunner با «موعد» (دوره + ساعت)
+         * تصمیم می‌گیرد بکاپ بگیرد یا نه؛ پس سربار تیک‌های بی‌موعد فقط دو option() خواندن است.
+         * موتور دامپ PHP-only است، پس در هاست اشتراکی هم بدون Symfony Process
+         * مستقیماً در همین پروسه اجرا می‌شود (مثل GenerateSitemap).
+         */
+        if ($isSharedHosting) {
+            $schedule->call(function () {
+                app(\App\Services\Backup\AutoBackupRunner::class)->runIfDue();
+            })->everyMinute();
+        } else {
+            $schedule->command('backup:auto')
+                ->everyMinute()
+                ->withoutOverlapping();
+        }
+
+        /*
          * Generate sitemap files.
          *
          * On shared hosting, run directly in current PHP process

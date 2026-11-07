@@ -173,10 +173,14 @@ class SiteBackupService
     /**
      * ساخت ZIP پشتیبان — [filename, path, size, tables, rows, files]
      *
+     * فاز ۱۴۵ — پارامتر $filenamePrefix: بکاپ‌های خودکارِ کرون با پیشوند
+     * «auto-backup» ذخیره می‌شوند تا از بکاپ‌های دستی تفکیک شوند (نشان «خودکار»
+     * در فهرست + حذف خودکار فقط فایل‌های خودکار). پیش‌فرض «backup» = رفتار قبل.
+     *
      * @param array $tables نام جدول‌های انتخاب‌شده
      * @param array $groupIds شناسه‌ی گروه‌های فایل انتخاب‌شده (نسبی به base_path)
      */
-    public function create(array $tables, array $groupIds): array
+    public function create(array $tables, array $groupIds, string $filenamePrefix = 'backup'): array
     {
         @ini_set('memory_limit', '1024M');
         @set_time_limit(0);
@@ -223,7 +227,7 @@ class SiteBackupService
             file_put_contents($manifestPath, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 
             // ---- ZIP ----
-            $filename = 'backup-'.now()->format('Ymd-His').'.zip';
+            $filename = $filenamePrefix.'-'.now()->format('Ymd-His').'.zip';
             $zipPath = $disk.'/'.$filename;
 
             $zip = new \ZipArchive();

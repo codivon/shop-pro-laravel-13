@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\System;
 
+use App\Services\Backup\AutoBackupRunner;
 use App\Services\Backup\SiteBackupService;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Title;
@@ -16,6 +17,8 @@ use Morilog\Jalali\Jalalian;
  *    (الپاین) و ارسال آرایه‌ها به create() — بدون رفت‌وبرگشت برای هر تیک (درس فاز ۱۷-د)
  *  - ساخت همگام و بدون صف → رفع باگ «پیغام موفق ولی بکاپ ساخته نمی‌شود»
  *  - بازیابی ZIP با منطق skip-if-exists + گزارش کامل
+ *  - فاز ۱۴۵ — تنظیمات پشتیبان‌گیری خودکار فقط-دیتابیس (کرون جاب) در همین صفحه:
+ *    دوره/ساعت/حذف خودکار/ایمیل — منطق موعد و اجرا در App\Services\Backup\AutoBackupRunner
  */
 #[Title('پشتیبان‌گیری')]
 class BackupIndex extends Component
@@ -31,9 +34,39 @@ class BackupIndex extends Component
 
     public ?string $confirmingDelete = null;
 
+    /* ---------------- پشتیبان‌گیری خودکار (فاز ۱۴۵) ---------------- */
+
+    public bool $autoEnabled = false;
+
+    /** daily | weekly | monthly | custom */
+    public string $autoPeriod = 'daily';
+
+    /** فاصله‌ی اجرا در حالت «بازه‌ی دلخواه» (روز) */
+    public int $autoCustomDays = 3;
+
+    /** ساعت اجرا 'HH:MM' */
+    public string $autoTime = '03:00';
+
+    /** حذف خودکار بکاپ‌های خودکار قدیمی‌تر از N روز — ۰ = خاموش */
+    public int $autoDeleteDays = 180;
+
+    public bool $autoEmailEnabled = false;
+
+    /** گیرنده‌ی ایمیل بکاپ — خالی = info_email سایت */
+    public string $autoEmailTo = '';
+
     public function mount(): void
     {
         auth('adminPanel')->user()?->can('backups.index') ?: abort(403);
+
+        // فاز ۱۴۵ — بارگذاری تنظیمات پشتیبان‌گیری خودکار
+        $this->autoEnabled = AutoBackupRunner::enabled();
+        $this->autoPeriod = AutoBackupRunner::period();
+        $this->autoCustomDays = AutoBackupRunner::customDays();
+        $this->autoTime = AutoBackupRunner::time();
+        $this->autoDeleteDays = AutoBackupRunner::deleteDays();
+        $this->autoEmailEnabled = AutoBackupRunner::emailEnabled();
+        $this->autoEmailTo = (string) option(AutoBackupRunner::OPT_EMAIL_TO, '');
     }
 
     /* ---------------- داده‌ها ---------------- */
@@ -93,6 +126,8 @@ class BackupIndex extends Component
                 'date' => Storage::disk('backup')->lastModified($file),
                 'name' => basename($file),
                 'size' => number_format(Storage::disk('backup')->size($file) / 1048576, 2).' mb',
+                // فاز ۱۴۵ — تفکیک بکاپ خودکارِ کرون از دستی (پیشوند auto-backup-)
+                'auto' => str_starts_with(basename($file), AutoBackupRunner::FILE_PREFIX.'-'),
             ];
         }
 
@@ -224,6 +259,132 @@ class BackupIndex extends Component
             report($e);
             $this->dispatch('toast', message: 'بازیابی ناموفق بود: '.$e->getMessage(), type: 'error');
         }
+    }
+
+    /* ---------------- پشتیبان‌گیری خودکار (فاز ۱۴۵) ---------------- */
+
+    /**
+     * ضربان زمان‌بند: کرون جاب در ۲ دقیقه‌ی اخیر اجرا شده؟
+     * (همان منطق صفحه‌ی تنظیمات توسعه‌دهنده — بدون کرون، بکاپ خودکار هرگز اجرا نمی‌شود)
+     */
+    public function getScheduleAliveProperty(): bool
+    {
+        $last = option('schedule_run');
+
+        if (! $last) {
+            return false;
+        }
+
+        try {
+            $last = is_object($last) ? $last : \Carbon\Carbon::parse($last);
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return $last->diffInMinutes(now()) <= 2;
+    }
+
+    /** اجرای بعدی موعد برای نمایش در پنل */
+    public function getAutoNextRunProperty(): array
+    {
+        return AutoBackupRunner::nextRun();
+    }
+
+    /** نتیجه‌ی آخرین اجرا (موفق/خطا) برای خط وضعیت زیر تنظیمات */
+    public function getAutoLastResultProperty(): ?array
+    {
+        $raw = (string) option(AutoBackupRunner::OPT_LAST_RESULT, '');
+
+        if ($raw === '') {
+            return null;
+        }
+
+        $decoded = json_decode($raw, true);
+
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    /** آخرین اسلاتِ اجراشده (جلالی) برای نمایش */
+    public function getAutoLastSlotJalaliProperty(): string
+    {
+        $last = (string) option(AutoBackupRunner::OPT_LAST_SLOT, '');
+
+        if ($last === '') {
+            return '';
+        }
+
+        try {
+            return Jalalian::fromDateTime(\Carbon\Carbon::parse($last))->format('Y/m/d — H:i');
+        } catch (\Throwable) {
+            return '';
+        }
+    }
+
+    /**
+     * ذخیره‌ی تنظیمات پشتیبان‌گیری خودکار — سوییچ‌ها/دوره/ساعت/حذف/ایمیل
+     * گیت: ساخت بکاپ (backups.create) — تغییر این تنظیمات عملاً «ساختن بکاپ آینده» است.
+     */
+    public function saveAutoBackup(): void
+    {
+        auth('adminPanel')->user()?->can('backups.create') ?: abort(403);
+
+        $this->validate([
+            'autoPeriod' => ['required', 'in:daily,weekly,monthly,custom'],
+            'autoCustomDays' => ['required_if:autoPeriod,custom', 'nullable', 'integer', 'min:1', 'max:365'],
+            'autoTime' => ['required', 'regex:/^([01]\d|2[0-3]):[0-5]\d$/'],
+            'autoDeleteDays' => ['required', 'integer', 'min:0', 'max:3650'],
+            'autoEmailTo' => ['nullable', 'email', 'max:190'],
+        ], [
+            'autoPeriod.required' => 'دوره‌ی پشتیبان‌گیری را انتخاب کنید.',
+            'autoPeriod.in' => 'دوره‌ی پشتیبان‌گیری نامعتبر است.',
+            'autoCustomDays.required_if' => 'برای بازه‌ی دلخواه، فاصله‌ی اجرا (روز) را وارد کنید.',
+            'autoCustomDays.integer' => 'فاصله‌ی اجرا باید عدد باشد.',
+            'autoCustomDays.min' => 'فاصله‌ی اجرا باید حداقل ۱ روز باشد.',
+            'autoCustomDays.max' => 'فاصله‌ی اجرا حداکثر ۳۶۵ روز است.',
+            'autoTime.required' => 'ساعت اجرا را مشخص کنید.',
+            'autoTime.regex' => 'فرمت ساعت اجرا باید HH:MM باشد.',
+            'autoDeleteDays.integer' => 'حذف خودکار باید عدد روز باشد.',
+            'autoDeleteDays.min' => 'برای خاموش‌کردن حذف خودکار، عدد را صفر کنید.',
+            'autoDeleteDays.max' => 'حداکثر ۳۶۵۰ روز.',
+            'autoEmailTo.email' => 'ایمیل گیرنده معتبر نیست.',
+        ], [
+            'autoPeriod' => 'دوره‌ی پشتیبان‌گیری',
+            'autoCustomDays' => 'فاصله‌ی اجرا',
+            'autoTime' => 'ساعت اجرا',
+            'autoDeleteDays' => 'حذف خودکار',
+            'autoEmailTo' => 'ایمیل گیرنده',
+        ]);
+
+        option_update(AutoBackupRunner::OPT_ENABLED, $this->autoEnabled ? 'on' : 'off');
+        option_update(AutoBackupRunner::OPT_PERIOD, $this->autoPeriod);
+        option_update(AutoBackupRunner::OPT_CUSTOM_DAYS, (string) max(1, $this->autoCustomDays));
+        option_update(AutoBackupRunner::OPT_TIME, $this->autoTime);
+        option_update(AutoBackupRunner::OPT_DELETE_DAYS, (string) max(0, $this->autoDeleteDays));
+        option_update(AutoBackupRunner::OPT_EMAIL_ENABLED, $this->autoEmailEnabled ? 'on' : 'off');
+        option_update(AutoBackupRunner::OPT_EMAIL_TO, trim($this->autoEmailTo));
+
+        $this->dispatch('toast', message: $this->autoEnabled
+            ? 'پشتیبان‌گیری خودکار فعال شد — اجرای بعدی: '.$this->autoNextRun['jalali']
+            : 'تنظیمات پشتیبان‌گیری خودکار ذخیره شد (فعال نیست).', type: 'success');
+    }
+
+    /** ساخت فوریِ یک بکاپ خودکار (بدون توجه به موعد — برای تست قابلیت) */
+    public function runAutoBackupNow(): void
+    {
+        auth('adminPanel')->user()?->can('backups.create') ?: abort(403);
+
+        $outcome = app(AutoBackupRunner::class)->run(force: true);
+
+        if (! $outcome['ran']) {
+            $this->dispatch('toast', message: 'اجرای بکاپ خودکار انجام نشد: '.($outcome['reason'] ?? ''), type: 'error');
+
+            return;
+        }
+
+        $r = $outcome['result'];
+
+        $this->dispatch('toast', message: 'بکاپ خودکار «'.$r['filename'].'» ساخته شد — '
+            .$r['tables'].' جدول، '.number_format($r['rows']).' رکورد.', type: 'success');
     }
 
     /* ---------------- دانلود / حذف (پورت ۱:۱ قدیمی) ---------------- */

@@ -11,6 +11,18 @@ use Illuminate\Support\Facades\Auth;
 class GlobalActivityObserver
 {
     /**
+     * گزینه‌های دفتریِ زمان‌بند/بکاپ خودکار که هر دقیقه/هر اجرا می‌نویسند و ارزش ممیزی ندارند —
+     * فاز ۱۴۵: قبلاً ضربان کرون (schedule_run) روزانه ۱۴۴۰ ردیف بی‌ارزش
+     * «سیستم، Option را بروزرسانی کرد» در activity_log می‌ساخت.
+     */
+    protected array $excludedOptionNames = [
+        'schedule_run',
+        'backup_auto_last_slot',
+        'backup_auto_last_run',
+        'backup_auto_last_result',
+    ];
+
+    /**
      * مدل‌هایی که نباید لاگ شوند
      */
     protected $excludedModels = [
@@ -337,6 +349,11 @@ class GlobalActivityObserver
     {
         // حذف مدل‌های خاص
         if (in_array(get_class($model), $this->excludedModels)) {
+            return true;
+        }
+
+        // فاز ۱۴۵ — گزینه‌های دفتریِ کرون/بکاپ خودکار بی‌ارزشِ ممیزی
+        if ($model instanceof \App\Models\Option && in_array($model->option_name, $this->excludedOptionNames, true)) {
             return true;
         }
 

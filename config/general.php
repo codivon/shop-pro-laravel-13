@@ -534,5 +534,18 @@ return [
         'multi_vendor_dashboard_stats',
         'multi_vendor_default_commission',
         'multi_vendor_withdraw_min_amount',
+
+        // فاز ۱۴۵ — پشتیبان‌گیری خودکار فقط-دیتابیس (صفحهٔ پشتیبان‌گیری — گیت‌ها در
+        // App\Services\Backup\AutoBackupRunner) — مستقل از زبان + دفترِ اجرا
+        'backup_auto_enabled',
+        'backup_auto_period',
+        'backup_auto_custom_days',
+        'backup_auto_time',
+        'backup_auto_delete_days',
+        'backup_auto_email_enabled',
+        'backup_auto_email_to',
+        'backup_auto_last_slot',
+        'backup_auto_last_run',
+        'backup_auto_last_result',
     ],
 ];

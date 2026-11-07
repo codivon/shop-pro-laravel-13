@@ -151,6 +151,169 @@
         </div>
     </div>
 
+    {{-- ============ پشتیبان‌گیری خودکار (فاز ۱۴۵) — فقط جداول و دیتای جداول ============ --}}
+    <div class="ap-card p-5" wire:key="auto-backup-settings"
+         x-data="{ on: @js($autoEnabled), mail: @js($autoEmailEnabled) }">
+
+        <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
+            <div class="flex items-start gap-3">
+                <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/12 dark:text-brand-400">
+                    <x-admin-panel::icon name="clock" class="size-5" />
+                </span>
+                <div>
+                    <h2 class="text-sm font-bold">فعال‌سازی پشتیبان‌گیری خودکار</h2>
+                    <p class="mt-1 text-xs leading-6 text-ink-3 dark:text-night-ink-2">
+                        بکاپ، در پس‌زمینه و بدون تاخیر ساخته می‌شود و در فهرست «فایل‌های پشتیبان» با برچسب
+                        <span class="ap-badge bg-violet-50 text-violet-700 dark:bg-violet-500/12 dark:text-violet-400">خودکار</span>
+                        دیده می‌شود. پشتیبان‌گیری فقط از <b>جداول و دیتای دیتابیس</b> است (بدون فایل‌ها) — کرون جاب سایت باید فعال باشد.
+                    </p>
+                </div>
+            </div>
+            <x-admin-panel::toggle wire:model="autoEnabled" x-on:change="on = $event.target.checked"
+                                   aria-label="فعال‌سازی پشتیبان‌گیری خودکار" />
+        </div>
+
+        {{-- هشدار کرون — از ضربان schedule_run (درس فاز ۱۴۵: بدون کرون، هیچ بکاپی اجرا نمی‌شود) --}}
+        @unless ($this->scheduleAlive)
+            <div class="mb-3.5 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] leading-5 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
+                <x-admin-panel::icon name="triangle-alert" class="mt-0.5 size-4 shrink-0" />
+                <span>
+                    <b>کرون جاب فعال نیست.</b>
+                    تا وقتی زمان‌بند لاراول (schedule:run هر دقیقه) اجرا نشود، هیچ بکاپ خودکاری ساخته نمی‌شود — تنظیم دستور کرون در «تنظیمات توسعه‌دهنده».
+                </span>
+            </div>
+        @endunless
+
+        <form wire:submit="saveAutoBackup" class="space-y-3.5">
+            <fieldset :disabled="!on" class="space-y-3.5 transition-opacity" :class="on ? '' : 'opacity-50'">
+                <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+
+                    {{-- دوره پشتیبان‌گیری --}}
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold" for="auto-period">دوره‌ی پشتیبان‌گیری</label>
+                        <select id="auto-period" wire:model.live="autoPeriod"
+                                class="ap-input w-full">
+                            <option value="daily">روزانه</option>
+                            <option value="weekly">هفتگی</option>
+                            <option value="monthly">ماهانه (هر ۳۰ روز)</option>
+                            <option value="custom">بازه‌ی زمانی دلخواه (بر اساس روز)</option>
+                        </select>
+                    </div>
+
+                    {{-- فاصله اجرا — فقط در حالت بازه‌ی دلخواه --}}
+                    @if ($autoPeriod === 'custom')
+                        <div wire:key="auto-custom-days">
+                            <label class="mb-1.5 block text-xs font-semibold" for="auto-custom-days">فاصله‌ی اجرا (چند روز؟)</label>
+                            <div class="relative">
+                                <input id="auto-custom-days" type="number" min="1" max="365" wire:model="autoCustomDays"
+                                       class="ap-input pe-12" inputmode="numeric">
+                                <span class="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-xs text-ink-3">روز</span>
+                            </div>
+                            @error('autoCustomDays') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                    @endif
+
+                    {{-- ساعت اجرا --}}
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold" for="auto-time">ساعت اجرا</label>
+                        <input id="auto-time" type="time" wire:model="autoTime" class="ap-input">
+                        @error('autoTime') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- حذف خودکار قدیمی‌ها --}}
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold" for="auto-delete-days">حذف خودکار پشتیبان‌های قدیمی‌تر از</label>
+                        <div class="relative">
+                            <input id="auto-delete-days" type="number" min="0" max="3650" wire:model="autoDeleteDays"
+                                   class="ap-input pe-12" inputmode="numeric">
+                            <span class="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-xs text-ink-3">روز</span>
+                        </div>
+                        @error('autoDeleteDays') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+
+                <p class="text-[11px] leading-5 text-ink-3 dark:text-night-ink-2">
+                    مثال: اگر «هر ۶ روز» باشد، فقط بکاپ‌های <b>خودکارِ</b> روزهای ۶، ۱۲، ۱۸… حذف می‌شوند، نه پشتیبان‌های دستی شما.
+                    (صفر = حذف خودکار خاموش)
+                </p>
+
+                {{-- اجرای بعدی — مطابق نمونه: «اجرا بعدی: … ← به شرط فعال‌بودن کرون جاب» --}}
+                <div class="flex flex-wrap items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300">
+                    <x-admin-panel::icon name="info" class="size-4 shrink-0" />
+                    @if ($this->autoNextRun['overdue'])
+                        <span>موعد اجرای بعدی رسیده ({{ $this->autoNextRun['jalali'] }}) — با تیکِ بعدی کرون جاب بکاپ ساخته می‌شود.</span>
+                    @else
+                        <span>اجرای بعدی: {{ $this->autoNextRun['jalali'] }} — به شرط فعال‌بودن کرون جاب.</span>
+                    @endif
+                </div>
+            </fieldset>
+
+            {{-- ============ ارسال پشتیبان با ایمیل ============ --}}
+            <div class="rounded-xl border border-line p-3.5 dark:border-night-line">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <p class="flex items-center gap-2 text-[13px] font-bold">
+                            <x-admin-panel::icon name="mail" class="size-4 text-ink-3" />
+                            ارسال پشتیبان با ایمیل
+                        </p>
+                        <p class="mt-1 text-xs leading-6 text-ink-3 dark:text-night-ink-2">
+                            پس از هر پشتیبان‌گیری، اگر حجم فایل کم باشد فایل به ایمیل پیوست می‌شود؛ در غیر این صورت روی سرور نگه‌داری شده و مشخصاتِ آن ایمیل می‌شود.
+                        </p>
+                    </div>
+                    <x-admin-panel::toggle wire:model="autoEmailEnabled" x-on:change="mail = $event.target.checked"
+                                           aria-label="ارسال پشتیبان با ایمیل" />
+                </div>
+
+                <div x-show="mail" x-cloak class="mt-3" wire:key="auto-email-to">
+                    <label class="mb-1.5 block text-xs font-semibold" for="auto-email-to">ایمیل گیرنده</label>
+                    <input id="auto-email-to" type="email" dir="ltr" placeholder="{{ option('info_email', 'admin@example.com') }}"
+                           wire:model="autoEmailTo" class="ap-input font-mono">
+                    <p class="mt-1 text-[11px] text-ink-3 dark:text-night-ink-2">خالی بگذارید تا از «ایمیل سایت» در تنظیمات اطلاعات عمومی استفاده شود.</p>
+                    @error('autoEmailTo') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <p x-show="!mail" class="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-[11px] text-ink-3 dark:bg-night-3 dark:text-night-ink-2">
+                    ارسال ایمیل پشتیبان خاموش است — فایل‌ها فقط روی سرور نگه‌داری می‌شوند.
+                </p>
+            </div>
+
+            {{-- وضعیت آخرین اجرا --}}
+            @if ($last = $this->autoLastResult)
+                <div class="flex flex-wrap items-center gap-2 rounded-xl border {{ ($last['ok'] ?? false) ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-500/20 dark:bg-emerald-500/10' : 'border-red-200 bg-red-50 dark:border-red-500/20 dark:bg-red-500/10' }} p-3 text-[11px] leading-5 {{ ($last['ok'] ?? false) ? 'text-emerald-800 dark:text-emerald-300' : 'text-red-700 dark:text-red-400' }}">
+                    <x-admin-panel::icon name="{{ ($last['ok'] ?? false) ? 'circle-check' : 'triangle-alert' }}" class="size-4 shrink-0" />
+                    @if ($last['ok'] ?? false)
+                        <span>آخرین بکاپ خودکار: <span class="ltr font-mono">{{ $last['filename'] }}</span>
+                            <span class="fa-digits mx-1">— {{ \App\Livewire\Admin\System\BackupIndex::faSize((int) ($last['size'] ?? 0)) }}</span>
+                            <span class="fa-digits">({{ number_format($last['tables'] ?? 0) }} جدول، {{ number_format($last['rows'] ?? 0) }} رکورد)</span>
+                            @if (($last['at'] ?? '') !== '')
+                                <span class="fa-digits mx-1">— {{ \App\Livewire\Admin\System\BackupIndex::jdate(strtotime($last['at'])) }}</span>
+                            @endif
+                        </span>
+                    @else
+                        <span>آخرین اجرای بکاپ خودکار ناموفق بود: <span class="ltr font-mono">{{ $last['error'] ?? 'خطای نامشخص' }}</span></span>
+                    @endif
+                </div>
+            @endif
+
+            @can('backups.create')
+                <div class="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3.5 dark:border-night-line">
+                    <span class="text-[11px] text-ink-3 dark:text-night-ink-2">تنظیمات فوراً اعمال می‌شوند — نیازی به ذخیره‌ی مجدد نیست.</span>
+                    <div class="flex items-center gap-2">
+                        <button type="button" wire:click="runAutoBackupNow" wire:loading.attr="disabled" wire:target="runAutoBackupNow"
+                                class="ap-btn-ghost !py-2.5" title="ساخت فوری یک بکاپ فقط-دیتابیس برای تست قابلیت">
+                            <x-admin-panel::icon name="timer" class="size-4" />
+                            ساخت فوری بکاپ خودکار
+                        </button>
+                        <button type="submit" class="ap-btn-primary !py-2.5">
+                            <x-admin-panel::icon name="check-circle" class="size-4" />
+                            ذخیره تنظیمات
+                        </button>
+                    </div>
+                </div>
+            @endcan
+        </form>
+    </div>
+
     {{-- ============ گزارش آخرین بازیابی ============ --}}
     @if ($report = $this->report)
         <div class="ap-card overflow-hidden" wire:key="restore-report">
@@ -278,6 +441,11 @@
                         <p class="fa-digits mt-0.5 text-[10px] text-ink-3 dark:text-night-ink-2">تاریخ: {{ \App\Livewire\Admin\System\BackupIndex::jdate($backup['date']) }}</p>
                     </div>
                     <span class="ap-badge bg-emerald-50 text-emerald-700 dark:bg-emerald-500/12 dark:text-emerald-400">تکمیل شد</span>
+                    @if ($backup['auto'])
+                        <span class="ap-badge bg-violet-50 text-violet-700 dark:bg-violet-500/12 dark:text-violet-400">خودکار</span>
+                    @else
+                        <span class="ap-badge bg-surface-2 text-ink-2 dark:bg-night-3 dark:text-night-ink-2">دستی</span>
+                    @endif
                     <span class="ltr text-[11px] text-ink-3 dark:text-night-ink-2">{{ $backup['size'] }}</span>
                     <div class="flex items-center gap-1.5">
                         <button type="button" wire:click="download('{{ $backup['name'] }}')"
