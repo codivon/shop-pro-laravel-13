@@ -185,7 +185,7 @@
                          x-transition:leave="transition ease-in duration-100"
                          x-transition:leave-start="opacity-100"
                          x-transition:leave-end="opacity-0"
-                         class="absolute top-full end-0 z-30 mt-2 w-60 overflow-hidden rounded-xl border border-line bg-surface p-1.5 shadow-pop dark:border-night-line dark:bg-night-2"
+                         class="absolute top-full start-0 sm:start-auto sm:end-0 z-30 mt-2 w-60 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-line bg-surface p-1.5 shadow-pop dark:border-night-line dark:bg-night-2"
                          role="menu" aria-label="انتخاب وضعیت جدید برای محصولات انتخاب‌شده">
                         <p class="px-2.5 pb-1 pt-1.5 text-[11px] font-bold text-ink-3 dark:text-night-ink-2">وضعیت تایید</p>
                         <button type="button" wire:click="bulkChangeStatus('Accept')" x-on:click="open = false"
