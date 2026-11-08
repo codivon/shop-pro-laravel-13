@@ -159,15 +159,91 @@
 
     {{-- نوار انتخاب گروهی --}}
     <div x-show="$wire.selected.length > 0" x-cloak
-         class="sticky top-20 z-20 flex items-center justify-between gap-3 rounded-2xl border border-brand-200 bg-brand-50/95 px-4 py-2.5 shadow-card backdrop-blur dark:border-brand-500/25 dark:bg-brand-950/80">
+         class="sticky top-20 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-200 bg-brand-50/95 px-4 py-2.5 shadow-card backdrop-blur dark:border-brand-500/25 dark:bg-brand-950/80">
         <span class="text-[13px] font-bold text-brand-800 dark:text-brand-300">
             <span class="fa-digits" x-text="ApFormat.faDigits($wire.selected.length)"></span> محصول انتخاب شده
         </span>
-        <button type="button" wire:click="$set('confirmingBulkDelete', true)"
-                class="ap-btn !px-3 !py-1.5 text-[13px] bg-red-600 text-white hover:bg-red-700">
-            <x-admin-panel::icon name="trash-2" class="size-4" />
-            حذف همه
-        </button>
+        <div class="flex flex-wrap items-center gap-2">
+            @can('products.update')
+                {{-- تغییر وضعیت گروهی (فاز ۱۴۶) — منوی بازشو کنار دکمه حذف گروهی --}}
+                <div class="relative" x-data="{ open: false }"
+                     x-on:click.outside="open = false" x-on:keydown.escape.window="open = false">
+                    <button type="button" x-on:click="open = !open"
+                            class="ap-btn !px-3 !py-1.5 text-[13px] bg-sky-600 text-white hover:bg-sky-700"
+                            :aria-expanded="open" aria-haspopup="true" aria-label="تغییر وضعیت محصولات انتخاب‌شده">
+                        <x-admin-panel::icon name="refresh-cw" class="size-4" />
+                        تغییر وضعیت
+                        <x-admin-panel::icon name="chevron-down" class="size-3.5 opacity-80 transition-transform duration-200"
+                                             x-bind:class="open ? 'rotate-180' : ''" />
+                    </button>
+
+                    {{-- منوی بازشوی وضعیت‌ها --}}
+                    <div x-show="open" x-cloak
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0 translate-y-1 scale-95"
+                         x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                         x-transition:leave="transition ease-in duration-100"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         class="absolute top-full end-0 z-30 mt-2 w-60 overflow-hidden rounded-xl border border-line bg-surface p-1.5 shadow-pop dark:border-night-line dark:bg-night-2"
+                         role="menu" aria-label="انتخاب وضعیت جدید برای محصولات انتخاب‌شده">
+                        <p class="px-2.5 pb-1 pt-1.5 text-[11px] font-bold text-ink-3 dark:text-night-ink-2">وضعیت تایید</p>
+                        <button type="button" wire:click="bulkChangeStatus('Accept')" x-on:click="open = false"
+                                wire:loading.attr="disabled" wire:target="bulkChangeStatus, bulkChangePublished"
+                                class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-semibold transition-colors hover:bg-surface-2 dark:hover:bg-night-3"
+                                role="menuitem">
+                            <span class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/12 dark:text-emerald-400">
+                                <x-admin-panel::icon name="circle-check" class="size-4" />
+                            </span>
+                            تایید شده
+                        </button>
+                        <button type="button" wire:click="bulkChangeStatus('Waiting')" x-on:click="open = false"
+                                wire:loading.attr="disabled" wire:target="bulkChangeStatus, bulkChangePublished"
+                                class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-semibold transition-colors hover:bg-surface-2 dark:hover:bg-night-3"
+                                role="menuitem">
+                            <span class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-500/12 dark:text-amber-400">
+                                <x-admin-panel::icon name="clock" class="size-4" />
+                            </span>
+                            در انتظار تایید
+                        </button>
+                        <button type="button" wire:click="bulkChangeStatus('Reject')" x-on:click="open = false"
+                                wire:loading.attr="disabled" wire:target="bulkChangeStatus, bulkChangePublished"
+                                class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-semibold transition-colors hover:bg-surface-2 dark:hover:bg-night-3"
+                                role="menuitem">
+                            <span class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600 dark:bg-red-500/12 dark:text-red-400">
+                                <x-admin-panel::icon name="circle-x" class="size-4" />
+                            </span>
+                            تایید نشده
+                        </button>
+                        <div class="mx-1 my-1 border-t border-line dark:border-night-line"></div>
+                        <p class="px-2.5 pb-1 pt-1.5 text-[11px] font-bold text-ink-3 dark:text-night-ink-2">وضعیت انتشار</p>
+                        <button type="button" wire:click="bulkChangePublished('1')" x-on:click="open = false"
+                                wire:loading.attr="disabled" wire:target="bulkChangeStatus, bulkChangePublished"
+                                class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-semibold transition-colors hover:bg-surface-2 dark:hover:bg-night-3"
+                                role="menuitem">
+                            <span class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600 dark:bg-sky-500/12 dark:text-sky-400">
+                                <x-admin-panel::icon name="eye" class="size-4" />
+                            </span>
+                            انتشار
+                        </button>
+                        <button type="button" wire:click="bulkChangePublished('0')" x-on:click="open = false"
+                                wire:loading.attr="disabled" wire:target="bulkChangeStatus, bulkChangePublished"
+                                class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-semibold transition-colors hover:bg-surface-2 dark:hover:bg-night-3"
+                                role="menuitem">
+                            <span class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-surface-3 text-ink-2 dark:bg-night-3 dark:text-night-ink-2">
+                                <x-admin-panel::icon name="eye-off" class="size-4" />
+                            </span>
+                            پیش‌نویس
+                        </button>
+                    </div>
+                </div>
+            @endcan
+            <button type="button" wire:click="$set('confirmingBulkDelete', true)"
+                    class="ap-btn !px-3 !py-1.5 text-[13px] bg-red-600 text-white hover:bg-red-700">
+                <x-admin-panel::icon name="trash-2" class="size-4" />
+                حذف همه
+            </button>
+        </div>
     </div>
 
     {{-- جدول --}}

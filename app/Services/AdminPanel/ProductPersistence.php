@@ -736,6 +736,44 @@ class ProductPersistence
     }
 
     /* ==================================================================
+     |  تغییر وضعیت گروهی (فاز ۱۴۶)
+     ================================================================== */
+
+    /**
+     * تغییر وضعیت گروهی محصولات از لیست (وضعیت تایید یا وضعیت انتشار).
+     *
+     * آپدیت گروهیِ تک‌کوئری: چون update گروهی رویداد مدل (Observer) نمی‌گیرد،
+     * کش فروشگاه را اینجا «یک‌بار» به‌صورت صریح با Product::clearCache() ابطال
+     * می‌کنیم — به‌جای حلقهٔ save تکی که هم n کوئری می‌زد و هم n بار کش را می‌شست.
+     *
+     * @param  array<int, int|string>  $ids        شناسهٔ محصولات انتخاب‌شده
+     * @param  array<string, mixed>    $attributes ستون‌های تغییر (status یا published)
+     * @param  string                  $label      متن فعالیت برای activity_log
+     */
+    public function bulkStatus(array $ids, array $attributes, string $label): int
+    {
+        $count = Product::whereIn('id', $ids)->update($attributes);
+
+        if ($count > 0) {
+            Product::clearCache();
+        }
+
+        activity()
+            ->causedBy(auth('adminPanel')->user())
+            ->event('updated')
+            ->withProperties([
+                'action' => 'bulk_status_product',
+                'product_ids' => $ids,
+                'changes' => $attributes,
+                'count' => count($ids),
+                'ip' => request()->ip(),
+            ])
+            ->log($label);
+
+        return $count;
+    }
+
+    /* ==================================================================
      |  تبدیل تاریخ‌های شمسی
      ================================================================== */
 

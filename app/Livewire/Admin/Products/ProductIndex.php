@@ -271,6 +271,70 @@ class ProductIndex extends Component
         $this->dispatch('toast', message: 'محصولات انتخاب‌شده حذف شدند.', type: 'success');
     }
 
+    /* ---------------- تغییر وضعیت گروهی (فاز ۱۴۶) ---------------- */
+
+    /**
+     * تغییر وضعیت تایید محصولات انتخاب‌شده: Accept / Waiting / Reject
+     * (منوی بازشوی «تغییر وضعیت» در نوار انتخاب گروهی)
+     */
+    public function bulkChangeStatus(string $status): void
+    {
+        $this->authorizeProduct('products.update');
+
+        if ($this->selected === [] || ! in_array($status, ['Accept', 'Waiting', 'Reject'], true)) {
+            return;
+        }
+
+        $labels = [
+            'Accept' => 'تایید شده',
+            'Waiting' => 'در انتظار تایید',
+            'Reject' => 'تایید نشده',
+        ];
+
+        $count = count($this->selected);
+
+        app(ProductPersistence::class)->bulkStatus(
+            $this->selected,
+            ['status' => $status],
+            'تغییر وضعیت تایید ' . $count . ' محصول به «' . $labels[$status] . '» به‌صورت گروهی',
+        );
+
+        $this->selected = [];
+        $this->selectAll = false;
+
+        $this->dispatch('toast', message: 'وضعیت تایید ' . $count . ' محصول به «' . $labels[$status] . '» تغییر کرد.', type: 'success');
+    }
+
+    /**
+     * تغییر وضعیت انتشار محصولات انتخاب‌شده: انتشار (1) / پیش‌نویس (0)
+     */
+    public function bulkChangePublished(string $value): void
+    {
+        $this->authorizeProduct('products.update');
+
+        $publish = (string) $value;
+
+        if ($this->selected === [] || ! in_array($publish, ['1', '0'], true)) {
+            return;
+        }
+
+        $count = count($this->selected);
+        $label = $publish === '1' ? 'انتشار' : 'پیش‌نویس';
+
+        app(ProductPersistence::class)->bulkStatus(
+            $this->selected,
+            ['published' => $publish === '1'],
+            'تغییر وضعیت انتشار ' . $count . ' محصول به «' . $label . '» به‌صورت گروهی',
+        );
+
+        $this->selected = [];
+        $this->selectAll = false;
+
+        $this->dispatch('toast', message: $publish === '1'
+            ? $count . ' محصول منتشر شد.'
+            : $count . ' محصول به پیش‌نویس تبدیل شد.', type: 'success');
+    }
+
     protected function authorizeProduct(string $permission): void
     {
         if (! auth('adminPanel')->user()?->can($permission)) {

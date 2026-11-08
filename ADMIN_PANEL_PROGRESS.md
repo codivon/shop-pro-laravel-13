@@ -3422,3 +3422,28 @@ DigiPay v1.3.0 (اسنپ‌پی + ری‌برندینگ) پوش شد؛ CreditPay
 - `resources/views/admin-panel/livewire/admin/system/backups.blade.php` — کارت تنظیمات خودکار + نشان خودکار/دستی
 - `app/Observers/GlobalActivityObserver.php` — رفع آلودگی activity_log توسط گزینه‌های دفتری کرون
 - مستندات: ADMIN_PANEL_PROGRESS.md (رکورد فاز ۱۴۵)
+
+## فاز ۱۴۶ — «تغییر وضعیت گروهی» محصولات در لیست، کنار دکمهٔ حذف گروهی
+
+> **درخواست کاربر:** در صفحهٔ لیست محصولات حذف گروهی داریم؛ حالا تغییر وضعیت گروهی هم لازم است — وقتی محصولات انتخاب می‌شوند، در کنار دکمهٔ «حذف همه» یک عنصر زیبا باشد که وضعیت محصولات را تغییر دهد.
+
+### طراحی
+| بخش | شرح |
+|---|---|
+| UI | **منوی بازشوی Alpine** (بدون مودال — سریع و کم‌کلیک) از دکمهٔ آبی‌آسمانی «تغییر وضعیت» با آیکون refresh-cw + شورون چرخان. دو بخش مجزا در منو: **وضعیت تایید** (تایید شده ✅ سبز / در انتظار تایید ⏳ کهربایی / تایید نشده ❌ قرمز) و **وضعیت انتشار** (انتشار 👁 آبی‌آسمانی / پیش‌نویس 🚫خاکستری). هر گزینه بجِ رنگی size-7 با آیکون Lucide. بسته‌شدن با کلیک بیرون/Escape/پس از انتخاب، انتقال scale/fade، `wire:loading.attr=disabled` روی هر ۵ گزینه با `wire:target` مشترک (ضد دابل‌کلیک)، role=menu + aria (دسترس‌پذیری). نوار انتخاب `flex-wrap` گرفت برای موبایل. منو فقط با `@can('products.update')` رندر می‌شود (هم‌الگو با نوار سفارش‌ها). |
+| کامپوننت | دو اکشن جدید در `ProductIndex`: `bulkChangeStatus('Accept'\|'Waiting'\|'Reject')` و `bulkChangePublished('1'\|'0')` — گیت `products.update`، whitelist سخت مقادیر (در صورت مقدار نامعتبر/انتخاب خالی: no-op بی‌صدا)، سپس سرویس + ریست انتخاب + توست فارسی موفقیت («وضعیت تایید N محصول به «تایید شده» تغییر کرد.» / «N محصول منتشر شد.» و…). |
+| سرویس | `ProductPersistence::bulkStatus($ids, $attributes, $label)` — **آپدیت گروهیِ تک‌کوئری** (`whereIn→update`) به‌جای حلقهٔ save تکی (n کوئری + n بار کش‌شویی). چون update گروهی **رویداد مدل (Observer) نمی‌گیرد**، کش پس از تغییر با `Product::clearCache()` **یک‌بار** صریح ابطال می‌شود — همان مکانیزم رسمی مدل (کلید `admin.products_count` + `config('front.cache-forget.products')`). رکورد فعالیت **یگانه** برای کل عملیات گروهی: `action=bulk_status_product` + شناسه‌ها + تغییرات + تعداد + IP (ضد اسپم activity_log — درس فاز ۱۴۵). |
+
+### راستی‌آزمایی (MariaDB 10.11.13 پرتابل بازسازی‌شده پس از ریست سندباکس)
+- محیط: PHP 8.4.8 استاتیک (/tmp/php84) + MariaDB 10.11.13 (socket /home/z/mariadb-data/mysqld.sock) + migrate کامل (~۱۵۰ مایگریشن) + seed + storage/installed — `env -u DATABASE_URL` (درس فاز ۱۴۲).
+- **تست جدید `tests/Feature/Extra/Phase146Test.php` — ۸/۸ سبز (۳۶ اظهار):** سرویس (آپدیت سه محصول + ابطال کش `admin.products_count` + رکورد فعالیت با properties درست)، سرویس published (boolean رفت‌وبرگشت)، Livewire bulkChangeStatus (تغییر DB + ریست انتخاب + توست)، Livewire bulkChangePublished، مقدار نامعتبر ('Hacked'/'maybe') → بدون توست و بدون تغییر، انتخاب خالی → no-op، بدون پرمیشن → ۴۰۳/بدون اثر جانبی (قرارداد فاز ۱۰۳: هر دو رفتار Livewire پذیرفته)، رندر نوار (منو + دو بخش + حذف همه).
+- سوئیت‌های کلیدی: **Unit ۲۶/۲۶** (۳ skip عادتی) + **AdminPanelSmoke ۵/۵** + **SecuritySettings+Phase103 ۳۰/۳۰** — همه سبز.
+- نکتهٔ Blade/Alpine: روی تگ کامپوننت `<x-admin-panel::icon>` بایندینگ باید **`x-bind:class`** باشد نه `:class` (Blade اتریبیوت `:` را در تگ کامپوننت به‌صورت PHP ارزیابی می‌کند و `open` تعریف‌نشده می‌شود) — الگوی logs.blade.php:203.
+- نکتهٔ دیتابیس: `update()` گروهی در MariaDB فقط ردیف‌های *تغییرکرده* را برمی‌گرداند؛ شمارش گزارش UI از `count($selected)` می‌آید نه بازگشت کوئری.
+
+### فایل‌های فاز ۱۴۶
+- `app/Livewire/Admin/Products/ProductIndex.php` — دو اکشن `bulkChangeStatus` / `bulkChangePublished`
+- `app/Services/AdminPanel/ProductPersistence.php` — متد `bulkStatus` (تک‌کوئری + clearCache یک‌باره + رکورد فعالیت یگانه)
+- `resources/views/admin-panel/livewire/admin/products/index.blade.php` — منوی بازشوی «تغییر وضعیت» کنار «حذف همه» + flex-wrap نوار
+- `tests/Feature/Extra/Phase146Test.php` — جدید: ۸ تست پوشش سه‌سطحی سرویس/کامپوننت/رندر
+- مستندات: ADMIN_PANEL_PROGRESS.md (رکورد فاز ۱۴۶)
