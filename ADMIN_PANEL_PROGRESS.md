@@ -3469,3 +3469,31 @@ DigiPay v1.3.0 (اسنپ‌پی + ری‌برندینگ) پوش شد؛ CreditPay
 - `resources/views/admin-panel/livewire/admin/products/index.blade.php` — سه کلاس positioning منو
 - `public/admin-panel/manifest.json` + `public/admin-panel/assets/admin-DMAiaYX0.css` + `public/admin-panel/assets/admin-Bb-5hZZx.js` — خروجی بیلد جدید (کامل، بدون نیمه‌کمیتی)
 - مستندات: ADMIN_PANEL_PROGRESS.md (رکورد فاز ۱۴۷)
+
+## فاز ۱۴۸ — رفع کرش «Cannot use object of type Illuminate\Http\JsonResponse as array» در تک‌صفحهٔ محصول (تم WeblakShop)
+
+> **گزارش کاربر:** ارور در تک‌صفحهٔ محصول: `Cannot use object of type Illuminate\Http\JsonResponse as array (View: .../themes/WeblakShop/src/resources/views/products/partials/product-info-sidebar.blade.php)` (سه لایهٔ View = تودرتویی طبیعی رندر Blade).
+
+### تشخیص ریشه (باگ pre-existing از کامیت اولیهٔ تم — `git log -S` → `f116dc66`)
+- `Themes\WeblakShop\ProductController::get_stores_helper()` قراردادش «آرایه» است (مصرف‌کننده: رندر سمت‌سرور `show()` → ویو `products.show` → پارشیال `product-info-sidebar` که `$get_stores['attribute_prices']` می‌خواند).
+- اما در مسیر خالی، کپیِ خط `return response()->json(['html' => '']);` از متد ای‌جکسی `get_stores()` باقی مانده بود → وقتی برای زوج `(product_id, color_id)` ردیفی در pivot `attribute_price` نباشد، به‌جای آرایه یک `JsonResponse` برمی‌گشت.
+- در Blade: `if ($get_stores){ $stores_attribute_prices=$get_stores['attribute_prices']; }` — آبجکت همیشه truthy است → دسترسی آرایه‌ای روی آبجکت → کرش.
+- محرک واقعی: محصولی که تنوع رنگِ انتخابی‌اش ردیفی در `attribute_price` ندارد (محصول ساده/رکورد یتیم پس از حذف قیمت).
+
+### رفع
+| فایل | تغییر |
+|---|---|
+| `themes/WeblakShop/src/Controllers/ProductController.php` | مسیر خالیِ `get_stores_helper()` اکنون **هم‌ساختار با مسیر عادی** آرایه برمی‌گرداند: `attribute_prices => collect()`، بقیه کلیدها خالی/null و `has_stores => false` — خروجی نهایی از نظر Blade دقیقاً معادل حالت تاریخیِ `$get_stores=[]` است (شمارش فروشنده صفر، بدون استثنا). متد ای‌جکسی `get_stores()` دست‌نخورده (برای XHR همچنان JSON مشروع است). |
+| `themes/WeblakShop/src/resources/views/products/partials/product-info-sidebar.blade.php` | گارد دفاعی: `if (is_array($get_stores) && !empty($get_stores['attribute_prices']))` — از این پس هر دادهٔ نامعتبری سایدبار را نمی‌ترکاند. (کامنت به‌صورت `//` داخل `@php`، نه `{{-- --}}` — بلوک‌های `@php` قبل از strip-comments ذخیره می‌شوند و کامنت Blade داخلشان به PHP کامپایل‌شده درز می‌کند.) |
+
+### یافتهٔ جانبی (فقط ثبت — تغییر داده نشد)
+- روت `get-stores-cached/{productId}/{colorId}` در `themes/WeblakShop/src/routes/web.php` با `app()->call('App\Http\Controllers\Front\ProductController@get_stores')` به کلاسی **ناموجود** اشاره می‌کند (هیچ `Front/ProductController` در هسته نیست) — روت مرده است؛ هیچ ارجاعی از فرانت/JS به نامش نیست (جست‌وجو شد) و در مسیر صفحهٔ محصول هم نمی‌آید. در صورت نیاز به فعال‌سازی، فاز جداگانه لازم دارد.
+
+### راستی‌آزمایی و محدودیت سندباکس
+- سندباکس ریست شده و PHP/PHPUnit در دسترس نیست؛ تغییرات حداقلی و به‌صورت ایستا بازبینی شد (مسیر خالی/مسیر عادی/محصول بدون اتریبیوت/محصول با pivot خالی — چهار سناریو ردیابی دستی شد).
+- پس از دیپلوی: تست دستی تک‌صفحهٔ محصولی که قبلاً کرش می‌کرد + چند محصول ساده و متغیردار.
+
+### فایل‌های فاز ۱۴۸
+- `themes/WeblakShop/src/Controllers/ProductController.php` — اصلاح قرارداد بازگشت هلپر
+- `themes/WeblakShop/src/resources/views/products/partials/product-info-sidebar.blade.php` — گارد دفاعی Blade
+- مستندات: ADMIN_PANEL_PROGRESS.md (رکورد فاز ۱۴۸)

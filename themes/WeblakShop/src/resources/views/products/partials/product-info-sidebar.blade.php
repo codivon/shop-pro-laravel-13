@@ -4,7 +4,8 @@
 
         // جمع‌آوری همه seller_id های یکتا (بدون تکرار)
         $stores_attribute_prices=[];
-        if ($get_stores){
+        // فاز ۱۴۸ — گارد دفاعی: دادهٔ نامعتبر (غیرآرایه‌ای) هرگز نباید سایدبار را بترکاند
+        if (is_array($get_stores) && !empty($get_stores['attribute_prices'])){
             $stores_attribute_prices=$get_stores['attribute_prices'];
         }
         $uniqueSellers = [];

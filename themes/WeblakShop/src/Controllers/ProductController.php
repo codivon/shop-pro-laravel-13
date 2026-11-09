@@ -772,7 +772,19 @@ class ProductController extends Controller
             ->get();
 
         if ($attributePrices->isEmpty()) {
-            return response()->json(['html' => '']);
+            // فاز ۱۴۸ — قرارداد این هلپر «آرایه» است (خروجی برای رندر سمت‌سرور صفحهٔ محصول، نه AJAX).
+            // بازگرداندن JsonResponse در مسیر خالی (کپی‌شده از متد get_stores ای‌جکسی) باعث کرش
+            // «Cannot use object of type Illuminate\Http\JsonResponse as array» در
+            // product-info-sidebar.blade.php می‌شد؛ اکنون همیشه ساختار آرایه‌ای یکسان برمی‌گردد.
+            return [
+                'attribute_prices'      => collect(),
+                'attribute_prices_site' => null,
+                'products'              => collect(),
+                'sellers'               => collect(),
+                'prices'                => collect(),
+                'attributes'            => collect(),
+                'has_stores'            => false,
+            ];
         }
 
         // Get all price IDs in one query
