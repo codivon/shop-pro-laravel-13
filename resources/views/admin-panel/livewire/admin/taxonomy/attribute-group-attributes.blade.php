@@ -73,12 +73,32 @@
         @endif
     </div>
 
+    {{-- نوار انتخاب گروهی (فاز ۱۴۹) — هم‌الگو با نوار محصولات، فقط دکمه حذف (بدون منو → بدون مشکل سرریز موبایل فاز ۱۴۷) --}}
+    <div x-show="$wire.selected.length > 0" x-cloak
+         class="sticky top-20 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-200 bg-brand-50/95 px-4 py-2.5 shadow-card backdrop-blur dark:border-brand-500/25 dark:bg-brand-950/80">
+        <span class="text-[13px] font-bold text-brand-800 dark:text-brand-300">
+            <span class="fa-digits" x-text="ApFormat.faDigits($wire.selected.length)"></span> ویژگی انتخاب شده
+        </span>
+        @can('attributes.delete')
+            <button type="button" wire:click="$set('confirmingBulkDelete', true)"
+                    class="ap-btn !px-3 !py-1.5 text-[13px] bg-red-600 text-white hover:bg-red-700">
+                <x-admin-panel::icon name="trash-2" class="size-4" />
+                حذف همه
+            </button>
+        @endcan
+    </div>
+
     {{-- جدول --}}
     <div class="ap-card overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full min-w-3xl text-start text-[13px]">
                 <thead>
                     <tr class="border-b border-line bg-surface-2 text-ink-2 dark:border-night-line dark:bg-night-3">
+                        <th class="w-10 px-3 py-3">
+                            <input type="checkbox" wire:model.live="selectAll"
+                                   class="size-4 rounded-md border-line text-brand-600 focus:ring-brand-500/30 dark:border-night-line"
+                                   aria-label="انتخاب همه ویژگی‌های این صفحه">
+                        </th>
                         <th class="w-16 px-3 py-3 text-start font-bold">ID</th>
                         <th class="px-3 py-3 text-start font-bold">نام</th>
                         <th class="px-3 py-3 text-start font-bold">{{ $attributeGroup->type === 'color' ? 'مقدار / رنگ' : 'مقدار' }}</th>
@@ -89,6 +109,11 @@
                     @forelse ($this->attributesList as $attribute)
                         <tr wire:key="attribute-{{ $attribute->id }}"
                             class="border-b border-line/60 transition-colors last:border-0 hover:bg-surface-2 dark:border-night-line/60 dark:hover:bg-night-3/60">
+                            <td class="px-3 py-3">
+                                <input type="checkbox" wire:model.live="selected" value="{{ $attribute->id }}"
+                                       class="size-4 rounded-md border-line text-brand-600 focus:ring-brand-500/30 dark:border-night-line"
+                                       aria-label="انتخاب ویژگی {{ $attribute->name }}">
+                            </td>
                             <td class="px-3 py-3 fa-digits font-bold">{{ number_format($attribute->id) }}</td>
                             <td class="max-w-48 px-3 py-3">
                                 <p class="truncate font-semibold">{{ $attribute->name }}</p>
@@ -124,7 +149,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4">
+                            <td colspan="5">
                                 <div class="flex flex-col items-center gap-2 py-14 text-ink-3 dark:text-night-ink-2">
                                     <x-admin-panel::icon name="list" class="size-10 opacity-40" />
                                     <p class="text-sm font-medium">ویژگی‌ای برای این گروه ثبت نشده است</p>
@@ -207,8 +232,36 @@
         </div>
     </div>
 
+    {{-- مودال تایید حذف گروهی (فاز ۱۴۹) --}}
+    <div x-data="{ open: @entangle('confirmingBulkDelete').live }"
+         x-show="open" x-cloak
+         class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" x-show="open" x-on:click="open=false" x-transition.opacity aria-hidden="true"></div>
+        <div x-show="open" x-on:click.stop
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             class="relative w-full max-w-sm rounded-2xl border border-line bg-surface p-6 shadow-pop dark:border-night-line dark:bg-night-2"
+             role="dialog" aria-modal="true">
+            <div class="mb-3 flex size-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400">
+                <x-admin-panel::icon name="trash-2" class="size-6" />
+            </div>
+            <h3 class="text-base font-bold">حذف گروهی ویژگی‌ها</h3>
+            <p class="mt-1.5 text-[13px] leading-6 text-ink-2 dark:text-night-ink-2">
+                <span class="fa-digits font-bold" x-text="ApFormat.faDigits($wire.selected.length)"></span> ویژگی انتخاب شده است. حذف غیرقابل بازگشت است و پیوند این ویژگی‌ها با تنوع‌های قیمت محصول نیز پاک می‌شود.
+            </p>
+            <div class="mt-5 flex gap-2.5">
+                <button type="button" wire:click="bulkDelete" wire:loading.attr="disabled" wire:target="bulkDelete"
+                        class="ap-btn flex-1 bg-red-600 text-white hover:bg-red-700">
+                    بله، همه حذف شوند
+                </button>
+                <button type="button" x-on:click="open=false" class="ap-btn-ghost flex-1">انصراف</button>
+            </div>
+        </div>
+    </div>
+
     {{-- لودینگ --}}
-    <div wire:loading wire:target="search, previousPage, nextPage, gotoPage, createAttribute, delete"
+    <div wire:loading wire:target="search, previousPage, nextPage, gotoPage, createAttribute, delete, bulkDelete"
          class="pointer-events-none fixed bottom-6 start-6 z-[65] flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 shadow-pop dark:border-night-line dark:bg-night-3">
         <svg class="size-4 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round" />

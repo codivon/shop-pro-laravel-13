@@ -3497,3 +3497,29 @@ DigiPay v1.3.0 (اسنپ‌پی + ری‌برندینگ) پوش شد؛ CreditPay
 - `themes/WeblakShop/src/Controllers/ProductController.php` — اصلاح قرارداد بازگشت هلپر
 - `themes/WeblakShop/src/resources/views/products/partials/product-info-sidebar.blade.php` — گارد دفاعی Blade
 - مستندات: ADMIN_PANEL_PROGRESS.md (رکورد فاز ۱۴۸)
+
+## فاز ۱۴۹ — حذف گروهی ویژگی‌ها و مقادیر ویژگی در صفحهٔ «ویژگی‌های گروه»
+
+> **درخواست کاربر:** در پنل مدیریت، در صفحهٔ ویژگی‌ها و مقادیر ویژگی (تک‌صفحهٔ گروه ویژگی)، امکان حذف دسته‌جمعی هم گذاشته شود.
+
+### محل پیاده‌سازی
+- صفحهٔ «ویژگی‌های گروه» (`AttributeGroupAttributes` / `attribute-group-attributes.blade.php`) — همان صفحه‌ای که ویژگی‌ها (نام) و مقادیرشان (کد رنگ برای گروه‌های رنگی) را لیست می‌کند. کامپوننت‌های دیگر تاکسونومی (لیست گروه‌ها، برندها، …) دست نخورده‌اند.
+
+### طراحی (کامل هم‌الگو با حذف گروهی محصولات فاز ۱۴۶)
+| بخش | شرح |
+|---|---|
+| UI | چک‌باکس انتخاب در سرستون (selectAll با `wire:model.live`) و هر ردیف + **نوار انتخاب گروهی چسبان** (`sticky top-20`، هم‌کلاس نوار محصولات) با شمارندهٔ فارسی و دکمهٔ قرمز «حذف همه» فقط با `@can('attributes.delete')`. بدون منوی بازشو → بدون ریسک سرریز موبایل فاز ۱۴۷. |
+| مودال | مودال تایید حذف گروهی (`entangle confirmingBulkDelete`) با شمارندهٔ زنده + هشدار شفاف: «پیوند این ویژگی‌ها با تنوع‌های قیمت محصول نیز پاک می‌شود». |
+| اکشن | `bulkDelete()`: گیت `attributes.delete` (همان پرمیشن حذف تکی)، نرمال‌سازی شناسه‌ها (`intval` + unique)، انتخاب خالی = no-op بی‌صدا. |
+| DB | دو کوئری گروهی به‌جای حلقهٔ تکی: ۱) پاک‌سازی پیوت `attribute_price` (`whereIn attribute_id → delete` — معنای دقیق `detach()` حذف تکی و cascade قدیمی) ۲) حذف ردیف‌ها از `attributes`. |
+| لاگ | حذف با کوئری‌بیلدر (بدون رویداد مدل) تا `GlobalActivityObserver` برای هر ردیف لاگ ننویسد — قرارداد ضداسپم فازهای ۱۴۵/۱۴۶: **یک رکورد فعالیت یگانه** با `action=bulk_delete_attribute` + شناسه‌ها + **نام‌های حذف‌شده** (یک کوئری سبک قبل از حذف) + شناسهٔ گروه + تعداد + IP. |
+| ریست | پس از اجرا: بستن مودال + خالی‌کردن `selected`/`selectAll` + توست موفقیت با تعداد. تغییر `search`/`perPage` هم انتخاب‌ها را پاک می‌کند (هم‌الگوی `ProductIndex`). |
+
+### راستی‌آزمایی و محدودیت سندباکس
+- سندباکس این جلسه PHP/PHPUnit ندارد؛ تغییرات ایستا بازبینی شد: گیت‌ها، شمارش ستون‌های جدول (۵ ستون با colspan=5 در empty-state)، `#[Computed]` در `updatedSelectAll`، ورودی‌های `wire:loading` (اضافه‌شدن `bulkDelete`) و `ApFormat.faDigits` (همان هلپر سراسری پنل).
+- پس از دیپلوی، تست دستی: انتخاب تک‌چک‌باکس/همه + حذف گروهی در گروه رنگی و گروه دکمه‌ای + بررسی activity_log (یک ردیف با نام‌ها) + حذف تکی قدیمی (بدون رگرسیون).
+
+### فایل‌های فاز ۱۴۹
+- `app/Livewire/Admin/Taxonomy/AttributeGroupAttributes.php` — state انتخاب گروهی + `updatedSelectAll` + `bulkDelete` + ریست در `updating`
+- `resources/views/admin-panel/livewire/admin/taxonomy/attribute-group-attributes.blade.php` — چک‌باکس‌ها، نوار انتخاب، مودال گروهی، لودینگ
+- مستندات: ADMIN_PANEL_PROGRESS.md (رکورد فاز ۱۴۹)
