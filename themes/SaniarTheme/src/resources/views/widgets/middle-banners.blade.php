@@ -1,17 +1,21 @@
+{{-- بنرهای میانی سانیار (۴ ستون) --}}
 @php
-    $variables              = get_widget($widget);
-    $index_middle_banners   = $variables['index_middle_banners'];
+    $variables = get_widget($widget);
+    $banners = $variables['index_middle_banners'];
 @endphp
-<!-- Start Banner -->
-@if ($index_middle_banners->count())
-    @foreach ($index_middle_banners as $banner)
-        @if(in_array($widget->option('place'), $banner->places ?? []))
-            <div class="col-12">
-                <div class="banner" style=" height: auto; @if($widget->ordering==1)margin-bottom:0 @endif">
-                    <a href="{{$banner->link}}" class="image-data-src"><img data-src="{{ $banner->image ? asset($banner->image) : asset('/no-image-product.svg') }}" src="{{ theme_asset('images/600-600.png') }}" alt="{{ $banner->title }}"></a>
-                </div>
+
+@if(count($banners))
+    <div class="banner py-20">
+        <div class="container-fluid">
+            <div class="row g-3">
+                @foreach($banners as $banner)
+                    <div class="col-lg-3 col-6">
+                        <a href="{{ $banner->link ?: '#' }}">
+                            <img src="{{ asset($banner->image) }}" class="img-fluid rounded-3 shadow-box" alt="{{ $banner->title ?: 'بنر' }}">
+                        </a>
+                    </div>
+                @endforeach
             </div>
-        @endif
-    @endforeach
+        </div>
+    </div>
 @endif
-<!-- End Banner -->

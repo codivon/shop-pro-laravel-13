@@ -1,4 +1,4 @@
-
+{{-- آیتم منوی سطح اول — مارکاپ سانیار --}}
 
 @if($menu->menus->isEmpty())
 
@@ -15,9 +15,8 @@
         @case('normal')
         @case('megamenu')
 
-            {{-- فاز ۱۱۷ — menu_icon: هم فونت‌آیکون، هم SVG/Lucide (قبلاً <i> خالی رندر می‌شد) --}}
-            <li class="list-item">
-                <a class="nav-link" href="{{ $menu->link ?: '#' }}">{!! menu_icon($menu->icon) !!}{{ $menu->title }}</a>
+            <li class="nav-item">
+                <a class="nav-link border-animate fromCenter" href="{{ $menu->link ?: '#' }}">{!! menu_icon($menu->icon) !!}{{ $menu->title }}</a>
             </li>
 
     @endswitch
@@ -27,11 +26,15 @@
     @switch($menu->type)
         @case('category')
 
-            <li class="list-item list-item-has-children menu-col-1">
-                <a class="nav-link" href="{{ $menu->category->link }}">{!! menu_icon($menu->icon) !!}{{ $menu->category->title }}</a>
-                <ul class="sub-menu nav">
-                    @if(!$menu->category->categories->isEmpty())
-                        @foreach ($menu->category->categories as $childCategory)
+            {{-- منوی دسته‌بندی — مگای دوم سانیار (sub-menu mega-container) --}}
+            <li class="nav-item">
+                <a href="{{ $menu->category->link }}" class="nav-link border-animate fromCenter">{!! menu_icon($menu->icon) !!}{{ $menu->category->title }}</a>
+                <ul class="list-unstyled shadow-lg back-menu sub-menu mega-container">
+                    @if(!$menu->category->getCategoriesCount() || !$menu->children)
+                        <li><a href="{{ $menu->category->link }}">{{ $menu->title ?: $menu->category->title }}</a></li>
+                    @else
+                        <li><a class="title" href="{{ $menu->category->link }}">همه دسته بندی های {{ $menu->category->title }}</a></li>
+                        @foreach (front_category_children($menu->category) as $childCategory)
                             @include('front::partials.menu.child-category', ['category' => $childCategory])
                         @endforeach
                     @endif
@@ -50,11 +53,12 @@
 
         @default
 
-            <li class="list-item list-item-has-children menu-col-1">
-                <a class="nav-link" href="{{ $menu->link ?: '#' }}">{!! menu_icon($menu->icon) !!}{{ $menu->title }}</a>
-                <ul class="sub-menu nav">
+            {{-- منوی ساده با زیرمنو — level-one / level-two سانیار --}}
+            <li class="nav-item">
+                <a class="nav-link border-animate fromCenter" href="{{ $menu->link ?: '#' }}">{!! menu_icon($menu->icon) !!}{{ $menu->title }}</a>
+                <ul class="level-one">
                     @foreach ($menu->childrenmenus as $childMenu)
-                        @include('front::partials.menu.child-menu', ['menu' => $childMenu])
+                        @include('front::partials.menu.child-menu-level', ['menu' => $childMenu])
                     @endforeach
                 </ul>
             </li>

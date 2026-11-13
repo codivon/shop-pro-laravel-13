@@ -11,8 +11,8 @@
             "@context" => "https://schema.org",
             "@type" => "WebSite",
             "url" => route('front.index'),
-            "name" => option('site_title'),
-            "logo" => option('info_logo') ? asset(option('info_logo')) : asset(config('front.asset_path') . 'img/logo.png'),
+            "name" => option('info_site_title'),
+            "logo" => option('info_logo') ? asset(option('info_logo')) : asset(config('front.asset_path') . 'image/logo.png'),
             "potentialAction" => [
                 "@type" => "SearchAction",
                 "target" => route('front.products.index') . "/?q={search_term_string}",
@@ -41,16 +41,18 @@
                 @include($moduleView)
             @else
                 @switch($widget->key)
-                    @case('fullscreen-slider')
-                        @include('front::widgets.fullscreen-slider')
-                        @break
-
                     @case('main-slider')
                         @include('front::widgets.main-slider')
                         @break
 
+                    @case('fullscreen-slider')
+                        @include('front::widgets.fullscreen-slider')
+                        @break
 
                     @case('products-moment-block')
+                        @include('front::widgets.products-moment-block')
+                        @break
+
                     @case('products-default-block')
                         @include('front::widgets.products-default-block')
                         @break
@@ -86,6 +88,7 @@
                     @case('posts')
                         @include('front::widgets.posts')
                         @break
+
                     @case('faqs')
                         @include('front::widgets.faqs')
                         @break
@@ -97,39 +100,32 @@
 @push('scripts')
     @if (option('dt_index_popup_type') == 'image')
         <div id="image-popup-modal" class="modal fade" tabindex="-1" role="dialog">
-            <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
                 <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
+                    <div class="modal-header border-0">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
+                    <div class="modal-body pt-0">
                         <a href="{{ option('dt_index_popup_link') }}">
                             <div class="d-none d-md-block">
-                                <img src="{{ asset(option('dt_index_popup_image')) }}" class="img-responsive w-100">
+                                <img src="{{ asset(option('dt_index_popup_image')) }}" class="img-fluid w-100" alt="popup">
                             </div>
                             <div class="d-block d-md-none">
                                 <img src="{{ asset(option('dt_index_popup_image_mobile')) }}"
-                                     class="img-responsive w-100">
+                                     class="img-fluid w-100" alt="popup">
                             </div>
                         </a>
                     </div>
                 </div>
             </div>
         </div>
-        <script>
-            $('#image-popup-modal').modal('show');
-        </script>
     @elseif (option('dt_index_popup_type') == 'text')
         <div id="text-popup-modal" class="modal fade" tabindex="-1" role="dialog"
              aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-            <div class="modal-dialog" role="document">
+            <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
+                    <div class="modal-header border-0">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body pt-0">
                         <p>{!! option('dt_index_popup_text') !!}</p>
@@ -137,10 +133,6 @@
                 </div>
             </div>
         </div>
-
-        <script>
-            $('#text-popup-modal').modal('show');
-        </script>
     @endif
 
     {{-- اسکریپت ویجت‌ساز پنل (فاز ۹-ه) — فقط در حالت پیش‌نمایش ?ap-preview=1؛ بدون هیچ تاثیری در بازدید عادی --}}
@@ -158,37 +150,5 @@
                 outline-offset: 2px;
             }
         </style>
-        <script>
-            (function () {
-                function clearHighlight() {
-                    document.querySelectorAll('[data-ap-outline]').forEach(function (node) {
-                        node.style.outline = '';
-                        node.removeAttribute('data-ap-outline');
-                    });
-                }
-
-                function highlightWidget(id) {
-                    var el = document.getElementById('widget-' + id);
-                    if (!el) { return; }
-                    clearHighlight();
-                    el.setAttribute('data-ap-outline', '1');
-                    el.style.outline = '2px dashed rgba(245, 158, 11, .95)';
-                    el.style.outlineOffset = '4px';
-                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-
-                function setGuides(on) {
-                    document.querySelectorAll('[id^="widget-"]').forEach(function (node) {
-                        node.classList.toggle('ap-widget-guide', !!on);
-                    });
-                }
-
-                window.addEventListener('message', function (event) {
-                    var data = event.data || {};
-                    if (data.apWidgetId) { highlightWidget(data.apWidgetId); }
-                    if (typeof data.apShowGuides !== 'undefined') { setGuides(data.apShowGuides); }
-                });
-            })();
-        </script>
     @endif
 @endpush

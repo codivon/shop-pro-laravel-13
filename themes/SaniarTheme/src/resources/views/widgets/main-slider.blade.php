@@ -1,58 +1,65 @@
+{{-- اسلایدر اصلی سانیار: اسلایدر بزرگ + اسلایدر محصولات شگفت‌انگیز --}}
 @php
-    $variables      = get_widget($widget);
+    $variables = get_widget($widget);
     $main_sliders   = $variables['main_sliders'];
     $mobile_sliders = $variables['mobile_sliders'];
-    $index_slider_banners = $variables['index_slider_banners'];
+
+    // ستون سانیار: محصولات ویژه با تایمر (معادل suggetMoment تمپلیت)
+    $moment_products = \App\Models\Product::query()
+        ->with('lowestPrice', 'category:id,title,slug')
+        ->select('id', 'title', 'type', 'category_id', 'slug', 'image', 'special', 'image_alt')
+        ->published()
+        ->available()
+        ->special()
+        ->orderByStock()
+        ->latest()
+        ->take(6)
+        ->get();
 @endphp
 
-<div class="d-block">
-    <div class="col-lg-8 col-md-8 col-xs-12 pull-right mb-3">
-        <div class="main-slider">
-            <div class="main-slider-container">
-                <div id="carouselExampleIndicators" class="carousel slide" data-ride="carousel">
-                    @if(count($main_sliders)>1)
-                    <ol class="carousel-indicators">
-                        @for($i=1;$i<= count($main_sliders);$i++)
-                        <li data-target="#carouselExampleIndicators" data-slide-to="{{$i}}" class="@if($i==0)active @endif"></li>
-                        @endfor
-                    </ol>
-                    @endif
-                    <div class="carousel-inner">
-                        @foreach($main_sliders as $slider)
-                        <div class="carousel-item @if ($loop->first)active @endif">
-                            <img class="d-block w-100" src="{{asset($slider->image)}}" alt="{{$slider->title ?: $slider->image}}">
+@if(count($main_sliders) || count($moment_products))
+    <div class="main-slider py-20">
+        <div class="container-fluid">
+            <div class="row gy-3">
+                @if(count($moment_products))
+                    <div class="col-lg-3 order-lg-1 order-2">
+                        <div class="swiper" id="suggetMoment">
+                            <div class="swiper-wrapper position-relative">
+                                @foreach($moment_products as $product)
+                                    <div class="swiper-slide">
+                                        @include('front::partials.product-card', ['product' => $product, 'withTimer' => true])
+                                    </div>
+                                @endforeach
+                            </div>
+                            <div class="swiper-progress-bar">
+                                <span class="slide_progress-bar"></span>
+                            </div>
                         </div>
-                        @endforeach
                     </div>
-                    @if(count($main_sliders)>1)
-                    <a class="carousel-control-prev" href="#carouselExampleIndicators" role="button"
-                       data-slide="prev">
-                        <span class="fa fa-angle-left" aria-hidden="true"></span>
-                        <span class="sr-only">Previous</span>
-                    </a>
-                    <a class="carousel-control-next" href="#carouselExampleIndicators" role="button"
-                       data-slide="next">
-                        <span class="fa fa-angle-right" aria-hidden="true"></span>
-                        <span class="sr-only">Next</span>
-                    </a>
-                    @endif
-                </div>
+                @endif
+
+                @if(count($main_sliders))
+                    <div class="col-lg-{{ count($moment_products) ? '9' : '12' }} order-lg-2 order-1">
+                        <div class="slider shadow-box">
+                            <div class="swiper" id="homeSlider">
+                                <div class="swiper-wrapper">
+                                    @foreach($main_sliders as $slider)
+                                        <div class="swiper-slide">
+                                            <a href="{{ $slider->link ?: '#' }}">
+                                                <img src="{{ asset($slider->image) }}" loading="lazy" class="img-fluid"
+                                                     alt="{{ $slider->title ?: 'اسلایدر' }}">
+                                            </a>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <div class="swiper-button-next d-lg-flex d-none"></div>
+                                <div class="swiper-button-prev d-lg-flex d-none"></div>
+                                <div class="swiper-pagination"></div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
-</div>
-<!--    End Main Slider ---------------------->
-
-<!--adplacement-------------------------------->
-<div class="col-lg-4 col-md-4 col-xs-12 pull-left mb-3">
-    <aside class="adplacement-container-column">
-        @foreach($index_slider_banners as $banner)
-        <a href="{{$banner->link}}" class="adplacement-item adplacement-item-column">
-            <div class="adplacement-sponsored-box">
-                <img src="{{asset($banner->image)}}" alt="{{$banner->title ?: $banner->image}}">
-            </div>
-        </a>
-        @endforeach
-    </aside>
-</div>
-<!--adplacement----------------
+@endif

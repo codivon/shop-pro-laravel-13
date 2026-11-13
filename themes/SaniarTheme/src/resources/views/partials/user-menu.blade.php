@@ -1,52 +1,23 @@
-<!--start .author-author__info-->
+{{-- منوی کشویی حساب کاربری — مارکاپ سانیار --}}
 @if(auth('web')->check())
-
-    <ul class="nav float-left">
-    <li class="nav-item account dropdown">
-        <a class="nav-link" href="#" data-toggle="dropdown" aria-haspopup="true"
-           aria-expanded="false">
-            <span class="label-dropdown">حساب کاربری</span>
-            <i class="mdi mdi-account-circle-outline"></i>
-        </a>
-        <div class="dropdown-menu dropdown-menu-sm dropdown-menu-left">
-
-            @if (auth('web')->user()->level == 'admin' || auth('web')->user()->level == 'creator')
-                <a class="dropdown-item" href="{{ route('np.dashboard') }}">
-                    پنل مدیریت
-                </a>
-            @endif
-            <a class="dropdown-item" href="{{ route('front.user.profile') }}">
-                <i class="mdi mdi-account-card-details-outline"></i>پروفایل
-            </a>
-            <a class="dropdown-item" href="{{ route('front.orders.index') }}">
-                <i class="mdi mdi-account-edit-outline"></i>سفارشات من
-            </a>
-            <div class="dropdown-divider" role="presentation"></div>
-            <a class="dropdown-item" href="{{ route('logout') }}">
-                <i class="mdi mdi-logout-variant"></i>خروج
-            </a>
-        </div>
-    </li>
-</ul>
+    <ul class="dropdown-menu">
+        @if (auth('web')->user()->level == 'admin' || auth('web')->user()->level == 'creator')
+            <li><a href="{{ route('np.dashboard') }}" class="dropdown-item"><i class="bi bi-speedometer2 me-2"></i>پنل مدیریت</a></li>
+        @endif
+        <li><a href="{{ route('front.user.profile') }}" class="dropdown-item"><i class="bi bi-house-door me-2"></i>پروفایل</a></li>
+        <li><a href="{{ route('front.orders.index') }}" class="dropdown-item"><i class="bi bi-cart-check me-2"></i>سفارش های من</a></li>
+        <li><a href="{{ route('front.wallet.index') }}" class="dropdown-item"><i class="bi bi-wallet2 me-2"></i>کیف پول</a></li>
+        <li><a href="{{ route('front.addresses.index') }}" class="dropdown-item"><i class="bi bi-pin-map me-2"></i>آدرس های من</a></li>
+        <li><a href="{{ route('front.notifications.index') }}" class="dropdown-item"><i class="bi bi-bell me-2"></i>پیام ها و اطلاعیه ها</a></li>
+        <li><a href="{{ route('front.user.comments') }}" class="dropdown-item"><i class="bi bi-chat-dots me-2"></i>نظرات من</a></li>
+        <li><a href="{{ route('front.tickets.index') }}" class="dropdown-item"><i class="bi bi-question-circle me-2"></i>درخواست پشتیبانی</a></li>
+        <li><a href="{{ route('front.favorites.index') }}" class="dropdown-item"><i class="bi bi-heart me-2"></i>محصولات مورد علاقه</a></li>
+        <li><a href="{{ route('front.user.user-history') }}" class="dropdown-item"><i class="bi bi-clock-history me-2"></i>بازدید های اخیر</a></li>
+        <li><a href="{{ route('logout') }}" class="dropdown-item mct-hover"><i class="bi bi-arrow-right-square me-2"></i>خروج از حساب کاربری</a></li>
+    </ul>
 @else
-    <ul class="nav float-left">
-        <li class="nav-item account dropdown">
-            <a class="nav-link" href="#" data-toggle="dropdown" aria-haspopup="true"
-               aria-expanded="false">
-                <span class="label-dropdown">حساب کاربری</span>
-                <i class="mdi mdi-account-circle-outline"></i>
-            </a>
-            <div class="dropdown-menu dropdown-menu-sm dropdown-menu-left">
-                <a class="dropdown-item" href="{{ route('login') }}">
-                    <i class="mdi mdi-account-card-details-outline"></i>ورود به سایت
-                </a>
-                <a class="dropdown-item" href="{{ route('register') }}">
-                    <i class="mdi mdi-account-edit-outline"></i>ثبت نام
-                </a>
-            </div>
-        </li>
+    <ul class="dropdown-menu">
+        <li><a href="{{ route('login') }}" class="dropdown-item"><i class="bi bi-box-arrow-in-left me-2"></i>ورود به سایت</a></li>
+        <li><a href="{{ route('register') }}" class="dropdown-item"><i class="bi bi-person-plus me-2"></i>ثبت نام</a></li>
     </ul>
 @endif
-
-
-<!--end /.author-author__info-->

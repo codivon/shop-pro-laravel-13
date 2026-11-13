@@ -1,102 +1,101 @@
+{{-- سبد خرید کشویی سانیار (offcanvas) --}}
 @php
-    $cart = isset($render_cart) ? $render_cart : $cart;
-
+    $render_cart = $cart ?? get_cart();
+    $cart_count = $render_cart ? $render_cart->products()->count() : 0;
 @endphp
-<div class="mini-cart-header" id="cart-list-item">
-
-    @if($cart && $cart->products()->count())
-        <a href="{{route('front.cart')}}" style="color: #4a5f73;">
-            <span class="mdi mdi-basket"></span>
-            <span class="cart-count count">{{@$cart->products()->count()}}</span>
-        </a>
-        <div class="mini-cart-dropdown">
-            <div class="header-cart-info-header">
-                <div class="header-cart-info-count">{{@$cart->products()->count()}} کالا</div>
-                <a href="{{route('front.cart')}}" class="header-cart-info-link">
-                    <span>مشاهده سبد خرید</span>
-                </a>
-            </div>
-            <div class="wrapper">
-                <div class="scrollbar" id="style-1">
-                    <div class="force-overflow">
-                        <ul class="header-basket-list">
-                            @foreach ($cart->products as $product)
-                                <li class="js-mini-cart-item">
-                                    <a href="{{ route('front.products.show', ['product' => $product]) }}" class="header-basket-list-item">
-                                        <div class="header-basket-list-item-image">
-                                            <img src="{{ $product->image ? asset($product->image) : '/empty.svg' }}"
-                                                 alt="{{ $product->title }}">
-                                        </div>
-                                        <div class="header-basket-list-item-content">
-                                            <h1 class="header-basket-list-item-title">{{ $product->title }}</h1>
-                                            <span class="header-basket-list-item-shipping-type">
-                                          @php
-                                              $cart_product_price = $product->prices()->find($product->pivot->price_id);
-                                          @endphp
-
-                                <div class="pt-1">
-                                    {{  number_format($cart_product_price->salePrice() * $product->pivot->quantity)}} تومان</div>
+<div class="offcanvas cart-canvas offcanvas-end" tabindex="-1" id="offcanvasCart"
+     aria-labelledby="offcanvasCartLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="offcanvasCartLabel">سبد خرید</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="cart-canvases">
+            @if($render_cart && $cart_count)
+                @foreach ($render_cart->products as $product)
+                    @php
+                        $cart_product_price = $product->prices()->find($product->pivot->price_id);
+                    @endphp
+                    <div class="item">
+                        <div class="row gy-2">
+                            <div class="col-4">
+                                <div class="image">
+                                    <img src="{{ $product->image ? asset($product->image) : theme_asset('image/product/no-image.png') }}"
+                                         alt="{{ $product->title }}" class="img-fluid">
+                                </div>
+                            </div>
+                            <div class="col-8">
+                                <a href="{{ route('front.products.show', ['product' => $product]) }}">
+                                    <div class="title">
+                                        <h6 class="font-14">{{ $product->title }}</h6>
+                                        <p class="mb-0 text-muted font-12 mt-2">{{ $product->pivot->quantity }} عدد</p>
+                                    </div>
+                                    <div class="price">
+                                        <p class="text-end mb-2 price-off fw-bold">{{ number_format($cart_product_price->salePrice() * $product->pivot->quantity) }} تومان</p>
                                         @if($cart_product_price->hasDiscount())
-                                            <del class="text-danger">{{ number_format($cart_product_price->regularPrice() * $product->pivot->quantity) }} تومان</del>
+                                            <p class="text-end price-discount">{{ number_format($cart_product_price->regularPrice() * $product->pivot->quantity) }} تومان</p>
                                         @endif
-                                    </span>
-                                            <div class="header-basket-list-item-footer">
-                                                <div class="header-basket-list-item-props">
-                                                                    <span class="header-basket-list-item-props-item"> {{$product->pivot->quantity}}
-                                                                        عدد</span>
-                                                    @foreach ($cart_product_price->get_attributes as $attribute)
-                                                        @if ($attribute->group->type == 'color')
-                                                    <span class="header-basket-list-item-props-item">
-                                                                        <span class="header-basket-list-item-color-badge" style="background: {{ $attribute->value }}"> </span>
-                                                                       {{ $attribute->name }}
-                                                     </span>
-                                                        @endif
-                                                    @endforeach
-
-                                                </div>
-                                            </div>
+                                    </div>
+                                    <div class="action d-flex justify-content-between align-items-center">
+                                        <div class="remove bg-light rounded-3">
+                                            <form method="POST" action="{{ route('front.cart.destroy', $product->pivot->id) }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn border-0 p-0 bg-transparent js-mini-cart-remove" aria-label="حذف">
+                                                    <i class="bi bi-x font-25"></i>
+                                                </button>
+                                            </form>
                                         </div>
-                                    </a>
-                                </li>
-                            @endforeach
-                        </ul>
+                                        <div class="counter">
+                                            <input type="text" name="count" class="counter" value="{{ $product->pivot->quantity }}" readonly>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+
+                <div class="item">
+                    <div class="factor">
+                        <div class="title">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ theme_asset('image/shopping-bag.png') }}" class="img-fluid" alt="">
+                                <h6 class="font-16">سفارش شما</h6>
+                            </div>
+                        </div>
+                        <div class="d-flex mb-3 align-items-center justify-content-between">
+                            <p class="fw-bold mb-0">محصول</p>
+                            <p class="fw-bold mb-0">قیمت کل</p>
+                        </div>
+                        @foreach ($render_cart->products as $product)
+                            @php
+                                $cart_product_price = $product->prices()->find($product->pivot->price_id);
+                            @endphp
+                            <div class="factor-item p-2 rounded-3 shadow-sm bg-light d-flex align-items-center justify-content-between">
+                                <p class="mb-0">{{ \Illuminate\Support\Str::limit($product->title, 24) }}</p>
+                                <p class="mb-0">{{ number_format($cart_product_price->salePrice() * $product->pivot->quantity) }} تومان</p>
+                            </div>
+                        @endforeach
+                        <div class="factor-item p-2 rounded-3 shadow-sm bg-light d-flex align-items-center justify-content-between">
+                            <p class="mb-0 fw-bold">جمع کل:</p>
+                            <p class="mb-0">{{ number_format($render_cart->discountPrice()) }} تومان</p>
+                        </div>
+                        <div class="action mt-3 d-flex align-items-center justify-content-center">
+                            <a href="{{ route('front.cart') }}" class="btn border-0 main-color-two-bg rounded-3">سبد خرید</a>
+                            <a href="{{ route('front.checkout') }}" class="btn border-0 main-color-one-bg rounded-3 ms-2">تسویه حساب</a>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="header-cart-info-footer">
-                <div class="header-cart-info-total">
-                    <span class="header-cart-info-total-text">مبلغ قابل پرداخت</span>
-                    <p class="header-cart-info-total-amount">
-                        <span class="header-cart-info-total-amount-number ">{{ number_format($cart->discountPrice()) }} </span>
-                        <span> تومان</span>
-                    </p>
+            @else
+                <div class="item">
+                    <div class="cart-canvas-empty text-center py-5">
+                        <img src="{{ theme_asset('image/empty-cart.svg') }}" alt="سبد خرید خالی" class="img-fluid mb-3" width="160">
+                        <p class="text-muted mb-3">سبد خرید شما خالی است ...</p>
+                        <a href="{{ route('front.products.index') }}" class="btn main-color-one-bg rounded-pill border-0">مشاهده محصولات</a>
+                    </div>
                 </div>
-                <div>
-                    <a href="{{route('front.checkout')}}" class="header-cart-info-submit btn btn-danger">ثبت سفارش</a>
-                </div>
-            </div>
+            @endif
         </div>
-    @else
-        <a href="{{route('front.cart')}}" style="color: #4a5f73;">
-            <span class="mdi mdi-basket"></span>
-            <span class="cart-count count">0</span>
-        </a>
-        <div class="mini-cart-dropdown">
-            <div class="header-cart-info-header">
-                <div class="header-cart-info-count">0 کالا</div>
-                <a href="{{route('front.cart')}}" class="header-cart-info-link">
-                    <span>مشاهده سبد خرید</span>
-                </a>
-            </div>
-            <div class="wrapper">
-                <p class="wrapper-empty-card-header">  سبد خرید شما خالی است ...</p>
-
-            </div>
-
-        </div>
-
-
-    @endif
-
+    </div>
 </div>
-

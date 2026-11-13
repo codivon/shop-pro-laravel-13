@@ -1,29 +1,21 @@
-@if($widget)
-    @php
-        $variables              = get_widget($widget);
-        $index_middle_2_banners   = $variables['index_middle_2_banners'];
+{{-- بنرهای میانی سانیار (۲ ستون بزرگ) --}}
+@php
+    $variables = get_widget($widget);
+    $banners = $variables['index_middle_2_banners'];
+@endphp
 
-    @endphp
-<!-- Start Banner -->
-@if ($index_middle_2_banners->count())
-
-        <div class="adplacement">
-            @php $i=1; @endphp
-            @foreach ($index_middle_2_banners as $banner)
-                @if(in_array($widget->option('place'), $banner->places ?? []))
-                    @if($i<=$widget->option('number'))
-            <div class="col-lg-6 col-xs-12 pull-right">
-                <a href="{{ $banner->link }}" class="item-adplacement image-data-src">
-                    <img data-src="{{ $banner->image ? asset($banner->image) : asset('/no-image-product.svg') }}" src="{{ theme_asset('images/600-600.png') }}" alt="{{ $banner->title }}">
-                </a>
+@if(count($banners))
+    <div class="banner py-20">
+        <div class="container-fluid">
+            <div class="row g-3">
+                @foreach($banners as $banner)
+                    <div class="col-lg-6 col-12">
+                        <a href="{{ $banner->link ?: '#' }}">
+                            <img src="{{ asset($banner->image) }}" class="img-fluid rounded-3 shadow-box" alt="{{ $banner->title ?: 'بنر' }}">
+                        </a>
+                    </div>
+                @endforeach
             </div>
-                        @php $i++; @endphp
-                    @endif
-                @endif
-            @endforeach
         </div>
-
-
-@endif
-<!-- End Banner -->
+    </div>
 @endif

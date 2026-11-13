@@ -1,113 +1,146 @@
-<!-- Start footer -->
-<footer>
-    <div class="footer-jump">
-        <a class="cursor-pointer">
-            <span class="footer-jump-angle"><i class="fa fa-angle-up"></i>برگشت به بالا</span>
-        </a>
-    </div>
-    <?php
-    $sevices_sliders=App\Models\Slider::whereJsonContains('groups', 'sevices_sliders')
-        ->where('published', true)
-        ->get()
-    ?>
-@if(count($sevices_sliders))
+{{-- فوتر سانیار --}}
+<footer class="footer">
+    <div class="container-fluid">
 
-    <div class="footer-inner-box">
-            @foreach($sevices_sliders as $sevices_slider)
-            <a href="{{$sevices_slider->link}}" class="footer-badge">
-                <img src="{{asset($sevices_slider->image)}}" alt="{{$sevices_slider->title}}">
-                <span class="item-feature">{{$sevices_slider->title}}</span>
-            </a>
-            @endforeach
+        @php
+            $sevices_sliders = App\Models\Slider::whereJsonContains('groups', 'sevices_sliders')
+                ->where('published', true)
+                ->get();
+        @endphp
 
-
-        </div>
-
-@endif
-    <div class="col-12">
-        <div class="middle-bar-footer">
-            <div class="col-lg-6 col-xs-12 pull-right">
-                <div class="footer-links">
-                    @foreach($footer_links as $group)
-                    <div class="links-col">
-                        <a class="head-line">{{ option('link_groups_' . $group['key'], $group['name']) }}</a>
-                        <ul class="links-ul">
-                            @foreach($links->where('link_group_id', $group['key']) as $link)
-                                <li>
-                                    <a href="{{ $link->link }}">{{ $link->title }}</a>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
+        @if(count($sevices_sliders))
+            <div class="footer-inner-box mb-4">
+                <div class="row gy-3">
+                    @foreach($sevices_sliders as $sevices_slider)
+                        <div class="col">
+                            <a href="{{ $sevices_slider->link }}" class="footer-badge">
+                                <img src="{{ asset($sevices_slider->image) }}" alt="{{ $sevices_slider->title }}">
+                                <span class="item-feature">{{ $sevices_slider->title }}</span>
+                            </a>
+                        </div>
                     @endforeach
                 </div>
             </div>
+        @endif
 
-            <div class="col-lg-4 col-xs-12 pull-left">
-                <div class="footer-form">
-                        <span class="newslitter-form">از تخفیف‌ها و جدیدترین‌های    {{ option('info_site_title', 'او پی شاپ') }} باخبر
-                            شوید:
-                        </span>
-
-                    <form id="newsletter-form" method="post" action="{{route('front.newsletter.subscribe')}}">
-                        <input type="text" name="contact" class="input-footer" placeholder="آدرس ایمیل یا شماره موبایل خود را وارد کنید">
-
-                        <button class="btn-footer-post">ارسال</button>
-                    </form>
+        <div class="footer-socail">
+            <div class="row gy-3">
+                <div class="col-lg-3">
+                    <div class="contact-item">
+                        <div class="title">
+                            <i class="bi bi-telephone-fill main-color-one-color"></i>
+                            <h4 class="font-16"><span class="main-color-one-color">شماره های </span>ارتباطی</h4>
+                        </div>
+                        <div class="desc">
+                            <a href="tel:{{ option('info_tel', '') }}" class="text-muted" dir="ltr">{{ option('info_tel', '') }}</a>
+                        </div>
+                    </div>
                 </div>
+                <div class="col-lg-3">
+                    <div class="contact-item">
+                        <div class="title">
+                            <i class="bi bi-envelope-fill main-color-one-color"></i>
+                            <h4 class="font-16"><span class="main-color-one-color"> ایمیل های </span>ارتباطی</h4>
+                        </div>
+                        <div class="desc">
+                            <a href="mailto:{{ option('info_email', '') }}" class="text-muted">{{ option('info_email', '') }}</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <div class="contact-item">
+                        <div class="title">
+                            <i class="bi bi-geo-alt-fill main-color-one-color"></i>
+                            <h4 class="font-16"><span class="main-color-one-color"> آدرس </span>شرکت</h4>
+                        </div>
+                        <div class="desc">
+                            <span class="text-muted">{{ option('info_footer_text', '') }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <div class="contact-item">
+                        <div class="title">
+                            <i class="bi bi-chevron-down main-color-one-color"></i>
+                            <h4 class="font-16"><span class="main-color-one-color"> فروشگاه </span>در رسانه ها</h4>
+                        </div>
+                        <div class="desc">
+                            <div class="social">
+                                @if(option('social_instagram'))
+                                    <a href="{{ option('social_instagram') }}"><i class="bi bi-instagram"></i></a>
+                                @endif
+                                @if(option('social_whatsapp'))
+                                    <a href="{{ option('social_whatsapp') }}"><i class="bi bi-whatsapp"></i></a>
+                                @endif
+                                @if(option('social_telegram'))
+                                    <a href="{{ option('social_telegram') }}"><i class="bi bi-telegram"></i></a>
+                                @endif
+                                @if(option('social_youtube'))
+                                    <a href="{{ option('social_youtube') }}"><i class="bi bi-youtube"></i></a>
+                                @endif
+                                @if(option('social_twitter'))
+                                    <a href="{{ option('social_twitter') }}"><i class="bi bi-twitter"></i></a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                <div class="footer-social">
-                    <span class="newslitter-form-social">   {{ option('info_site_title', 'او پی شاپ') }} را در شبکه‌های اجتماعی دنبال کنید:</span>
+        <div class="footer-menu">
+            <div class="row gy-3">
+                @foreach($footer_links as $group)
+                    <div class="col-lg-3 col-6">
+                        <div class="footer-menu-title">
+                            <h4 class="font-16">{{ option('link_groups_' . $group['key'], $group['name']) }}</h4>
+                            <ul class="navbar-nav">
+                                @foreach($links->where('link_group_id', $group['key']) as $link)
+                                    <li class="nav-item"><a href="{{ $link->link }}" class="nav-link">{{ $link->title }}</a></li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
 
-                    <div class="social-links">
-                        @if(option('social_instagram'))
-                            <a href="{{ option('social_instagram') }}"><i class="fa fa-instagram"></i></a>
+        <div class="footer-text">
+            <div class="row gy-3">
+                <div class="col-lg-9">
+                    <div class="footer-menu-text">
+                        <img src="{{ option('info_logo', theme_asset('image/logo.png')) }}" class="img-fluid" alt="{{ option('info_site_title', 'او پی شاپ') }}">
+                        <p class="text-justify mb-2">
+                            {{ option('info_about_us', option('info_short_description', '')) }}
+                        </p>
+                        <a href="{{ route('front.contact.index') }}" class="main-color-one-color"><i
+                                class="bi bi-arrow-left main-color-one-color me-1"></i> اطلاعات بیشتر</a>
+
+                        <form id="newsletter-form" method="post" action="{{ route('front.newsletter.subscribe') }}"
+                              class="footer-newsletter-form mt-3 d-flex gap-2">
+                            @csrf
+                            <input type="text" name="contact" class="form-control rounded-pill border-0"
+                                   placeholder="آدرس ایمیل یا شماره موبایل خود را وارد کنید">
+                            <button class="btn main-color-one-bg rounded-pill border-0" type="submit">ارسال</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <div class="footer-namad">
+                        @if(option('info_enamad'))
+                            {!! option('info_enamad') !!}
                         @endif
 
-                        @if(option('social_whatsapp'))
-                            <a href="{{ option('social_whatsapp') }}"><i class="fa fa-whatsapp"></i></a>
-                        @endif
-
-                        @if(option('social_telegram'))
-                            <a href="{{ option('social_telegram') }}"><i class="fa fa-telegram"></i></a>
-                        @endif
-
-                        @if(option('social_facebook'))
-                            <a href="{{ option('social_facebook') }}"><i class="fa fa-facebook"></i></a>
-                        @endif
-
-                        @if(option('social_twitter'))
-                            <a href="{{ option('social_twitter') }}"><i class="fa fa-twitter"></i></a>
+                        @if(option('info_samandehi'))
+                            {!! option('info_samandehi') !!}
                         @endif
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-12">
-        <div class="footer-address">
-            <div class="footer-contact">
-                <ul>
-                    <li>{{option('info_footer_text')}}</li>
-                    <li style="float:right">شماره تماس : <a class="phone-contact">{{option('info_tel')}}</a></li>
-                    <li class="email-title">آدرس ایمیل : <a >{{option('info_email')}}</a></li>
-                </ul>
-            </div>
-
-            <div class="address-images">
-                @if(option('info_enamad'))
-                    {!! option('info_enamad') !!}
-                @endif
-
-                @if(option('info_samandehi'))
-                    {!! option('info_samandehi') !!}
-                @endif
-
-            </div>
+        <div class="footer-copy-right">
+            <p class="text-center mb-0">تمامی حقوق این فروشگاه متعلق به {{ option('info_site_title', 'او پی شاپ') }} می‌باشد.</p>
         </div>
     </div>
-
-
 </footer>
-<!-- End footer -->
