@@ -18,6 +18,7 @@ use Spatie\Sitemap\SitemapIndex;
 use Spatie\Sitemap\Tags\Url;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Route;
 
 class SitemapController extends Controller
 {
@@ -250,13 +251,22 @@ class SitemapController extends Controller
 
         $tags = Tag::whereHas('products')->get();
 
-        foreach ($tags as $tag) {
-            $url = Url::create(route('front.products.tag', ['tag' => $tag->slug ?? $tag->id]))
-                ->setLastModificationDate($tag->updated_at ?? $tag->created_at ?? Carbon::now())
-                ->setChangeFrequency(Url::CHANGE_FREQUENCY_WEEKLY)
-                ->setPriority(0.6);
+        /*
+         * فاز ۱۵۳ — پلتفرم در حال حاضر هیچ صفحهٔ فرانت برای تگ محصول ندارد
+         * (route('front.products.tag') تعریف نشده و فراخوانی مستقیم آن داخل
+         * sitemap باعث Fatal «Route not defined» و ۵۰۰ شدن XML می‌شد؛
+         * همین باگ از اسکلت WeblakShop به ارث رسیده بود). اگر روزی روت اضافه
+         * شود، سگمنت به‌صورت خودکار برمی‌گردد.
+         */
+        if (Route::has('front.products.tag')) {
+            foreach ($tags as $tag) {
+                $url = Url::create(route('front.products.tag', ['tag' => $tag->slug ?? $tag->id]))
+                    ->setLastModificationDate($tag->updated_at ?? $tag->created_at ?? Carbon::now())
+                    ->setChangeFrequency(Url::CHANGE_FREQUENCY_WEEKLY)
+                    ->setPriority(0.6);
 
-            $sitemap->add($url);
+                $sitemap->add($url);
+            }
         }
 
         $content = $sitemap->render();
@@ -380,7 +390,7 @@ class SitemapController extends Controller
         $forms = Form::where('published', true)->get();
 
         foreach ($forms as $form) {
-            $url = Url::create(route('front.forms.show', ['form' => $form->slug ?? $form->id]))
+            $url = Url::create(route('front.form.show', ['form' => $form->slug ?? $form->id]))
                 ->setLastModificationDate($form->updated_at ?? $form->created_at ?? Carbon::now())
                 ->setChangeFrequency(Url::CHANGE_FREQUENCY_MONTHLY)
                 ->setPriority(0.5);
@@ -420,7 +430,7 @@ class SitemapController extends Controller
             $sellerName = $seller->full_name ?? $seller->name ?? 'فروشنده';
             $slug = $seller->slug ?? $seller->id;
 
-            $url = Url::create(route('showSellerStore', ['seller' => $slug]))
+            $url = Url::create(route('front.showSellerStore', ['seller' => $slug]))
                 ->setLastModificationDate($seller->updated_at ?? $seller->created_at ?? Carbon::now())
                 ->setChangeFrequency(Url::CHANGE_FREQUENCY_WEEKLY)
                 ->setPriority(0.7);

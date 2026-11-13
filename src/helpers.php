@@ -26,15 +26,18 @@ define('SANIAR_THEME_HELPERS_LOADED', 1);
 /**
  * FIX مقیاس: middleware throttle فقط در production — در تست/سندباکس محدودیتی نیست.
  */
+if (!function_exists('production_throttle')) {
 function production_throttle(string $limiter): string
 {
     return app()->environment('production') ? 'throttle:' . $limiter : '';
+}
 }
 
 /**
  * شناسه‌های دسته‌های فیلتر ویجت — همهٔ دسته‌ها در «یک کوئری» + زیردرخت از مپ کش‌شده
  * (جایگزین Category::find + allChildCategories بازگشتی به‌ازای هر دسته = N+1)
  */
+if (!function_exists('front_widget_category_ids')) {
 function front_widget_category_ids($category_filter, bool $withSubCategories = true): array
 {
     if (! $category_filter || ! $category_filter->hasCategory()) {
@@ -63,11 +66,13 @@ function front_widget_category_ids($category_filter, bool $withSubCategories = t
 
     return array_values(array_unique($categories));
 }
+}
 
 /**
  * فرزندان منتشرشدهٔ یک دسته — اگر relation ازقبل لود شده باشد (منو/ویجت)
  * بدون کوئری پاسخ می‌دهد؛ وگرنه یک کوئری (رفتار قدیم getCategories).
  */
+if (!function_exists('front_category_children')) {
 function front_category_children($category)
 {
     if (! $category) {
@@ -80,7 +85,9 @@ function front_category_children($category)
 
     return $category->categories()->published()->get();
 }
+}
 
+if (!function_exists('get_widget')) {
 function get_widget($widget)
 {
     if (WidgetRegistry::has($widget->key)) {
@@ -95,7 +102,9 @@ function get_widget($widget)
         return get_widget_uncached($widget);
     });
 }
+}
 
+if (!function_exists('get_widget_uncached')) {
 function get_widget_uncached($widget)
 {
     $variables = [];
@@ -527,12 +536,14 @@ function get_widget_uncached($widget)
 
     return $variables;
 }
+}
 
 /**
  * مپ id => parent_id برای «همه» دسته‌ها — کش دائمی.
  * زیردرخت هر دسته در حافظه از روی این مپ محاسبه می‌شود (بدون کوئری بازگشتی).
  * با تغییر دسته‌ها (CategoryObserver) ابطال می‌شود.
  */
+if (!function_exists('front_category_map')) {
 function front_category_map(): array
 {
     return Cache::rememberForever('front.category.map', function () {
@@ -543,10 +554,12 @@ function front_category_map(): array
             ->all();
     });
 }
+}
 
 /**
  * شناسه‌های زیردرخت یک دسته (شامل خودش) — O(n) در حافظه، بدون کوئری بازگشتی N+1.
  */
+if (!function_exists('front_category_subtree_ids')) {
 function front_category_subtree_ids(Category $category): array
 {
     $children = [];
@@ -572,11 +585,13 @@ function front_category_subtree_ids(Category $category): array
 
     return array_values(array_unique($ids));
 }
+}
 
 /**
  * شمارش محصولات منتشرشدهٔ هر دسته (به‌همراه زیردسته‌ها) در «یک کوئری» + کش.
  * جایگزین N+1 خط‌به‌خطِ $category->allPublishedProducts()->count() در ویجت دسته‌ها.
  */
+if (!function_exists('front_category_published_counts')) {
 function front_category_published_counts($categories): array
 {
     $categories = $categories instanceof \Illuminate\Support\Collection ? $categories : collect($categories);
@@ -648,11 +663,13 @@ function front_category_published_counts($categories): array
         return $result;
     });
 }
+}
 
 /**
  * مقادیر فیلتر مشخصات (Specification) سایدبار دسته — با زیرکوئری ایندکس‌خور
  * به‌جای لیست غول‌پیکر id محصولات + کش ۵ دقیقه‌ای.
  */
+if (!function_exists('front_filter_spec_values')) {
 function front_filter_spec_values(Category $category, $filter): array
 {
     $treeIds = front_category_subtree_ids($category);
@@ -674,10 +691,12 @@ function front_filter_spec_values(Category $category, $filter): array
         return get_separated_values($values, $filter->separator);
     });
 }
+}
 
 /**
  * مقادیر فیلتر ویژگی‌ها (AttributeGroup) سایدبار دسته — زیرکوئری + کش ۵ دقیقه‌ای.
  */
+if (!function_exists('front_filter_attribute_values')) {
 function front_filter_attribute_values(Category $category, $filter)
 {
     $treeIds = front_category_subtree_ids($category);
@@ -703,12 +722,14 @@ function front_filter_attribute_values(Category $category, $filter)
             ->get();
     });
 }
+}
 
 /**
  * شرط WHERE جستجوی محصولات با استفاده از ایندکس FULLTEXT (در صورت وجود)
  * و فالبک LIKE فقط روی title برای توکن‌های خیلی کوتاه.
  * هرگز description را LIKE نمی‌زند (full-scan در میلیون رکورد).
  */
+if (!function_exists('front_search_match')) {
 function front_search_match($query, string $term): void
 {
     $term = trim($term);
@@ -760,7 +781,9 @@ function front_search_match($query, string $term): void
             ->orWhere('products.title_en', 'like', $like);
     });
 }
+}
 
+if (!function_exists('highest_banner')) {
 function highest_banner()
 {
     return Banner::whereJsonContains('groups', 'index_highest_banner')
@@ -768,8 +791,10 @@ function highest_banner()
         ->orderBy('ordering')
         ->get();
 }
+}
 
 
+if (!function_exists('widget_seeder')) {
 function widget_seeder()
 {
     $theme = current_theme_name();
@@ -894,8 +919,10 @@ function widget_seeder()
     createWidgets($homeWidgets);
     createWidgets($postWidgets);
 }
+}
 
 // گزینه‌های پایه محصولات
+if (!function_exists('baseProductOptions')) {
 function baseProductOptions($orderByStock = 'yes')
 {
     return [
@@ -909,8 +936,10 @@ function baseProductOptions($orderByStock = 'yes')
         ['key' => 'number', 'value' => '10'],
     ];
 }
+}
 
 // ایجاد ویجت‌ها و آپشن‌ها
+if (!function_exists('createWidgets')) {
 function createWidgets($widgets)
 {
     foreach ($widgets as $data) {
@@ -928,12 +957,16 @@ function createWidgets($widgets)
         }
     }
 }
+}
 
+if (!function_exists('theme_first_config')) {
 function theme_first_config()
 {
     widget_seeder();
 }
+}
 
+if (!function_exists('Get_All_Tags')) {
 function Get_All_Tags($tag_name)
 {
     $ids=[];
@@ -947,4 +980,5 @@ function Get_All_Tags($tag_name)
         array_push($ids,$taggable->tag_id);
     }
     return \App\Models\Tag::whereIn('id',$ids)->get();
+}
 }
