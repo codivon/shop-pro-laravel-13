@@ -1,0 +1,154 @@
+@extends('front::layouts.master')
+
+@push('meta')
+    <meta name="description" content="{{ option('info_short_description') }}">
+    <meta name="keywords" content="{{ option('info_tags') }}">
+
+    <link rel="canonical" href="{{ url('/') }}"/>
+
+    @php
+        $ldData = [
+            "@context" => "https://schema.org",
+            "@type" => "WebSite",
+            "url" => route('front.index'),
+            "name" => option('info_site_title'),
+            "logo" => option('info_logo') ? asset(option('info_logo')) : asset(config('front.asset_path') . 'image/logo.png'),
+            "potentialAction" => [
+                "@type" => "SearchAction",
+                "target" => route('front.products.index') . "/?q={search_term_string}",
+                "query-input" => "required name=search_term_string"
+            ]
+        ];
+    @endphp
+
+    <script type="application/ld+json">
+        {!! json_encode($ldData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) !!}
+    </script>
+@endpush
+
+@section('content')
+    @foreach ($widgets as $widget)
+        {{-- wrapper ابزارک برای ویجت‌ساز پنل (هایلایت/اسکرول) — بدون تغییر ظاهری --}}
+        <div id="widget-{{ $widget->id }}">
+            @php
+                // اول چک کن آیا ماژولی این ویجت رو ثبت کرده
+                $moduleView = \App\Services\WidgetRegistry::getView($widget->key);
+                $moduleHasWidget = $moduleView && view()->exists($moduleView);
+            @endphp
+
+            @if ($moduleHasWidget)
+                {{-- ویجت از ماژول لود میشه --}}
+                @include($moduleView)
+            @else
+                @switch($widget->key)
+                    @case('main-slider')
+                        @include('front::widgets.main-slider')
+                        @break
+
+                    @case('fullscreen-slider')
+                        @include('front::widgets.fullscreen-slider')
+                        @break
+
+                    @case('products-moment-block')
+                        @include('front::widgets.products-moment-block')
+                        @break
+
+                    @case('products-default-block')
+                        @include('front::widgets.products-default-block')
+                        @break
+
+                    @case('products-colorful-block')
+                        @include('front::widgets.products-colorful-block')
+                        @break
+
+                    @case('middle-banners')
+                        @include('front::widgets.middle-banners')
+                        @break
+
+                    @case('middle-banners-2')
+                        @include('front::widgets.middle-banners-2')
+                        @break
+
+                    @case('middle-banners-4')
+                        @include('front::widgets.middle-banners-4')
+                        @break
+
+                    @case('coworker-sliders')
+                        @include('front::widgets.coworker-sliders')
+                        @break
+
+                    @case('sevices-sliders')
+                        @include('front::widgets.sevices-sliders')
+                        @break
+
+                    @case('categories')
+                        @include('front::widgets.categories')
+                        @break
+
+                    @case('posts')
+                        @include('front::widgets.posts')
+                        @break
+
+                    @case('faqs')
+                        @include('front::widgets.faqs')
+                        @break
+                @endswitch
+            @endif
+        </div>
+    @endforeach
+@endsection
+@push('scripts')
+    @if (option('dt_index_popup_type') == 'image')
+        <div id="image-popup-modal" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body pt-0">
+                        <a href="{{ option('dt_index_popup_link') }}">
+                            <div class="d-none d-md-block">
+                                <img src="{{ asset(option('dt_index_popup_image')) }}" class="img-fluid w-100" alt="popup">
+                            </div>
+                            <div class="d-block d-md-none">
+                                <img src="{{ asset(option('dt_index_popup_image_mobile')) }}"
+                                     class="img-fluid w-100" alt="popup">
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @elseif (option('dt_index_popup_type') == 'text')
+        <div id="text-popup-modal" class="modal fade" tabindex="-1" role="dialog"
+             aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body pt-0">
+                        <p>{!! option('dt_index_popup_text') !!}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- اسکریپت ویجت‌ساز پنل (فاز ۹-ه) — فقط در حالت پیش‌نمایش ?ap-preview=1؛ بدون هیچ تاثیری در بازدید عادی --}}
+    @if (request()->get('ap-preview'))
+        <style>
+            [data-ap-outline] {
+                animation: apWidgetPulse 1.6s ease-in-out infinite;
+            }
+            @keyframes apWidgetPulse {
+                0%, 100% { outline-color: rgba(245, 158, 11, .95); outline-offset: 4px; }
+                50% { outline-color: rgba(245, 158, 11, .35); outline-offset: 9px; }
+            }
+            .ap-widget-guide {
+                outline: 1px dashed rgba(148, 163, 184, .8) !important;
+                outline-offset: 2px;
+            }
+        </style>
+    @endif
+@endpush

@@ -1,0 +1,108 @@
+/* ---------------------------------------------------------
+   استایل‌های اختصاصی صفحات احراز هویت قالب سانیار
+   (جایگزین بلوک‌های <style> داخل بلید)
+   --------------------------------------------------------- */
+
+/* نمایش خطاهای اعتبارسنجی لاراول */
+.invalid-feedback {
+    display: inline-block;
+    text-align: right;
+    font-size: 11px;
+}
+
+/* ورودی کد تایید (پلاگین activationCodeInput در js/scripts.js)
+   استایل‌ها از قالب قبلی حفظ شده تا OTP به‌درستی نمایش داده شود */
+.activation-code {
+    direction: ltr;
+    position: relative;
+}
+.activation-code .activation-code-inputs {
+    display: flex;
+    flex-flow: row nowrap;
+    margin-top: 20px;
+}
+.activation-code.active > span {
+    transform: translate(0, -100%);
+    line-height: 30px;
+    opacity: 0.6;
+}
+.activation-code.active::before {
+    opacity: 0;
+}
+.activation-code.active .activation-code-inputs input {
+    opacity: 1 !important;
+    border-color: var(--main-color-one, #e8a33d) !important;
+}
+.activation-code .activation-code-inputs input {
+    display: flex;
+    flex-flow: column nowrap;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    min-width: 0;
+    line-height: 36px;
+    text-align: center;
+    align-items: center;
+    transition: all 0.3s ease;
+    border-bottom: 2px solid;
+    border-color: #ccc;
+    margin-right: 8px;
+    background: white !important;
+    opacity: 0;
+}
+.activation-code > span {
+    position: absolute;
+    display: block;
+    font-size: 13px;
+    color: #6f6f6f;
+    top: 0;
+    right: 0;
+    transition: all 0.3s ease;
+}
+.activation-code::before {
+    content: '';
+    display: block;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    border-bottom: 2px solid;
+    border-color: #ccc;
+    transition: opacity 0.3s ease;
+}
+.activation-code-input {
+    display: none;
+    width: 100%;
+}
+
+/* لینک ویرایش شماره / ابزارک‌های کمکی کارت احراز هویت */
+.form-edit-number {
+    display: inline-block;
+    font-size: 13px;
+    color: var(--main-color-one, #e8a33d);
+    cursor: pointer;
+}
+.form-edit-number:hover {
+    text-decoration: underline;
+}
+
+/* فاصله فرم داخل کارت */
+.auth-form .comment-item input.form-control,
+.auth-form .comment-item textarea.form-control {
+    border-radius: 0;
+    border: 0;
+    border-bottom: 2px solid #e9ecef;
+    padding-right: 0;
+    background: transparent;
+    box-shadow: none;
+}
+.auth-form .comment-item input.form-control:focus,
+.auth-form .comment-item textarea.form-control:focus {
+    border-bottom-color: var(--main-color-one, #e8a33d);
+    box-shadow: none;
+    background: transparent;
+}
+
+input.disabled {
+    cursor: no-drop;
+}

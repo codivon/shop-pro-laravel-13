@@ -1,0 +1,543 @@
+/**
+ * SaniarTheme — استایل صفحه تک‌محصول
+ * (منتقل‌شده از بلوک <style> داخل show.blade.php + قواعد اسکلت سانیار)
+ */
+
+/* ---------- انتخاب ویژگی‌ها (type / color / extra-options) ---------- */
+.type-container ul.type-list {
+    list-style: none
+}
+
+.type-container ul.type-list li {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 8px;
+    margin-left: 8px;
+    background-color: #eff3f8;
+    border: 2px solid #ffffff;
+    padding: 6px 10px;
+    border-radius: 10px;
+    letter-spacing: -.2px;
+    word-spacing: -1px;
+    color: #1c1c25;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none
+}
+
+.type-container ul.type-list li.selected {
+    position: relative;
+    outline: 2px solid #3ecaf6;
+    padding-right: 30px
+}
+
+.type-container ul.type-list li {
+    position: relative;
+}
+
+.type-container .product-attribute:has(input[type=radio]:checked) {
+    outline: 2px solid #3ecaf6;
+}
+
+.color-container {
+    padding-right: 5px
+}
+
+.color-container .color-container-title {
+    font-weight: 700;
+    font-size: 13px;
+    color: #1c1c25;
+    margin-bottom: 8px
+}
+
+.color-container ul.color-list {
+    list-style: none
+}
+
+.color-container ul.color-list li {
+    display: inline-block;
+    margin-left: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all .2s ease-in-out;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #ffffff;
+    vertical-align: middle;
+    margin-bottom: 10px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none
+}
+
+.color-container ul.color-list li.selected {
+    transform: scale(1.15);
+    outline: 2px solid #3ecaf6
+}
+
+.color-container ul.color-list li input {
+    display: none
+}
+
+.color-container ul.color-list .is-white {
+    border: 2px solid #ebf1f6
+}
+
+.color-container ul.color-list .is-white.selected:after {
+    content: "";
+    color: #8f9bad
+}
+
+.extra-options-container {
+    padding: 0 5px
+}
+
+.extra-options-container ul.type-list {
+    list-style: none
+}
+
+.extra-options-container ul.type-list li {
+    display: inline-flex;
+    align-items: center
+}
+
+.extra-options-container ul.type-list li div.option-item {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 8px;
+    margin-left: 8px;
+    background-color: #eff3f8;
+    padding: 8px;
+    border-radius: 10px;
+    letter-spacing: -.2px;
+    word-spacing: -1px;
+    color: #1c1c25;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none
+}
+
+.extra-options-container ul.type-list li div.option-item .selectbox {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background-color: #fff;
+    border-radius: 5px;
+    margin-left: 8px;
+    transition: ease .1s all
+}
+
+.extra-options-container ul.type-list li div.option-item .selectbox i {
+    visibility: hidden;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 10px
+}
+
+.extra-options-container ul.type-list li div.option-item.selected .selectbox {
+    background-color: #1abc9c
+}
+
+.extra-options-container ul.type-list li div.option-item.selected .selectbox i {
+    visibility: visible
+}
+
+/* ---------- باکس فروشنده (پارشال product-info) ---------- */
+.product-actions .seller-container {
+    width: 100%;
+    padding: 17px 11px 0 0;
+    background-color: var(--main-background);
+    border-radius: 20px
+}
+
+.product-actions .seller-container .seller-avatar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid #ebf1f6;
+    background-color: #fff;
+    border-radius: 12px
+}
+
+.product-actions .bg-success {
+    background-color: #13deb91a !important;
+    color: #13deb9 !important;
+}
+
+.product-actions .seller-container .seller-avatar i.shop {
+    font-size: 23px;
+    margin: 0;
+    padding: 0
+}
+
+.product-actions .seller-container .seller-avatar img {
+    width: 100%;
+}
+
+.product-actions .seller-container .seller-container-title {
+    font-weight: 700;
+    font-size: 15px;
+    color: #1c1c25
+}
+
+.product-actions .seller-container ul {
+    list-style: none
+}
+
+.product-actions .seller-container ul li {
+    display: flex;
+    align-items: center;
+    border-bottom: dashed 1px #e5e9ec;
+    padding: 12px 0
+}
+
+.product-actions .seller-container ul li:last-child {
+    border: none;
+    padding-bottom: 0
+}
+
+.product-actions .seller-container ul li i {
+    color: #1c1c25;
+    font-size: 16px;
+    margin-left: 7px
+}
+
+.product-actions .seller-container ul li .table-name {
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    color: #1c1c25
+}
+
+.product-actions .seller-container ul li .table-name .verify {
+    font-size: 11px;
+    margin-right: 2px;
+    color: #0097e6
+}
+
+.product-actions .seller-container ul li a.table-name {
+    transition: all .2s ease-in-out
+}
+
+.product-actions .seller-container ul li a.table-name:hover {
+    color: #3ecaf6
+}
+
+.product-actions .seller-container ul li span.divider {
+    margin-left: 8px;
+    margin-right: 8px
+}
+
+.product-actions .seller-container ul li span.divider:before {
+    background-color: #cdd4dc;
+    border-radius: 50%;
+    content: "";
+    display: inline-block;
+    height: 4px;
+    width: 4px
+}
+
+.product-actions .seller-container ul li span.table-flag {
+    font-size: 14px;
+    font-weight: 400;
+    color: #b7b7bc
+}
+
+.product-actions .seller-container ul li span.table-flag.green {
+    color: #16a085;
+    font-weight: 700
+}
+
+.text-success-dark {
+    color: #16a085 !important;
+}
+
+.fw-bold {
+    font-weight: 700 !important;
+}
+
+/* ---------- تب‌های صفحه محصول ---------- */
+.p-tabs {
+    background-color: unset;
+}
+
+.p-tabs .box-tabs-main {
+    border-radius: 4px 4px 0 0;
+    overflow: hidden;
+}
+
+.p-tabs .box-tabs {
+    padding: 0 5px;
+}
+
+/* ---------- اسکلت سانیار صفحه محصول ---------- */
+
+/* نشان وضعیت (ناموجود / پیش‌فروش / فروش ویژه) */
+.product-timeout .promotion-badge {
+    display: inline-block;
+    padding: 6px 18px;
+    border-radius: 10px;
+    background-color: var(--main-color-one, #1c1c25);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.product-timeout .promotion-badge.not-available {
+    background-color: #ef394e;
+}
+
+.product-timeout .countdown-timer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-weight: 700;
+    color: var(--main-color-one, #1c1c25);
+}
+
+/* گالری تصاویر */
+.product-page .pro_gallery {
+    position: relative;
+}
+
+.product-page .pro_gallery #img-product-zoom {
+    width: 100%;
+    height: auto;
+    border-radius: 14px;
+}
+
+.product-page .pro_gallery #gallery_01f {
+    width: 100%;
+    float: none;
+    margin-top: 15px;
+}
+
+.product-page .pro_gallery .gallery-items .item a {
+    display: block;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    overflow: hidden;
+    opacity: .7;
+    transition: all .2s ease-in-out;
+}
+
+.product-page .pro_gallery .gallery-items .item a.active,
+.product-page .pro_gallery .gallery-items .item a:hover {
+    border-color: var(--main-color-one, #3ecaf6);
+    opacity: 1;
+}
+
+.product-page .pro_gallery .gallery-items img {
+    width: 100%;
+    border-radius: 8px;
+}
+
+/* دکمه‌های کنار گالری (علاقه‌مندی / مقایسه / نمودار / اشتراک) */
+/* چیدمان اصلی از کلاس سانیار .icon-product-box (موقعیت مطلق، ستون عمودی) می‌آید */
+.product-page .gallery-options {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.product-page .gallery-options .icon-product-box-item {
+    position: relative;
+}
+
+.product-page .gallery-options .btn-option {
+    all: unset;
+    display: block;
+    cursor: pointer;
+}
+
+.product-page .gallery-options .icon-product-box-item:hover,
+.product-page .gallery-options .icon-product-box-item.btn-option-favorites {
+    color: var(--main-color-one, #3ecaf6);
+    background: #f5f6f9;
+}
+
+.product-page .gallery-options .tooltip-short {
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 10px);
+    transform: translateY(-50%);
+    background-color: #1c1c25;
+    color: #fff;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all .2s ease-in-out;
+    z-index: 5;
+}
+
+.product-page .gallery-options .icon-product-box-item:hover .tooltip-short {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* باکس فروشندگان */
+.product-page .box-suppliers {
+    margin-top: 20px;
+}
+
+.product-page .box-suppliers-headline-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.product-page .box-suppliers-headline-container .headline-delivery span {
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.product-page .box-suppliers-headline-container .link-border {
+    color: var(--main-color-one, #3ecaf6);
+    font-size: 14px;
+}
+
+/* کارت تب‌ها */
+.product-page .p-tabs .box-tabs-main {
+    background-color: #fff;
+    border-radius: 14px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, .04);
+}
+
+/* شناسه کالا */
+.product-page .footer-product-id {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #7d879c;
+    font-size: 13px;
+    padding: 15px 10px 0;
+}
+
+/* آیکون‌های امتیاز */
+.product-star i {
+    color: #ffc107;
+    font-size: 18px;
+}
+
+.product-star i:not(.active) {
+    color: #e5e9ec;
+}
+
+/* ============================================================
+   SaniarTheme — چیپ‌های انتخاب ویژگی (رنگ/سایز) با مارکاپ سانیار
+   (ساختار input داخل label برای سازگاری با show.js — :has برای حالت انتخاب)
+   ============================================================ */
+
+.product-meta-color-items {
+    --chip-border: #e9ecef;
+}
+
+.product-meta-color-items .ui-variant-color,
+.product-meta-color-items .ui-variant {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--chip-border);
+    border-radius: 0.75rem;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    margin: 0;
+    font-weight: normal;
+    position: relative;
+}
+
+.product-meta-color-items .ui-variant-color:hover,
+.product-meta-color-items .ui-variant:hover {
+    border-color: var(--main-color-one, #0f5132);
+}
+
+.product-meta-color-items .ui-variant-color input,
+.product-meta-color-items .ui-variant input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+    margin: 0;
+}
+
+.product-meta-color-items .ui-variant-shape {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: inline-block;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+}
+
+.product-meta-color-items .ui-variant-check {
+    display: none;
+}
+
+.product-meta-color-items .ui-variant-color:has(input:checked),
+.product-meta-color-items .ui-variant:has(input:checked),
+.product-meta-color-items .ui-variant-color.selected,
+.product-meta-color-items .ui-variant.selected {
+    border-color: var(--main-color-one, #0f5132);
+    box-shadow: 0 0 0 2px rgba(15, 81, 50, 0.15);
+    color: var(--main-color-one, #0f5132);
+    font-weight: bold;
+}
+
+.product-meta-color-items .unavailable {
+    opacity: 0.45;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
+.product-meta-color-items .unavailable:hover {
+    border-color: var(--chip-border);
+    box-shadow: none;
+}
+
+/* نشان درصد تخفیف باکس خرید */
+.product-seller-price-real .discount.show-discount {
+    display: inline-block;
+    background: var(--main-color-two, #dc3545);
+    color: #fff;
+    border-radius: 0.5rem;
+    padding: 0 0.4rem;
+    font-size: 12px;
+    margin-right: 0.35rem;
+}
+
+/* اسکلتون لودینگ تغییر ویژگی */
+.product-seller-info.loading-skeleton {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+/* ردیف‌های اضافی فروشندگان — مخفی تا کلیک «بیشتر» */
+tr.table-suppliers-row.in-filter {
+    display: none;
+}
+
+tr.table-suppliers-row.in-filter.shown {
+    display: table-row;
+}
