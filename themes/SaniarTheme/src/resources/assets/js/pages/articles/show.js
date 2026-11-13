@@ -16,11 +16,10 @@ $(document).ready(function() {
                 post_id: postId,
             },
             success: function(response) {
-                console.log(response);
                 if (response.liked) {
-                    icon.addClass('fa-heart-like');
+                    icon.addClass('liked');
                 } else {
-                    icon.removeClass('fa-heart-like');
+                    icon.removeClass('liked');
                 }
                 likesSpan.text(response.likes_count);
             },
@@ -64,22 +63,34 @@ $(document).ready(function() {
 
                     // ساخت HTML
                     var commentHtml = `
-                <div class="comment card mb-3 comment-pending-own" id="comment-${comment.id}" style="opacity: 0.6;">
-                    <div class="card-body">
-                        <div class="comment--avatar">
-                            <img class="shadow-1 mb-2" src="${avatarUrl}" alt="${userName}" width="55" height="55" loading="lazy">
+                <div class="comment-item opacity-50 comment-pending-own mb-3" id="comment-${comment.id}">
+                    <div class="comment-item-avatar d-sm-flex d-none">
+                        <div class="comment-item-avatar-img">
+                            <a href="javascript:void(0)" class="rounded-circle">
+                                <img src="${avatarUrl}" class="rounded-circle" width="40" alt="${userName}" loading="lazy">
+                            </a>
                         </div>
-                        <div class="comment--meta">
-                            <div class="comment--name">
-                                <a href="javascript:void(0)" style="text-decoration: none;">
-                                    <span>${userName}</span>
-                                    <small class="alert-warning">
-                                        <i class="fas fa-clock"></i> ${comment.is_pending ? 'این دیدگاه پس از تایید مدیر نمایش داده می‌شود' : ''}
-                                    </small>
+                    </div>
+                    <div class="comment-item-desc">
+                        <div class="comment-item-avatar d-sm-none d-flex mb-2">
+                            <div class="comment-item-avatar-img">
+                                <a href="javascript:void(0)" class="rounded-circle">
+                                    <img src="${avatarUrl}" class="rounded-circle" width="40" alt="${userName}" loading="lazy">
                                 </a>
                             </div>
-                            <span class="date">${comment.created_at}</span>
-                            <p class="comment--description mb-3">${escapeHtml(comment.body)}</p>
+                        </div>
+                        <div class="comment-item-title">
+                            <div class="comment-date">
+                                <p class="text-muted comment-date-auther">${userName}</p>
+                                <p class="text-muted comment-date-speractor">–</p>
+                                <p class="text-muted comment-date-date">${comment.created_at}</p>
+                            </div>
+                            <small class="alert-warning d-block">
+                                <i class="bi bi-clock"></i> ${comment.is_pending ? 'این دیدگاه پس از تایید مدیر نمایش داده می‌شود' : ''}
+                            </small>
+                        </div>
+                        <div class="comment-item-content">
+                            <p>${escapeHtml(comment.body)}</p>
                         </div>
                     </div>
                 </div>
@@ -87,7 +98,7 @@ $(document).ready(function() {
 
                     // اضافه کردن به صفحه
                     if ($('.user-pending-comments').length === 0) {
-                        $('.approved-comments').before(`
+                        $('#article-comments .title-panel').after(`
                     <div class="user-pending-comments">
                         <h5>دیدگاه‌های در انتظار تایید شما</h5>
                         <div class="comments-list"></div>
@@ -95,7 +106,7 @@ $(document).ready(function() {
                 `);
                     }
 
-                    $('.comments-container .user-pending-comments').prepend(commentHtml);
+                    $('.user-pending-comments').prepend(commentHtml);
 
                     // پاک کردن فرم
                     $('#comment-form')[0].reset();
@@ -176,22 +187,34 @@ $(document).ready(function() {
 
                         // ساخت HTML
                         var commentHtml = `
-                <div class="comment comment-answer card mb-2 comment-pending-own" id="comment-${comment.id}" style="opacity: 0.6;">
-                    <div class="card-body">
-                        <div class="comment--avatar">
-                            <img class="shadow-1 mb-2" src="${avatarUrl}" alt="${userName}" width="55" height="55" loading="lazy">
+                <div class="comment-item opacity-50 comment-pending-own mb-2" id="comment-${comment.id}">
+                    <div class="comment-item-avatar d-sm-flex d-none">
+                        <div class="comment-item-avatar-img">
+                            <a href="javascript:void(0)" class="rounded-circle">
+                                <img src="${avatarUrl}" class="rounded-circle" width="40" alt="${userName}" loading="lazy">
+                            </a>
                         </div>
-                        <div class="comment--meta">
-                            <div class="comment--name">
-                                <a href="javascript:void(0)" style="text-decoration: none;">
-                                    <span>${userName}</span>
-                                    <small class="alert-warning">
-                                        <i class="fas fa-clock"></i> ${comment.is_pending ? 'این پاسخ پس از تایید مدیر نمایش داده می‌شود' : ''}
-                                    </small>
+                    </div>
+                    <div class="comment-item-desc com-response">
+                        <div class="comment-item-avatar d-sm-none d-flex mb-2">
+                            <div class="comment-item-avatar-img">
+                                <a href="javascript:void(0)" class="rounded-circle">
+                                    <img src="${avatarUrl}" class="rounded-circle" width="40" alt="${userName}" loading="lazy">
                                 </a>
                             </div>
-                            <span class="date">${comment.created_at}</span>
-                            <p class="comment--description mb-3">${escapeHtml(comment.body)}</p>
+                        </div>
+                        <div class="comment-item-title">
+                            <div class="comment-date">
+                                <p class="text-muted comment-date-auther">${userName}</p>
+                                <p class="text-muted comment-date-speractor">–</p>
+                                <p class="text-muted comment-date-date">${comment.created_at}</p>
+                            </div>
+                            <small class="alert-warning d-block">
+                                <i class="bi bi-clock"></i> ${comment.is_pending ? 'این پاسخ پس از تایید مدیر نمایش داده می‌شود' : ''}
+                            </small>
+                        </div>
+                        <div class="comment-item-content">
+                            <p>${escapeHtml(comment.body)}</p>
                         </div>
                     </div>
                 </div>
@@ -199,7 +222,7 @@ $(document).ready(function() {
 
                         // اضافه کردن به صفحه
                         if ($('.user-pending-comments').length === 0) {
-                            $('.approved-comments').before(`
+                            $('#article-comments .title-panel').after(`
                     <div class="user-pending-comments">
                         <h5>دیدگاه‌های در انتظار تایید شما</h5>
                         <div class="comments-list"></div>
@@ -207,7 +230,7 @@ $(document).ready(function() {
                 `);
                         }
 
-                        $('.comments-container .user-pending-replies-comments-'+comment.parent_id).append(commentHtml);
+                        $('.user-pending-replies-comments-'+comment.parent_id).append(commentHtml);
 
                         // پاک کردن فرم
                         $('#send-answer-form')[0].reset();
@@ -258,10 +281,10 @@ $(document).ready(function() {
 
                     if (response.liked) {
                         // لایک جدید
-                        icon.removeClass('fa-regular').addClass('fa-solid liked');
+                        icon.removeClass('bi-hand-thumbs-up').addClass('bi-hand-thumbs-up-fill liked');
                     } else {
                         // آنلایک کردن
-                        icon.removeClass('fa-solid liked').addClass('fa-regular');
+                        icon.removeClass('bi-hand-thumbs-up-fill liked').addClass('bi-hand-thumbs-up');
                     }
 
                     // بروزرسانی تعدادها
@@ -269,8 +292,8 @@ $(document).ready(function() {
                     dislikeCountSpan.text(response.dislikes_count);
 
                     // ریست کردن آیکون دیسلایک (اگر کاربر قبلاً دیسلایک کرده بود)
-                    if (dislikeIcon.hasClass('fa-solid disliked')) {
-                        dislikeIcon.removeClass('fa-solid disliked').addClass('fa-regular');
+                    if (dislikeIcon.hasClass('bi-hand-thumbs-down-fill disliked')) {
+                        dislikeIcon.removeClass('bi-hand-thumbs-down-fill disliked').addClass('bi-hand-thumbs-down');
                     }
 
                     // انیمیشن
@@ -320,10 +343,10 @@ $(document).ready(function() {
 
                     if (response.liked) {
                         // دیسلایک جدید
-                        icon.removeClass('fa-regular').addClass('fa-solid disliked');
+                        icon.removeClass('bi-hand-thumbs-down').addClass('bi-hand-thumbs-down-fill disliked');
                     } else {
                         // آندیسلایک کردن
-                        icon.removeClass('fa-solid disliked').addClass('fa-regular');
+                        icon.removeClass('bi-hand-thumbs-down-fill disliked').addClass('bi-hand-thumbs-down');
                     }
 
                     // بروزرسانی تعدادها
@@ -331,8 +354,8 @@ $(document).ready(function() {
                     likeCountSpan.text(response.likes_count);
 
                     // ریست کردن آیکون لایک (اگر کاربر قبلاً لایک کرده بود)
-                    if (likeIcon.hasClass('fa-solid liked')) {
-                        likeIcon.removeClass('fa-solid liked').addClass('fa-regular');
+                    if (likeIcon.hasClass('bi-hand-thumbs-up-fill liked')) {
+                        likeIcon.removeClass('bi-hand-thumbs-up-fill liked').addClass('bi-hand-thumbs-up');
                     }
 
                     // انیمیشن
@@ -356,7 +379,7 @@ $(document).ready(function() {
     });
 
     // دیسلایک کردن کامنت
-    $(document).on('click', '.comments-container .send-answer', function(e) {
+    $(document).on('click', '.send-answer', function(e) {
         e.preventDefault();
 
         let button = $(this);

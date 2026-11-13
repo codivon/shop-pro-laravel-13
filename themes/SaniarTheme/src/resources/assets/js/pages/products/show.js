@@ -1,3 +1,9 @@
+// وضعیت فروشندگان چندگانه از data-attribute صفحه خوانده می‌شود (به‌جای اسکریپت اینلاین در بلید)
+if (typeof window.multi_vendor_system_status === 'undefined') {
+    var $jsProduct = $('.js-product[data-multi-vendor]');
+    window.multi_vendor_system_status = $jsProduct.attr('data-multi-vendor') || 'false';
+}
+
 $(document).ready(function () {
 
     function writeColorsName() {

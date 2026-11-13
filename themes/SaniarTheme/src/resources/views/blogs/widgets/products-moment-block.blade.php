@@ -1,54 +1,43 @@
+{{-- اسلایدر محصولات شگفت‌انگیز سانیار — ویجت‌ساز وبلاگ (با تایمر) --}}
 @php
-    $variables      = get_widget($widget);
-    $products       = $variables['products'];
+    $variables = get_widget($widget);
+    $products  = $variables['products'];
 @endphp
 
-<!-- Start products -->
 @if ($products->count())
-    <!--    Slider-sidebar------------------->
-    <div class="col-lg-2 col-md-12 col-xs-12 pull-left">
-        <div class="slider-sidebar">
-            <div class="widget-suggestion widget card">
-                @if($widget->option('title'))
-                    <header class="card-header promo-single-headline">
-                        <h3 class="card-title">{{ $widget->option('title') }}</h3>
-                    </header>
-                @endif
-
-                <div id="progressBar">
-                    <div class="slide-progress" style="width: 100%; transition: width 5000ms ease 0s;"></div>
+    <div class="product-slider site-slider py-20">
+        <div class="container-fluid">
+            <div class="header-content mb-4 bg-white shadow-box rounded-3 p-3 d-flex align-items-center justify-content-between flex-wrap">
+                <div class="title d-flex align-items-center">
+                    <img src="{{ theme_asset('image/amazing.svg') }}" alt="" class="img-fluid">
+                    <h5 class="font-16 ms-3"><span class="main-color-one-color d-inline-block ms-1">{{ $widget->option('title','پیشنهاد شگفت انگیز') }}</span></h5>
                 </div>
-                <div id="suggestion-slider" class="owl-carousel owl-theme owl-rtl owl-loaded owl-drag owl-nav-disabled">
-                    <div class="owl-stage-outer">
-                        <div class="owl-stage"
-                             style="transform: translate3d(1369px, 0px, 0px); transition: all 0.25s ease 0s; width: 2190px;">
-                            @php $i=1; @endphp
-                            @foreach($products as $product)
-                            <div class="owl-item @if($i==1 or $i==2)cloned @endif" style="width: 273.75px;">
-                                <div class="item">
-                                    <a href="{{ route('front.products.show', ['product' => $product]) }}" class="image-data-src">
-                                        <img class="w-100" data-src="{{ $product->image ? asset($product->image) : asset('/no-image-product.svg') }}" src="{{ theme_asset('images/600-600.png') }}" alt="{{ $product->title }}">
-                                    </a>
-                                    <h3 class="product-title">
-                                        <a href="{{ route('front.products.show', ['product' => $product]) }}">{{ $product->title }}</a>
-                                    </h3>
-                                    <div class="price">
-                                        @if($product->getLowestDiscount())
-                                        <del><span class="amount">{{ $product->getLowestDiscount() }}</span></del>
-                                        @endif
-                                        <span class="amount">{{ $product->getLowestPrice() }}{{--<span>تومان</span>--}}</span>
-                                    </div>
-                                </div>
-                            </div>
-                                @php $i++; @endphp
-                            @endforeach
-                        </div>
+                @if($widget->option('link'))
+                    <div class="link">
+                        <a href="{{ $widget->option('link') }}" class="border-animate fromCenter pb-1 fw-bold">
+                            {{ $widget->option('link_title', 'مشاهده همه') }}
+                            <i class="bi bi-chevron-double-left main-color-one-color"></i>
+                        </a>
                     </div>
+                @endif
+            </div>
+        </div>
+
+        <div class="parent">
+            <div class="container-fluid">
+                <div class="swiper product-slider-swiper">
+                    <div class="swiper-wrapper">
+                        @foreach($products as $product)
+                            <div class="swiper-slide">
+                                @include('front::partials.product-card', ['product' => $product, 'withTimer' => true, 'hoverBtns' => true])
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="swiper-button-next d-lg-flex d-none"></div>
+                    <div class="swiper-button-prev d-lg-flex d-none"></div>
+                    <div class="swiper-pagination"></div>
                 </div>
             </div>
         </div>
     </div>
-    <!--    Slider-sidebar------------------->
-
 @endif
-<!-- End products -->

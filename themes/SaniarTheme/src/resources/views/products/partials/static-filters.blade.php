@@ -1,14 +1,15 @@
+{{-- فیلترهای استاتیک (موجودی/برند/دسته‌بندی/قیمت) — اسکین سانیار --}}
+{{-- در اسکوپ لوپ category-filters-body اجرا می‌شود: $filter، $loop، $category، $products_id، $min_price، $max_price --}}
 @switch($filter->filterable->type)
     @case('stock')
-        <div class="col-12 my-3">
-            <div class="parent-switcher">
-                <label class="ui-statusswitcher">
-                    <input type="checkbox" id="switcher-stock" class="in_stock" name="in_stock" {{ request('in_stock') ? 'checked' : '' }}>
-                    <span class="ui-statusswitcher-slider">
-                        <span class="ui-statusswitcher-slider-toggle"></span>
-                    </span>
-                </label>
-                <label class="label-switcher" for="switcher-stock">فقط کالاهای موجود</label>
+        <div class="filter-item">
+            <h5 class="filter-item-title">وضعیت کالا</h5>
+            <div class="filter-item-content">
+                <div class="form-check form-switch">
+                    <input class="form-check-input in_stock" type="checkbox" role="switch"
+                           id="stock-switcher-{{ $loop->index }}" name="in_stock" {{ request('in_stock') ? 'checked' : '' }}>
+                    <label class="form-check-label font-14" for="stock-switcher-{{ $loop->index }}">فقط کالاهای موجود</label>
+                </div>
             </div>
         </div>
 
@@ -22,26 +23,25 @@
         @endphp
 
         @if ($brands->count())
-            <div class="card">
-                <div class="card-header" id="heading-{{ $loop->index }}">
-                    <h2 class="mb-0">
-                        <button class="btn btn-block text-right collapsed" type="button"
-                            data-toggle="collapse" data-target="#collapse-{{ $loop->index }}"
-                            aria-expanded="false" aria-controls="collapse-{{ $loop->index }}">
-                            برند
-                            <i class="mdi mdi-chevron-down"></i>
-                        </button>
-                    </h2>
-                </div>
-
-                <div id="collapse-{{ $loop->index }}" class="collapse {{ request('filters.' . $filter->id) ? 'show' : '' }}" aria-labelledby="heading-{{ $loop->index }}">
-                    <div class="card-body">
+            <div class="filter-item">
+                <h5 class="filter-item-title d-flex align-items-center justify-content-between" role="button"
+                    data-bs-toggle="collapse" data-bs-target="#collapse-brand-{{ $loop->index }}"
+                    aria-expanded="{{ request('filters.' . $filter->id) ? 'true' : 'false' }}"
+                    aria-controls="collapse-brand-{{ $loop->index }}">
+                    <span>برند</span>
+                    <i class="bi bi-chevron-down font-14"></i>
+                </h5>
+                <div class="filter-item-content">
+                    <div id="collapse-brand-{{ $loop->index }}"
+                         class="collapse {{ request('filters.' . $filter->id) ? 'show' : '' }}">
                         @foreach ($brands as $brand)
-                            <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" name="filters[{{ $filter->id }}][{{ $brand->id }}]" {{ request('filters.' . $filter->id . '.' .$brand->id) ? 'checked' : '' }}
-                                    id="customCheck-{{ $loop->parent->index }}-{{ $loop->index }}">
-                                <label class="custom-control-label"
-                                    for="customCheck-{{ $loop->parent->index }}-{{ $loop->index }}">{{ $brand->name }}</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       name="filters[{{ $filter->id }}][{{ $brand->id }}]"
+                                       {{ request('filters.' . $filter->id . '.' . $brand->id) ? 'checked' : '' }}
+                                       id="{{ $loop->parent->index }}check-{{ $loop->parent->index }}-{{ $loop->index }}">
+                                <label class="form-check-label font-14"
+                                       for="{{ $loop->parent->index }}check-{{ $loop->parent->index }}-{{ $loop->index }}">{{ $brand->name }}</label>
                             </div>
                         @endforeach
                     </div>
@@ -53,26 +53,25 @@
     @case('child_category')
 
         @if ($category->childrenCategories->count())
-            <div class="card">
-                <div class="card-header" id="heading-{{ $loop->index }}">
-                    <h2 class="mb-0">
-                        <button class="btn btn-block text-right collapsed" type="button"
-                            data-toggle="collapse" data-target="#collapse-{{ $loop->index }}"
-                            aria-expanded="false" aria-controls="collapse-{{ $loop->index }}">
-                            دسته بندی
-                            <i class="mdi mdi-chevron-down"></i>
-                        </button>
-                    </h2>
-                </div>
-
-                <div id="collapse-{{ $loop->index }}" class="collapse {{ request('filters.' . $filter->id) ? 'show' : '' }}" aria-labelledby="heading-{{ $loop->index }}">
-                    <div class="card-body">
+            <div class="filter-item">
+                <h5 class="filter-item-title d-flex align-items-center justify-content-between" role="button"
+                    data-bs-toggle="collapse" data-bs-target="#collapse-cat-{{ $loop->index }}"
+                    aria-expanded="{{ request('filters.' . $filter->id) ? 'true' : 'false' }}"
+                    aria-controls="collapse-cat-{{ $loop->index }}">
+                    <span>دسته بندی</span>
+                    <i class="bi bi-chevron-down font-14"></i>
+                </h5>
+                <div class="filter-item-content">
+                    <div id="collapse-cat-{{ $loop->index }}"
+                         class="collapse {{ request('filters.' . $filter->id) ? 'show' : '' }}">
                         @foreach ($category->childrenCategories as $chidCategory)
-                            <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" name="filters[{{ $filter->id }}][{{ $chidCategory->id }}]" {{ request('filters.' . $filter->id . '.' .$chidCategory->id) ? 'checked' : '' }}
-                                    id="customCheck-{{ $loop->parent->index }}-{{ $loop->index }}">
-                                <label class="custom-control-label"
-                                    for="customCheck-{{ $loop->parent->index }}-{{ $loop->index }}">{{ $chidCategory->title }}</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       name="filters[{{ $filter->id }}][{{ $chidCategory->id }}]"
+                                       {{ request('filters.' . $filter->id . '.' . $chidCategory->id) ? 'checked' : '' }}
+                                       id="{{ $loop->parent->index }}check-{{ $loop->parent->index }}-{{ $loop->index }}">
+                                <label class="form-check-label font-14"
+                                       for="{{ $loop->parent->index }}check-{{ $loop->parent->index }}-{{ $loop->index }}">{{ $chidCategory->title }}</label>
                             </div>
                         @endforeach
                     </div>
@@ -84,25 +83,39 @@
 
     @case('price')
 
-        <div class="col-12 my-4">
-            <div class="parent-switcher mb-3">
-                <label class="ui-statusswitcher">
-                    <input type="checkbox" id="switcher-price" class="price_filter" name="price_filter" {{ request('price_filter') ? 'checked' : '' }}>
-                    <span class="ui-statusswitcher-slider">
-                        <span class="ui-statusswitcher-slider-toggle"></span>
-                    </span>
-                </label>
-                <label class="label-switcher" for="switcher-price">فیلتر بر اساس قیمت: </label>
+        <div class="filter-item">
+            <h5 class="filter-item-title">قیمت</h5>
+            <div class="filter-item-content">
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input price_filter" type="checkbox" role="switch"
+                           id="price-switcher-{{ $loop->index }}" name="price_filter" {{ request('price_filter') ? 'checked' : '' }}>
+                    <label class="form-check-label font-14" for="price-switcher-{{ $loop->index }}">فیلتر بر اساس قیمت</label>
+                </div>
+
+                <div class="filter-price js-price-slider"
+                     data-min-selected="{{ request('min_price') ?: $min_price }}"
+                     data-max-selected="{{ request('max_price') ?: $max_price }}"
+                     data-min="{{ $min_price }}"
+                     data-max="{{ $max_price }}">
+                    <div class="filter-slider">
+                        <div class="price-slider"></div>
+                    </div>
+                    <ul class="filter-range mb-4">
+                        <li>
+                            <input type="text" class="js-slider-range-from min-price-filter" disabled>
+                            <span>تومان</span>
+                        </li>
+                        <li class="label fw-bold">تا</li>
+                        <li>
+                            <input type="text" class="js-slider-range-to max-price-filter" disabled>
+                            <span>تومان</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <input type="hidden" name="min_price" value="{{ request('min_price') }}">
+                <input type="hidden" name="max_price" value="{{ request('max_price') }}">
             </div>
-            <div class="mt-2 mb-2">
-                <div id="slider-non-linear-step"></div>
-            </div>
-            <div class="mt-2 mb-2 text-center pt-2 font-size-14">
-                <span>قیمت: </span>
-                <span class="example-val" id="slider-non-linear-step-value"></span> تومان
-            </div>
-            <input type="hidden" name="min_price" value="{{ request('min_price') }}">
-            <input type="hidden" name="max_price" value="{{ request('max_price') }}">
         </div>
         @break
 

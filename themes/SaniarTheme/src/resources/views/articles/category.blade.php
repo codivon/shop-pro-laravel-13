@@ -67,7 +67,7 @@
 
                 </div>
 
-                @include('front::blogs.partials.sidebar')
+                @include('front::articles.partials.sidebar')
             </div>
 
         </div>

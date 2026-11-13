@@ -1,107 +1,99 @@
 @extends('front::user.layouts.master')
 
-@push('styles')
-@endpush
-
 @section('user-content')
-    <div class="col-lg-12 col-xs-12 pull-right">
-        <div class="headline-profile">
-            <span>بازدیدهای اخیر</span>
-        </div>
-        @if(count($products))
-        <div class="profile-user-history">
-            <ul>
-                @foreach($products as $product)
 
-                    <li>
-                        <div class="user-history-list-item">
-                            <a href="{{ route('front.products.show', ['product' => $product]) }}"><img src="{{  $product->image ? asset($product->image) : asset('/no-image-product.svg') }}" alt="{{ $product->title }}"></a>
-                        </div>
-
-                        <div class="user-history-list-item-content">
-                            <a href="{{ route('front.products.show', ['product' => $product]) }}">{{ $product->title }}</a>
-
-                            <div class="stars rating-div" style="width: 83px;">
-                                @for($i=1;$i<=$product->rating;$i++)
-                                    <span class="star-item"><i class="fa fa-star active"></i></span>
-                                @endfor
-                                <span class="star-item"><i class="fa fa-star"></i></span>
-                                <span class="star-item"><i class="fa fa-star"></i></span>
-                                <span class="star-item"><i class="fa fa-star"></i></span>
-                                <span class="star-item"><i class="fa fa-star"></i></span>
-                                <span class="star-item"><i class="fa fa-star"></i></span>
-
-                            </div>
-
-                            <div class="user-history-list-item-content-container">
-                                <div class="new-price">
-                                    <span class="new-price-value">{{ $product->getLowestPrice() }}</span>
-
-                                </div>
-                            </div>
-
-                            <div class="user-history-list-item-button-group">
-                                <a href="{{ route('front.products.show', ['product' => $product]) }}" class="history-same-product-modal" >مشاهده کالا</a>
-                                <a class="remove-item-profile-history viewer-remove-btn cursor-pointer" data-toggle="modal" data-target="#comment-delete-modal" data-action="{{ route('front.user.user-history.delete', ['slug' => $product->slug]) }}"><i class="fa fa-trash"></i></a>
-                            </div>
-                        </div>
-                    </li>
-
-                @endforeach
-            </ul>
-        </div>
-        @else
-
-
-            <div class="profile-stats">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="page dt-sl dt-sn pt-3">
-                            <p class="text-center">چیزی برای نمایش وجود ندارد!</p>
-                        </div>
+    {{-- بازدیدهای اخیر — ساختار کارکردی قبلی با کارت‌های قالب سانیار (favorite.html) --}}
+    <div class="ui-boxs">
+        <div class="ui-box">
+            <div class="ui-box-item ui-box-white">
+                <div class="ui-box-item-title">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="fw-bold">بازدیدهای اخیر</h4>
                     </div>
                 </div>
+                <div class="ui-box-item-desc">
+                    @if(count($products))
+                        <div class="product-list-row">
+                            @foreach($products as $product)
+                                <div class="product-row">
+                                    <div class="product-row-desc">
+                                        <a href="{{ route('front.products.show', ['product' => $product]) }}">
+                                            <div class="product-row-desc-item">
+                                                <div class="product-row-img">
+                                                    <img src="{{ $product->image ? asset($product->image) : asset('/no-image-product.svg') }}"
+                                                         alt="{{ $product->title }}" width="100">
+                                                </div>
+                                                <div class="product-row-title">
+                                                    <h6>{{ $product->title }}</h6>
+                                                    <div class="d-flex align-items-center gap-1">
+                                                        @for($i=1;$i<=$product->rating;$i++)
+                                                            <i class="bi bi-star-fill text-warning font-12"></i>
+                                                        @endfor
+                                                        @for($i=$product->rating;$i<5;$i++)
+                                                            <i class="bi bi-star text-muted font-12"></i>
+                                                        @endfor
+                                                    </div>
+                                                    <div class="product-price">
+                                                        <p>{{ $product->getLowestPrice() }}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="product-row-icon">
+                                            <a href="{{ route('front.products.show', ['product' => $product]) }}"
+                                               class="btn main-color-one-bg btn-sm history-same-product-modal">مشاهده کالا</a>
+                                            <a class="btn btn-danger btn-sm remove-item-profile-history viewer-remove-btn cursor-pointer"
+                                               data-bs-toggle="modal" data-bs-target="#comment-delete-modal"
+                                               data-action="{{ route('front.user.user-history.delete', ['slug' => $product->slug]) }}"
+                                               title="حذف"><i class="bi bi-trash text-white"></i></a>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-center text-muted py-4">چیزی برای نمایش وجود ندارد!</p>
+                    @endif
+                </div>
             </div>
-        @endif
+        </div>
     </div>
+
     @if ($products->links()->paginator->hasPages())
-    <div class="pager pager-back-none">
-        {{$products->links()}}
-    </div>
+        <div class="my-paginate mt-4">
+            <nav aria-label="Page navigation">
+                {{$products->links()}}
+            </nav>
+        </div>
     @endif
 
 @endsection
 
 @push('scripts')
-    <!-- Start favorite delete -->
+    {{-- Start viewers delete --}}
     <div class="modal fade" id="comment-delete-modal" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-sm" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="now-ui-icons location_pin"></i>
+                        <i class="bi bi-geo-alt"></i>
                         حذف از بازدیدها
                     </h5>
-                    <button type="button" class="close" data-dismiss="modal"
-                            aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-12">
                             <p>آیا از حذف این محصول از بازدیدهای اخیر اطمینان دارید؟</p>
 
-                            <div class="form-ui dt-sl">
-                                <form id="viewers-remove-form" action="#" method="POST">
-                                    <div class="modal-body text-center">
-                                        @csrf
-                                        @method('delete')
-                                        <button type="submit" class="btn btn-danger btn-md">بله حذف شود</button>
-                                        <button class="btn btn-light" data-dismiss="modal">لغو</button>
-                                    </div>
-                                </form>
-                            </div>
+                            <form id="viewers-remove-form" action="#" method="POST">
+                                <div class="text-center">
+                                    @csrf
+                                    @method('delete')
+                                    <button type="submit" class="btn btn-danger btn-md">بله حذف شود</button>
+                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">لغو</button>
+                                </div>
+                            </form>
                         </div>
 
                     </div>
@@ -109,7 +101,8 @@
             </div>
         </div>
     </div>
-    <!-- End favorite delete -->
+    {{-- End viewers delete --}}
 
+    <script src="{{ theme_asset('js/pages/user/jquery-bs5-modal-compat.js') }}"></script>
     <script src="{{ theme_asset('js/pages/profile/viewers.js') }}"></script>
 @endpush

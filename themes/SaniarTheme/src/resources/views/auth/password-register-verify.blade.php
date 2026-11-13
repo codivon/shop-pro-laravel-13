@@ -6,63 +6,55 @@
    $back_url = $type == 'login';
 @endphp
 
-@section('style')
-    <style>
-        .dk-btn:before{
-            right: -97px;
-        }
-        #main .account-box .content-account {
-            padding: 10px 30px 30px;
-        }
-        .message-light{
-            padding: 15px 30px;
-        }
-        .form-account label{
-            margin-bottom: 19px;
-            font-size: 13px;
-        }
-    </style>
-@endsection
 @section('content')
-    <div class="col-lg-4 col-md-6 col-xs-12 mx-auto">
-        <div class="account-box form-ui">
-            <a href="/" class="logo-account">
-                <img src="{{ option('info_logo', theme_asset('img/logo.png')) }}" alt="{{ option('info_site_title', 'او پی شاپ') }}">
+    <div class="row justify-content-center">
+        <div class="col-lg-4">
 
-            </a>
-            <span class="account-head-line">کد تایید را وارد کنید</span>
+            {{-- کارت ثبت‌نام با کد تایید — ساختار sending-code.html قالب سانیار --}}
+            <div class="auth-form shadow-xl rounded-3 mt-5 bg-white">
+                <div class="auth-form-title d-flex align-items-center justify-content-between title-panel mb-4 slider-title-desc-center">
+                    <h2 class="text-center h4 text-muted title-font">کد تایید را وارد کنید</h2>
+                    <a href="{{ route('front.index') }}">
+                        <img src="{{ option('info_logo', theme_asset('image/logo.png')) }}" width="120" alt="{{ option('info_site_title', 'او پی شاپ') }}">
+                    </a>
+                </div>
 
-            <form id="register-with-code-form" action="{{route('front.user.Register_Mobile')}}" method="post"  class="message-light">
-                @csrf
-                <div class="form-account">
-                    <label>
+                <form id="register-with-code-form" action="{{route('front.user.Register_Mobile')}}" method="post">
+                    @csrf
+                    <div class="alert text-center alert-success font-13">
                         حساب کاربری با شماره موبایل {{session('ShowPasswordForm_Mobile_Email')}} وجود ندارد. برای ساخت حساب جدید،کد تایید برای این شماره ارسال گردید.
-                    </label>
-
-                </div>
-                <input name="mobile" type="hidden" value="{{session('ShowPasswordForm_Mobile_Email')}}">
-                <div class="form-row">
-                    <div class="numbers-verify form-content form-content1 w-100">
-                        <input name="verify_code" class="activation-code-input" placeholder="کد تایید را وارد کنید">
                     </div>
-                </div>
-                <div class="form-row mt-4 ">
-                    <span class="form-account-row">دریافت مجدد کد تایید</span> (<p data-action="{{ $back_url }}" id="countdown-verify-end"></p>)
-                </div>
 
-                @if ($errors->any())
-                    <span class="invalid-feedback" role="alert" style="margin: 10px 0;text-align: center">
-                                        <strong>{{ $errors->all()[0] }}</strong>
-                                    </span>
+                    <input name="mobile" type="hidden" value="{{session('ShowPasswordForm_Mobile_Email')}}">
+                    <div class="form-row">
+                        <div class="numbers-verify form-content form-content1 w-100">
+                            <input name="verify_code" class="activation-code-input" placeholder="کد تایید را وارد کنید">
+                        </div>
+                    </div>
+                    <div class="form-row mt-4 text-center">
+                        <span class="font-13">دریافت مجدد کد تایید</span> (<p data-action="{{ $back_url }}" id="countdown-verify-end" class="d-inline"></p>)
+                    </div>
 
-                @endif
+                    @if ($errors->any())
+                        <span class="invalid-feedback" role="alert" style="margin: 10px 0;text-align: center">
+                                            <strong>{{ $errors->all()[0] }}</strong>
+                                        </span>
 
-                <div class="parent-btn">
-                    <button type="submit" class="dk-btn dk-btn-info text-center mt-5">
-                        ادامه
-                    </button>
-                </div>
-            </form>
+                    @endif
+
+                    <div class="form-group mt-3">
+                        <button type="submit" class="btn-login w-100 btn main-color-one-bg text-white rounded-3 border-0 py-3">
+                            ادامه
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+
+            <p class="loginTermsDesc mt-3">با ورود و یا ثبت نام در {{ option('info_site_title', 'او پی شاپ') }} شما <a class="underlined main-color-one-color fw-bold" href="/rules/">شرایط و
+                قوانین</a> استفاده از سرویس‌های سایت و <a class="underlined main-color-one-color fw-bold" href="/privacy-polices/">قوانین حریم
+                خصوصی</a> آن را می‌پذیرید.</p>
+
         </div>
     </div>
 

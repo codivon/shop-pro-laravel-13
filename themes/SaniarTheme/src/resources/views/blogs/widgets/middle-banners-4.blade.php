@@ -1,30 +1,29 @@
+{{-- بنرهای میانی سانیار (۴ بنر عرضی) — ویجت‌ساز وبلاگ --}}
 @if($widget)
     @php
-        $variables              = get_widget($widget);
-        $index_middle_4_banners   = $variables['index_middle_4_banners'];
-
+        $variables               = get_widget($widget);
+        $index_middle_4_banners  = $variables['index_middle_4_banners'];
     @endphp
 
     @if ($index_middle_4_banners->count())
-
-        <!--   adplacement -------------------->
-        <div class="adplacement">
-            @php $i=1; @endphp
-            @foreach ($index_middle_4_banners as $banner)
-                @if(in_array($widget->option('place'), $banner->places ?? []))
-                    @if($i<=$widget->option('number'))
-                        <div class="col-6 col-lg-3 pull-right" @if($i==1 or $i==3) style="padding-left:0;" @endif>
-                            <a href="{{ $banner->link }}" class="item-adplacement image-data-src">
-                                <img data-src="{{ asset($banner->image) }}" title="{{ $banner->title }}" alt="{{ $banner->title }}">
-                            </a>
-                        </div>
-                        @php $i++; @endphp
-                    @endif
-                @endif
-            @endforeach
+        <div class="banner py-20">
+            <div class="container-fluid">
+                <div class="row g-3">
+                    @php $i=1; @endphp
+                    @foreach ($index_middle_4_banners as $banner)
+                        @if(in_array($widget->option('place'), $banner->places ?? []))
+                            @if($i<=$widget->option('number'))
+                                <div class="col-12 col-md-6">
+                                    <a href="{{ $banner->link }}" title="{{ $banner->title }}">
+                                        <img src="{{ asset($banner->image) }}" alt="{{ $banner->title }}" class="img-fluid rounded-3 shadow-box w-100">
+                                    </a>
+                                </div>
+                                @php $i++; @endphp
+                            @endif
+                        @endif
+                    @endforeach
+                </div>
+            </div>
         </div>
-        <!--   adplacement -------------------->
-
     @endif
-
 @endif

@@ -1,71 +1,72 @@
-<div class="widget widget-product  blog-article-image-box-container">
-    <div class="row d-flex">
+{{-- گرید مقالات سانیار (gird-post-blog) — saniar blog-item --}}
+<div class="articles-list-container">
+    <div class="row gy-3">
         @foreach($posts as $post)
-            <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-3">
-                <div class="card article-image shadow-1">
-                    <img class="article-image--center-crop"
-                         src="{{ $post->image ? asset($post->image) : asset('/no-image-product.svg') }}"
-                         alt="{{ $post->title }}" loading="lazy">
-
-
-                    @if($post->post_type=="video")
-                        <div class="post-grid-thumbnail-video-type minimal">
-                            <i class=" fas fa-play" style="color:red"></i>
+            <div class="col-lg-3 col-sm-6 col-12">
+                <div class="blog-item position-relative">
+                    <a href="{{ route('front.articles.show', $post->slug) }}">
+                        <div class="image">
+                            <img src="{{ $post->image ? asset($post->image) : asset('/no-image-product.svg') }}"
+                                 alt="{{ $post->title }}" class="img-fluid" loading="lazy">
                         </div>
-                    @elseif($post->post_type=="podcast")
-                        <div class="post-grid-thumbnail-video-type minimal">
-                            <i class=" fa fa-headphones" style="color:red"></i>
-                        </div>
-                    @endif
-
-                    <a class="article-link" href="{{ route('front.articles.show', $post->slug) }}"></a>
-
-                    <div class="article--footer">
-                        <h3 class="article-title mb-2">
-                            <a class="link" href="{{ route('front.articles.show', $post->slug) }}">
+                        <div class="title">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="title-item">
+                                    <i class="bi bi-tag me-1"></i>
+                                    <span class="font-12">{{ $post->categories->first()->title ?? 'دسته بندی نشده' }}</span>
+                                </div>
+                                <div class="title-item">
+                                    <i class="bi bi-alarm me-1"></i>
+                                    <span class="font-12">{{ jdate($post->created_at)->format('d F Y') }}</span>
+                                </div>
+                            </div>
+                            <h4 class="font-16 text-overflow-1 h4">
+                                @if($post->post_type=="video")
+                                    <i class="bi bi-play-circle-fill main-color-one-color me-1"></i>
+                                @elseif($post->post_type=="podcast")
+                                    <i class="bi bi-soundwave main-color-one-color me-1"></i>
+                                @endif
                                 {{ $post->title }}
-                            </a>
-                        </h3>
-                        <ul class="article-meta">
-                            <li>
-                                <img src="{{$post->admin->imageUrl}}"
-                                     alt="{{ $post->admin->full_name ?? 'ناشناس' }}"
-                                     class="article--meta-avatar shadow-1 me-2" height="32" width="32" loading="lazy">
-                                <a class="article--meta-username lts-05" href="{{ route('front.articles.index', ['profile' => $post->admin->username]) }}">
-                                    {{ $post->admin->full_name ?? 'ناشناس' }}
-                                </a>
-                            </li>
-                            <li class="divider"></li>
-                            <li><span class="date">{{ jdate($post->created_at)->format('d F Y') }}</span></li>
-                            <li class="divider"></li>
-                            <li><span class="date">{{ number_format($post->view) }} <i class="far fa-eye"></i></span></li>
-                        </ul>
-                    </div>
+                            </h4>
+                        </div>
+                    </a>
 
-                    @if($post->categories->isNotEmpty())
-                        <span class="category-badge">
-                            <a class="link text-white" href="?cat={{ $post->categories->first()->slug }}">
+                    {{-- متا (خارج از لینک کارت تا لینک‌های تودرتو نداشته باشیم) --}}
+                    <div class="d-flex align-items-center justify-content-between px-3 pb-3 flex-wrap gap-1">
+                        <div class="d-flex align-items-center">
+                            <img class="rounded-circle me-2" src="{{ $post->admin->imageUrl }}"
+                                 alt="{{ $post->admin->full_name ?? 'ناشناس' }}" width="24" height="24" loading="lazy">
+                            <a class="text-muted font-12" href="{{ route('front.articles.index', ['profile' => $post->admin->username]) }}">
+                                {{ $post->admin->full_name ?? 'ناشناس' }}
+                            </a>
+                        </div>
+                        @if($post->categories->isNotEmpty())
+                            <a class="font-12 main-color-one-color text-decoration-none" href="?cat={{ $post->categories->first()->slug }}">
                                 {{ $post->categories->first()->title }}
                             </a>
-                        </span>
-                    @endif
+                        @endif
+                        <span class="text-muted font-12">{{ number_format($post->view) }} <i class="bi bi-eye"></i></span>
+                    </div>
 
                     @if($post->is_editor_pick)
-                        <span class="editor-choice-badge badge bg-secondary shadow-secondary"
+                        <span class="badge bg-secondary position-absolute top-0 start-0 m-2"
                               data-bs-toggle="tooltip" data-bs-placement="top"
                               aria-label="انتخاب سردبیر" data-bs-original-title="انتخاب سردبیر">
-                            <i class="fas fa-crown"></i>
+                            <i class="bi bi-patch-check-fill"></i>
                         </span>
                     @endif
                 </div>
             </div>
-
         @endforeach
     </div>
 
     @if($posts->isEmpty())
-        <div class="text-center py-5">
-            <p>مقاله‌ای برای نمایش وجود ندارد.</p>
+        <div class="content-box">
+            <div class="container-fluid">
+                <div class="text-center py-5">
+                    <p class="mb-0">مقاله‌ای برای نمایش وجود ندارد.</p>
+                </div>
+            </div>
         </div>
     @endif
 </div>

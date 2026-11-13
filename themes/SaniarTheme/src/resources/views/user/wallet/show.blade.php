@@ -1,5 +1,6 @@
-<div class="table-responsive ">
-    <table class="table">
+<div class="table-responsive">
+    {{-- جزئیات تراکنش کیف پول — بارگذاری آجاکسی در #history-detail --}}
+    <table class="table main-table">
         <tbody>
             <tr>
                 <th scope="row" style="min-width: 200px;">آیدی</th>
@@ -15,20 +16,14 @@
                 <td>
                     @if($history->withdraw)
                         برداشت وجه
-                        <div class="badge badge-danger ml-1">
-                            <i class="mdi mdi-arrow-left"></i>
-                        </div>
+                        <span class="badge bg-danger ms-1"><i class="bi bi-arrow-left"></i></span>
                     @else
                         @if ($history->type == 'deposit')
                             افزایش اعتبار
-                            <div class="badge badge-success ml-1">
-                                <i class="mdi mdi-arrow-up"></i>
-                            </div>
+                            <span class="badge bg-success ms-1"><i class="bi bi-arrow-up"></i></span>
                         @else
                             کاهش اعتبار
-                            <div class="badge badge-danger ml-1">
-                                <i class="mdi mdi-arrow-down"></i>
-                            </div>
+                            <span class="badge bg-danger ms-1"><i class="bi bi-arrow-down"></i></span>
                         @endif
                     @endif
                 </td>
@@ -42,19 +37,19 @@
                 <th scope="row">وضعیت</th>
                 <td>
                     @if($history->status == 'success')
-                        <div class="badge badge-success">موفق</div>
+                        <span class="badge bg-success">موفق</span>
                         @if($history->withdraw)
                             @if($history->status_pay=="waiting")
-                                <div class="badge badge-warning">در انتظار پرداخت</div>
+                                <span class="badge bg-warning">در انتظار پرداخت</span>
                             @elseif($history->status_pay=="pay")
-                                <div class="badge badge-success">پرداخت شده</div>
+                                <span class="badge bg-success">پرداخت شده</span>
                             @elseif($history->status_pay=="unpay")
-                                <div class="badge badge-danger">پرداخت نشده</div>
+                                <span class="badge bg-danger">پرداخت نشده</span>
                             @endif
 
                         @endif
                     @else
-                        <div class="badge badge-danger">ناموفق</div>
+                        <span class="badge bg-danger">ناموفق</span>
                     @endif
                 </td>
             </tr>

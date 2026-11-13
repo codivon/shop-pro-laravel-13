@@ -37,38 +37,48 @@
     // کلاس سفارشی فرم
     $formCustomClass = $setting->form_class ?? '';
 
-    // CSS سفارشی
+    // CSS سفارشی فرم (توسط js/pages/blog/form-show.js تزریق می‌شود — بدون style اینلاین)
     $customCss = $setting->custom_css ?? '';
+
+    // پیکربندی فیلدها برای اعتبارسنجی سمت کلاینت (خوانده شده توسط form-show.js)
+    $fieldsConfig = [];
+    foreach ($form->fields as $field) {
+        $fieldsConfig[] = [
+            'name'             => $field->name,
+            'label'            => $field->label,
+            'type'             => $field->type,
+            'required'         => (bool) $field->required,
+            'rules_validation' => $field->rules_validation ?? '',
+        ];
+    }
 @endphp
 
-@push('styles')
-    <link rel="stylesheet" href="{{ theme_asset('css/form-builder.css') }}">
-    <style>
-
-        /* CSS سفارشی فرم */
-        {!! $customCss !!}
-    </style>
-@endpush
-
 @section('content')
-    <div class="form-container">
-        <div class="">
-            <div class="row justify-content-center">
-                <div class="col-lg-12 col-md-12">
-                    <div class="form-card">
-                        <div class="form-header">
-                            <h1 class="text-right">{{ $form->title }}</h1>
-                            <div class="form-description mt-4 mb-4 text-right" id="form-description-{{ $form->id }}">
+    {{-- فرم ساز — سانیار content-box --}}
+    <div class="content">
+        <div class="container-fluid py-3">
+            <div class="content-box">
+                <div class="container-fluid">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-12 col-md-12">
+
+                            <div class="title-panel mb-3">
+                                <h1 class="font-18">{{ $form->title }}</h1>
+                            </div>
+
+                            <div class="form-description mb-4" id="form-description-{{ $form->id }}">
                                 @if($form->description)
-                                    <p>{!! $form->description !!}</p>
+                                    {!! $form->description !!}
                                 @endif
                             </div>
 
-                        </div>
-
-                        <div class="form-body">
-                            <!-- فرم (با قابلیت جابجایی) -->
-                            <div class="form-wrapper {{ $widthClass }} {{ $alignmentClass }} {{ $formCustomClass }}" id="form-wrapper-{{ $form->id }}" data-position="{{ $formPosition }}">
+                            {{-- فرم (با قابلیت جابجایی) --}}
+                            <div class="form-wrapper {{ $widthClass }} {{ $alignmentClass }} {{ $formCustomClass }}"
+                                 id="form-wrapper-{{ $form->id }}"
+                                 data-position="{{ $formPosition }}"
+                                 data-form-id="{{ $form->id }}"
+                                 data-custom-css="{{ $customCss }}"
+                                 data-fields="{{ json_encode($fieldsConfig, JSON_UNESCAPED_UNICODE) }}">
                                 <form id="dynamic-form" method="POST" action="{{ route('front.form.submit', $form) }}" enctype="multipart/form-data">
                                     @csrf
 
@@ -87,12 +97,12 @@
                                                 $wrapperClass = $field->wrapper_class ?? '';
                                             @endphp
 
-                                            <div class="form-group-custom {{ $columnClass }} {{ $wrapperClass }}" data-field-id="{{ $field->id }}">
+                                            <div class="form-group-custom {{ $columnClass }} {{ $wrapperClass }} mb-3" data-field-id="{{ $field->id }}">
                                                 @if($field->show_label)
-                                                    <label for="{{ $field->name }}" class="{{ $field->label_class }}">
+                                                    <label for="{{ $field->name }}" class="form-label {{ $field->label_class }}">
                                                         {{ $field->label }}
                                                         @if($field->required)
-                                                            <span class="required-star">*</span>
+                                                            <span class="text-danger ms-1">*</span>
                                                         @endif
                                                     </label>
                                                 @endif
@@ -101,7 +111,7 @@
                                                     @case('textarea')
                                                         <textarea name="{{ $field->name }}"
                                                                   id="{{ $field->name }}"
-                                                                  class="form-control-custom {{ $field->class }}"
+                                                                  class="form-control {{ $field->class }}"
                                                                   placeholder="{{ $field->placeholder ?? 'متن خود را وارد کنید...' }}"
                                                                   rows="4">{{ old($field->name) }}</textarea>
                                                         @break
@@ -109,7 +119,7 @@
                                                     @case('select')
                                                         <select name="{{ $field->name }}"
                                                                 id="{{ $field->name }}"
-                                                                class="select-custom {{ $field->class }}">
+                                                                class="form-select {{ $field->class }}">
                                                             <option value="">انتخاب کنید...</option>
                                                             @foreach($field->options_array as $option)
                                                                 <option value="{{ $option }}" {{ old($field->name) == $option ? 'selected' : '' }}>
@@ -122,17 +132,14 @@
                                                     @case('checkbox')
                                                         <div class="checkbox-group">
                                                             @foreach($field->options_array as $index => $option)
-                                                                <div class="form-auth-row">
-                                                                    <label class="ui-checkbox has-diviter">
-                                                                        <input type="checkbox"
-                                                                               id="checkbox-{{ $field->id }}-{{ $index }}"
-                                                                               value="{{ $option }}"
-                                                                               name="{{ $field->name }}[]"
-                                                                               class="{{ $field->class }}"
-                                                                            {{ in_array($option, (array)old($field->name, [])) ? 'checked' : '' }}>
-                                                                        <span class="ui-checkbox-check"></span>
-                                                                    </label>
-                                                                    <label for="checkbox-{{ $field->id }}-{{ $index }}" class="remember-me has-diviter-remember-me cursor-pointer">
+                                                                <div class="form-check">
+                                                                    <input type="checkbox"
+                                                                           id="checkbox-{{ $field->id }}-{{ $index }}"
+                                                                           value="{{ $option }}"
+                                                                           name="{{ $field->name }}[]"
+                                                                           class="form-check-input {{ $field->class }}"
+                                                                        {{ in_array($option, (array) old($field->name, [])) ? 'checked' : '' }}>
+                                                                    <label for="checkbox-{{ $field->id }}-{{ $index }}" class="form-check-label text-muted">
                                                                         {{ $option }}
                                                                     </label>
                                                                 </div>
@@ -143,31 +150,29 @@
                                                     @case('radio')
                                                         <div class="radio-group">
                                                             @foreach($field->options_array as $index => $option)
-                                                                <label class="radio-item">
+                                                                <div class="form-check">
                                                                     <input type="radio"
                                                                            name="{{ $field->name }}"
                                                                            value="{{ $option }}"
-                                                                           class="{{ $field->class }}"
+                                                                           class="form-check-input {{ $field->class }}"
                                                                            id="radio-{{ $field->id }}-{{ $index }}"
                                                                         {{ old($field->name) == $option ? 'checked' : '' }}>
-                                                                    <span>{{ $option }}</span>
-                                                                </label>
+                                                                    <label for="radio-{{ $field->id }}-{{ $index }}" class="form-check-label text-muted">{{ $option }}</label>
+                                                                </div>
                                                             @endforeach
                                                         </div>
                                                         @break
 
                                                     @case('file')
                                                         <div class="form-group-custom">
-{{--                                                            <label for="file-input-{{ $field->name }}">{{ $field->label }}</label>--}}
-                                                            <label class="upload-label" for="file-input-{{ $field->name }}">
-                                                                <i class="fa fa-upload"></i>
+                                                            <label class="upload-label form-control rounded-3 d-flex align-items-center justify-content-center text-muted" for="file-input-{{ $field->name }}">
+                                                                <i class="bi bi-cloud-arrow-up ms-2"></i>
                                                                 <span>برای آپلود کلیک کنید</span>
                                                             </label>
                                                             <input type="file"
                                                                    name="{{ $field->name }}"
                                                                    id="file-input-{{ $field->name }}"
-                                                                   class="file-input-hidden {{ $field->class }}"
-                                                                   style="display: none;">
+                                                                   class="file-input-hidden d-none {{ $field->class }}"
                                                             <span id="file-name-{{ $field->name }}" class="file-name-display"></span>
                                                             <small class="d-block mt-2 text-muted">فرمت‌های مجاز: jpg, png, pdf</small>
                                                         </div>
@@ -177,14 +182,14 @@
                                                         <input type="{{ $field->type }}"
                                                                name="{{ $field->name }}"
                                                                id="{{ $field->name }}"
-                                                               class="form-control-custom {{ $field->class }}"
+                                                               class="form-control {{ $field->class }}"
                                                                placeholder="{{ $field->placeholder ?? 'لطفا وارد کنید...' }}"
                                                                value="{{ old($field->name, $field->default_value ?? '') }}">
                                                 @endswitch
 
                                                 @if($field->help_text)
-                                                    <div class="help-text">
-                                                        <i class="fa fa-info-circle"></i> {{ $field->help_text }}
+                                                    <div class="help-text form-text text-muted mt-1">
+                                                        <i class="bi bi-info-circle"></i> {{ $field->help_text }}
                                                     </div>
                                                 @endif
 
@@ -193,12 +198,13 @@
                                         @endforeach
                                     </div>
 
-                                    <button type="submit" class="btn-submit" id="submit-btn">
-                                        <i class="fa fa-paper-plane"></i> {{ $form->button_text }}
+                                    <button type="submit" class="btn border-0 main-color-one-bg rounded-3 px-5 py-2" id="submit-btn">
+                                        <i class="bi bi-send text-white"></i> <span class="text-white">{{ $form->button_text }}</span>
                                     </button>
                                     <div class="form-result mt-3"></div>
                                 </form>
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -207,155 +213,13 @@
     </div>
 @endsection
 
+@push('styles')
+    <link rel="stylesheet" href="{{ theme_asset('css/form-builder.css') }}">
+@endpush
+
 @push('scripts')
     <script src="{{ theme_asset('js/plugins/jquery-validation/jquery.validate.min.js') }}"></script>
     <script src="{{ theme_asset('js/plugins/jquery-validation/localization/messages_fa.min.js') }}?v=2"></script>
-    <script type="text/javascript" src="{{ theme_asset('js/pages/form-builder.js') }}"></script>
-    <script>
-        $(document).ready(function() {
-            var formId = {{ $form->id }};
-            var formPosition = '{{ $formPosition }}';
-            var formWrapper = document.getElementById('form-wrapper-' + formId);
-            var formDescription = document.getElementById('form-description-' + formId);
-            console.log(formId);
-            console.log(formPosition);
-            console.log(formWrapper);
-            console.log(formDescription);
-            // تنظیم موقعیت فرم نسبت به توضیحات
-            if (formPosition === 'bottom') {
-                // فرم باید زیر توضیحات قرار بگیرد
-                if (formDescription && formWrapper) {
-                    // اگر توضیحات وجود دارد، فرم را بعد از توضیحات قرار بده
-                    formDescription.parentNode.insertBefore(formWrapper, formDescription.nextSibling);
-                }
-            } else {
-                // حالت top (پیش‌فرض) - فرم بالای توضیحات قرار می‌گیرد
-                if (formDescription && formWrapper) {
-                    // اگر توضیحات وجود دارد، فرم را قبل از توضیحات قرار بده
-                    formDescription.parentNode.insertBefore(formWrapper, formDescription);
-                }
-            }
-
-            // نمایش فرم بعد از جابجایی
-            if (formWrapper) {
-                formWrapper.style.display = 'block';
-            }
-
-            let rules = {};
-            let messages = {};
-            let fieldsData = [];
-
-            @foreach($form->fields as $field)
-            fieldsData.push({
-                name: '{{ $field->name }}',
-                label: '{{ $field->label }}',
-                type: '{{ $field->type }}',
-                required: {{ $field->required ? 'true' : 'false' }},
-                rules_validation: '{{ addslashes($field->rules_validation ?? '') }}'
-            });
-
-            @if($field->required)
-                rules['{{ $field->name }}'] = {
-                required: true
-            };
-            messages['{{ $field->name }}'] = {
-                required: 'وارد کردن {{ $field->label }} الزامی است'
-            };
-            @endif
-
-            @if($field->type === 'email')
-            if (rules['{{ $field->name }}']) {
-                rules['{{ $field->name }}'].email = true;
-            } else {
-                rules['{{ $field->name }}'] = { email: true };
-            }
-            messages['{{ $field->name }}'] = {
-                ...messages['{{ $field->name }}'],
-                email: 'لطفا یک ایمیل معتبر وارد کنید'
-            };
-            @endif
-
-            @if($field->type === 'tel')
-            if (rules['{{ $field->name }}']) {
-                rules['{{ $field->name }}'].pattern = /^09[0-9]{9}$/;
-            } else {
-                rules['{{ $field->name }}'] = { pattern: /^09[0-9]{9}$/ };
-            }
-            messages['{{ $field->name }}'] = {
-                ...messages['{{ $field->name }}'],
-                pattern: 'شماره موبایل باید با 09 شروع شود و 11 رقم باشد'
-            };
-            @endif
-
-            @if($field->rules_validation)
-            @php
-                $validationRules = explode('|', $field->rules_validation);
-            @endphp
-            @foreach($validationRules as $rule)
-            @if(str_contains($rule, 'min:'))
-            let minVal_{{ $field->name }} = '{{ $rule }}'.split(':')[1];
-            if (rules['{{ $field->name }}']) {
-                rules['{{ $field->name }}'].minlength = parseInt(minVal_{{ $field->name }});
-            } else {
-                rules['{{ $field->name }}'] = { minlength: parseInt(minVal_{{ $field->name }}) };
-            }
-            messages['{{ $field->name }}'] = {
-                ...messages['{{ $field->name }}'],
-                minlength: 'حداقل باید ' + minVal_{{ $field->name }} + ' کاراکتر وارد شود'
-            };
-            @endif
-
-            @if(str_contains($rule, 'max:'))
-            let maxVal_{{ $field->name }} = '{{ $rule }}'.split(':')[1];
-            if (rules['{{ $field->name }}']) {
-                rules['{{ $field->name }}'].maxlength = parseInt(maxVal_{{ $field->name }});
-            } else {
-                rules['{{ $field->name }}'] = { maxlength: parseInt(maxVal_{{ $field->name }}) };
-            }
-            messages['{{ $field->name }}'] = {
-                ...messages['{{ $field->name }}'],
-                maxlength: 'حداکثر ' + maxVal_{{ $field->name }} + ' کاراکتر مجاز است'
-            };
-            @endif
-
-                @if(str_contains($rule, 'numeric'))
-            if (rules['{{ $field->name }}']) {
-                rules['{{ $field->name }}'].number = true;
-            } else {
-                rules['{{ $field->name }}'] = { number: true };
-            }
-            messages['{{ $field->name }}'] = {
-                ...messages['{{ $field->name }}'],
-                number: 'لطفا یک مقدار عددی وارد کنید'
-            };
-            @endif
-            @endforeach
-            @endif
-            @endforeach
-
-
-            $('#dynamic-form').validate({
-                rules: rules,
-                messages: messages,
-                errorClass: 'error-message',
-                errorElement: 'div',
-                errorPlacement: function(error, element) {
-                    error.addClass('error-message');
-                    error.insertAfter(element);
-                    element.addClass('error');
-                },
-                success: function(label, element) {
-                    $(element).removeClass('error');
-                },
-                highlight: function(element) {
-                    $(element).addClass('error');
-                },
-                unhighlight: function(element) {
-                    $(element).removeClass('error');
-                }
-            });
-
-
-        });
-    </script>
+    <script src="{{ theme_asset('js/pages/form-builder.js') }}"></script>
+    <script src="{{ theme_asset('js/pages/blog/form-show.js') }}"></script>
 @endpush

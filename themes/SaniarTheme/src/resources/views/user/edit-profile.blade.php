@@ -5,125 +5,133 @@
 @endpush
 
 @section('user-content')
-    <div class="col-lg-12 col-xs-12 pull-right">
 
-        <div class="headline-profile">
-            <span>ویرایش اطلاعات شخصی</span>
-
-            <a href="{{route('front.user.password')}}"  class="add-address-link float-left cursor-pointer openMap">تغییر رمز ورود</a>
-
-
-        </div>
-        <div class="profile-stats">
-            <form id="profile-form" action="{{ route('front.user.profile.update') }}" class="setting_form" method="POST">
-                @method('put')
-                <div class="form-legal-row">
-                <div class="col-lg-6 col-xs-12 mx-auto">
-                    <div class="form-legal-col">
-                        <fieldset class="form-legal-fieldset">
-                            <div class="form-legal-item">
-                                <label for="name-first">نام</label>
-                                <input type="text" value="{{ $user->first_name }}" name="first_name" id="name-first" class="input-name-first"
-                                       placeholder="نام خود را وارد کنید">
-                            </div>
-
-                            <div class="form-legal-item">
-                                <label for="name-last">نام خانوادگی</label>
-                                <input name="last_name" type="text" id="name-last" class="input-name-last"
-                                       placeholder="نام خانوادگی خود را وارد کنید" value="{{ $user->last_name }}">
-                            </div>
-
-                            <?php $birth_date=explode('/',$user->birth_date) ?>
-                            <div class="form-legal-item">
-                                <label>تاریخ تولد</label>
-                                <select name="day" id="day">
-                                    <option value="date-desc" selected="selected">روز</option>
-                                    @for($i=1;$i<=31;$i++)
-                                    <option @if(@$birth_date[2]==$i) selected @endif value="{{$i}}">{{$i}}</option>
-                                   @endfor
-                                </select>
-                                <select name="month" id="month">
-                                    <option value="date-desc" selected="selected">ماه</option>
-                                    <option @if(@$birth_date[1]==1) selected @endif value="1">فروردین</option>
-                                    <option @if(@$birth_date[1]==2) selected @endif value="2">اردیبهشت</option>
-                                    <option @if(@$birth_date[1]==3) selected @endif value="3">خرداد</option>
-                                    <option @if(@$birth_date[1]==4) selected @endif value="4">تیر</option>
-                                    <option @if(@$birth_date[1]==5) selected @endif value="5">مرداد</option>
-                                    <option @if(@$birth_date[1]==6) selected @endif value="6">شهریور</option>
-                                    <option @if(@$birth_date[1]==7) selected @endif value="7">مهر</option>
-                                    <option @if(@$birth_date[1]==8) selected @endif value="8">آبان</option>
-                                    <option @if(@$birth_date[1]==9) selected @endif value="9">آذر</option>
-                                    <option @if(@$birth_date[1]==10) selected @endif value="10">دی</option>
-                                    <option @if(@$birth_date[1]==11) selected @endif value="11">بهمن</option>
-                                    <option @if(@$birth_date[1]==12) selected @endif value="12">اسفند</option>
-                                </select>
-                                <select name="year" id="year">
-                                    <option value="date-desc" selected="selected">سال</option>
-                                    @for($i=1360;$i<=1400;$i++)
-                                        <option @if(@$birth_date[0]==$i) selected @endif value="{{$i}}">{{$i}}</option>
-                                    @endfor
-                                </select>
-                            </div>
-
-                            <div class="form-legal-item">
-                                <label for="code-national">کد ملی</label>
-                                <input type="text" id="code-national" class="input-code-national" name="national_code" value="{{$user->national_code}}"
-                                       placeholder="کد ملی خود را وارد کنید">
-                            </div>
-{{--
-
-                            <div class="form-legal-item has-diviter-item">
-                                <div class="form-auth-row">
-                                    <label class="ui-checkbox has-diviter">
-                                        <input type="checkbox" value="1" name="login" checked="" id="remember1">
-                                        <span class="ui-checkbox-check"></span>
-                                    </label>
-                                    <label for="remember1" class="remember-me has-diviter-remember-me">تبعه خارجی
-                                        فاقد کد ملی هستم</label>
-                                </div>
-                            </div>
---}}
-
-                            <div class="form-legal-item">
-                                <label for="phone">شماره موبایل</label>
-                                <input type="text" id="phone" class="input-code-national" disabled value="{{ $user->username }}"
-                                       placeholder="شماره موبایل خود را وارد کنید">
-                            </div>
-
-                            <div class="form-legal-item">
-                                <label for="email">آدرس ایمیل</label>
-                                <input type="text" id="email" class="input-code-national"  name="email" value="{{ $user->email }}"
-                                       placeholder="آدرس ایمیل خود را وارد کنید">
-                            </div>
-
-                            <div class="form-legal-item has-diviter-item">
-                                <div class="form-auth-row">
-                                    <label class="ui-checkbox has-diviter">
-                                        <input type="checkbox" value="1" name="newsletter" @if($user->newsletter==1)checked="" @endif id="remember2">
-                                        <span class="ui-checkbox-check"></span>
-                                    </label>
-                                    <label for="remember2" class="remember-me has-diviter-remember-me cursor-pointer">اشتراک در
-                                        خبرنامه {{ option('info_site_title', 'او پی شاپ') }}</label>
-                                </div>
-                                <label for="number-card" class="number-card">شماره کارت</label>
-                                <input type="text" id="number-card" name="card_number" class=""
-                                       placeholder="شماره کارت خود را وارد کنید" value="{{ $user->card_number }}">
-                            </div>
-
-                        </fieldset>
+    {{-- ویرایش اطلاعات شخصی — ریسکین‌شده با فرم‌های قالب سانیار (edit-user-panel.html) --}}
+    <div class="ui-boxs">
+        <div class="ui-box">
+            <div class="ui-box-item ui-box-white">
+                <div class="ui-box-item-title">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="fw-bold">ویرایش اطلاعات شخصی</h4>
+                        <a href="{{ route('front.user.password') }}" class="btn btn-sm btn-outline-secondary">تغییر رمز ورود <i class="bi bi-shield-lock"></i></a>
                     </div>
                 </div>
-            </div>
+                <div class="ui-box-item-desc">
+                    <form id="profile-form" action="{{ route('front.user.profile.update') }}" class="setting_form" method="POST">
+                        @method('put')
 
-                <div class="form-legal-row-submit">
-                <div class="parent-btn">
-                    <button  id="submit-btn" class="dk-btn dk-btn-info">
-                        ثبت اطلاعات کاربری
-                        <i class="fa fa-check sign-in"></i>
-                    </button>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" value="{{ $user->first_name }}" name="first_name" id="name-first"
+                                           class="form-control float-input" placeholder="نام خود را وارد کنید">
+                                    <label for="name-first">نام خود را وارد کنید</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input name="last_name" type="text" id="name-last"
+                                           class="form-control float-input" placeholder="نام خانوادگی خود را وارد کنید"
+                                           value="{{ $user->last_name }}">
+                                    <label for="name-last">نام خانوادگی خود را وارد کنید</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        @php $birth_date=explode('/',$user->birth_date) @endphp
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="comment-item mb-3">
+                                    <label class="form-label label-float">تاریخ تولد</label>
+                                    <select name="day" id="day" class="form-select">
+                                        <option value="date-desc" selected="selected">روز</option>
+                                        @for($i=1;$i<=31;$i++)
+                                            <option @if(@$birth_date[2]==$i) selected @endif value="{{$i}}">{{$i}}</option>
+                                        @endfor
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="comment-item mb-3">
+                                    <label class="form-label label-float">&nbsp;</label>
+                                    <select name="month" id="month" class="form-select">
+                                        <option value="date-desc" selected="selected">ماه</option>
+                                        <option @if(@$birth_date[1]==1) selected @endif value="1">فروردین</option>
+                                        <option @if(@$birth_date[1]==2) selected @endif value="2">اردیبهشت</option>
+                                        <option @if(@$birth_date[1]==3) selected @endif value="3">خرداد</option>
+                                        <option @if(@$birth_date[1]==4) selected @endif value="4">تیر</option>
+                                        <option @if(@$birth_date[1]==5) selected @endif value="5">مرداد</option>
+                                        <option @if(@$birth_date[1]==6) selected @endif value="6">شهریور</option>
+                                        <option @if(@$birth_date[1]==7) selected @endif value="7">مهر</option>
+                                        <option @if(@$birth_date[1]==8) selected @endif value="8">آبان</option>
+                                        <option @if(@$birth_date[1]==9) selected @endif value="9">آذر</option>
+                                        <option @if(@$birth_date[1]==10) selected @endif value="10">دی</option>
+                                        <option @if(@$birth_date[1]==11) selected @endif value="11">بهمن</option>
+                                        <option @if(@$birth_date[1]==12) selected @endif value="12">اسفند</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="comment-item mb-3">
+                                    <label class="form-label label-float">&nbsp;</label>
+                                    <select name="year" id="year" class="form-select">
+                                        <option value="date-desc" selected="selected">سال</option>
+                                        @for($i=1360;$i<=1400;$i++)
+                                            <option @if(@$birth_date[0]==$i) selected @endif value="{{$i}}">{{$i}}</option>
+                                        @endfor
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" id="code-national" class="form-control float-input" name="national_code"
+                                           value="{{$user->national_code}}" placeholder="کد ملی خود را وارد کنید">
+                                    <label for="code-national">کد ملی خود را وارد کنید</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" id="phone" class="form-control float-input" disabled
+                                           value="{{ $user->username }}" placeholder="شماره موبایل خود را وارد کنید">
+                                    <label for="phone">شماره موبایل خود را وارد کنید</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" id="email" class="form-control float-input" name="email"
+                                           value="{{ $user->email }}" placeholder="آدرس ایمیل خود را وارد کنید">
+                                    <label for="email">آدرس ایمیل خود را وارد کنید</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" id="number-card" name="card_number" class="form-control float-input"
+                                           placeholder="شماره کارت خود را وارد کنید" value="{{ $user->card_number }}">
+                                    <label for="number-card">شماره کارت خود را وارد کنید</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input type="checkbox" value="1" name="newsletter" @if($user->newsletter==1) checked @endif id="remember2" class="form-check-input">
+                            <label for="remember2" class="form-check-label cursor-pointer">اشتراک در خبرنامه {{ option('info_site_title', 'او پی شاپ') }}</label>
+                        </div>
+
+                        <div class="mb-2">
+                            <button id="submit-btn" type="submit"
+                                    class="btn border-0 main-color-one-bg waves-effect waves-light py-2 px-5">
+                                <i class="bi bi-pencil-square text-white me-1"></i> ثبت اطلاعات کاربری
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
-            </form>
         </div>
     </div>
 

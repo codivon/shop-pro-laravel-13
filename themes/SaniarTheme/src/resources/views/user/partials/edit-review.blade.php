@@ -8,9 +8,7 @@
         <div class="modal-content">
             <div class="modal-header pb-0">
                 <h5 class="modal-title" id="price-changes-modal-label">افزودن نظر</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <p id="product_title"></p>
@@ -46,7 +44,7 @@
                                                         <input class="hide" type="radio" id="review-suggest-yes" name="suggest" value="yes">
                                                         <div class="review-suggest-item">
                                                             <label for="review-suggest-yes">
-                                                                <i class="mdi mdi-thumb-up-outline"></i>
+                                                                <i class="bi bi-hand-thumbs-up"></i>
                                                                 <p> پیشنهاد می کنم</p>
                                                             </label>
                                                         </div>
@@ -56,7 +54,7 @@
                                                         <input class="hide" type="radio" id="review-suggest-not-sure" name="suggest" value="not_sure">
                                                         <div class="review-suggest-item">
                                                             <label for="review-suggest-not-sure">
-                                                                <i class="mdi mdi-help"></i>
+                                                                <i class="bi bi-question-circle"></i>
                                                                 <p> مطمئن نیستم</p>
                                                             </label>
                                                         </div>
@@ -67,7 +65,7 @@
                                                         <input class="hide" type="radio" id="review-suggest-no" name="suggest" value="no">
                                                         <div class="review-suggest-item">
                                                             <label  for="review-suggest-no">
-                                                                <i class="mdi mdi-thumb-down-outline"></i>
+                                                                <i class="bi bi-hand-thumbs-down"></i>
                                                                 <p> پیشنهاد نمی کنم</p>
                                                             </label>
                                                         </div>
@@ -167,77 +165,5 @@
 @push('scripts')
     <script src="{{theme_asset('js/bootstrap-slider.min.js')}}"></script>
     <script src="{{ theme_asset('js/pages/products/show.js') }}?v=13"></script>
-    <script>
-        $('input[name=rating]').val(3);
-    </script>
-
-    <script>
-        $('.add-product-review-modal-btn').on('click', function() {
-            var item=this;
-            var url=$(item).data('url');
-            var productId=$(item).data('productid');
-            $('input[name=product_id]').val(productId);
-
-            $('#edit-product-review-modal').on('show.bs.modal', function () {
-
-                $('#advantage-input').val('');
-                $('#disadvantage-input').val('');
-
-                $('.slider-tick-label-container .slider-tick-label').css('width','64.4px')
-                $('.slider-tick-label-container .slider-tick-label:first-child').css('width','30px')
-
-                block('#edit-product-review-modal');
-                $.ajax({
-                    url: url,
-                    type: 'GET',
-                    success: function (data) {
-                        let review = data.review;
-                        $('.js-advantages-list').empty();
-                        $('.js-disadvantages-list').empty();
-                        if (review) {
-                            $('#product_title').text(review.product.title);
-                            $('#add-product-review-form').find('input[name="title"]').val(review.title);
-                            $('#add-product-review-form').find(`input[name="rating"][value="${review.rating}"]`).prop('checked', true);
-                            $('#add-product-review-form').find(`input[name="rating"]`).attr('data-value',review.rating);
-                            $('#add-product-review-form').find(`input[name="rating"]`).attr('value',review.rating);
-                            $('#add-product-review-form').find(`.slider-handle.min-slider-handle.round`).attr('aria-valuenow',review.rating);
-                            var rate_Percentage=(parseInt(100)/parseInt(5))*parseInt(review.rating);
-                            $('#add-product-review-form').find(`.slider-handle.min-slider-handle.round`).css('right',rate_Percentage+'%');
-                            $('#add-product-review-form').find(`.slider-handle.min-slider-handle.round`).attr('aria-valuenow',rate_Percentage);
-                            $('#add-product-review-form').find(`.tooltip.tooltip-main.top`).css('right',rate_Percentage+'%');
-                            $('#add-product-review-form').find(`.slider-selection.tick-slider-selection`).css('width',rate_Percentage+'%');
-                            $('#add-product-review-form').find('textarea[name="body"]').val(review.body);
-
-                            $('#add-product-review-form #review-suggest-'+review.suggest).prop('checked', true);
-                            $('#add-product-review-form #review-suggest-'+review.suggest).parent().find('.review-suggest-item').addClass('active')
-
-                            review.points.forEach(function (item) {
-                                if(item.type == 'positive') {
-                                    $('#advantage-input').val(item.text);
-                                    $('#advantages .js-icon-form-add').trigger('click');
-                                } else {
-                                    $('#disadvantage-input').val(item.text);
-                                    $('#disadvantages .js-icon-form-add').trigger('click');
-                                }
-                            });
-                        }
-
-                    },complete: function () {
-                        unblock('#edit-product-review-modal');
-                    }
-                });
-
-                $('.product-offer-question .review-suggest-item').click(function () {
-                    var item2=this;
-                    $('.product-offer-question .review-suggest-item').removeClass('active');
-                    $(item2).addClass('active');
-                })
-            });
-
-
-        });
-
-
-
-    </script>
+    <script src="{{ theme_asset('js/pages/user/edit-review-modal.js') }}"></script>
 @endpush

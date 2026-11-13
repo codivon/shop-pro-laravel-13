@@ -1,34 +1,48 @@
 @extends('front::auth.layouts.master', ['title' => 'تغییر رمز عبور'])
 
 @section('content')
-    <div class="col-lg-4 col-md-6 col-xs-12 mx-auto">
-        <div class="account-box">
-            <a href="/" class="logo-account">
-                <img src="{{ option('info_logo', theme_asset('img/logo.png')) }}" alt="{{ option('info_site_title', 'او پی شاپ') }}">
+    <div class="row justify-content-center">
+        <div class="col-lg-4">
 
-            </a>
+            {{-- کارت تغییر اجباری رمز عبور — ساختار register.html قالب سانیار --}}
+            <div class="auth-form shadow-xl rounded-3 mt-5 bg-white">
+                <div class="auth-form-title d-flex align-items-center justify-content-between title-panel mb-4 slider-title-desc-center">
+                    <h2 class="text-center h4 text-muted title-font">تغییر رمز عبور</h2>
+                    <a href="{{ route('front.index') }}">
+                        <img src="{{ option('info_logo', theme_asset('image/logo.png')) }}" width="120" alt="{{ option('info_site_title', 'او پی شاپ') }}">
+                    </a>
+                </div>
 
-            <span class="account-head-line">تغییر رمز عبور</span>
-            <div class="content-account">
-                <div class="massege-light">
+                <div class="alert text-center alert-warning font-13">
                     شما باید رمز عبور خود را تغییر دهید!
                 </div>
+
                 <form id="force-password-change-form" action="{{ route('front.user.force-update-password') }}" method="POST">
                     @csrf
-                    <label for="password">رمز عبور جدید</label>
-                    <input type="password" name="password" id="password" class="input-password" placeholder="">
+                    <div class="comment-item mb-3">
+                        <input type="password" name="password" id="password" class="form-control" placeholder=" ">
+                        <label for="password" class="form-label label-float">رمز عبور جدید</label>
+                    </div>
 
-                    <label for="password-new-again">تکرار رمز عبور جدید</label>
-                    <input type="password" name="password_confirmation" id="password-new-again" class="input-password" placeholder="">
+                    <div class="comment-item mb-3">
+                        <input type="password" name="password_confirmation" id="password-new-again" class="form-control" placeholder=" ">
+                        <label for="password-new-again" class="form-label label-float">تکرار رمز عبور جدید</label>
+                    </div>
 
-                    <div class="parent-btn">
-                        <button type="submit" class="dk-btn dk-btn-info">
+                    <div class="form-group">
+                        <button type="submit" class="main-color-one-bg py-3 btn w-100 rounded-3 border-0">
                             تغییر رمز عبور
-                            <i class="fa fa-refresh sign-in"></i>
+                            <i class="bi bi-arrow-repeat text-white"></i>
                         </button>
                     </div>
                 </form>
+
             </div>
+
+            <p class="loginTermsDesc mt-3">با ورود و یا ثبت نام در {{ option('info_site_title', 'او پی شاپ') }} شما <a class="underlined main-color-one-color fw-bold" href="/rules/">شرایط و
+                قوانین</a> استفاده از سرویس‌های سایت و <a class="underlined main-color-one-color fw-bold" href="/privacy-polices/">قوانین حریم
+                خصوصی</a> آن را می‌پذیرید.</p>
+
         </div>
     </div>
 

@@ -1,23 +1,26 @@
+{{-- نوار ویژگی‌ها (feature) سانیار — ویجت‌ساز وبلاگ --}}
 @php
-    $variables          = get_widget($widget);
-    $sevices_sliders    = $variables['sevices_sliders'];
+    $variables       = get_widget($widget);
+    $sevices_sliders = $variables['sevices_sliders'];
 @endphp
 
-<!-- services -->
 @if ($sevices_sliders->count())
-    <div class="bk-icons-footer mb-3">
-        <div class="footer-services">
-            <div class="row">
+    <div class="feature">
+        <div class="container-fluid">
+            <div class="row justify-content-center g-2 row-cols-1 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 row-cols-xl-5">
                 @foreach ($sevices_sliders as $slider)
-                    <div class="service-item col">
-                        <a href="{{ $slider->link }}">
-                            <img data-src="{{ asset($slider->image) }}" alt="{{ $slider->title }}">
+                    <div class="col">
+                        <a href="{{ $slider->link }}" class="feature-item d-flex align-items-center p-3 rounded-3 bg-white shadow-box">
+                            <div class="image">
+                                <img src="{{ asset($slider->image) }}" alt="{{ $slider->title }}" class="img-fluid">
+                            </div>
+                            <div class="desc ms-3">
+                                <h6 class="mb-0">{{ $slider->title }}</h6>
+                            </div>
                         </a>
-                        <p>{{ $slider->title }}</p>
                     </div>
                 @endforeach
             </div>
         </div>
     </div>
 @endif
-<!-- End services -->

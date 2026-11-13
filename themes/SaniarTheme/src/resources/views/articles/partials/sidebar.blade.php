@@ -1,125 +1,125 @@
-{{-- اسلایدر شاید بخوانید --}}
-<div class="grid-type-two-container blog-article-image-box-container">
-    <div class="section-title section-title-secondary d-flex align-items-center justify-content-between mb-3">
-        <div class="d-flex align-items-center justify-content-between">
-            <div class="title"> پیشنهادهایی برای شما</div>
-            <a class="more text-gray el-center mr-3 fs-10" href="{{ route('front.articles.index',['sort=editor_pick']) }}">
-                بیشتر <i class="fa fa-angle-left mr-2"></i>
-            </a>
+{{-- سایدبار مقاله — سانیار side-blog-detail (آخرین مقالات / هشتگ‌های داغ) --}}
+
+{{-- پیشنهادهایی برای شما — اسلایدر سانیار --}}
+@if(!empty($suggestions) && count($suggestions))
+    <div class="blog-slider site-slider site-slider-sm py-20">
+        <div class="container-fluid">
+            <div class="header-content mb-4 bg-white shadow-box rounded-3 p-3 d-flex align-items-center justify-content-between flex-wrap">
+                <div class="title d-flex align-items-center">
+                    <img src="{{ theme_asset('image/square.png') }}" alt="" class="img-fluid">
+                    <h5 class="font-16 ms-3 mb-0">پیشنهادهایی <span class="main-color-one-color d-inline-block">برای شما</span></h5>
+                </div>
+                <div class="link">
+                    <a class="border-animate fromCenter pb-1 fw-bold" href="{{ route('front.articles.index',['sort=editor_pick']) }}">
+                        بیشتر
+                        <i class="bi bi-chevron-double-left main-color-one-color"></i>
+                    </a>
+                </div>
+            </div>
         </div>
-    </div>
-    <div class="suggestions-post-carousel-one-block owl-carousel owl-theme owl-rtl owl-loaded owl-drag posts-carousel">
-        <div class="owl-stage-outer">
-            <div class="owl-stage"
-                 style="transform: translate3d(0px, 0px, 0px); transition: all 0s ease 0s; width: 2234px;">
-                @php $i=1; @endphp
-                @foreach($suggestions as $suggestion)
-                    <div class="owl-item @if($i==1 or $i==2 or $i==3 or $i==4)active @endif"
-                         style="width: 309.083px; margin-left: 10px;">
-                        <div class=" card article-image shadow-1">
-                            <img class="article-image--center-crop"
-                                 src="{{ $suggestion->image ? asset($suggestion->image) : asset('/no-image-product.svg') }}"
-                                 alt="{{ $suggestion->title }}"
-                                 loading="lazy">
 
-                            @if($suggestion->post_type=="video")
-                                <div class="post-grid-thumbnail-video-type minimal">
-                                    <i class=" fas fa-play"></i>
-                                </div>
-                            @endif
-
-                            <a class="article-link"
-                               href="{{ route('front.articles.show', $post) }}"></a>
-                            <div class="article--footer"><h3 class="article-title mb-2">
-                                    <a class="link" href="{{ route('front.articles.show', $post) }}">
-                                        {{ $suggestion->title }}
+        <div class="parent">
+            <div class="container-fluid">
+                <div class="swiper product-slider-swiper">
+                    <div class="swiper-wrapper">
+                        @foreach($suggestions as $suggestion)
+                            <div class="swiper-slide">
+                                <div class="blog-item position-relative">
+                                    <a href="{{ route('front.articles.show', $post) }}">
+                                        <div class="image">
+                                            <img src="{{ $suggestion->image ? asset($suggestion->image) : asset('/no-image-product.svg') }}"
+                                                 alt="{{ $suggestion->title }}" class="img-fluid" loading="lazy">
+                                        </div>
+                                        <div class="title">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div class="title-item">
+                                                    <i class="bi bi-tag me-1"></i>
+                                                    <span class="font-12">{{ $suggestion->categories()->first()->title ?? '' }}</span>
+                                                </div>
+                                                <div class="title-item">
+                                                    <i class="bi bi-alarm me-1"></i>
+                                                    <span class="font-12">{{ jdate($suggestion->created_at)->format('d F Y') }}</span>
+                                                </div>
+                                            </div>
+                                            <h4 class="font-16 text-overflow-1 h4">
+                                                @if($suggestion->post_type=="video")
+                                                    <i class="bi bi-play-circle-fill main-color-one-color me-1"></i>
+                                                @endif
+                                                {{ $suggestion->title }}
+                                            </h4>
+                                            <div class="d-flex align-items-center mt-2">
+                                                <img class="rounded-circle me-2"
+                                                     src="{{ $post->admin->imageUrl }}"
+                                                     alt="{{ $suggestion->admin->full_name ?? 'ناشناس' }} " width="24" height="24" loading="lazy">
+                                                <span class="text-muted font-12">{{ $suggestion->admin->full_name ?? 'ناشناس' }}</span>
+                                            </div>
+                                        </div>
                                     </a>
-                                </h3>
-                                <ul class="article-meta">
-                                    <li>
-                                        <img
-                                            src="{{$post->admin->imageUrl}}"
-                                            alt="{{ $suggestion->admin->full_name ?? 'ناشناس' }} " class="article--meta-avatar shadow-1 me-2"
-                                            height="32" width="32" loading="lazy"><a
-                                            class="article--meta-username lts-05"
-                                            href="">{{ $suggestion->admin->full_name ?? 'ناشناس' }}</a>
-                                    </li>
-                                    <li class="divider"></li>
-                                    <li><span class="date">{{ jdate($suggestion->created_at)->format('d F Y') }}</span></li>
-                                </ul>
+                                </div>
                             </div>
-                            @if($suggestion->categories())
-                                <span class="category-badge">
-                                                <a class="link text-white" href="">{{$suggestion->categories()->first()->title}}</a>
-                                            </span>
-                            @endif
-
-                        </div>
+                        @endforeach
                     </div>
-                @endforeach
-
+                    <div class="swiper-button-next d-lg-flex d-none"></div>
+                    <div class="swiper-button-prev d-lg-flex d-none"></div>
+                    <div class="swiper-pagination"></div>
+                </div>
             </div>
         </div>
     </div>
-</div>
+@endif
 
-{{-- جدیدترین مقالات --}}
-<div class="grid-type-one-container grid-article-sidebar-container card shadow-1 mb-4">
-    <div class="card-body">
-        <div class="sidebar-card-inner-header">
-            <div class="inner-card-container--title lts-05">
-                <i class="fa-regular fa-clock"></i> جدیدترین مقالات
-            </div>
-            <span class="divider"></span>
-        </div>
-        <div class="article-lists">
-            @foreach($latestPosts ?? [] as $latestPost)
-                <div class="small-article">
-                    <div class="grid-thumbnail">
-                        <div class="grid-thumbnail--level-one">
-                            <div class="grid-thumbnail--level-two">
-                                <div class="image" style="background-image: url('{{ asset($latestPost->image) }}');"></div>
-                            </div>
-                        </div>
-                        <a class="article-link" href="{{ route('front.articles.show', $latestPost->slug) }}"></a>
-                    </div>
-                    <div class="small-article--details">
-                        <h3>
-                            <a href="{{ route('front.articles.show', $latestPost->slug) }}">{{ $latestPost->title }}</a>
-                        </h3>
-                        <ul class="article--meta">
-                            <li>
-                                <a class="link" href="#">
-                                    <span class="date">{{ $latestPost->admin->full_name ?? 'ناشناس' }}</span>
+{{-- جدیدترین مقالات — mini-blog-item سانیار --}}
+<div class="side-blog-detail position-sticky top-0">
+    <div class="latest-posts">
+        <div class="content-box">
+            <div class="container-fluid">
+                <div class="title-panel mb-2">
+                    <h6 class="title"><i class="bi bi-clock-history main-color-one-color me-2"></i> جدیدترین مقالات</h6>
+                </div>
+                <nav class="navbar">
+                    <ul class="navbar-nav">
+                        @foreach($latestPosts ?? [] as $latestPost)
+                            <li class="nav-item">
+                                <a href="{{ route('front.articles.show', $latestPost->slug) }}" class="nav-link">
+                                    <div class="mini-blog-item">
+                                        <div class="image">
+                                            <img src="{{ $latestPost->image ? asset($latestPost->image) : asset('/no-image-product.svg') }}" class="img-fluid" alt="{{ $latestPost->title }}" loading="lazy">
+                                        </div>
+                                        <div class="d-flex align-items-start desc flex-wrap flex-column justify-content-between">
+                                            <h5 class="title">{{ $latestPost->title }}</h5>
+                                            <div class="d-flex align-items-center">
+                                                <p class="text-muted mb-0">{{ $latestPost->admin->full_name ?? 'ناشناس' }}</p>
+                                                <p class="text-muted mb-0 ms-2">{{ jdate($latestPost->created_at)->format('d F Y') }}</p>
+                                                <div class="text-end ms-2"><i class="bi bi-arrow-left main-color-one-color"></i></div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </a>
                             </li>
-                            <li class="divider"></li>
-                            <li><span class="date">{{ jdate($latestPost->created_at)->format('d F Y') }}</span></li>
-                        </ul>
-                    </div>
-                </div>
-            @endforeach
+                        @endforeach
+                    </ul>
+                </nav>
+            </div>
         </div>
     </div>
-</div>
 
-{{-- هشتگ های داغ --}}
-<div class="inner-card-container hashtag-container card shadow-1 mb-4">
-    <div class="card-body">
-        <div class="sidebar-card-inner-header">
-            <div class="inner-card-container--title lts-05">
-                <i class="fa-solid fa-hashtag"></i> هشتگ های داغ
+    {{-- هشتگ های داغ --}}
+    <div class="hashtag-container mt-3">
+        <div class="content-box">
+            <div class="container-fluid">
+                <div class="title-panel mb-2">
+                    <h6 class="title"><i class="bi bi-hash main-color-one-color me-2"></i> هشتگ های داغ</h6>
+                </div>
+                <ul class="hashtags">
+                    @foreach($hotTags ?? [] as $tag)
+                        <li>
+                            <a href="{{ route('front.articles.index', ['tag' => $tag->slug]) }}">
+                                {{ $tag->name }}
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
             </div>
-            <span class="divider"></span>
         </div>
-        <ul class="hashtags">
-            @foreach($hotTags ?? [] as $tag)
-                <li>
-                    <a href="{{ route('front.articles.index', ['tag' => $tag->slug]) }}">
-                        {{ $tag->name }}
-                    </a>
-                </li>
-            @endforeach
-        </ul>
     </div>
 </div>

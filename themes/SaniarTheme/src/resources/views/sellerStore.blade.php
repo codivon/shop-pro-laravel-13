@@ -8,220 +8,185 @@
     <link rel="canonical" href="{{ route('front.showSellerStore', ['seller' => $seller]) }}" />
 @endpush
 
-@push('befor-styles')
-    <link rel="stylesheet" href="{{ theme_asset('css/vendor/nouislider.min.css') }}">
-    <link rel="stylesheet" href="{{ theme_asset('css/search.css') }}">
-    <link rel="stylesheet" href="{{ theme_asset('css/jquery.horizontalmenu.css') }}">
-@endpush
-
-@push('styles')
-
-     <style>
-         .widget-seller {
-             display: flex;
-             flex-direction: column;
-             align-items: center
-         }
-
-         .widget-seller .seller-avatar {
-             display: flex;
-             align-items: center;
-             justify-content: center;
-             width: 80px;
-             height: 80px;
-             border: 1px solid #ececec;
-             border-radius: 20px;
-             margin: 15px auto
-         }
-
-         .widget-seller .seller-avatar img {
-             width: 99%;
-             border-radius: 20px
-         }
-
-         .widget-seller .seller-username {
-             font-size: 17px;
-             font-weight: 700;
-             margin-bottom: 15px;
-             display: flex;
-             align-items: center
-         }
-
-         .widget-seller .seller-username i {
-             color: #2c96ea;
-             font-size: 16px;
-             margin-right: 4px;
-             font-weight: 400
-         }
-
-         .widget-seller .registrations-date {
-             color: #979797;
-             font-size: 13px;
-             font-weight: 400
-         }
-
-         .widget-seller .seller-rating a {
-             text-decoration: none;
-             border: none
-         }
-
-         .widget-seller .seller-statistics-container {
-             display: flex;
-             margin-top: 15px;
-             margin-bottom: 15px
-         }
-
-         .widget-seller .seller-statistics-container .seller-statistics {
-             display: flex;
-             flex-direction: column;
-             align-items: center;
-             margin-left: 10px
-         }
-
-         .widget-seller .seller-statistics-container .seller-statistics:last-child {
-             margin-left: 0
-         }
-
-         .widget-seller .seller-statistics-container .seller-statistics .value {
-             background-color: #f5f5f5;
-             border-radius: 10px;
-             padding: 6px 25px;
-             margin-bottom: 5px
-         }
-
-         .widget-seller .seller-statistics-container .seller-statistics .label {
-             font-size: 12px;
-             font-weight: 400
-         }
-         .widget-seller .seller-biography{
-             font-size: 13px;
-             text-align: right;
-         }
-     </style>
-@endpush
 @section('content')
+    {{-- فروشگاه فروشنده — سانیار bread-crumb + سایدبار + گرید product-box --}}
+    <div class="bread-crumb pt-3">
+        <div class="container-fluid">
+            <div class="content-box">
+                <div class="container-fluid">
+                    <nav aria-label="breadcrumb" class="my-lg-0 my-2">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('front.index') }}" class="font-14 text-muted">خانه</a>
+                            </li>
+                            <li class="breadcrumb-item active main-color-one-color font-14" aria-current="page">فروشگاه {{ $seller_info->business_name }}</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <!-- Start main-content -->
-    <main class="main-content dt-sl mb-3 mt-6">
-        <div class="container main-container">
+    <div class="content">
+        <div class="container-fluid py-3">
+            <div class="row gy-4">
 
-            <div class="row">
-                <div class="col-lg-3 col-md-12 col-sm-12 sticky-sidebar">
+                {{-- سایدبار فروشنده --}}
+                <div class="col-lg-3 col-md-12 col-sm-12">
+                    <div class="position-sticky top-0">
 
-                    <div class="dt-sn mb-3">
-                        <div class="widget-seller card-body">
-                            <div class="seller-avatar shadow-1">
-                                @if($seller->seller_info->logo)
-                                    <img class="round" src="{{ $seller->seller_info->logo ? asset($seller->seller_info->logo) : null  }}" alt="avatar" height="40" width="40">
-                                @else
-                                    <span class="c-profile-nav__avatar"><?= mb_substr($seller->seller_info->business_name,0,1,'UTF-8') ?></span>
+                        <div class="content-box mb-3">
+                            <div class="container-fluid text-center">
+                                <div class="seller-avatar d-flex align-items-center justify-content-center rounded-3 shadow-box mx-auto my-3">
+                                    @if($seller->seller_info->logo)
+                                        <img class="rounded-3" src="{{ asset($seller->seller_info->logo) }}" alt="avatar" width="80" height="80">
+                                    @else
+                                        <span class="main-color-one-color font-30 fw-bold p-4"><?= mb_substr($seller->seller_info->business_name, 0, 1, 'UTF-8') ?></span>
+                                    @endif
+                                </div>
+                                <h5 class="font-16 mt-3 mb-1">
+                                    {{ $seller->business_name }}
+                                    <i class="bi bi-patch-check-fill main-color-one-color"></i>
+                                </h5>
+                                <p class="text-muted font-12 mb-2">{{ $seller->created_at ? $seller->created_at->diffForHumans() : 'چند لحظه پیش' }}</p>
+                                <p class="font-14 mb-1">آمار رضایت محصولات</p>
+                                <p class="font-14 mb-3">
+                                    <span class="text-muted">عملکرد: </span>
+                                    <span class="fw-bold main-color-one-color">عالی</span>
+                                </p>
+                                <div class="row g-2 text-center pb-3">
+                                    <div class="col-6">
+                                        <div class="bg-body-tertiary rounded-3 p-2">
+                                            <div class="fw-bold">% 100</div>
+                                            <div class="font-12 text-muted">تعهد ارسال</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="bg-body-tertiary rounded-3 p-2">
+                                            <div class="fw-bold">% 100</div>
+                                            <div class="font-12 text-muted">بدون مرجوعی</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @if($seller->seller_info and $seller->seller_info->bio)
+                                    <div class="text-start border-top pt-3 pb-3">
+                                        <p class="font-12 text-muted mb-0 lh-base text-justify">
+                                            <span class="fw-bold text-dark">بیوگرافی: </span>{{ $seller->seller_info->bio }}
+                                        </p>
+                                    </div>
                                 @endif
                             </div>
-                            <div class="seller-username">{{$seller->business_name}} <i class="ri-verified-badge-fill"></i>
-                            </div>
-                            <div class="registrations-date mb-2">{{ $seller->created_at ? $seller->created_at->diffForHumans() : 'چند لحظه پیش' }}</div>
-                            <div class="seller-rating d-flex align-items-center mb-2">
-                                <span class="link fs-8">آمار رضایت محصولات</span>
-                            </div>
-                            <div class="registrations-date"><span>عملکرد: </span>
-                                <span class="text-success-dark fw-bold">عالی</span>
+                        </div>
 
-                            </div>
-                            <div class="seller-statistics-container fa-num">
-                                <div class="seller-statistics">
-                                    <div class="value">% 100</div>
-                                    <div class="label">تعهد ارسال</div>
-                                </div>
-                                <div class="seller-statistics">
-                                    <div class="value">% 100</div>
-                                    <div class="label">بدون مرجوعی
+                        @if ($has_filter)
+                            @include('front::products.partials.seller-filters', ['seller' => $seller, 'filterable' => $filterable, 'products_id' => $products_id, 'categorise' => $categorise])
+                        @endif
+
+                        {{-- نوار بازه قیمت — سانیار js-price-slider --}}
+                        <div class="content-box mb-3">
+                            <div class="container-fluid">
+                                <div class="filter-item py-3">
+                                    <h5 class="filter-item-title">قیمت</h5>
+                                    <div class="filter-item-content">
+                                        <div class="filter-price js-price-slider"
+                                             data-min-selected="{{ request('min_price') ?: $min_price }}"
+                                             data-max-selected="{{ request('max_price') ?: $max_price }}"
+                                             data-min="{{ $min_price }}"
+                                             data-max="{{ $max_price }}">
+                                            <div class="filter-slider">
+                                                <div class="price-slider"></div>
+                                            </div>
+                                            <ul class="filter-range mb-4">
+                                                <li>
+                                                    <input type="text" class="js-slider-range-from min-price-filter" disabled>
+                                                    <span>تومان</span>
+                                                </li>
+                                                <li class="label fw-bold">تا</li>
+                                                <li>
+                                                    <input type="text" class="js-slider-range-to max-price-filter" disabled>
+                                                    <span>تومان</span>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            @if($seller->seller_info and $seller->seller_info->bio)
-                                <div class="pt-0 pb-0">
-                                    <p class="seller-biography text-gray fw-light fs-8 lh-25 text-justify lts-05 mb-0">
-                                        <span class="text-black fw-normal fs-8">بیوگرافی:</span>{{$seller->seller_info->bio}}</p></div>
-                            @endif
-
                         </div>
-                    </div>
 
-                @if ($has_filter)
-                    @include('front::products.partials.seller-filters',['seller'=>$seller,'filterable'=>$filterable,'products_id'=>$products_id,'categorise'=>$categorise])
-                @endif
+                    </div>
                 </div>
 
-                <div id="category-products-div" data-action="{{ route('front.showSellerStore', ['seller' => $seller]) }}" class="{{--{{ $filterable ? 'col-lg-9' : 'col-lg-12' }}--}}col-lg-9 col-md-12 col-sm-12">
-                    <div class="col-12">
-                        <!-- Start Content -->
-                        <div class="title-breadcrumb-special dt-sl mb-3">
-                            <div class="breadcrumb dt-sl">
-                                <nav>
-                                    <a href="/">خانه</a>
-                                    <span>فروشگاه {{ $seller_info->business_name }}</span>
+                {{-- لیست محصولات --}}
+                <div id="category-products-div" data-action="{{ route('front.showSellerStore', ['seller' => $seller]) }}" class="col-lg-9 col-md-12 col-sm-12">
 
-                                 {{--   @foreach ($category->parents() as $parent)
-                                        <a href="{{ route('front.products.category', ['category' => $parent]) }}">{{ $parent->title }}</a>
-                                    @endforeach
-                                    <span>{{ $category->title }}</span>--}}
-                                </nav>
-                            </div>
-                        </div>
-                    </div>
-                    @if($products->count())
-                        <div class="dt-sl dt-sn px-0 search-amazing-tab">
-
-                            <div class="row">
-                                <div class="products-list-sort-type ah-tab-wrapper dt-sl">
-                                    <div class="ah-tab dt-sl">
-                                        <a class="ah-tab-item" data-sort="latest" {{ request('sort_type') == 'latest' || !request('sort_type') ? 'data-ah-tab-active=true' : '' }} >جدید ترین</a>
-                                        <a class="ah-tab-item" data-sort="view" {{ request('sort_type') == 'view' ? 'data-ah-tab-active=true' : '' }}>پربازدید ترین</a>
-                                        <a class="ah-tab-item" data-sort="sale" {{ request('sort_type') == 'sale' ? 'data-ah-tab-active=true' : '' }} >پرفروش ترین</a>
-                                        <a class="ah-tab-item" data-sort="cheapest" {{ request('sort_type') == 'cheapest' ? 'data-ah-tab-active=true' : '' }} >ارزان ترین</a>
-                                        <a class="ah-tab-item" data-sort="expensivest" {{ request('sort_type') == 'expensivest' ? 'data-ah-tab-active=true' : '' }} >گران ترین</a>
+                    {{-- مرتب‌سازی — سانیار category-sort --}}
+                    <div class="category-sort mb-3">
+                        <div class="content-box">
+                            <div class="container-fluid">
+                                <div class="d-flex align-items-center flex-wrap">
+                                    <div>
+                                        <h5 class="font-18 mb-0">مرتب سازی</h5>
+                                        <p class="mb-0 text-muted font-14">براساس</p>
+                                    </div>
+                                    <div class="form-checks ms-md-5 ms-0 mt-md-0 mt-3">
+                                        <div class="form-check form-check-inline {{ request('sort_type') == 'latest' || !request('sort_type') ? 'active' : '' }}">
+                                            <input class="form-check-input" type="radio" name="sort_type" id="sortLatest" value="latest" {{ request('sort_type') == 'latest' || !request('sort_type') ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="sortLatest">جدید ترین</label>
+                                        </div>
+                                        <div class="form-check form-check-inline {{ request('sort_type') == 'view' ? 'active' : '' }}">
+                                            <input class="form-check-input" type="radio" name="sort_type" id="sortView" value="view" {{ request('sort_type') == 'view' ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="sortView">پربازدید ترین</label>
+                                        </div>
+                                        <div class="form-check form-check-inline {{ request('sort_type') == 'sale' ? 'active' : '' }}">
+                                            <input class="form-check-input" type="radio" name="sort_type" id="sortSale" value="sale" {{ request('sort_type') == 'sale' ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="sortSale">پرفروش ترین</label>
+                                        </div>
+                                        <div class="form-check form-check-inline {{ request('sort_type') == 'cheapest' ? 'active' : '' }}">
+                                            <input class="form-check-input" type="radio" name="sort_type" id="sortCheapest" value="cheapest" {{ request('sort_type') == 'cheapest' ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="sortCheapest">ارزان ترین</label>
+                                        </div>
+                                        <div class="form-check form-check-inline {{ request('sort_type') == 'expensivest' ? 'active' : '' }}">
+                                            <input class="form-check-input" type="radio" name="sort_type" id="sortExpensive" value="expensivest" {{ request('sort_type') == 'expensivest' ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="sortExpensive">گران ترین</label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
 
-                            <div class="row mb-3 mx-0 px-res-0">
+                    @if($products->count())
+                        <div class="category-items">
+                            <div class="row gy-3">
                                 @foreach($products as $product)
-
-                                    <div class="col-lg-3 col-md-4 col-sm-6 col-12 px-10 mb-1 px-res-0 category-product-div">
-                                        @include('front::products.partials.product-card', ['product' => $product])
+                                    <div class="col-lg-3 col-md-4 col-sm-6 col-12 category-product-div">
+                                        @include('front::partials.product-card', ['product' => $product, 'withTimer' => false, 'hoverBtns' => true])
                                     </div>
-
                                 @endforeach
                             </div>
+                        </div>
 
+                        <div class="my-paginate my-4">
                             {{ $products->appends(request()->all())->links('front::components.paginate') }}
                         </div>
                     @else
-                        @include('front::partials.empty')
+                        <div class="content-box">
+                            <div class="container-fluid">
+                                <div class="text-center py-5">
+                                    <i class="bi bi-basket2 font-30 main-color-one-color"></i>
+                                    <p class="mt-3 mb-0">چیزی برای نمایش وجود ندارد</p>
+                                </div>
+                            </div>
+                        </div>
                     @endif
+
                 </div>
             </div>
-
-
-
         </div>
-    </main>
-    <!-- End main-content -->
+    </div>
 @endsection
 
 @push('scripts')
-
-    <script>
-        var selected_min_price = {{ request('min_price') ?: $min_price }};
-        var selected_max_price = {{ request('max_price') ?: $max_price }};
-        var products_min_price = {{ $min_price }};
-        var products_max_price = {{ $max_price }};
-    </script>
-    <script src="{{ theme_asset('js/vendor/theia-sticky-sidebar.min.js') }}"></script>
-    <script src="{{ theme_asset('js/vendor/jquery.horizontalmenu.js') }}"></script>
-    <script src="{{ theme_asset('js/pages/products/category.js') }}?v=5"></script>
     <script src="{{ theme_asset('js/vendor/nouislider.min.js') }}"></script>
-    <script src="{{ theme_asset('js/vendor/wNumb.js') }}"></script>
-    <script src="{{ theme_asset('js/vendor/ResizeSensor.min.js') }}"></script>
-
+    <script src="{{ theme_asset('js/pages/products/category.js') }}?v=5"></script>
 @endpush

@@ -14,24 +14,36 @@
 @endpush
 
 @section('content')
+    {{-- صفحه محتوایی CMS (درباره ما / سوالات متداول / قوانین) — سانیار content-box --}}
+    <div class="bread-crumb pt-3">
+        <div class="container-fluid">
+            <div class="content-box">
+                <div class="container-fluid">
+                    <nav aria-label="breadcrumb" class="my-lg-0 my-2">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('front.index') }}" class="font-14 text-muted">خانه</a>
+                            </li>
+                            <li class="breadcrumb-item active main-color-one-color font-14" aria-current="page">{{ $page->title }}</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <!-- Start main-content -->
-    <main class="main-content dt-sl mt-4 mb-3">
-        <div class="container main-container">
-
-            <div class="row">
-                <div class="col-12">
-                    <div class="page dt-sl dt-sn pt-3 pb-5">
-                        <div class="section-title title-wide mb-1 no-after-title-wide">
-                            <h1 class="font-weight-bold">{{ $page->title }}</h1>
-                        </div>
+    <div class="content">
+        <div class="container-fluid py-3">
+            <div class="content-box page-content-box">
+                <div class="container-fluid">
+                    <div class="mb-4 title-panel">
+                        <h1 class="font-18">{{ $page->title }}</h1>
+                    </div>
+                    <div class="page-body">
                         {!! $page->content !!}
                     </div>
                 </div>
             </div>
-
         </div>
-    </main>
-    <!-- End main-content -->
-
+    </div>
 @endsection

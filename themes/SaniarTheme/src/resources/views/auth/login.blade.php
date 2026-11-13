@@ -8,25 +8,19 @@
         }
 @endphp
 
-@section('style')
-    <style>
-        .dk-btn:before{
-            right: -97px;
-        }
-        #main .account-box .content-account {
-            padding: 10px 30px 30px;
-        }
-    </style>
-@endsection
 @section('content')
-    <div class="col-lg-4 col-md-6 col-xs-12 mx-auto">
-        <div class="account-box">
-            <a href="/" class="logo-account">
-                <img src="{{ option('info_logo', theme_asset('img/logo.png')) }}" alt="{{ option('info_site_title', 'او پی شاپ') }}">
+    <div class="row justify-content-center">
+        <div class="col-lg-4">
 
-            </a>
-            <span class="account-head-line">ورود | ثبت‌نام</span>
-            <div class="content-account">
+            {{-- کارت ورود — ساختار register.html قالب سانیار --}}
+            <div class="auth-form shadow-xl rounded-3 mt-5 bg-white">
+                <div class="auth-form-title d-flex align-items-center justify-content-between title-panel mb-4 slider-title-desc-center">
+                    <h2 class="text-center h4 text-muted title-font">ورود | ثبت‌نام</h2>
+                    <a href="{{ route('front.index') }}">
+                        <img src="{{ option('info_logo', theme_asset('image/logo.png')) }}" width="120" alt="{{ option('info_site_title', 'او پی شاپ') }}">
+                    </a>
+                </div>
+
                 <form action="{{ route('front.user.CheckMobileEmail').$params }}" id="login" method="post">
                     @csrf
 
@@ -43,10 +37,12 @@
                         </div>
                     @endif
 
-                    <label for="email-phone">سلام!<br>
+                    <label for="email-phone" class="form-label">سلام!<br>
 
                         لطفا شماره موبایل یا ایمیل خود را وارد کنید</label>
-                    <input name="username" type="text" id="email-phone" value="{{old('username')}}" class="input-email-account" placeholder="" autofocus required>
+                    <div class="comment-item mb-3">
+                        <input name="username" type="text" id="email-phone" value="{{old('username')}}" class="form-control" placeholder="" autofocus required>
+                    </div>
                     @error('username')
                     <span class="invalid-feedback" role="alert" style="margin: 10px 0;">
                                         <strong>{{ $message }}</strong>
@@ -65,16 +61,22 @@
                         @enderror
                     @endif
 
-                    <div class="parent-btn">
-                        <button class="dk-btn dk-btn-info text-center mt-5">
+                    <div class="form-group">
+                        <button type="submit" class="main-color-one-bg py-3 btn w-100 rounded-3 border-0">
                             ورود
                         </button>
                     </div>
-                    <label class="mt-3">ورود شما به معنای پذیرش شرایط {{ option('info_site_title', 'او پی شاپ') }} وقوانین حریم‌خصوصیاست
+                    <label class="mt-3 font-12 text-muted">ورود شما به معنای پذیرش شرایط {{ option('info_site_title', 'او پی شاپ') }} وقوانین حریم‌خصوصیاست
 
                     </label>
                 </form>
+
             </div>
+
+            <p class="loginTermsDesc mt-3">با ورود و یا ثبت نام در {{ option('info_site_title', 'او پی شاپ') }} شما <a class="underlined main-color-one-color fw-bold" href="/rules/">شرایط و
+                قوانین</a> استفاده از سرویس‌های سایت و <a class="underlined main-color-one-color fw-bold" href="/privacy-polices/">قوانین حریم
+                خصوصی</a> آن را می‌پذیرید.</p>
+
         </div>
     </div>
 

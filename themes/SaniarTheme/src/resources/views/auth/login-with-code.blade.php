@@ -1,39 +1,47 @@
 @extends('front::auth.layouts.master', ['title' => 'ورود با رمز یکبار مصرف'])
 
 @section('content')
-    <div class="col-lg-4 col-md-6 col-xs-12 mx-auto">
-        <div class="account-box">
-            <a href="/" class="logo-account">
-                <img src="{{ option('info_logo', theme_asset('img/logo.png')) }}" alt="{{ option('info_site_title', 'او پی شاپ') }}">
+    <div class="row justify-content-center">
+        <div class="col-lg-4">
 
-            </a>
-            <span class="account-head-line">ورود با رمز یکبار مصرف</span>
-            <div class="content-account pb-5">
+            {{-- کارت ورود با رمز یکبار مصرف — ساختار register.html قالب سانیار --}}
+            <div class="auth-form shadow-xl rounded-3 mt-5 bg-white">
+                <div class="auth-form-title d-flex align-items-center justify-content-between title-panel mb-4 slider-title-desc-center">
+                    <h2 class="text-center h4 text-muted title-font">ورود با رمز یکبار مصرف</h2>
+                    <a href="{{ route('front.index') }}">
+                        <img src="{{ option('info_logo', theme_asset('image/logo.png')) }}" width="120" alt="{{ option('info_site_title', 'او پی شاپ') }}">
+                    </a>
+                </div>
+
                 <form id="login-with-code-form" data-redirect="{{ route('one-time-login', ['type' => 'login']) }}" action="{{ route('login-with-code.send') }}" method="POST">
                     @csrf
-                    <div class="form-group">
-                        <label for="mobile">شماره موبایل خود را وارد کنید</label>
-                        <input type="text" name="mobile" id="mobile" class="input-email-account" placeholder="">
+                    <div class="comment-item mb-3">
+                        <input type="text" name="mobile" id="mobile" class="form-control" placeholder=" ">
+                        <label for="mobile" class="form-label label-float">شماره موبایل خود را وارد کنید</label>
                     </div>
-                    <div class="row pr-4">
+                    <div class="row mb-3">
                         <x-captcha />
                     </div>
 
-                    <div class="parent-btn">
-                        <button class="dk-btn dk-btn-info">
+                    <div class="form-group">
+                        <button type="submit" class="main-color-one-bg py-3 btn w-100 rounded-3 border-0">
                             درخواست کد تایید
-                            <i class="mdi mdi-lock sign-in"></i>
+                            <i class="bi bi-shield-lock text-white"></i>
                         </button>
                     </div>
                 </form>
-            </div>
-            <div class="account-footer">
 
-                <a href="{{ route('login') }}" class="btn-link-register">ورود با رمز عبور</a>
+                <div class="text-center mt-3">
+                    <a href="{{ route('login') }}" class="main-color-one-color fw-bold font-14">ورود با رمز عبور</a>
+                </div>
             </div>
+
+            <p class="loginTermsDesc mt-3">با ورود و یا ثبت نام در {{ option('info_site_title', 'او پی شاپ') }} شما <a class="underlined main-color-one-color fw-bold" href="/rules/">شرایط و
+                قوانین</a> استفاده از سرویس‌های سایت و <a class="underlined main-color-one-color fw-bold" href="/privacy-polices/">قوانین حریم
+                خصوصی</a> آن را می‌پذیرید.</p>
+
         </div>
     </div>
-
 
 @endsection
 

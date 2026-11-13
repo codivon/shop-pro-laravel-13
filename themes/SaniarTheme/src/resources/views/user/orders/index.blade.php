@@ -1,256 +1,234 @@
 @extends('front::user.layouts.master')
-@push('styles')
-    <link rel="stylesheet" type="text/css" href="{{theme_asset('css/order.css')}}">
-    <style>
-        .page-contents-order{
-            background: unset;
-        }
 
-    </style>
-@endpush
 @section('user-content')
 
+    {{-- سفارش‌های من — ریسکین‌شده با کامپوننت سفارش‌های قالب سانیار (order.html / order-user-panel.html) --}}
+    <div class="ui-boxs">
+        <div class="ui-box">
+            <div class="ui-box-item ui-box-white">
+                <div class="ui-box-item-title">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <h4 class="fw-bold">سفارش‌های من</h4>
 
-    <div class="page-contents page-contents-order orders-page">
-
-        {{-- ===== Header ===== --}}
-        <div class="orders-header">
-            <h4>
-                <i class="fas fa-shopping-bag"></i>
-                سفارش‌های من
-            </h4>
-        </div>
-
-        {{-- ===== Filter Tabs ===== --}}
-        <div class="orders-tabs">
-            <a href="?status=all" class="orders-tab {{ (request('status', 'all') === 'all') ? 'active' : '' }}">
-                <i class="fas fa-list"></i>
-                همه
-                @php $allCount = auth('web')->user()->orders()->count(); @endphp
-                @if($allCount > 0)
-                    <span class="tab-count">{{ $allCount }}</span>
-                @endif
-            </a>
-            <a href="?status=paid" class="orders-tab {{ (request('status') === 'paid') ? 'active' : '' }}">
-                <i class="fas fa-check-circle"></i>
-                تکمیل شده
-                @php $paidCount = auth('web')->user()->orders()->where('status', 'paid')->count(); @endphp
-                @if($paidCount > 0)
-                    <span class="tab-count">{{ $paidCount }}</span>
-                @endif
-            </a>
-            <a href="?status=unpaid" class="orders-tab {{ (request('status') === 'unpaid') ? 'active' : '' }}">
-                <i class="fas fa-clock"></i>
-                در انتظار پرداخت
-                @php $unpaidCount = auth('web')->user()->orders()->where('status', 'unpaid')->count(); @endphp
-                @if($unpaidCount > 0)
-                    <span class="tab-count">{{ $unpaidCount }}</span>
-                @endif
-            </a>
-            <a href="?status=cancelled" class="orders-tab {{ (request('status') === 'cancelled') ? 'active' : '' }}">
-                <i class="fas fa-times-circle"></i>
-                لغو شده
-                @php $cancelledCount = auth('web')->user()->orders()->whereIn('status', ['cancelled', 'failed'])->count(); @endphp
-                @if($cancelledCount > 0)
-                    <span class="tab-count">{{ $cancelledCount }}</span>
-                @endif
-            </a>
-            @php
-                $returnedCount = 0;
-                if (class_exists(\App\Models\ReturnRequest::class)) {
-                    $returnedCount = \App\Models\ReturnRequest::where('user_id', auth('web')->id())
-                        ->whereNotIn('status', ['cancelled'])
-                        ->distinct('order_id')
-                        ->count('order_id');
-                }
-            @endphp
-            @if(class_exists(\App\Models\ReturnRequest::class))
-                <a href="?status=returned" class="orders-tab {{ (request('status') === 'returned') ? 'active' : '' }}">
-                    <i class="fas fa-undo-alt"></i>
-                    مرجوع شده
-                    @if($returnedCount > 0)
-                        <span class="tab-count">{{ $returnedCount }}</span>
-                    @endif
-                </a>
-            @endif
-        </div>
-
-        @php
-            $query = auth('web')->user()->orders()->latest();
-            if (request('status') === 'paid') {
-                $query->where('status', 'paid');
-            } elseif (request('status') === 'unpaid') {
-                $query->where('status', 'unpaid');
-            } elseif (request('status') === 'cancelled') {
-                $query->whereIn('status', ['cancelled', 'failed']);
-            } elseif (request('status') === 'returned' && class_exists(\App\Models\ReturnRequest::class)) {
-                $returnedOrderIds = \App\Models\ReturnRequest::where('user_id', auth('web')->id())
-                    ->whereNotIn('status', ['cancelled'])
-                    ->pluck('order_id')
-                    ->unique()
-                    ->toArray();
-                $query->whereIn('id', $returnedOrderIds);
-            }
-            $orders = $query->paginate(10);
-        @endphp
-
-        {{-- ===== Order Cards ===== --}}
-        @if($orders->count())
-            @foreach ($orders as $order)
-
-                @php
-                    // بررسی نوع پرداخت — فاز ۸۸: پکیج ادغامی CreditPay (پرداخت قسطی و اعتباری) جایگزین پکیج قدیمی اقساطی شد
-                    $isInstallment = false;
-                    $isCredit = false;
-                    if (function_exists('module_is_active') && module_is_active('CreditPay')) {
-                        $isInstallment = \Modules\CreditPay\Models\InstallmentPlan::where('order_id', $order->id)->exists();
-                        $isCredit = \Modules\CreditPay\Models\CreditOrder::where('order_id', $order->id)->exists();
-                    }
-
-                    // بررسی مرجوعی
-                    $hasReturn = false;
-                    if (class_exists(\App\Models\ReturnRequest::class)) {
-                        $hasReturn = \App\Models\ReturnRequest::where('order_id', $order->id)
-                            ->whereNotIn('status', ['cancelled'])
-                            ->exists();
-                    }
-
-                    // محصولات سفارش
-                    $orderProducts = $order->items->take(4);
-                    $totalProducts = $order->items->count();
-                    $remainingProducts = max(0, $totalProducts - 4);
-                @endphp
-
-                <div class="order-card">
-                    {{-- Header --}}
-                    <div class="order-card-header">
-                        <div class="order-card-header-left">
-                            <a href="{{ route('front.orders.show', ['order' => $order]) }}">
-                                <i class="fas fa-chevron-left"></i>
+                        {{-- ===== Filter Tabs ===== --}}
+                        <div class="d-flex flex-wrap align-items-center">
+                            @php $allCount = auth('web')->user()->orders()->count(); @endphp
+                            <a href="?status=all" class="btn btn-sm rounded-pill me-2 mb-2 {{ (request('status', 'all') === 'all') ? 'main-color-one-bg text-white' : 'btn-light' }}">
+                                <i class="bi bi-list"></i>
+                                همه
+                                @if($allCount > 0)
+                                    <span class="badge rounded-pill badge-spn">{{ $allCount }}</span>
+                                @endif
                             </a>
-                            <h6>سفارش #{{ $order->id }}</h6>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            @if($hasReturn)
-                                <span class="return-indicator">
-                            <i class="fas fa-undo-alt"></i> مرجوعی
-                        </span>
-                            @endif
-                            @if($order->status == 'paid')
-                                <span class="order-status-badge paid">
-                                <i class="fas fa-check-circle"></i> تحویل شده
-                            </span>
-                            @elseif($order->status == 'unpaid')
-                                <span class="order-status-badge unpaid">
-                                <i class="fas fa-clock"></i> پرداخت نشده
-                            </span>
-                            @else
-                                <span class="order-status-badge cancelled">
-                                <i class="fas fa-times-circle"></i> لغو شده
-                            </span>
-                            @endif
-                        </div>
-                    </div>
-
-                    {{-- Body --}}
-                    <div class="order-card-body">
-                        {{-- Info Row --}}
-                        <div class="order-info-row">
-                            <div class="order-info-item">
-                                <i class="far fa-calendar"></i>
-                                <span>{{ jdate($order->created_at)->format('%d %B %Y') }}</span>
-                            </div>
-                            <div class="order-info-divider"></div>
-                            <div class="order-info-item">
-                                <i class="fas fa-box"></i>
-                                <span>{{ $totalProducts }} کالا</span>
-                            </div>
-                            <div class="order-info-divider"></div>
-                            @if($isInstallment)
-                                <span class="payment-type-badge installment">
-                            <i class="fas fa-money-check-alt"></i> اقساطی
-                        </span>
-                            @elseif($isCredit)
-                                <span class="payment-type-badge credit">
-                            <i class="fas fa-credit-card"></i> اعتباری
-                        </span>
-                            @elseif ($order->walletHistory)
-                                <span class="payment-type-badge wallet">
-                            <i class="fas fa-wallet"></i> کیف پول
-                        </span>
-                            @else
-                                <span class="payment-type-badge gateway">
-                            <i class="fas fa-credit-card"></i> اینترنتی
-                        </span>
-                            @endif
-                        </div>
-
-                        {{-- Product Thumbnails --}}
-                        <div class="order-products">
-                            @foreach($orderProducts as $item)
-                                <div class="order-product-thumb">
-                                    @if($item->product && $item->product->image)
-                                        <img src="{{ asset($item->product->image) }}" alt="{{ $item->title }}">
-                                    @else
-                                        <div class="order-product-thumb-more">
-                                            <i class="fas fa-image"></i>
-                                        </div>
+                            @php $paidCount = auth('web')->user()->orders()->where('status', 'paid')->count(); @endphp
+                            <a href="?status=paid" class="btn btn-sm rounded-pill me-2 mb-2 {{ (request('status') === 'paid') ? 'main-color-one-bg text-white' : 'btn-light' }}">
+                                <i class="bi bi-check-circle"></i>
+                                تکمیل شده
+                                @if($paidCount > 0)
+                                    <span class="badge rounded-pill badge-spn">{{ $paidCount }}</span>
+                                @endif
+                            </a>
+                            @php $unpaidCount = auth('web')->user()->orders()->where('status', 'unpaid')->count(); @endphp
+                            <a href="?status=unpaid" class="btn btn-sm rounded-pill me-2 mb-2 {{ (request('status') === 'unpaid') ? 'main-color-one-bg text-white' : 'btn-light' }}">
+                                <i class="bi bi-clock"></i>
+                                در انتظار پرداخت
+                                @if($unpaidCount > 0)
+                                    <span class="badge rounded-pill badge-spn">{{ $unpaidCount }}</span>
+                                @endif
+                            </a>
+                            @php $cancelledCount = auth('web')->user()->orders()->whereIn('status', ['cancelled', 'failed'])->count(); @endphp
+                            <a href="?status=cancelled" class="btn btn-sm rounded-pill me-2 mb-2 {{ (request('status') === 'cancelled') ? 'main-color-one-bg text-white' : 'btn-light' }}">
+                                <i class="bi bi-x-circle"></i>
+                                لغو شده
+                                @if($cancelledCount > 0)
+                                    <span class="badge rounded-pill badge-spn">{{ $cancelledCount }}</span>
+                                @endif
+                            </a>
+                            @php
+                                $returnedCount = 0;
+                                if (class_exists(\App\Models\ReturnRequest::class)) {
+                                    $returnedCount = \App\Models\ReturnRequest::where('user_id', auth('web')->id())
+                                        ->whereNotIn('status', ['cancelled'])
+                                        ->distinct('order_id')
+                                        ->count('order_id');
+                                }
+                            @endphp
+                            @if(class_exists(\App\Models\ReturnRequest::class))
+                                <a href="?status=returned" class="btn btn-sm rounded-pill me-2 mb-2 {{ (request('status') === 'returned') ? 'main-color-one-bg text-white' : 'btn-light' }}">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                    مرجوع شده
+                                    @if($returnedCount > 0)
+                                        <span class="badge rounded-pill badge-spn">{{ $returnedCount }}</span>
                                     @endif
-                                </div>
-                            @endforeach
-                            @if($remainingProducts > 0)
-                                <div class="order-product-thumb order-product-thumb-more">
-                                    +{{ $remainingProducts }}
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    {{-- Footer --}}
-                    <div class="order-card-footer">
-                        <div class="order-total">
-                            <span class="label">مبلغ قابل پرداخت:</span>
-                            <span class="value">{{ number_format($order->price) }} تومان</span>
-                            @if($order->totalDiscount() != 0)
-                                <span style="color:#10b981;font-size:0.75rem;">
-                            (تخفیف: {{ number_format($order->totalDiscount()) }} ت)
-                        </span>
-                            @endif
-                        </div>
-                        <div class="order-actions">
-                            @if($order->status == 'unpaid')
-                                <a href="{{ route('front.orders.pay', ['order' => $order]) }}"
-                                   class="order-action-btn order-action-btn-primary">
-                                    <i class="fas fa-credit-card"></i> پرداخت
                                 </a>
                             @endif
-                            <a href="{{ route('front.orders.show', ['order' => $order]) }}"
-                               class="order-action-btn order-action-btn-outline">
-                                <i class="fas fa-eye"></i> جزئیات
-                            </a>
                         </div>
                     </div>
                 </div>
 
-            @endforeach
+                @php
+                    $query = auth('web')->user()->orders()->latest();
+                    if (request('status') === 'paid') {
+                        $query->where('status', 'paid');
+                    } elseif (request('status') === 'unpaid') {
+                        $query->where('status', 'unpaid');
+                    } elseif (request('status') === 'cancelled') {
+                        $query->whereIn('status', ['cancelled', 'failed']);
+                    } elseif (request('status') === 'returned' && class_exists(\App\Models\ReturnRequest::class)) {
+                        $returnedOrderIds = \App\Models\ReturnRequest::where('user_id', auth('web')->id())
+                            ->whereNotIn('status', ['cancelled'])
+                            ->pluck('order_id')
+                            ->unique()
+                            ->toArray();
+                        $query->whereIn('id', $returnedOrderIds);
+                    }
+                    $orders = $query->paginate(10);
+                @endphp
 
-            {{-- Pagination --}}
-            <div class="d-flex justify-content-center mt-4">
-                {{ $orders->links("pagination::bootstrap-4") }}
+                <div class="ui-box-item-desc p-0">
+                    {{-- ===== Order Cards ===== --}}
+                    @if($orders->count())
+                        <div class="orders">
+                            @foreach ($orders as $order)
+
+                                @php
+                                    // بررسی نوع پرداخت — فاز ۸۸: پکیج ادغامی CreditPay (پرداخت قسطی و اعتباری) جایگزین پکیج قدیمی اقساطی شد
+                                    $isInstallment = false;
+                                    $isCredit = false;
+                                    if (function_exists('module_is_active') && module_is_active('CreditPay')) {
+                                        $isInstallment = \Modules\CreditPay\Models\InstallmentPlan::where('order_id', $order->id)->exists();
+                                        $isCredit = \Modules\CreditPay\Models\CreditOrder::where('order_id', $order->id)->exists();
+                                    }
+
+                                    // بررسی مرجوعی
+                                    $hasReturn = false;
+                                    if (class_exists(\App\Models\ReturnRequest::class)) {
+                                        $hasReturn = \App\Models\ReturnRequest::where('order_id', $order->id)
+                                            ->whereNotIn('status', ['cancelled'])
+                                            ->exists();
+                                    }
+
+                                    // محصولات سفارش
+                                    $orderProducts = $order->items->take(4);
+                                    $totalProducts = $order->items->count();
+                                    $remainingProducts = max(0, $totalProducts - 4);
+                                @endphp
+
+                                <div class="order-item">
+                                    {{-- Status + Link --}}
+                                    <div class="order-item-status">
+                                        <div class="order-item-status-item">
+                                            @if($hasReturn)
+                                                <p><i class="bi bi-arrow-counterclockwise text-warning"></i> <span>مرجوعی</span></p>
+                                            @endif
+                                            @if($order->status == 'paid')
+                                                <p><i class="bi bi-bag-check-fill main-color-three-color"></i> <span>تحویل شده</span></p>
+                                            @elseif($order->status == 'unpaid')
+                                                <p><i class="bi bi-clock-fill text-warning"></i> <span>پرداخت نشده</span></p>
+                                            @else
+                                                <p><i class="bi bi-x-circle-fill text-danger"></i> <span>لغو شده</span></p>
+                                            @endif
+                                        </div>
+                                        <div class="order-item-status-item">
+                                            <a href="{{ route('front.orders.show', ['order' => $order]) }}">
+                                                <p><i class="bi bi-arrow-left pointer text-dark"></i></p>
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    {{-- Info Row --}}
+                                    <div class="order-item-detail">
+                                        <ul class="nav">
+                                            <li class="nav-item text-muted">{{ jdate($order->created_at)->format('%d %B %Y') }}</li>
+                                            <li class="nav-item">
+                                                <span class="text-mute">کد سفارش</span>
+                                                <strong>#{{ $order->id }}</strong>
+                                            </li>
+                                            <li class="nav-item">
+                                                <span class="text-mute">{{ $totalProducts }} کالا</span>
+                                                @if($isInstallment)
+                                                    <strong><i class="bi bi-cash-coin"></i> اقساطی</strong>
+                                                @elseif($isCredit)
+                                                    <strong><i class="bi bi-credit-card"></i> اعتباری</strong>
+                                                @elseif ($order->walletHistory)
+                                                    <strong><i class="bi bi-wallet2"></i> کیف پول</strong>
+                                                @else
+                                                    <strong><i class="bi bi-credit-card"></i> اینترنتی</strong>
+                                                @endif
+                                            </li>
+                                            <li class="nav-item">
+                                                <span class="text-mute">مبلغ قابل پرداخت</span>
+                                                <strong>{{ number_format($order->price) }} تومان</strong>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    {{-- Product Thumbnails --}}
+                                    <div class="order-item-product-list">
+                                        @foreach($orderProducts as $item)
+                                            <div class="order-item-product-list-item">
+                                                @if($item->product && $item->product->image)
+                                                    <img src="{{ asset($item->product->image) }}" alt="{{ $item->title }}" class="img-thumbnail" width="70" height="70">
+                                                @else
+                                                    <div class="img-thumbnail d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                                                        <i class="bi bi-image text-muted"></i>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                        @if($remainingProducts > 0)
+                                            <div class="order-item-product-list-item">
+                                                <div class="img-thumbnail d-flex align-items-center justify-content-center text-muted" style="width: 70px; height: 70px;">
+                                                    +{{ $remainingProducts }}
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    {{-- Footer --}}
+                                    <div class="order-item-show">
+                                        @if($order->totalDiscount() != 0)
+                                            <p class="text-success font-12">تخفیف: {{ number_format($order->totalDiscount()) }} ت</p>
+                                        @endif
+                                        <div class="d-flex align-items-center justify-content-end flex-wrap">
+                                            @if($order->status == 'unpaid')
+                                                <a href="{{ route('front.orders.pay', ['order' => $order]) }}"
+                                                   class="btn btn-sm border-0 main-color-one-bg waves-effect waves-light ms-2 mb-1">
+                                                    <i class="bi bi-credit-card text-white"></i> پرداخت
+                                                </a>
+                                            @endif
+                                            <a href="{{ route('front.orders.show', ['order' => $order]) }}"
+                                               class="btn btn-sm border-0 main-color-three-bg waves-effect waves-light mb-1">
+                                                <i class="bi bi-card-list text-white"></i> جزئیات
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            @endforeach
+                        </div>
+
+                        {{-- Pagination --}}
+                        <div class="my-paginate mt-4 pb-3">
+                            <nav aria-label="Page navigation">
+                                {{ $orders->links("pagination::bootstrap-4") }}
+                            </nav>
+                        </div>
+
+                    @else
+                        {{-- Empty State --}}
+                        <div class="text-center py-5">
+                            <i class="bi bi-bag main-color-one-color font-40"></i>
+                            <h6 class="mt-3">هیچ سفارشی یافت نشد</h6>
+                            <p class="text-muted">شما هنوز سفارشی ثبت نکرده‌اید.</p>
+                            <a href="{{ route('front.products.index') }}" class="btn border-0 main-color-one-bg waves-effect waves-light">
+                                <i class="bi bi-shop text-white"></i> شروع خرید
+                            </a>
+                        </div>
+                    @endif
+                </div>
             </div>
-
-        @else
-            {{-- Empty State --}}
-            <div class="orders-empty">
-                <i class="fas fa-shopping-bag"></i>
-                <h6>هیچ سفارشی یافت نشد</h6>
-                <p>شما هنوز سفارشی ثبت نکرده‌اید.</p>
-                <a href="{{ route('front.products.index') }}" class="order-action-btn order-action-btn-primary">
-                    <i class="fas fa-store"></i> شروع خرید
-                </a>
-            </div>
-        @endif
-
+        </div>
     </div>
 
 @endsection

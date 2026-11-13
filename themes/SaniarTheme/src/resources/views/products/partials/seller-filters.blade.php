@@ -1,23 +1,23 @@
+{{-- فیلتر محصولات فروشنده — اسکین سانیار --}}
+<div class="mb-3">
+    <div class="filter-items position-sticky top-0">
+        <div class="container-fluid">
+            <form class="products-filter-form" action="{{ route('front.showSellerStore', ['seller' => $seller]) }}">
 
-<div class="dt-sn mb-3">
-    <form id="products-filter-form" action="{{ route('front.showSellerStore', ['seller' => $seller]) }}">
-        <div class="col-12">
-            <div class="section-title text-sm-title title-wide mb-1 no-after-title-wide">
-                <h2>فیلتر محصولات</h2>
-            </div>
-        </div>
-        <div class="col-12 mb-3">
-            <div class="widget-search">
-                <input type="text" name="s" value="{{ request('s') }}"
-                       placeholder="نام محصول مورد نظر را بنویسید...">
-                <button class="btn-search-widget">
-                    <img src="{{ theme_asset('img/theme/search.png') }}" alt="search buttom">
-                </button>
-            </div>
-        </div>
-        <div class="col-12 filter-product mb-3">
-            <div class="accordion" id="accordionExample">
-
+                <div class="filter-item">
+                    <h5 class="filter-item-title">جستجو</h5>
+                    <div class="filter-item-content">
+                        <div class="search-form">
+                            <div class="search-filed">
+                                <input type="text" name="s" value="{{ request('s') }}"
+                                       placeholder="نام محصول مورد نظر را بنویسید..." class="form-control search-input">
+                                <button type="submit" class="btn search-btn main-color-one-bg rounded-pill">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 @foreach ($filterable as $filter)
 
@@ -30,30 +30,25 @@
                             @endphp
 
                             @if (count($spec_values))
-                                <div class="card">
-                                    <div class="card-header" id="heading-{{ $loop->index }}">
-                                        <h2 class="mb-0">
-                                            <button class="btn btn-block text-right collapsed" type="button"
-                                                    data-toggle="collapse" data-target="#collapse-{{ $loop->index }}"
-                                                    aria-expanded="false" aria-controls="collapse-{{ $loop->index }}">
-                                                {{ $filter->filterable->name }}
-                                                <i class="mdi mdi-chevron-down"></i>
-                                            </button>
-                                        </h2>
-                                    </div>
-
-                                    <div id="collapse-{{ $loop->index }}"
-                                         class="collapse {{ request('filters.' . $filter->id) ? 'show' : '' }}"
-                                         aria-labelledby="heading-{{ $loop->index }}">
-                                        <div class="card-body">
+                                <div class="filter-item">
+                                    <h5 class="filter-item-title d-flex align-items-center justify-content-between" role="button"
+                                        data-bs-toggle="collapse" data-bs-target="#seller-collapse-{{ $loop->index }}"
+                                        aria-expanded="{{ request('filters.' . $filter->id) ? 'true' : 'false' }}"
+                                        aria-controls="seller-collapse-{{ $loop->index }}">
+                                        <span>{{ $filter->filterable->name }}</span>
+                                        <i class="bi bi-chevron-down font-14"></i>
+                                    </h5>
+                                    <div class="filter-item-content">
+                                        <div id="seller-collapse-{{ $loop->index }}"
+                                             class="collapse {{ request('filters.' . $filter->id) ? 'show' : '' }}">
                                             @foreach ($spec_values as $spec_val)
-                                                <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input"
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox"
                                                            name="filters[{{ $filter->id }}][{{ $spec_val }}]"
-                                                           {{ request('filters.' . $filter->id . '.' .$spec_val) ? 'checked' : '' }}
-                                                           id="customCheck-{{ $loop->parent->index }}-{{ $loop->index }}">
-                                                    <label class="custom-control-label"
-                                                           for="customCheck-{{ $loop->parent->index }}-{{ $loop->index }}">{{ $spec_val }}</label>
+                                                           {{ request('filters.' . $filter->id . '.' . $spec_val) ? 'checked' : '' }}
+                                                           id="seller-check-{{ $loop->parent->index }}-{{ $loop->index }}">
+                                                    <label class="form-check-label font-14"
+                                                           for="seller-check-{{ $loop->parent->index }}-{{ $loop->index }}">{{ $spec_val }}</label>
                                                 </div>
                                             @endforeach
                                         </div>
@@ -71,38 +66,30 @@
                             @endphp
 
                             @if ($group_values->count())
-                                <div class="card">
-                                    <div class="card-header" id="heading-{{ $loop->index }}">
-                                        <h2 class="mb-0">
-                                            <button class="btn btn-block text-right collapsed" type="button"
-                                                    data-toggle="collapse" data-target="#collapse-{{ $loop->index }}"
-                                                    aria-expanded="false" aria-controls="collapse-{{ $loop->index }}">
-                                                {{ $filter->filterable->name }}
-                                                <i class="mdi mdi-chevron-down"></i>
-                                            </button>
-                                        </h2>
-                                    </div>
-
-                                    <div id="collapse-{{ $loop->index }}"
-                                         class="collapse {{ request('filters.' . $filter->id) ? 'show' : '' }}"
-                                         aria-labelledby="heading-{{ $loop->index }}">
-                                        <div class="card-body">
+                                <div class="filter-item">
+                                    <h5 class="filter-item-title d-flex align-items-center justify-content-between" role="button"
+                                        data-bs-toggle="collapse" data-bs-target="#seller-collapse-{{ $loop->index }}"
+                                        aria-expanded="{{ request('filters.' . $filter->id) ? 'true' : 'false' }}"
+                                        aria-controls="seller-collapse-{{ $loop->index }}">
+                                        <span>{{ $filter->filterable->name }}</span>
+                                        <i class="bi bi-chevron-down font-14"></i>
+                                    </h5>
+                                    <div class="filter-item-content">
+                                        <div id="seller-collapse-{{ $loop->index }}"
+                                             class="collapse {{ request('filters.' . $filter->id) ? 'show' : '' }}">
                                             @foreach ($group_values as $group_val)
-                                                <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox"
-                                                           class="custom-control-input attribute_group_input"
+                                                <div class="form-check">
+                                                    <input class="form-check-input attribute_group_input" type="checkbox"
                                                            name="filters[{{ $filter->id }}][{{ $group_val->id }}]"
-                                                           {{ request('filters.' . $filter->id . '.' .$group_val->id) ? 'checked' : '' }}
-                                                           id="customCheck-{{ $loop->parent->index }}-{{ $loop->index }}">
-                                                    <label class="custom-control-label"
-                                                           for="customCheck-{{ $loop->parent->index }}-{{ $loop->index }}">{{ $group_val->name }}</label>
+                                                           {{ request('filters.' . $filter->id . '.' . $group_val->id) ? 'checked' : '' }}
+                                                           id="seller-check-{{ $loop->parent->index }}-{{ $loop->index }}">
+                                                    <label class="form-check-label font-14"
+                                                           for="seller-check-{{ $loop->parent->index }}-{{ $loop->index }}">{{ $group_val->name }}</label>
                                                     @if ($group_val->group->type == "color")
-                                                        <span class="filter-color"
-                                                              style="background-color: {{ $group_val->value }}"></span>
+                                                        <span class="filter-color" style="background-color: {{ $group_val->value }}"></span>
                                                     @endif
                                                 </div>
                                             @endforeach
-
                                         </div>
                                     </div>
                                 </div>
@@ -117,14 +104,11 @@
 
                 @endforeach
 
-            </div>
-        </div>
+                <div class="filter-item text-center">
+                    <button type="submit" class="btn-outline-site border-0 bg-transparent">اعمال فیلتر</button>
+                </div>
 
-        <div class="col-12">
-            <button class="btn btn-info btn-block" type="submit">
-                فیلتر
-            </button>
+            </form>
         </div>
-    </form>
+    </div>
 </div>
-

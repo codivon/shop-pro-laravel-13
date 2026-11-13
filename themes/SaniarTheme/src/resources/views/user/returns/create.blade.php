@@ -1,5 +1,11 @@
 @extends('front::user.layouts.master')
 
+@push('styles')
+    <link rel="stylesheet" href="{{ theme_asset('css/pages/user/returns.css') }}">
+    {{-- آیکون‌های وضعیت مرجوعی از مدل با کلاس‌های font-awesome می‌آیند --}}
+    <link rel="stylesheet" href="{{ theme_asset('css/font-awesome.min.css') }}">
+@endpush
+
 @section('user-content')
 
 @php
@@ -21,79 +27,10 @@
     $ptInfo = $paymentTypeLabels[$paymentType] ?? ['label' => $paymentType, 'color' => '#6b7280', 'icon' => 'fa-circle'];
 @endphp
 
-<style>
-    .returns-page { padding: 0; }
-    .returns-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
-    .returns-header a { color: #64748b; font-size: 1.2rem; text-decoration: none; }
-    .returns-header a:hover { color: #1e293b; }
-    .returns-header h4 { font-size: 1.3rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px; }
-    .returns-header h4 i { color: #f59e0b; }
-
-    .payment-type-badge {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 6px 14px; border-radius: 999px; font-size: 0.78rem; font-weight: 700;
-        background: {{ $ptInfo['bg'] ?? '#f3f4f6' }};
-        color: {{ $ptInfo['color'] ?? '#6b7280' }};
-        margin-bottom: 16px;
-    }
-
-    .return-form-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; margin-bottom: 16px; border: 1px solid #f1f5f9; }
-    .return-form-card-header { padding: 16px 20px; border-bottom: 1px solid #f8fafc; background: #fcfcfd; }
-    .return-form-card-header h5 { margin: 0; font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-    .return-form-card-header h5 i { color: #f59e0b; }
-    .return-form-card-body { padding: 20px; }
-
-    .return-product-banner { display: flex; gap: 14px; align-items: center; padding: 14px; background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9; margin-bottom: 20px; }
-    .return-product-banner img { width: 70px; height: 70px; border-radius: 10px; object-fit: cover; flex-shrink: 0; border: 2px solid #e2e8f0; }
-    .return-product-banner-info h6 { margin: 0 0 4px; font-size: 0.92rem; font-weight: 700; color: #1e293b; }
-    .return-product-banner-info small { font-size: 0.78rem; color: #64748b; }
-
-    .return-form-group { margin-bottom: 20px; }
-    .return-form-label { display: block; font-size: 0.85rem; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
-    .return-form-label .required { color: #ef4444; }
-    .return-form-select { width: 100%; padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 0.88rem; color: #1e293b; background: #fff; transition: border-color 0.2s; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: left 14px center; background-size: 16px; padding-left: 40px; }
-    .return-form-select:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
-    .return-form-textarea { width: 100%; padding: 12px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 0.88rem; color: #1e293b; resize: vertical; min-height: 100px; transition: border-color 0.2s; }
-    .return-form-textarea:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
-
-    .return-file-upload { position: relative; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 28px; text-align: center; transition: all 0.2s; cursor: pointer; background: #f8fafc; }
-    .return-file-upload:hover { border-color: #6366f1; background: #eef2ff; }
-    .return-file-upload i { font-size: 2rem; color: #94a3b8; margin-bottom: 8px; }
-    .return-file-upload:hover i { color: #6366f1; }
-    .return-file-upload-text { font-size: 0.85rem; color: #64748b; font-weight: 600; }
-    .return-file-upload-hint { font-size: 0.72rem; color: #94a3b8; margin-top: 4px; }
-    .return-file-upload input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-
-    .return-image-previews { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
-    .return-image-preview { position: relative; width: 80px; height: 80px; border-radius: 10px; overflow: hidden; border: 2px solid #e2e8f0; }
-    .return-image-preview img { width: 100%; height: 100%; object-fit: cover; }
-    .return-image-preview-remove { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: rgba(239,68,68,0.9); color: #fff; border: none; font-size: 0.7rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-
-    .return-alert { border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; font-size: 0.82rem; display: flex; gap: 8px; align-items: flex-start; }
-    .return-alert-warning { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
-    .return-alert-danger { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
-    .return-alert-info { background: #eef2ff; border: 1px solid #c7d2fe; color: #3730a3; }
-
-    .return-summary-card { background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #a7f3d0; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; }
-    .return-summary-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 0.85rem; }
-    .return-summary-row .label { color: #64748b; }
-    .return-summary-row .value { font-weight: 700; color: #1e293b; }
-    .return-summary-row.total { border-top: 1px dashed #a7f3d0; margin-top: 6px; padding-top: 8px; }
-    .return-summary-row.total .value { font-size: 1.1rem; color: #10b981; }
-    .return-summary-row .text-success { color: #10b981; }
-    .return-summary-row .text-primary { color: #6366f1; }
-    .return-summary-row .text-muted { color: #94a3b8; }
-
-    .return-submit-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px; border-radius: 10px; font-size: 0.9rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; box-shadow: 0 4px 12px rgba(245,158,11,0.25); }
-    .return-submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(245,158,11,0.35); }
-    .return-cancel-btn { display: inline-flex; align-items: center; gap: 6px; padding: 12px 28px; border-radius: 10px; font-size: 0.9rem; font-weight: 600; text-decoration: none; border: 1.5px solid #e2e8f0; color: #64748b; background: #fff; transition: all 0.15s; }
-    .return-cancel-btn:hover { background: #f8fafc; color: #475569; }
-</style>
-
 <div class="returns-page">
 
     <div class="returns-header">
-        <a href="{{ route('front.orders.show', $order) }}"><i class="fas fa-arrow-right"></i></a>
+        <a href="{{ route('front.orders.show', $order) }}"><i class="bi bi-arrow-right"></i></a>
         <h4><i class="fas fa-undo-alt"></i> درخواست مرجوعی</h4>
     </div>
 
@@ -125,7 +62,7 @@
             </div>
 
             {{-- نوع پرداخت --}}
-            <div class="payment-type-badge">
+            <div class="payment-type-badge" style="background:{{ $ptInfo['bg'] ?? '#f3f4f6' }};color:{{ $ptInfo['color'] ?? '#6b7280' }};">
                 <i class="fas {{ $ptInfo['icon'] ?? 'fa-circle' }}"></i>
                 نوع پرداخت سفارش: <strong>{{ $ptInfo['label'] ?? $paymentType }}</strong>
             </div>
@@ -248,65 +185,7 @@
     </div>
 </div>
 
-<script>
-(function () {
-    var fileInput = document.getElementById('file-input');
-    var previewContainer = document.getElementById('image-previews');
-    var uploadArea = document.getElementById('file-upload-area');
-    var maxFiles = 5;
-
-    if (fileInput) {
-        fileInput.addEventListener('change', function () {
-            previewContainer.innerHTML = '';
-            var files = Array.from(this.files).slice(0, maxFiles);
-
-            if (files.length > maxFiles) {
-                alert('حداکثر ' + maxFiles + ' تصویر می‌توانید آپلود کنید.');
-                this.value = '';
-                return;
-            }
-
-            files.forEach(function (file, index) {
-                var reader = new FileReader();
-                reader.onload = function (e) {
-                    var preview = document.createElement('div');
-                    preview.className = 'return-image-preview';
-                    preview.innerHTML = '<img src="' + e.target.result + '">' +
-                        '<button type="button" class="return-image-preview-remove" data-index="' + index + '"><i class="fas fa-times"></i></button>';
-                    previewContainer.appendChild(preview);
-
-                    preview.querySelector('.return-image-preview-remove').addEventListener('click', function () {
-                        preview.remove();
-                    });
-                };
-                reader.readAsDataURL(file);
-            });
-        });
-    }
-
-    // Drag and drop
-    if (uploadArea) {
-        uploadArea.addEventListener('dragover', function (e) {
-            e.preventDefault();
-            this.style.borderColor = '#6366f1';
-            this.style.background = '#eef2ff';
-        });
-        uploadArea.addEventListener('dragleave', function (e) {
-            e.preventDefault();
-            this.style.borderColor = '#cbd5e1';
-            this.style.background = '#f8fafc';
-        });
-        uploadArea.addEventListener('drop', function (e) {
-            e.preventDefault();
-            this.style.borderColor = '#cbd5e1';
-            this.style.background = '#f8fafc';
-            if (fileInput) {
-                fileInput.files = e.dataTransfer.files;
-                fileInput.dispatchEvent(new Event('change'));
-            }
-        });
-    }
-})();
-</script>
-
 @endsection
+@push('scripts')
+    <script src="{{ theme_asset('js/pages/user/returns-create.js') }}"></script>
+@endpush

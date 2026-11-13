@@ -1,47 +1,62 @@
+{{-- اسلایدر مطالب وبلاگ سانیار (ویجت‌ساز وبلاگ) — saniar blog-item + swiper --}}
 @php
-    $variables      = get_widget($widget);
-    $posts          = $variables['blogs'];
+    $variables = get_widget($widget);
+    $posts     = $variables['blogs'];
 @endphp
 
-<!-- Start blogs -->
-@if ($posts->count())
-    <div class="row">
-        <div class="col-xl-12 col-lg-12">
-            <section class="slider-section dt-sl mb-3">
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <div class="section-title text-sm-title title-wide no-after-title-wide">
-                            <h2>{{ $widget->option('title') }}</h2>
-                            @if ($widget->option('link'))
-                                <a href="{{ $widget->option('link') }}">{{ $widget->option('link_title', 'مشاهده همه') }}</a>
-                            @endif
-                        </div>
-                    </div>
-
-                    <div class="col-12 px-res-0">
-                        <div class="product-carousel carousel-md owl-carousel owl-theme posts-widget-owl">
-                            @foreach ($posts as $post)
-                                <div class="item">
-                                    <div class="post-card mb-0">
-                                        <div class="post-thumbnail">
-                                            <a href="{{ route('front.articles.show', ['slug' => $post->slug]) }}">
-                                                <img src="{{ asset('/no-image-product.svg') }}" data-src="{{ $post->image ? asset($post->image) : theme_asset('/no-image-product.svg') }}" alt="{{ $post->title }}">
-                                            </a>
-                                            <span class="post-tag">{{ $post->category ? $post->category->title : 'دسته بندی نشده' }}</span>
-
-                                        </div>
-                                        <div class="post-title">
-                                            <a href="{{ route('front.articles.show', ['slug' => $post->slug]) }}">{{ $post->title }}</a>
-                                            <span class="post-date">{{ jdate($post->created_at)->format('%d %B %Y') }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
+@if(count($posts))
+    <div class="blog-slider site-slider site-slider-sm py-20">
+        <div class="container-fluid">
+            <div class="header-content mb-4 bg-white shadow-box rounded-3 p-3 d-flex align-items-center justify-content-between flex-wrap">
+                <div class="title d-flex align-items-center">
+                    <img src="{{ theme_asset('image/square.png') }}" alt="" class="img-fluid">
+                    <h5 class="font-16 ms-3">{{ $widget->option('title', 'آخرین مطالب') }} <span class="main-color-one-color d-inline-block">وبلاگ</span></h5>
                 </div>
-            </section>
+                @if($widget->option('link'))
+                    <div class="link">
+                        <a href="{{ $widget->option('link') }}" class="border-animate fromCenter pb-1 fw-bold">
+                            {{ $widget->option('link_title', 'مشاهده همه') }}
+                            <i class="bi bi-chevron-double-left main-color-one-color"></i>
+                        </a>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <div class="parent">
+            <div class="container-fluid">
+                <div class="swiper product-slider-swiper">
+                    <div class="swiper-wrapper">
+                        @foreach($posts as $post)
+                            <div class="swiper-slide">
+                                <div class="blog-item">
+                                    <a href="{{ route('front.articles.show', ['slug' => $post->slug]) }}">
+                                        <div class="image">
+                                            <img src="{{ $post->image ? asset($post->image) : asset('/no-image-product.svg') }}" alt="{{ $post->title }}" class="img-fluid">
+                                        </div>
+                                        <div class="title">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div class="title-item">
+                                                    <i class="bi bi-tag me-1"></i>
+                                                    <span class="font-12">{{ $post->category ? $post->category->title : 'دسته بندی نشده' }}</span>
+                                                </div>
+                                                <div class="title-item">
+                                                    <i class="bi bi-alarm me-1"></i>
+                                                    <span class="font-12">{{ jdate($post->created_at)->format('%d %B %Y') }}</span>
+                                                </div>
+                                            </div>
+                                            <h4 class="font-16 text-overflow-1 h4">{{ $post->title }}</h4>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="swiper-button-next d-lg-flex d-none"></div>
+                    <div class="swiper-button-prev d-lg-flex d-none"></div>
+                    <div class="swiper-pagination"></div>
+                </div>
+            </div>
         </div>
     </div>
 @endif
-<!-- End blogs -->

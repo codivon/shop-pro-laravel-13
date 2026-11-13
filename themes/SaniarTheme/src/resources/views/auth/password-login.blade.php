@@ -4,36 +4,32 @@
     $redirect_url = request("redirect") ?: \Illuminate\Support\Facades\Redirect::intended()->getTargetUrl();
 @endphp
 
-@section('style')
-    <style>
-        .dk-btn:before{
-            right: -97px;
-        }
-        #main .account-box .content-account {
-            padding: 10px 30px 30px;
-        }
-    </style>
-@endsection
 @section('content')
 
-    <div class="col-lg-4 col-md-6 col-xs-12 mx-auto">
-        <div class="account-box content-account">
-            <a href="/" class="logo-account">
-                <img src="{{ option('info_logo', theme_asset('img/logo.png')) }}" alt="{{ option('info_site_title', 'او پی شاپ') }}">
+    <div class="row justify-content-center">
+        <div class="col-lg-4">
 
-            </a>
+            {{-- کارت ورود با رمز عبور — ساختار register.html قالب سانیار --}}
+            <div class="auth-form shadow-xl rounded-3 mt-5 bg-white">
+                <div class="auth-form-title d-flex align-items-center justify-content-between title-panel mb-4 slider-title-desc-center">
+                    <h2 class="text-center h4 text-muted title-font">ورود</h2>
+                    <a href="{{ route('front.index') }}">
+                        <img src="{{ option('info_logo', theme_asset('image/logo.png')) }}" width="120" alt="{{ option('info_site_title', 'او پی شاپ') }}">
+                    </a>
+                </div>
 
-            @if(session('SettFirstOnePassword'))
-                <span class="account-head-line">رمز عبور جدید را وارد کنید</span>
-            @else
-                <span class="account-head-line">رمز عبور را وارد کنید</span>
-            @endif
-            <div class="content-account">
+                @if(session('SettFirstOnePassword'))
+                    <div class="alert text-center alert-warning font-13">رمز عبور جدید را وارد کنید</div>
+                @endif
+
                 <form action="{{ route('front.user.CheckPassword') }}" id="login" method="post">
                     @csrf
                   <input name="username" value="{{session('ShowPasswordForm_Mobile_Email')}}" type="hidden">
-                    <input autofocus required name="password" type="password" id="email-phone" value="{{old('password')}}" class="input-email-account" placeholder="">
-                    <input name="remember" type="hidden"  value="1" class="input-email-account" placeholder="">
+                    <div class="comment-item mb-3">
+                        <input autofocus required name="password" type="password" id="email-phone" value="{{old('password')}}" class="form-control" placeholder=" ">
+                        <label for="email-phone" class="form-label label-float">رمز عبور را وارد کنید</label>
+                    </div>
+                    <input name="remember" type="hidden"  value="1">
                     @error('password')
                     <span class="invalid-feedback" role="alert" style="margin: 10px 0;">
                                         <strong>{{ $message }}</strong>
@@ -44,18 +40,24 @@
                                         <strong>{{ session('admin_login_error')  }}</strong>
                                     </span>
                         @endif
+
                     @if(!session('SettFirstOnePassword'))
-                        @if (option('forgot_password_link', 'on') == 'on')
-                        <a href="{{route('password.request')}}" class="account-link-password">رمز خود را فراموش کرده ام</a>
-                        @endif
-                            @if (option('login_with_code', 'on') == 'on')
-                        <a href="{{route('login-with-code.request')}}" class="account-link-password">ورود با رمز یکبار مصرف</a>
+                        <div class="d-flex justify-content-between flex-wrap mb-3">
+                            @if (option('forgot_password_link', 'on') == 'on')
+                                <a href="{{route('password.request')}}" class="form-edit-number">رمز خود را فراموش کرده ام</a>
                             @endif
+                            @if (option('login_with_code', 'on') == 'on')
+                                <a href="{{route('login-with-code.request')}}" class="form-edit-number">ورود با رمز یکبار مصرف</a>
+                            @endif
+                        </div>
                     @endif
 
                     @if(session('SettFirstOnePassword') and option('user_referrals_enable', "false") == "true")
-                        <span class="account-head-line pt-4 pr-0">کد معرف را وارد کنید (اختیاری)</span>
-                        <input name="referralCode" type="text"  value="{{@request('ref')}}" class="input-email-account" placeholder="">
+                        <label class="form-label mt-2">کد معرف را وارد کنید (اختیاری)</label>
+                        <div class="comment-item mb-3">
+                            <input name="referralCode" type="text"  value="{{@request('ref')}}" class="form-control" placeholder=" ">
+                            <label class="form-label label-float">کد معرف</label>
+                        </div>
                         @error('referralCode')
                         <span class="invalid-feedback" role="alert" style="margin: 10px 0;">
                                         <strong>{{ $message }}</strong>
@@ -64,14 +66,20 @@
                     @endif
 
 
-                    <div class="parent-btn">
-                        <button class="dk-btn dk-btn-info text-center mt-5">
+                    <div class="form-group">
+                        <button type="submit" class="main-color-one-bg py-3 btn w-100 rounded-3 border-0">
                             تایید
                         </button>
                     </div>
 
                 </form>
+
             </div>
+
+            <p class="loginTermsDesc mt-3">با ورود و یا ثبت نام در {{ option('info_site_title', 'او پی شاپ') }} شما <a class="underlined main-color-one-color fw-bold" href="/rules/">شرایط و
+                قوانین</a> استفاده از سرویس‌های سایت و <a class="underlined main-color-one-color fw-bold" href="/privacy-polices/">قوانین حریم
+                خصوصی</a> آن را می‌پذیرید.</p>
+
         </div>
     </div>
 

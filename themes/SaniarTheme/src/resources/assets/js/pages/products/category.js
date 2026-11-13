@@ -1,141 +1,207 @@
-$('#products-filter-form').on('submit', function (e) {
-    e.preventDefault();
+/**
+ * SaniarTheme — صفحه محصولات دسته‌بندی
+ * فیلترها + مرتب‌سازی + نوار قیمت noUiSlider + بارگذاری ایجکس لیست محصولات
+ */
+(function ($) {
+    'use strict';
 
-    var formData = new FormData(this);
+    // ---------- ارسال فرم فیلتر ----------
+    $(document).on('submit', '.products-filter-form', function (e) {
+        e.preventDefault();
 
-    var sortType = $(
-        '.products-list-sort-type .ah-tab-item[data-ah-tab-active="true"]'
-    ).data('sort');
+        var formData = new FormData(this);
 
-    formData.append('sort_type', sortType);
+        var sortType = $('.category-sort input[name="sort_type"]:checked').val();
+        if (sortType) {
+            formData.append('sort_type', sortType);
+        }
 
-    var queryString = new URLSearchParams(formData).toString();
+        var queryString = new URLSearchParams(formData).toString();
 
-    reloadProductsList(
-        $('#category-products-div').data('action') + '?' + queryString
-    );
-});
-$('#products-filter-form input').on('change', function () {
-    $('#products-filter-form').trigger('submit');
-});
+        reloadProductsList(
+            $('#category-products-div').data('action') + '?' + queryString
+        );
+    });
 
-function reloadProductsList(url) {
-    $.ajax({
-        type: 'GET',
-        url: url,
-        success: function (data) {
-            let content = $(data).find('#category-products-div').html();
+    // ---------- ارسال خودکار با تغییر ورودی‌های فیلتر ----------
+    $(document).on('change', '.products-filter-form input', function () {
+        $(this).closest('form').trigger('submit');
+    });
 
-            $('#category-products-div').html(content);
+    // ---------- مرتب‌سازی ----------
+    $(document).on('change', '.category-sort input[name="sort_type"]', function () {
+        var listWrapper = $('#category-products-div');
+        if (!listWrapper.length) {
+            return;
+        }
 
-            window.history.pushState({}, '', url);
-
-            $('html, body').animate(
-                {
-                    scrollTop: $('#category-products-div').offset().top - 20
-                },
-                1000
-            );
-
-            horizontalMenu();
-        },
-        beforeSend: function (xhr) {
-            block('#category-products-div');
-        },
-        complete: function () {
-            unblock('#category-products-div');
+        if ($('.products-filter-form').length) {
+            // فرم فیلتر خودش sort_type فعلی را اضافه می‌کند
+            $('.products-filter-form').trigger('submit');
+        } else {
+            reloadProductsList(listWrapper.data('action') + '?sort_type=' + $(this).val());
         }
     });
-}
 
-$(document).on('click', '#category-products-div .pagination a', function (e) {
-    e.preventDefault();
-    reloadProductsList($(this).attr('href'));
-});
+    // ---------- سازگاری با تب‌های مرتب‌سازی قدیمی (صفحه فروشنده) ----------
+    $(document).on('click', '.products-list-sort-type .ah-tab-item[data-sort]', function () {
+        if ($(this).attr('data-ah-tab-active') === 'true') {
+            return false;
+        }
+        $('.products-list-sort-type .ah-tab-item').removeAttr('data-ah-tab-active');
+        $(this).attr('data-ah-tab-active', 'true');
 
-$(window).on('popstate', function (e) {
-    location.reload();
-});
+        var listWrapper = $('#category-products-div');
+        if (!listWrapper.length) {
+            return false;
+        }
 
-function horizontalMenu() {
-    $('.products-list-sort-type').horizontalmenu({
-        itemClick: function (item) {
-            if ($(item).attr('data-ah-tab-active') == 'true') {
-                return false;
-            }
+        if ($('.products-filter-form').length) {
+            $('.products-filter-form').trigger('submit');
+        } else {
+            reloadProductsList(listWrapper.data('action') + '?sort_type=' + $(this).data('sort'));
+        }
+        return false;
+    });
 
-            $('.ah-tab-content-wrapper .ah-tab-content').removeAttr(
-                'data-ah-tab-active'
-            );
+    function reloadProductsList(url) {
+        $.ajax({
+            type: 'GET',
+            url: url,
+            success: function (data) {
+                var content = $(data).find('#category-products-div').html();
 
-            $(
-                '.ah-tab-content-wrapper .ah-tab-content:eq(' +
-                    $(item).index() +
-                    ')'
-            ).attr('data-ah-tab-active', 'true');
+                $('#category-products-div').html(content);
 
-            if (!$('#products-filter-form').length) {
-                let queryString = 'sort_type=' + $(item).data('sort');
+                window.history.pushState({}, '', url);
 
-                reloadProductsList(
-                    $('#category-products-div').data('action') +
-                        '?' +
-                        queryString
+                $('html, body').animate(
+                    {
+                        scrollTop: $('#category-products-div').offset().top - 20
+                    },
+                    1000
                 );
-
-                return false;
+            },
+            beforeSend: function (xhr) {
+                block('#category-products-div');
+            },
+            complete: function () {
+                unblock('#category-products-div');
             }
+        });
+    }
 
-            setTimeout(() => {
-                $('#products-filter-form').trigger('submit');
-            }, 200);
+    // ---------- صفحه‌بندی ایجکس ----------
+    $(document).on('click', '#category-products-div .pagination a', function (e) {
+        e.preventDefault();
+        reloadProductsList($(this).attr('href'));
+    });
 
-            return false; //if this finction return true then will be executed http request
+    $(window).on('popstate', function () {
+        location.reload();
+    });
+
+    // ---------- انتخاب ویژگی → فعال شدن «فقط کالاهای موجود» ----------
+    $(document).on('change', '.attribute_group_input', function () {
+        if ($(this).prop('checked')) {
+            $('.in_stock').prop('checked', true);
         }
     });
-}
 
-horizontalMenu();
-
-$('.attribute_group_input').on('change', function () {
-    if ($(this).prop('checked')) {
-        $('.in_stock').prop('checked', true);
-    }
-});
-
-$(document).ready(function () {
-    if ($('#slider-non-linear-step').length) {
-        var nonLinearStepSlider = document.getElementById(
-            'slider-non-linear-step'
-        );
-
-        noUiSlider.create(nonLinearStepSlider, {
-            start: [selected_min_price, selected_max_price],
-            connect: true,
-            direction: 'rtl',
-            format: wNumb({
-                decimals: 0,
-                thousand: ','
-            }),
-            range: {
-                min: [products_min_price],
-                max: [products_max_price]
+    // ---------- نوار بازه قیمت (noUiSlider سانیار) ----------
+    $(document).ready(function () {
+        document.querySelectorAll('.js-price-slider').forEach(function (box) {
+            if (typeof noUiSlider === 'undefined') {
+                return;
             }
-        });
-        var nonLinearStepSliderValueElement = document.getElementById(
-            'slider-non-linear-step-value'
-        );
 
-        nonLinearStepSlider.noUiSlider.on('update', function (values) {
-            $('input[name="min_price"]').val(values[0].replaceAll(',', ''));
-            $('input[name="max_price"]').val(values[1].replaceAll(',', ''));
+            var slider = box.querySelector('.price-slider');
+            if (!slider || slider.noUiSlider) {
+                return;
+            }
 
-            nonLinearStepSliderValueElement.innerHTML = values.join(' - ');
+            var minPrice = parseInt(box.getAttribute('data-min'), 10) || 0;
+            var maxPrice = parseInt(box.getAttribute('data-max'), 10) || 0;
+            var selectedMin = parseInt(box.getAttribute('data-min-selected'), 10) || minPrice;
+            var selectedMax = parseInt(box.getAttribute('data-max-selected'), 10) || maxPrice;
+
+            if (selectedMin < minPrice) { selectedMin = minPrice; }
+            if (selectedMax > maxPrice || selectedMax < selectedMin) { selectedMax = maxPrice; }
+
+            var faFormat = new Intl.NumberFormat('fa-IR');
+
+            noUiSlider.create(slider, {
+                start: [selectedMin, selectedMax],
+                connect: true,
+                direction: 'rtl',
+                step: 1000,
+                format: {
+                    to: function (value) {
+                        return Math.round(value);
+                    },
+                    from: function (value) {
+                        return Number(value);
+                    }
+                },
+                range: {
+                    min: minPrice,
+                    max: maxPrice
+                }
+            });
+
+            var minHidden = box.parentElement.querySelector('input[name="min_price"]');
+            var maxHidden = box.parentElement.querySelector('input[name="max_price"]');
+            var fromInput = box.querySelector('.min-price-filter');
+            var toInput = box.querySelector('.max-price-filter');
+
+            slider.noUiSlider.on('update', function (values) {
+                if (fromInput) { fromInput.value = faFormat.format(values[0]); }
+                if (toInput) { toInput.value = faFormat.format(values[1]); }
+                if (minHidden) { minHidden.value = Math.round(values[0]); }
+                if (maxHidden) { maxHidden.value = Math.round(values[1]); }
+            });
+
+            slider.noUiSlider.on('change', function () {
+                // هم‌رفتار با نسخه قبلی: تغییر قیمت، فیلترهای مرتبط را فعال می‌کند
+                $('.in_stock').prop('checked', true);
+                $('.price_filter').prop('checked', true);
+                $(box).closest('form').trigger('submit');
+            });
         });
 
-        nonLinearStepSlider.noUiSlider.on('change', function (values) {
-            $('.in_stock').prop('checked', true);
-            $('.price_filter').prop('checked', true);
-        });
-    }
-});
+        // ---------- سازگاری با اسلایدر قدیمی (صفحه فروشنده) ----------
+        var legacySlider = document.getElementById('slider-non-linear-step');
+        if (legacySlider && typeof noUiSlider !== 'undefined' && !legacySlider.noUiSlider) {
+            var legacyMin = parseInt(window.products_min_price, 10) || 0;
+            var legacyMax = parseInt(window.products_max_price, 10) || 0;
+            var legacySelMin = parseInt(window.selected_min_price, 10) || legacyMin;
+            var legacySelMax = parseInt(window.selected_max_price, 10) || legacyMax;
+
+            noUiSlider.create(legacySlider, {
+                start: [legacySelMin, legacySelMax],
+                connect: true,
+                direction: 'rtl',
+                format: window.wNumb ? wNumb({decimals: 0, thousand: ','}) : undefined,
+                range: {min: legacyMin, max: legacyMax}
+            });
+
+            var legacyValueEl = document.getElementById('slider-non-linear-step-value');
+            var legacyMinInput = document.querySelector('input[name="min_price"]');
+            var legacyMaxInput = document.querySelector('input[name="max_price"]');
+
+            legacySlider.noUiSlider.on('update', function (values) {
+                var raw = values.map(function (v) {
+                    return String(v).replace(/,/g, '');
+                });
+                if (legacyMinInput) { legacyMinInput.value = raw[0]; }
+                if (legacyMaxInput) { legacyMaxInput.value = raw[1]; }
+                if (legacyValueEl) { legacyValueEl.innerHTML = values.join(' - '); }
+            });
+
+            legacySlider.noUiSlider.on('change', function () {
+                $('.in_stock').prop('checked', true);
+                $('.price_filter').prop('checked', true);
+            });
+        }
+    });
+})(jQuery);

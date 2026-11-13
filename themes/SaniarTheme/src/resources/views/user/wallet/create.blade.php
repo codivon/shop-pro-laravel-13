@@ -1,56 +1,59 @@
 @extends('front::user.layouts.master')
 
 @section('user-content')
-    <div class="col-xl-9 col-lg-8 col-md-8 col-sm-12">
-        <div class="px-3 px-res-0">
-            @if ($errors->any())
-                <div class="alert alert-danger">
-                    @foreach ($errors->all() as $error)
-                        <p>{{ $error }}</p>
-                    @endforeach
+
+    {{-- افزایش موجودی کیف پول — ریسکین‌شده با فرم‌های قالب سانیار --}}
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            @foreach ($errors->all() as $error)
+                <p class="mb-0">{{ $error }}</p>
+            @endforeach
+        </div>
+    @endif
+
+    <div class="ui-boxs">
+        <div class="ui-box">
+            <div class="ui-box-item ui-box-white">
+                <div class="ui-box-item-title">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="fw-bold">افزایش موجودی کیف پول</h4>
+                        <a href="{{ route('front.wallet.index') }}" class="btn btn-sm btn-light">بازگشت <i class="bi bi-arrow-left"></i></a>
+                    </div>
                 </div>
-            @endif
+                <div class="ui-box-item-desc">
+                    <form id="wallet-create-form" action="{{ route('front.wallet.store') }}" class="setting_form" method="POST">
+                        @csrf
 
-            <div class="section-title text-sm-title title-wide mb-1 no-after-title-wide dt-sl mb-2 px-res-1">
-                <h2>افزایش موجودی کیف پول</h2>
-            </div>
-            <div class="form-ui additional-info dt-sl dt-sn pt-4">
-                <form id="wallet-create-form" action="{{ route('front.wallet.store') }}" class="setting_form" method="POST">
-                    @csrf
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="amount">مبلغ (تومان)</label>
+                                    <input type="number" class="form-control amount-input" name="amount" id="amount">
+                                </div>
+                            </div>
 
-                    <div class="row">
-                        <div class="col-lg-6">
-                            <div class="form-row-title">
-                                <h3>مبلغ (تومان)</h3>
-                            </div>
-                            <div class="form-row form-group">
-                                <input type="number" class="input-ui pr-2 amount-input" name="amount">
-                            </div>
-                        </div>
-
-                        <div class="col-lg-6">
-                            <div class="form-row-title">
-                                <h3>انتخاب درگاه پرداخت</h3>
-                            </div>
-                            <div class="form-row form-group">
-                                <select class="form-control py-0" name="gateway" required>
-                                    <option value="">انتخاب کنید</option>
-                                    @foreach ($gateways as $gateway)
-                                        <option value="{{ $gateway->key }}">{{ $gateway->name }}</option>
-                                    @endforeach
-                                </select>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="gateway">انتخاب درگاه پرداخت</label>
+                                    <select class="form-select" name="gateway" id="gateway" required>
+                                        <option value="">انتخاب کنید</option>
+                                        @foreach ($gateways as $gateway)
+                                            <option value="{{ $gateway->key }}">{{ $gateway->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <hr>
-                    <div class="form-row mt-3 justify-content-center">
-                        <button id="submit-btn" type="submit" class="btn-primary-cm btn-with-icon ml-2">
-                            <i class="mdi mdi-arrow-left"></i>
-                            افزایش موجودی
-                        </button>
-                    </div>
-                </form>
+                        <hr>
+                        <div class="d-flex justify-content-center mt-3">
+                            <button id="submit-btn" type="submit" class="btn border-0 main-color-one-bg waves-effect waves-light py-2 px-5">
+                                <i class="bi bi-arrow-left text-white me-1"></i>
+                                افزایش موجودی
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

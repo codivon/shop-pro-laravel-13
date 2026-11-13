@@ -1,6 +1,6 @@
 @php
     // This partial is loaded via AJAX into #history-detail (see index.blade.php).
-    // Styles (.ump-detail, .ump-badge, ...) live in index.blade.php @push('styles').
+    // Styles (.ump-detail, .ump-badge, ...) live in css/pages/user/user-messages.css.
     $item = $message->items()->first();
     $status = $item ? $item->status : 'unseen';
     $isSeen = $status === 'seen';

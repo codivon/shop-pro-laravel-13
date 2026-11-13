@@ -1,7 +1,5 @@
 @extends('front::user.layouts.master')
-@push('styles')
-    <link rel="stylesheet" type="text/css" href="{{theme_asset('css/order.css')}}">
-@endpush
+
 @section('user-content')
 
     @php
@@ -109,74 +107,75 @@
 
         // ========== برچسب‌های وضعیت مرجوعی ==========
         $returnStatusLabels = [
-            'pending'   => ['label' => 'در حال بررسی مرجوعی', 'color' => '#f59e0b', 'bg' => '#fffbeb', 'icon' => 'fa-clock'],
-            'approved'  => ['label' => 'تایید اولیه مرجوعی', 'color' => '#3b82f6', 'bg' => '#dbeafe', 'icon' => 'fa-check-circle'],
-            'received'  => ['label' => 'محصول دریافت شد', 'color' => '#8b5cf6', 'bg' => '#ede9fe', 'icon' => 'fa-box'],
-            'completed' => ['label' => 'مرجوع شد', 'color' => '#10b981', 'bg' => '#d1fae5', 'icon' => 'fa-check-double'],
-            'rejected'  => ['label' => 'مرجوعی رد شد', 'color' => '#ef4444', 'bg' => '#fee2e2', 'icon' => 'fa-times-circle'],
-            'cancelled' => ['label' => 'مرجوعی لغو شد', 'color' => '#6b7280', 'bg' => '#f3f4f6', 'icon' => 'fa-ban'],
+            'pending'   => ['label' => 'در حال بررسی مرجوعی', 'color' => '#f59e0b', 'bg' => '#fffbeb', 'icon' => 'bi-clock'],
+            'approved'  => ['label' => 'تایید اولیه مرجوعی', 'color' => '#3b82f6', 'bg' => '#dbeafe', 'icon' => 'bi-check-circle'],
+            'received'  => ['label' => 'محصول دریافت شد', 'color' => '#8b5cf6', 'bg' => '#ede9fe', 'icon' => 'bi-box'],
+            'completed' => ['label' => 'مرجوع شد', 'color' => '#10b981', 'bg' => '#d1fae5', 'icon' => 'bi-check2-circle'],
+            'rejected'  => ['label' => 'مرجوعی رد شد', 'color' => '#ef4444', 'bg' => '#fee2e2', 'icon' => 'bi-x-circle'],
+            'cancelled' => ['label' => 'مرجوعی لغو شد', 'color' => '#6b7280', 'bg' => '#f3f4f6', 'icon' => 'bi-slash-circle'],
         ];
     @endphp
 
-    <section class="page-contents page-contents-order">
-        <div class="container-fluid px-0">
-
-            {{-- پیام‌ها --}}
-            @if(session('message') == 'ok')
-                <div class="alert alert-success rounded-3 mb-4">
-                    <div class="d-flex align-items-center">
-                        <i class="mdi mdi-check-circle fs-4 me-2"></i>
-                        <div>
-                            سفارش شما با شماره سفارش <strong>{{ $order->id }}</strong> با موفقیت در سیستم ثبت شد.
+    {{-- جزییات سفارش — ریسکین‌شده با کامپوننت‌های قالب سانیار (order-detail.html) --}}
+    <div class="ui-boxs">
+        <div class="ui-box">
+            <div class="ui-box-item ui-box-white">
+                <div class="ui-box-item-title">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <div class="d-flex align-items-center">
+                            <a href="{{ route('front.orders.index') }}" class="text-dark me-3" title="بازگشت به سفارش‌ها">
+                                <i class="bi bi-arrow-right fs-5"></i>
+                            </a>
+                            <h4 class="fw-bold mb-0">جزئیات سفارش #{{ $order->id }}</h4>
                         </div>
-                    </div>
-                </div>
-            @elseif(session('transaction-error'))
-                <div class="alert alert-warning rounded-3 mb-4">
-                    <div class="d-flex align-items-start">
-                        <i class="mdi mdi-alert-circle fs-4 me-2"></i>
-                        <div>
-                            <strong>سفارش با شماره {{ $order->id }} ثبت شد اما پرداخت ناموفق بود.</strong>
-                            <p class="mb-0 mt-1 small">برای جلوگیری از لغو سیستمی سفارش، تا ۱ ساعت پس از ثبت سفارش پرداخت را انجام دهید.</p>
-                            <p class="mb-0 small text-muted">چنانچه طی این فرایند مبلغی از حساب شما کسر شده است، طی ۷۲ ساعت آینده به حساب شما باز خواهد گشت.</p>
-                            @if($order->status == 'unpaid')
-                                <a href="{{ route('front.orders.pay', ['order' => $order]) . '?gateway=' . ($order->gatewayRelation ? $order->gatewayRelation->key : 'wallet') }}"
-                                   class="btn btn-primary btn-sm mt-2">
-                                    پرداخت سفارش
-                                </a>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            @elseif(session('error'))
-                <div class="alert alert-danger rounded-3 mb-4">
-                    <i class="mdi mdi-close-circle me-2"></i>
-                    <strong>{{ session('error') }}</strong>
-                </div>
-            @endif
-
-            @if(session('success'))
-                <div class="alert alert-success rounded-3 mb-4">
-                    <i class="fas fa-check-circle me-2"></i>
-                    <strong>{{ session('success') }}</strong>
-                </div>
-            @endif
-
-            {{-- کارت اصلی سفارش --}}
-            <div class="card shadow-sm border-0 rounded-3 mb-4">
-                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center flex-wrap">
-                    <div class="d-flex align-items-center">
-                        <a href="{{ route('front.orders.index') }}" class="text-dark me-3">
-                            <i class="fas fa-arrow-right"></i>
+                        <a href="{{ route('front.orders.print', $order->id) }}" class="main-color-one-color text-decoration-none" target="_blank">
+                            <i class="bi bi-printer me-1"></i> مشاهده فاکتور
                         </a>
-                        <h5 class="mb-0 fw-bold">جزئیات سفارش #{{ $order->id }}</h5>
                     </div>
-                    <a href="{{ route('front.orders.print', $order->id) }}" class="text-secondary" target="_blank">
-                        <i class="fas fa-print me-1"></i> مشاهده فاکتور
-                    </a>
                 </div>
 
-                <div class="card-body">
+                <div class="ui-box-item-desc">
+                    {{-- پیام‌ها --}}
+                    @if(session('message') == 'ok')
+                        <div class="alert alert-success rounded-3 mb-4">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-check-circle fs-4 me-2"></i>
+                                <div>
+                                    سفارش شما با شماره سفارش <strong>{{ $order->id }}</strong> با موفقیت در سیستم ثبت شد.
+                                </div>
+                            </div>
+                        </div>
+                    @elseif(session('transaction-error'))
+                        <div class="alert alert-warning rounded-3 mb-4">
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-exclamation-circle fs-4 me-2"></i>
+                                <div>
+                                    <strong>سفارش با شماره {{ $order->id }} ثبت شد اما پرداخت ناموفق بود.</strong>
+                                    <p class="mb-0 mt-1 small">برای جلوگیری از لغو سیستمی سفارش، تا ۱ ساعت پس از ثبت سفارش پرداخت را انجام دهید.</p>
+                                    <p class="mb-0 small text-muted">چنانچه طی این فرایند مبلغی از حساب شما کسر شده است، طی ۷۲ ساعت آینده به حساب شما باز خواهد گشت.</p>
+                                    @if($order->status == 'unpaid')
+                                        <a href="{{ route('front.orders.pay', ['order' => $order]) . '?gateway=' . ($order->gatewayRelation ? $order->gatewayRelation->key : 'wallet') }}"
+                                           class="btn main-color-one-bg btn-sm mt-2 border-0">
+                                            پرداخت سفارش
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @elseif(session('error'))
+                        <div class="alert alert-danger rounded-3 mb-4">
+                            <i class="bi bi-x-circle me-2"></i>
+                            <strong>{{ session('error') }}</strong>
+                        </div>
+                    @endif
+
+                    @if(session('success'))
+                        <div class="alert alert-success rounded-3 mb-4">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <strong>{{ session('success') }}</strong>
+                        </div>
+                    @endif
+
                     {{-- اطلاعات کلی سفارش --}}
                     <div class="row g-3 pb-3 mb-3 border-bottom">
                         <div class="col-md-3 col-6">
@@ -238,7 +237,7 @@
                                 <div class="text-muted small">نوع پرداخت</div>
                                 <div class="fw-bold">
                                     @if($isInstallment)
-                                        <span class="badge bg-info"><i class="fas fa-money-check-alt"></i> اقساطی</span>
+                                        <span class="badge bg-info"><i class="bi bi-cash-coin"></i> اقساطی</span>
                                     @elseif ($order->walletHistory)
                                         کیف پول
                                     @else
@@ -277,7 +276,7 @@
                                         مبلغ قابل پرداخت
                                     @endif
                                 </div>
-                                <div class="fw-bold fs-5 text-primary">{{ number_format($displayPayable) }} تومان</div>
+                                <div class="fw-bold fs-5 main-color-one-color">{{ number_format($displayPayable) }} تومان</div>
                                 @if($isInstallment)
                                     <small class="text-muted d-block">از مجموع {{ number_format($installmentPlan->total_payable) }} تومان</small>
                                 @endif
@@ -308,8 +307,8 @@
                                         </select>
                                     </div>
                                     <div class="col-md-3 col-5">
-                                        <button type="submit" class="btn btn-warning btn-sm w-100">
-                                            <i class="fas fa-credit-card"></i> پرداخت پیش‌پرداخت
+                                        <button type="submit" class="btn btn-warning btn-sm w-100 border-0">
+                                            <i class="bi bi-credit-card"></i> پرداخت پیش‌پرداخت
                                         </button>
                                     </div>
                                 </form>
@@ -332,7 +331,7 @@
                                         </select>
                                     </div>
                                     <div class="col-md-3 col-5">
-                                        <button type="submit" class="btn btn-primary btn-sm w-100">پرداخت سفارش</button>
+                                        <button type="submit" class="btn main-color-one-bg btn-sm w-100 border-0">پرداخت سفارش</button>
                                     </div>
                                 </form>
                             </div>
@@ -348,14 +347,14 @@
 
                         @php
                             $statusSteps = [
-                                'w-pending' => ['label' => 'در انتظار بررسی', 'step' => 1, 'color' => '#ffc107', 'icon' => 'fa-clock'],
-                                'pending' => ['label' => 'در حال بررسی', 'step' => 2, 'color' => '#fd7e14', 'icon' => 'fa-magnifying-glass'],
-                                'processing' => ['label' => 'در حال پردازش', 'step' => 3, 'color' => '#0d6efd', 'icon' => 'fa-gear'],
-                                'waiting' => ['label' => 'منتظر ارسال', 'step' => 4, 'color' => '#0dcaf0', 'icon' => 'fa-hourglass-half'],
-                                'sent' => ['label' => 'ارسال شد', 'step' => 5, 'color' => '#6f42c1', 'icon' => 'fa-truck-fast'],
-                                'post-sent' => ['label' => 'تحویل به پست', 'step' => 6, 'color' => '#20c997', 'icon' => 'fa-box'],
-                                'delivered' => ['label' => 'تحویل داده شد', 'step' => 7, 'color' => '#198754', 'icon' => 'fa-check-circle'],
-                                'canceled' => ['label' => 'لغو شد', 'step' => 0, 'color' => '#dc3545', 'icon' => 'fa-ban']
+                                'w-pending' => ['label' => 'در انتظار بررسی', 'step' => 1, 'color' => '#ffc107', 'icon' => 'bi-clock'],
+                                'pending' => ['label' => 'در حال بررسی', 'step' => 2, 'color' => '#fd7e14', 'icon' => 'bi-search'],
+                                'processing' => ['label' => 'در حال پردازش', 'step' => 3, 'color' => '#0d6efd', 'icon' => 'bi-gear'],
+                                'waiting' => ['label' => 'منتظر ارسال', 'step' => 4, 'color' => '#0dcaf0', 'icon' => 'bi-hourglass-split'],
+                                'sent' => ['label' => 'ارسال شد', 'step' => 5, 'color' => '#6f42c1', 'icon' => 'bi-truck'],
+                                'post-sent' => ['label' => 'تحویل به پست', 'step' => 6, 'color' => '#20c997', 'icon' => 'bi-box'],
+                                'delivered' => ['label' => 'تحویل داده شد', 'step' => 7, 'color' => '#198754', 'icon' => 'bi-check-circle'],
+                                'canceled' => ['label' => 'لغو شد', 'step' => 0, 'color' => '#dc3545', 'icon' => 'bi-slash-circle']
                             ];
 
                             $isDownloadGroup = $group['is_download_group'] ?? false;
@@ -368,14 +367,14 @@
                         @endphp
 
 
-                        <div class="card border rounded-3 mb-4 overflow-hidden">
+                        <div class="content-box border rounded-3 mb-4 overflow-hidden">
                             {{-- هدر مرسوله --}}
-                            <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center flex-wrap">
+                            <div class="bg-light py-2 px-3 d-flex justify-content-between align-items-center flex-wrap border-bottom">
                                 <div class="d-flex align-items-center gap-2">
                                     @if($group['seller_logo'])
                                         <img src="{{ $group['seller_logo'] }}" width="32" height="32" class="rounded-circle object-fit-cover">
                                     @else
-                                        <i class="fas fa-store fs-4 text-secondary"></i>
+                                        <i class="bi bi-shop fs-4 text-secondary"></i>
                                     @endif
                                     <div>
                                         <span class="fw-bold">{{ $group['seller_name'] }}</span>
@@ -391,7 +390,7 @@
 
                             </div>
 
-                            <div class="card-body p-3">
+                            <div class="p-3">
                                 {{-- اطلاعات ارسال --}}
                                 <div class="row g-3 small mb-3 pb-2 border-bottom">
                                     <div class="col-md-3 col-6">
@@ -436,14 +435,14 @@
 
                                 @if($group['cancel_reason'])
                                     <div class="alert alert-warning py-2 small mb-3">
-                                        <i class="fas fa-info-circle me-1"></i>
+                                        <i class="bi bi-info-circle me-1"></i>
                                         <strong>دلیل لغو:</strong> {{ $group['cancel_reason'] }}
                                     </div>
                                 @endif
 
                                 @if($group['refunded'])
                                     <div class="alert alert-info py-2 small mb-3">
-                                        <i class="fas fa-check-circle me-1"></i>
+                                        <i class="bi bi-check-circle me-1"></i>
                                         وجه این سفارش به کیف پول شما برگشت داده شده است.
                                     </div>
                                 @endif
@@ -462,7 +461,7 @@
                                     @endif
                                     <div class="col-4">
                                         <div class="text-muted">جمع نهایی مرسوله</div>
-                                        <div class="fw-bold text-primary">{{ number_format($group['total'] + $group['shipping_cost']-$group['discount']) }} تومان</div>
+                                        <div class="fw-bold main-color-one-color">{{ number_format($group['total'] + $group['shipping_cost']-$group['discount']) }} تومان</div>
                                     </div>
                                 </div>
 
@@ -489,7 +488,7 @@
 
                                             @else
                                                 <div class="bg-light rounded-3 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                                                    <i class="fas fa-image text-muted"></i>
+                                                    <i class="bi bi-image text-muted"></i>
                                                 </div>
                                             @endif
                                         </div>
@@ -504,7 +503,7 @@
                                             {{-- نشان وضعیت مرجوعی --}}
                                             @if($itemReturnInfo)
                                                 <div style="margin-bottom:8px;padding:4px 10px;background:{{ $itemReturnInfo['color'] }};color:#fff;border-radius:8px;font-size:0.72rem;font-weight:600;display:inline-block;">
-                                                    <i class="fas {{ $itemReturnInfo['icon'] }}"></i> {{ $itemReturnInfo['label'] }}
+                                                    <i class="bi {{ $itemReturnInfo['icon'] }}"></i> {{ $itemReturnInfo['label'] }}
                                                 </div>
                                             @endif
 
@@ -540,12 +539,12 @@
                 </span>
                                                                 @elseif($groupName == 'گارانتی')
                                                                     <span class="order-product-attribute">
-                    <i class="fas fa-shield-alt me-1"></i>
+                    <i class="bi bi-shield-check me-1"></i>
                     {{ $groupName }}: {{ $attribute['name'] }}
                 </span>
                                                                 @elseif($groupName == 'سایز')
                                                                     <span class="order-product-attribute">
-                    <i class="fas fa-ruler me-1"></i>
+                    <i class="bi bi-rulers me-1"></i>
                     {{ $groupName }}: {{ $attribute['name'] }}
                 </span>
                                                                 @else
@@ -591,7 +590,7 @@
                                                         <div style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
                                                             <div style="display:flex;align-items:center;gap:8px;">
                                                                 <div style="width:28px;height:28px;border-radius:50%;background:#10b981;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                                                    <i class="fas fa-check text-white" style="font-size:0.7rem;"></i>
+                                                                    <i class="bi bi-check text-white" style="font-size:0.7rem;"></i>
                                                                 </div>
                                                                 <div>
                                                                     <span style="color:#10b981;font-size:0.82rem;font-weight:700;">قابل بازگشت توسط مشتری</span>
@@ -600,12 +599,12 @@
                                                             </div>
                                                             <a href="{{ route('front.returns.create', ['order' => $order, 'orderItem' => $item]) }}"
                                                                style="background:#10b981;color:#fff;padding:6px 16px;border-radius:8px;font-size:0.78rem;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-                                                                <i class="fas fa-undo-alt"></i> درخواست مرجوعی
+                                                                <i class="bi bi-arrow-counterclockwise"></i> درخواست مرجوعی
                                                             </a>
                                                         </div>
                                                         <div style="padding:8px 14px;background:#f0fdf4;border-top:1px solid #d1fae5;">
                                                             <small style="color:#64748b;font-size:0.72rem;display:flex;align-items:center;gap:4px;">
-                                                                <i class="fas fa-info-circle"></i>
+                                                                <i class="bi bi-info-circle"></i>
                                                                 برای آگاهی از شرایط مرجوعی، قوانین بازگشت کالا را مطالعه کنید.
                                                             </small>
                                                         </div>
@@ -615,7 +614,7 @@
                                                     {{-- مهلت مرجوعی تمام شده --}}
                                                     <div style="border:1px solid #f1f5f9;border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:8px;">
                                                         <div style="width:28px;height:28px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                                            <i class="fas fa-clock text-muted" style="font-size:0.72rem;"></i>
+                                                            <i class="bi bi-clock text-muted" style="font-size:0.72rem;"></i>
                                                         </div>
                                                         <div>
                                                             <span style="color:#94a3b8;font-size:0.8rem;font-weight:600;">مهلت مرجوعی به پایان رسیده است</span>
@@ -629,7 +628,7 @@
                                                         <div style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
                                                             <div style="display:flex;align-items:center;gap:8px;">
                                                                 <div style="width:28px;height:28px;border-radius:50%;background:{{ $itemReturnInfo['color'] }};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                                                    <i class="fas {{ $itemReturnInfo['icon'] }} text-white" style="font-size:0.72rem;"></i>
+                                                                    <i class="bi {{ $itemReturnInfo['icon'] }} text-white" style="font-size:0.72rem;"></i>
                                                                 </div>
                                                                 <div>
                                                                     <span style="color:{{ $itemReturnInfo['color'] }};font-size:0.82rem;font-weight:700;">{{ $itemReturnInfo['label'] }}</span>
@@ -641,14 +640,14 @@
                                                             @if($item->returnRequest)
                                                                 <a href="{{ route('front.returns.show', $item->returnRequest) }}"
                                                                    style="background:{{ $itemReturnInfo['color'] }};color:#fff;padding:6px 16px;border-radius:8px;font-size:0.78rem;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-                                                                    <i class="fas fa-eye"></i> مشاهده جزئیات
+                                                                    <i class="bi bi-eye"></i> مشاهده جزئیات
                                                                 </a>
                                                             @endif
                                                         </div>
                                                         @if($itemReturnStatus === 'completed' && $item->returnRequest?->refund_to_wallet)
                                                             <div style="padding:6px 14px;border-top:1px solid {{ $itemReturnInfo['color'] }}22;">
                                                                 <small style="color:#10b981;font-size:0.72rem;display:flex;align-items:center;gap:4px;">
-                                                                    <i class="fas fa-wallet"></i>
+                                                                    <i class="bi bi-wallet2"></i>
                                                                     مبلغ {{ number_format($item->returnRequest->refund_amount) }} تومان به کیف پول شما برگشت داده شد.
                                                                 </small>
                                                             </div>
@@ -656,7 +655,7 @@
                                                         @if($itemReturnStatus === 'rejected' && $item->returnRequest?->rejection_reason)
                                                             <div style="padding:6px 14px;border-top:1px solid {{ $itemReturnInfo['color'] }}22;">
                                                                 <small style="color:#ef4444;font-size:0.72rem;display:flex;align-items:center;gap:4px;">
-                                                                    <i class="fas fa-info-circle"></i>
+                                                                    <i class="bi bi-info-circle"></i>
                                                                     دلیل رد: {{ $item->returnRequest->rejection_reason }}
                                                                 </small>
                                                             </div>
@@ -669,29 +668,27 @@
                                     @if ($item->product && $item->product->isDownload() && $item->get_price && $item->get_price->isDownloadable())
                                         <div class="mt-3 mr-auto">
                                             <a href="{{ $item->get_price->downloadLink() }}" class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-download me-1"></i> دانلود محصول
+                                                <i class="bi bi-download me-1"></i> دانلود محصول
                                             </a>
                                         </div>
                                     @endif
-                            </div>
-                            @endforeach
-                        </div>
+                                    @endforeach
 
                         {{-- فقط برای محصولات فیزیکی وضعیت ارسال نمایش داده شود --}}
                         @if(!($isDownloadGroup ?? false) and $order->status == 'paid')
-                            <div class="container-fluid">
+                            <div class="container-fluid px-0">
                                 <div class="order-status-container mb-3">
 
                                     @if($isCanceled)
                                         {{-- وضعیت لغو شده --}}
-                                        <div class="card bg-danger bg-opacity-10 border-0 p-2">
+                                        <div class="bg-danger bg-opacity-10 border-0 p-2 rounded-3">
                                             <div class="d-flex align-items-center gap-2">
-                                                <i class="fas fa-ban text-danger fs-5"></i>
+                                                <i class="bi bi-slash-circle text-danger fs-5"></i>
                                                 <span class="text-white fw-bold">سفارش لغو شده است</span>
                                             </div>
                                             @if($group['cancel_reason'])
                                                 <div class="mt-1 small text-muted">
-                                                    <i class="fas fa-info-circle me-1"></i> دلیل: {{ $group['cancel_reason'] }}
+                                                    <i class="bi bi-info-circle me-1"></i> دلیل: {{ $group['cancel_reason'] }}
                                                 </div>
                                             @endif
                                         </div>
@@ -727,11 +724,11 @@
                                 background-color: {{ $isCompleted ? $progressColor : ($isActive ? $progressColor : '#f1f5f9') }};
                                 border: 2px solid {{ $isCompleted || $isActive ? $progressColor : '#cbd5e1' }};">
                                                             @if($isCompleted)
-                                                                <i class="fas fa-check text-white" style="font-size: 10px;"></i>
+                                                                <i class="bi bi-check text-white" style="font-size: 10px;"></i>
                                                             @elseif($isActive)
-                                                                <i class="fas {{ $stepIcon }} text-white" style="font-size: 10px;"></i>
+                                                                <i class="bi {{ $stepIcon }} text-white" style="font-size: 10px;"></i>
                                                             @else
-                                                                <i class="fas {{ $stepIcon }} text-muted" style="font-size: 10px;"></i>
+                                                                <i class="bi {{ $stepIcon }} text-muted" style="font-size: 10px;"></i>
                                                             @endif
                                                         </div>
 
@@ -758,7 +755,7 @@
                                                         {{-- نشانگر مرحله فعال --}}
                                                         @if($isActive)
                                                             <div class="small text-success mt-1">
-                                                                <i class="fas fa-spinner fa-pulse"></i>
+                                                                <i class="bi bi-arrow-repeat"></i>
                                                             </div>
                                                         @endif
                                                     </div>
@@ -774,30 +771,31 @@
                                 </div>
                             </div>
                         @endif
+                    </div>
                 </div>
                 @endforeach
 
                 {{-- تاریخچه تراکنش‌ها --}}
                 @if ($order->transactions->count())
-                    <div class="card border rounded-3 overflow-hidden">
-                        <div class="card-header bg-light py-2" data-bs-toggle="collapse" data-bs-target="#transactions" style="cursor: pointer;">
+                    <div class="content-box border rounded-3 overflow-hidden">
+                        <div class="bg-light py-2 px-3" data-bs-toggle="collapse" data-bs-target="#transactions" style="cursor: pointer;">
                             <div class="d-flex align-items-center gap-2">
-                                <i class="fas fa-chevron-down small"></i>
+                                <i class="bi bi-chevron-down small"></i>
                                 <span class="fw-bold">تاریخچه تراکنش‌ها</span>
                                 <span class="badge bg-secondary">{{ $order->transactions->count() }}</span>
                             </div>
                         </div>
                         <div id="transactions" class="collapse">
-                            <div class="card-body p-0">
+                            <div class="p-0">
                                 <div class="list-group list-group-flush">
                                     @foreach($order->transactions()->latest()->get() as $transaction)
                                         <div class="list-group-item">
                                             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                                                 <div class="d-flex align-items-center gap-2">
                                                     @if($transaction->status)
-                                                        <i class="fas fa-check-circle text-success fs-5"></i>
+                                                        <i class="bi bi-check-circle text-success fs-5"></i>
                                                     @else
-                                                        <i class="fas fa-times-circle text-danger fs-5"></i>
+                                                        <i class="bi bi-x-circle text-danger fs-5"></i>
                                                     @endif
                                                     <div>
                                                         <div class="fw-bold">
@@ -834,8 +832,7 @@
                 @endif
             </div>
         </div>
-    </section>
-
-
+    </div>
+    </div>
 
 @endsection

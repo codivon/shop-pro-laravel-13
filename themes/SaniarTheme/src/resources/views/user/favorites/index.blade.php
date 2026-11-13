@@ -1,80 +1,68 @@
 @extends('front::user.layouts.master')
 
 @section('user-content')
-    <div class="col-lg-12 col-xs-12 pull-right">
-        <div class="headline-profile">
-            <span>لیست علاقه مندی</span>
-        </div>
-        <div class="profile-stats">
-            @if($favorites->count())
-                @foreach ($favorites as $favorite)
-            <div class="profile-recent-fav profile-favorites-fav">
-                <a href="{{ route('front.products.show', ['product' => $favorite->product]) }}" class="img-profile-favorites"><img
-                        src="{{  $favorite->product->image ? asset($favorite->product->image) : asset('/no-image-product.svg') }}" alt="{{ $favorite->product->title }}"></a>
-                <div class="profile-recent-fav-col">
-                    <a href="{{ route('front.products.show', ['product' => $favorite->product]) }}" style="font-size:14px;">{{ $favorite->product->title }}</a>
-                    <div class="profile-recent-fav-price">{{ $favorite->product->getLowestPrice() }}</div>
-                    <div class="profile-recent-fav-remove favorite-remove-btn" data-action="{{ route('front.favorites.destroy', ['favorite' => $favorite]) }}"  data-toggle="modal" data-target="#favorite-delete-modal"><a><i class="fa fa-trash"></i></a></div>
-                    <a href="{{ route('front.products.show', ['product' => $favorite->product]) }}"  class="profile-wishlist">مشاهده محصول<i class="fa fa-angle-left"></i></a>
-                </div>
-            </div>
-                @endforeach
-            @else
-                <div class="row">
-                    <div class="col-12">
-                        <div class="page dt-sl dt-sn pt-3">
-                            <p class="text-center">چیزی برای نمایش وجود ندارد!</p>
-                        </div>
+
+    {{-- لیست علاقه مندی ها — ریسکین‌شده با کامپوننت محصولات قالب سانیار (favorite.html) --}}
+    <div class="ui-boxs">
+        <div class="ui-box">
+            <div class="ui-box-item ui-box-white">
+                <div class="ui-box-item-title">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="fw-bold">علاقه مندی ها</h4>
                     </div>
                 </div>
-            @endif
-
+                <div class="ui-box-item-desc">
+                    @if($favorites->count())
+                        <div class="product-list-row">
+                            @foreach ($favorites as $favorite)
+                                <div class="product-row">
+                                    <div class="product-row-desc">
+                                        <a href="{{ route('front.products.show', ['product' => $favorite->product]) }}">
+                                            <div class="product-row-desc-item">
+                                                <div class="product-row-img">
+                                                    <img src="{{ $favorite->product->image ? asset($favorite->product->image) : asset('/no-image-product.svg') }}"
+                                                         alt="{{ $favorite->product->title }}" width="100">
+                                                </div>
+                                                <div class="product-row-title">
+                                                    <h6>{{ $favorite->product->title }}</h6>
+                                                    <div class="product-price">
+                                                        <p>{{ $favorite->product->getLowestPrice() }}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="product-row-icon">
+                                            <a href="{{ route('front.products.show', ['product' => $favorite->product]) }}"
+                                               class="btn btn-light btn-sm" title="مشاهده محصول"><i class="bi bi-eye"></i></a>
+                                            <a class="btn btn-danger btn-sm favorite-remove-btn"
+                                               data-action="{{ route('front.favorites.destroy', ['favorite' => $favorite]) }}"
+                                               data-bs-toggle="modal" data-bs-target="#favorite-delete-modal"
+                                               title="حذف از علاقه مندی ها"><i class="bi bi-trash text-white"></i></a>
+                                            <a href="{{ route('front.products.show', ['product' => $favorite->product]) }}"
+                                               class="btn main-color-one-bg btn-sm" title="افزودن به سبد"><i class="bi bi-cart-plus text-white"></i></a>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-center text-muted py-4">چیزی برای نمایش وجود ندارد!</p>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="pager pager-back-none">
-        {{$favorites->links("pagination::bootstrap-4")}}
+    <div class="my-paginate mt-4">
+        <nav aria-label="Page navigation">
+            {{$favorites->links("pagination::bootstrap-4")}}
+        </nav>
     </div>
+
 @endsection
 
 @push('scripts')
-    <!-- Start favorite delete -->
-    <div class="modal fade" id="favorite-delete-modal" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-sm" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="now-ui-icons location_pin"></i>
-                        حذف از لیست علاقمندی ها
-                    </h5>
-                    <button type="button" class="close" data-dismiss="modal"
-                        aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-12">
-                            <p>آیا تمایل به حذف این محصول از لیست علاقمندی ها دارید؟</p>
-
-                            <div class="form-ui dt-sl">
-                                <form id="favorite-remove-form" action="#" method="POST">
-                                    <div class="modal-body text-center">
-                                        @csrf
-                                        @method('delete')
-                                        <button type="submit" class="btn btn-danger btn-md">بله حذف شود</button>
-                                        <button class="btn btn-light" data-dismiss="modal">لغو</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- End favorite delete -->
-
+    @include('front::user.partials.favorite-delete-modal')
+    <script src="{{ theme_asset('js/pages/user/jquery-bs5-modal-compat.js') }}"></script>
     <script src="{{ theme_asset('js/pages/favorites/index.js') }}"></script>
 @endpush

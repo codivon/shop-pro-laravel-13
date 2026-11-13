@@ -1,96 +1,68 @@
 @extends('front::user.layouts.master')
 
-@push('styles')
-    <link rel="stylesheet" type="text/css" href="{{theme_asset('css/notifications.css')}}">
-@endpush
-
 @section('user-content')
-    <div id="messages-page" class="col-xl-9 col-lg-8 col-md-8 col-sm-12" style="margin-top: 60px">
-        <div class="notifications-page">
 
-            <div class="notif-page-header">
-                <div class="notif-page-title">
-                    <div class="notif-page-title-icon">
-                        <i class="mdi mdi-bell-ring"></i>
-                    </div>
-                    <div>
-                        <h2>{{ trans('front::messages.profile.all-notifications') }}</h2>
-                        <small>آخرین پیام‌ها و اعلان‌های شما در یک نگاه</small>
-                    </div>
-                </div>
+    {{-- اطلاعیه ها — ریسکین‌شده با کامپوننت اطلاعیه قالب سانیار (notification.html) --}}
+    <div class="ui-boxs">
+        <div class="ui-box">
+            <div class="ui-box-item ui-box-white">
+                <div class="ui-box-item-title">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <h4 class="fw-bold">{{ trans('front::messages.profile.all-notifications') }}</h4>
 
-                <div class="notif-page-stats">
-                    <div class="notif-stat">
-                        <div class="notif-stat-num">{{ $notifications->total() ?? $notifications->count() }}</div>
-                        <div class="notif-stat-label">کل اعلان‌ها</div>
-                    </div>
-                    <div class="notif-stat">
-                        <div class="notif-stat-num">
-                            {{ Auth::user()->unreadNotifications()->count() }}
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-light text-dark rounded-pill me-2">
+                                کل اعلان‌ها: {{ $notifications->total() ?? $notifications->count() }}
+                            </span>
+                            <span class="badge rounded-pill main-color-one-bg">
+                                خوانده‌نشده: {{ Auth::user()->unreadNotifications()->count() }}
+                            </span>
                         </div>
-                        <div class="notif-stat-label">خوانده‌نشده</div>
                     </div>
                 </div>
-            </div>
+                <div class="ui-box-item-desc">
+                    @if($notifications->count())
+                        @foreach($notifications as $notification)
+                            @php
+                                $isRead = ! is_null($notification->userRecipients()->first()->read_at);
+                            @endphp
 
-            <div class="content-overlay"></div>
-            <div class="header-navbar-shadow"></div>
-
-            <div class="content-body">
-                <section id="statistics-card">
-                    <div class="row">
-                        <div class="col-lg-12 col-12 mb-4">
-                            <div class="notif-list-grid">
-                                @if($notifications->count())
-                                    @foreach($notifications as $notification)
-                                        @php
-                                            $isRead = ! is_null($notification->userRecipients()->first()->read_at);
-                                        @endphp
-
-                                            <div class="notif-item {{ $isRead ? 'read' : 'unread' }}">
-                                                @if(! $isRead)
-                                                    <span class="notif-item-badge"></span>
-                                                @endif
-
-                                                <div class="notif-item-icon">
-                                                    <i class="mdi mdi-comment-text-outline"></i>
-                                                </div>
-                                                <div class="notif-item-body">
-                                                    <div class="notif-item-header">
-                                                        <h5 class="notif-item-title">
-                                                            {{ $notification->title }}
-                                                        </h5>
-                                                        <span class="notif-item-time">
-                                                            <i class="mdi mdi-clock-outline"></i>
-                                                            {{ jdate($notification->created_at)->ago() }}
-                                                        </span>
-                                                    </div>
-                                                    <p class="notif-item-text">
-                                                        {{ $notification->message }}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                    @endforeach
-                                @else
-                                    <div class="notif-empty-state">
-                                        <div class="notif-empty-icon-wrap">
-                                            <i class="mdi mdi-bell-off-outline"></i>
-                                        </div>
-                                        <h5 class="notif-empty-title">صندوق اعلان شما خالی است</h5>
-                                        <p class="notif-empty-text">
-                                            وقتی اعلان جدیدی دریافت کنید، اینجا نمایش داده می‌شود
-                                        </p>
-                                    </div>
-                                @endif
+                            <div class="alert {{ $isRead ? 'alert-light' : 'alert-warning' }}" role="alert">
+                                <div class="notifi-title">
+                                    <h6 class="alert-link">
+                                        @if(! $isRead)
+                                            <span class="badge rounded-pill main-color-one-bg ms-1">جدید</span>
+                                        @endif
+                                        {{ $notification->title }}
+                                    </h6>
+                                    <p class="text-muted">
+                                        <i class="bi bi-clock"></i>
+                                        {{ jdate($notification->created_at)->ago() }}
+                                    </p>
+                                </div>
+                                <div class="notifi-desc">
+                                    <p>{{ $notification->message }}</p>
+                                </div>
                             </div>
+                        @endforeach
+                    @else
+                        <div class="alert alert-light text-center" role="alert">
+                            <i class="bi bi-bell-slash font-25 d-block mb-2 text-muted"></i>
+                            <h6>صندوق اعلان شما خالی است</h6>
+                            <p class="mb-0 text-muted">وقتی اعلان جدیدی دریافت کنید، اینجا نمایش داده می‌شود</p>
                         </div>
-                    </div>
-                </section>
-
-                {{ $notifications->links('front::components.paginate') }}
+                    @endif
+                </div>
             </div>
         </div>
     </div>
+
+    <div class="my-paginate mt-4">
+        <nav aria-label="Page navigation">
+            {{ $notifications->links('front::components.paginate') }}
+        </nav>
+    </div>
+
 @endsection
 
 @include('back.partials.plugins', ['plugins' => ['persian-datepicker', 'jquery.validate']])

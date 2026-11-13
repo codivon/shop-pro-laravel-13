@@ -60,6 +60,15 @@ $(document).ready(function() {
         window.history.pushState({}, '', url);
     }
 
+    // آدرس آرشیو مقالات — از data-url روی .articles-index-page (بدون اسکریپت اینلاین در بلید)
+    function getArticlesIndexUrl() {
+        var pageEl = document.querySelector('.articles-index-page');
+        if (pageEl && pageEl.dataset.url) {
+            return pageEl.dataset.url;
+        }
+        return (typeof articlesIndexUrl !== 'undefined') ? articlesIndexUrl : window.location.pathname;
+    }
+
     // تابع بارگذاری مقالات
     function loadArticles(filters, shouldUpdateUrl = true) {
         block('.articles-index-page')
@@ -70,7 +79,7 @@ $(document).ready(function() {
         $('#pagination-container').html('');
 
         $.ajax({
-            url: articlesIndexUrl,
+            url: getArticlesIndexUrl(),
             type: 'GET',
             data: filters,
             success: function(response) {
