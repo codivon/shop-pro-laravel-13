@@ -259,7 +259,7 @@
                                         </li>
 
                                         <li>
-                                            <a href="{{ route('front.user.comments') }}" class="{{ active_class('front.user.comments') }}">
+                                            <a href="{{ route('front.comments.index') }}" class="{{ active_class('front.comments.index') }}">
                                                 <i class="mdi mdi-glasses"></i>
                                                 دیدگاه های شما
                                             </a>

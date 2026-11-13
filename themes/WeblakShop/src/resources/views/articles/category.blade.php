@@ -1,7 +1,7 @@
 @extends('front::layouts.master', ['title' => $category->title])
 
 @push('meta')
-    <link rel="canonical" href="{{ route('front.blogs.category', ['category' => $category]) }}" />
+    <link rel="canonical" href="{{ url()->current() }}" />
 @endpush
 
 @section('content')
@@ -15,7 +15,7 @@
                         <div class="breadcrumb dt-sl">
                             <nav>
                                 <a href="/">خانه</a>
-                                <a href="{{ route('front.blogs.index') }}">وبلاگ</a>
+                                <a href="{{ route('front.blog.index') }}">وبلاگ</a>
                                 <a href="#">{{ $category->title }}</a>
                             </nav>
                         </div>

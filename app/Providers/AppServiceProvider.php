@@ -311,11 +311,34 @@ class AppServiceProvider extends ServiceProvider
     {
         // register theme service provider
 
+        /*
+         * فاز ۱۵۲ — هر provider قالب در register() فایل helpers.php خود را require می‌کند؛
+         * ثبت provider قالب «دوم» در همان پروسه (مثلاً صدا زدن loadTheme وسط درخواست
+         * نصب/فعال‌سازی وقتی قالب قبلی در بوت ثبت شده) به
+         * «Fatal: Cannot redeclare function …» (مثل production_throttle) می‌رسد.
+         * قالب فقط یک بار در هر پروسه ثبت می‌شود؛ سوییچ قالب از درخواست بعدی
+         * با خواندن دوبارهٔ CURRENT_THEME از .env اعمال می‌شود.
+         */
+        static $loadedTheme = null;
+
         $theme = get_current_theme();
 
-        if ($theme && class_exists($theme['service_provider'])) {
+        if ($theme === null) {
+            return;
+        }
+
+        if ($loadedTheme !== null && $loadedTheme !== $theme['name']) {
+            \Illuminate\Support\Facades\Log::warning(
+                'سوییچ قالب در همان پروسه نادیده گرفته شد؛ قالب «'.$loadedTheme.'» از قبل ثبت شده و «'.$theme['name'].'» از درخواست بعدی فعال می‌شود.'
+            );
+
+            return;
+        }
+
+        if (class_exists($theme['service_provider'])) {
             app()->register($theme['service_provider']);
-        } elseif ($theme) {
+            $loadedTheme = $theme['name'];
+        } else {
             // فاز ۶۸ — قالب فعال قابل بارگذاری نیست (مثلاً پوشه تغییرنام یافته ولی
             // namespace قدیمی مانده). قبلاً بی‌صدا رد می‌شد و صفحهٔ اصلی ۴۰۴ می‌داد؛
             // حالا دست‌کم در لاگ ردیابی می‌شود.
