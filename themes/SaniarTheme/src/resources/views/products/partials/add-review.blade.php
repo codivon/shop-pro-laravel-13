@@ -173,7 +173,5 @@
 </div>
 @push('scripts')
     <script src="{{theme_asset('js/bootstrap-slider.min.js')}}"></script>
-    <script>
-        $('input[name=rating]').val(3);
-    </script>
+    <script src="{{theme_asset('js/pages/products/product-page-init.js')}}"></script>
 @endpush

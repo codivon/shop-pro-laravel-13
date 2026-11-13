@@ -3,6 +3,9 @@
     $siteStoreCount = 0;
 @endphp
 
+{{-- جدول فروشندگان — مارکاپ سانیار multi-seller --}}
+<table class="table main-table rounded-0 mb-0 align-middle">
+    <tbody class="text-center">
 @foreach($attribute_prices as $attribute_price)
     @php
         $product = $products[$attribute_price->product_id] ?? null;
@@ -30,7 +33,7 @@
     @endphp
 
     @if($isSiteStore)
-        <div class="table-suppliers-row table-suppliers-row-active">
+        <tr class="table-suppliers-row table-suppliers-row-active">
             @include('front::products.partials.store-row', [
                 'sellerName' => option('info_site_title', 'او پی شاپ'),
                 'rating' => 5,
@@ -41,10 +44,10 @@
                 'guarantees' => $guarantees,
                 'isNewSeller' => false
             ])
-        </div>
+        </tr>
     @else
         @php $displayedStores[] = $attribute_price->id; @endphp
-        <div class="table-suppliers-row {{ $loop->first ? 'table-suppliers-row-active' : '' }} {{ $loop->index > 2 ? 'in-filter in-list' : '' }}">
+        <tr class="table-suppliers-row {{ $loop->first ? 'table-suppliers-row-active' : '' }} {{ $loop->index > 2 ? 'in-filter in-list' : '' }}">
             @include('front::products.partials.store-row', [
                 'sellerName' => $variant->business_name,
                 'sellerUrl' => route('front.showSellerStore', ['seller' => $variant->seller]),
@@ -56,9 +59,11 @@
                 'guarantees' => $guarantees,
                 'isNewSeller' => empty($variant->operation)
             ])
-        </div>
+        </tr>
     @endif
 @endforeach
+    </tbody>
+</table>
 
 <input name="count_stores" type="hidden" value="{{ count($displayedStores) }}">
 <input name="count_stores_zero" type="hidden" value="فروشنده {{ option('info_site_title', 'او پی شاپ') }}">

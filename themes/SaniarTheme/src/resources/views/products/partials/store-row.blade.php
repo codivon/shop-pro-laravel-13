@@ -10,96 +10,67 @@
     'isNewSeller' => false
 ])
 
-<div class="table-suppliers-cell table-suppliers-cell-title">
-    <div class="seller-wrapper">
-        <p class="table-suppliers-seller-name">
-            <span>
-                @if($sellerUrl)
-                    <a href="{{ $sellerUrl }}">{{ $sellerName }}</a>
-                @else
-                    <a>{{ $sellerName }}</a>
-                @endif
-            </span>
-        </p>
-        <div class="table-suppliers-rating">
-            @if($isSiteStore)
-                <div class="product-seller-second-line">
-                    عملکرد:
-                    <span class="u-text-bold">{{ $rating }}</span>
-                    از ۵
-                    <span class="u-divider"></span>
-                    <span class="u-text-bold">{{ $satisfaction }}٪</span>
-                    رضایت از کالا
-                </div>
-            @else
-                @if($isNewSeller)
-                    <div class="product-seller-second-line">فروشنده جدید</div>
-                @else
-                    <div class="product-seller-second-line">
-                        عملکرد:
-                        <span class="u-text-bold">{{ $rating }}</span>
-                        از ۵
-                        <span class="u-divider"></span>
-                        <span class="u-text-bold">{{ $satisfaction }}٪</span>
-                        رضایت از کالا
-                    </div>
-                @endif
-            @endif
+{{-- ردیف فروشنده — مارکاپ سانیار multi-seller (td های جدول) --}}
+
+<td>
+    <div class="d-flex align-items-start">
+        <div>
+            <i class="bi bi-shop"></i>
         </div>
-    </div>
-</div>
-
-<div class="table-suppliers-cell table-suppliers-cell-no-lead-time">
-    <div class="seller-wrapper">
-        <p>آماده ارسال</p>
-    </div>
-</div>
-
-<div class="table-suppliers-cell table-suppliers-cell-guarantee">
-    <div class="seller-wrapper">
-        @foreach($guarantees as $guarantee)
-            <span>{{ $guarantee }}</span>
-        @endforeach
-    </div>
-</div>
-
-<div class="table-suppliers-cell table-suppliers-cell-price">
-    <div class="seller-wrapper">
-        <div class="price-secondary">
-            <div class="price-secondary">
-                <div class="price-secondary">
-                    <div class="product-seller-row-price mb-3">
-                        @if($price->hasDiscount())
-                            <div class="product-seller-price-real text-danger">
-                                <del class="product-seller-price-prev text-danger font-size-16">
-                                    {{ number_format($price->regularPrice()) }}
-                                </del>
-                                تومان
-                                <div class="discount show-discount mr-3 t-25 r--10">
-                                    <span>{{ $price->discount() }}%</span>
-                                </div>
-                            </div>
-                        @endif
-                        <div class="product-seller-price-real">
-                            <div class="product-seller-price-prev font-size-20">
-                                {{ number_format($price->salePrice()) }}
-                            </div>
-                            تومان
-                        </div>
-                    </div>
-                </div>
+        <div class="text-start ms-2">
+            <h6 class="text-muted-2 font-14">
+                @if($sellerUrl)
+                    <a href="{{ $sellerUrl }}" class="text-decoration-none">{{ $sellerName }}</a>
+                @else
+                    <a class="text-decoration-none">{{ $sellerName }}</a>
+                @endif
+                @if($isSiteStore)
+                    <span class="success-label py-1 rounded-pill ms-1">منتخب</span>
+                @elseif($isNewSeller)
+                    <span class="danger-label py-1 rounded-pill ms-1">فروشنده جدید</span>
+                @endif
+            </h6>
+            <div class="d-flex align-items-center mt-2">
+                <p class="font-12 mb-0">
+                    <span class="text-success ms-1">{{ $satisfaction }}٪</span>
+                    <span class="text-muted">رضایت از کالا</span>
+                </p>
+                <p class="ps-1 ms-1 border-start font-12 mb-0">
+                    <span class="text-muted">عملکرد</span>
+                    <span class="text-success">{{ $rating }}</span>
+                </p>
             </div>
         </div>
     </div>
-</div>
+</td>
 
-<div class="table-suppliers-cell table-suppliers-cell-action">
-    <div class="seller-wrapper">
-        <a class="js-btn-add-to-cart add-to-cart"
-           data-price_id="{{ $price->id }}"
-           data-action="{{ route('front.cart.store', ['product' => $product]) }}"
-           data-product="{{ $product->slug }}">
-            افزودن به سبد
-        </a>
-    </div>
-</div>
+<td>
+    <i class="bi bi-box-seam me-1"></i>
+    <p class="d-inline mb-0 font-14">آماده ارسال</p>
+</td>
+
+<td>
+    @if(count($guarantees))
+        <i class="bi bi-shield-check me-1"></i>
+        <p class="d-inline font-14 mb-0">{{ implode('، ', $guarantees) }}</p>
+    @else
+        <span class="text-muted font-14">-</span>
+    @endif
+</td>
+
+<td>
+    @if($price->hasDiscount())
+        <del class="text-danger font-12 d-block">{{ number_format($price->regularPrice()) }}</del>
+    @endif
+    <p class="fw-bold text-muted-2 mb-0 d-inline font-16">{{ number_format($price->salePrice()) }}</p>
+    <span class="text-muted font-12">تومان</span>
+</td>
+
+<td class="font-14">
+    <a class="js-btn-add-to-cart add-to-cart btn py-2 border-0 main-color-one-bg waves-effect waves-light"
+       data-price_id="{{ $price->id }}"
+       data-action="{{ route('front.cart.store', ['product' => $product]) }}"
+       data-product="{{ $product->slug }}">
+        <i class="bi bi-basket text-white font-16 me-1"></i> افزودن به سبد خرید
+    </a>
+</td>

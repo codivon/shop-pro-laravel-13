@@ -1,324 +1,263 @@
+{{-- ستون اطلاعات محصول — مارکاپ سانیار product-meta --}}
+{{-- مهم: ریشهٔ .product-info-block با replaceWith در show.js جایگزین می‌شود؛ تغییر ندهید --}}
+<div class="col-lg-8 col-md-12 col-12 product-info-block">
 
-<div class="col-lg-8 col-md-12 col-xs-12 pull-left px-0 product-info-block" style="transform: none;">
-    <section style="transform: none;">
-        @if ($product->category)
-        <div class="product-headline">
-            <div class="product-title-container">
-                <div class="product-directory">
-                    <ul class="mb-0">
-                        @foreach ($product->category->parents() as $parent)
-                        <li>
-                            <a class="link-border" href="{{ route('front.products.category', ['category' => $parent]) }}">{{ $parent->title }}</a>
+    @if ($product->category)
+        {{-- مسیر دسته‌بندی کوچک بالای عنوان --}}
+        <div class="bread-crumb pb-2">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    @foreach ($product->category->parents() as $parent)
+                        <li class="breadcrumb-item">
+                            <a href="{{ route('front.products.category', ['category' => $parent]) }}"
+                               class="font-14 text-muted">{{ $parent->title }}</a>
                         </li>
-                            <li>
-                                <span>/</span>
-                            </li>
-                        @endforeach
+                    @endforeach
+                    <li class="breadcrumb-item">
+                        <a href="{{ route('front.products.category', ['category' => $product->category]) }}"
+                           class="font-14 text-muted">{{ $product->category->title }}</a>
+                    </li>
+                </ol>
+            </nav>
+        </div>
+    @endif
 
-                        <li>
-                            <a class="link-border" href="{{ route('front.products.category', ['category' => $product->category]) }}">{{ $product->category->title }}</a>
-                        </li>
-                    </ul>
-                    <h1 class="product-title">{{ $product->title }}</h1>
+    <div class="product-meta-title">
+        <div class="row align-items-baseline gy-2">
+            <div class="col-lg-8">
+                <h1 class="font-18 fw-bold mb-1">{{ $product->title }}</h1>
+                @if ($product->title_en)
+                    <p class="mb-0 mt-1 text-muted font-13" dir="ltr">{{ $product->title_en }}</p>
+                @endif
+            </div>
+            <div class="col-lg-4">
+                @if ($product->brand)
+                    <a href="{{ route('front.brands.show', ['brand' => $product->brand]) }}"
+                       class="text-lg-end d-block font-14 main-color-one-color fw-bold">
+                        برند: {{ $product->brand->name }}
+                    </a>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    <div class="product-meta-feature mt-3">
+        <div class="row gy-3">
+            <div class="col-lg-8">
+                @if ($product->specialSpecifications()->count())
+                    <div class="product-meta-feature-items">
+                        <h5 class="title font-16 mb-2">ویژگی های کالا</h5>
+                        <ul class="navbar-nav">
+                            @foreach ($product->specialSpecifications() as $specification)
+                                <li class="nav item {{ $loop->index >= 3 ? 'product-params-more' : '' }}">
+                                    <span>{{ $specification->name }}:</span>
+                                    <strong>{{ $specification->pivot->value }}</strong>
+                                </li>
+                            @endforeach
+                        </ul>
+                        @if ($product->specialSpecifications()->count() > 3)
+                            <a class="link-border product-params-more-handler" href="">
+                                <span class="show-more">موارد بیشتر</span>
+                                <span class="show-less">بستن</span>
+                            </a>
+                        @endif
+                    </div>
+                @endif
+
+                @if ($product->short_description)
+                    <div class="product-additional-info mt-2">
+                        <div class="product-additional-item is-masked">
+                            <p class="mb-0 font-13">{!! nl2br($product->short_description) !!}</p>
+                            <a class="mask-handler link-border" href="">
+                                <span class="show-more">مشاهده بیشتر</span>
+                                <span class="show-less">مشاهده کمتر</span>
+                            </a>
+                            <div class="shadow-box"></div>
+                        </div>
+                    </div>
+                @endif
+            </div>
+            <div class="col-lg-4">
+                <div class="product-meta-rating">
+                    @if ($product->rating)
+                        <div class="d-flex align-items-center justify-content-lg-end">
+                            <div class="count-comment text-muted cursor-pointer" data-activate-tab="comments">
+                                {{ $product->reviews_count }} دیدگاه
+                            </div>
+                            <div class="count-rating ms-2">
+                                <span>({{ $product->reviews_count }}) {{ $product->rating }}</span>
+                                <i class="bi bi-star-fill"></i>
+                            </div>
+                        </div>
+                        @if ($product->comments()->accepted()->count())
+                            <div class="d-flex align-items-center justify-content-lg-end mt-1">
+                                <div class="count-comment text-muted cursor-pointer" data-activate-tab="questions">
+                                    {{ $product->comments()->accepted()->count() }} پرسش و پاسخ
+                                </div>
+                            </div>
+                        @endif
+                    @endif
+                </div>
+                @if ($product->suggestionCount())
+                    <div class="d-flex align-items-center justify-content-lg-end mt-2">
+                        <i class="bi bi-hand-thumbs-up-fill text-success"></i>
+                        <p class="text-muted font-13 mb-0 ms-1">
+                            <span>{{ $product->suggestionPercent() }}٪</span>
+                            ({{ $product->suggestionCount() }}) نفر از خریداران این کالا را پیشنهاد کردن
+                        </p>
+                    </div>
+                @endif
+                <div class="product-meta-garanty justify-content-lg-end justify-content-start mt-2">
+                    <i class="bi bi-shield-fill-check main-color-one-color"></i>
+                    <span class="text-muted font-13"> گارانتی اصالت و سلامت فیزیکی کالا </span>
                 </div>
             </div>
         </div>
-        @endif
+    </div>
 
+    @php
+        $prevAttribute = null;
+        $groups = [];
+        $selectedAttributesIds = [];
+        $groupIndex = 0;
+    @endphp
 
-            @if ($product->isPhysical())
-                @php
-                    $prev_attribute = null;
-                    $groups = null;
-                    $attributes_id = [];
-                @endphp
+    @foreach ($attributeGroups as $attributeGroup)
+        @php
+            $attributes = $product->get_attributes($attributeGroup, $prevAttribute, $groups, $selectedAttributesIds);
 
-         <div class="product-attributes product-info" style="transform: none;">
-            <div class="col-lg-8 col-md-8 col-xs-12 pull-right pr-0">
-                <div class="product-config">
-                    <span class="product-title-en">{{ $product->title_en }}</span>
-                    @if ($product->rating)
-                    <div class="product-engagement">
-                        <div class="product-engagement-item">
-                            <div class="product-engagement-rating">{{ $product->rating }}
-                                <span class="product-engagement-rating-num">
-                                                    ({{ $product->reviews_count }})
-                                                </span>
-                            </div>
-                        </div>
+            // اگر گروه ویژگی قابل نمایش نباشد، رد شو
+            if (!$attributes) continue;
 
-                        <div class="product-engagement-item">
-                            <div class="product-engagement-set"></div>
-                            <div class="product-engagement-link" data-activate-tab="comments">
-                                {{ $product->reviews_count }}
-                                دیدگاه کاربران
-                            </div>
-                        </div>
-                        <div class="product-engagement-item">
-                            <div class="product-engagement-set"></div>
-                            <div class="product-engagement-link" data-activate-tab="questions">
-                                {{ $product->comments()->accepted()->count() }}
-                                پرسش و پاسخ
-                            </div>
-                        </div>
-                    </div>
-                    @endif
-                    @if ($product->suggestionCount())
-                        <div class="col-12 d-flex">
-                            <i class="mdi mdi mdi-thumb-up-outline text-success mx-0"></i>
-                            <p class="text-muted commodity mx-2"><span>{{ $product->suggestionPercent() }}%</span>({{ $product->suggestionCount() }}
-                                ) نفر از خریداران این کالا را پیشنهاد کردن </p>
-                        </div>
-                    @endif
+            $isFirstGroup = ($groupIndex == 0);
+            $hasSelectedInGroup = false;
+            $currentSelectedAttrIds = $selectedAttributesIds;
+        @endphp
 
-
-                    <div class="product-config-wrapper d-flex">
-                        @if ($product->brand)
-                            <div class="product-params p-0">
-                                <ul class="m-0" data-title="برند">
-                                        <li class="mb-0">
-                                            <span>برند: </span>
-                                            <span>
-                                             <a  href="{{ route('front.brands.show', ['brand' => $product->brand]) }}" class="link--with-border-bottom link-border">{{ $product->brand->name }}</a>
-                                            </span>
-                                        </li>
-                                </ul>
-
-                            </div>
-                        @endif
-                    </div>
-                    {{--color--}}
+        @if ($attributeGroup->type == 'color')
+            {{-- انتخاب رنگ — چیپ‌های سانیار (ساختار js حفظ شده: ui-variant-shape/data-colorname) --}}
+            <div class="product-meta-color mt-3 product-variants">
+                <h5 class="font-16 mb-2">
+                    {{ $attributeGroup->name }}:
                     @php
-                        $prevAttribute = null;
-                        $groups = [];
-                        $selectedAttributesIds = [];
-                        $groupIndex = 0;
+                        $selectedColor = $selected_price->get_attributes()->where('attribute_group_id', $attributeGroup->id)->first();
                     @endphp
-
-                    @foreach ($attributeGroups as $attributeGroup)
+                    <span class="main-color-one-color">{{ $selectedColor ? $selectedColor->name : '' }}</span>
+                </h5>
+                <div class="product-meta-color-items d-flex flex-wrap gap-2">
+                    @foreach ($attributes as $attribute)
                         @php
-                            $attributes = $product->get_attributes($attributeGroup, $prevAttribute, $groups, $selectedAttributesIds);
+                            // بررسی موجودی
+                            $hasStock = $isFirstGroup
+                                ? $product->hasAttributeStock($attribute)
+                                : $product->hasAttributeStock($attribute, $currentSelectedAttrIds);
 
-                            // اگر گروه ویژگی قابل نمایش نباشد، رد شو
-                            if (!$attributes) continue;
+                            // بررسی انتخاب شده بودن
+                            $isSelected = (bool) $selected_price->get_attributes()->find($attribute->id);
 
-                            $isFirstGroup = ($groupIndex == 0);
-                            $hasSelectedInGroup = false;
-                            $currentSelectedAttrIds = $selectedAttributesIds;
+                            if ($isSelected) {
+                                $hasSelectedInGroup = true;
+                                $prevAttribute = $attribute;
+                                $selectedAttributesIds[] = $attribute->id;
+                            }
                         @endphp
 
-                        @if ($attributeGroup->type == 'color')
-                            {{-- نمایش ویژگی‌های رنگی --}}
-                            <div class="product-variants mb-0 d-flex flex-column">
-                                @php
-                                    $selectedColor = $selected_price->get_attributes()->where('attribute_group_id', $attributeGroup->id)->first();
-                                @endphp
-                                <div class="mb-3 d-flex">
-                                    <h6 class=" ml-1"> {{ $attributeGroup->name }}:</h6>
-                                    <span>{{ $selectedColor ? $selectedColor->name : '' }}</span>
-                                </div>
-
-                                <ul>
-                                    @foreach ($attributes as $attribute)
-                                        @php
-                                            // بررسی موجودی
-                                            $hasStock = $isFirstGroup
-                                                ? $product->hasAttributeStock($attribute)
-                                                : $product->hasAttributeStock($attribute, $currentSelectedAttrIds);
-
-                                            // بررسی انتخاب شده بودن
-                                            $isSelected = (bool) $selected_price->get_attributes()->find($attribute->id);
-
-                                            if ($isSelected) {
-                                                $hasSelectedInGroup = true;
-                                                $prevAttribute = $attribute;
-                                                $selectedAttributesIds[] = $attribute->id;
-                                            }
-                                        @endphp
-
-                                        <li class="js-c-ui-variant product-attribute">
-                                            <label class="ui-variant-color">
+                        <label class="js-c-ui-variant product-attribute ui-variant-color {{ $hasStock ? '' : 'unavailable' }} {{ $isSelected ? 'selected' : '' }}"
+                               for="variant-color-{{ $attribute->id }}"
+                               title="{{ $hasStock ? $attribute->name : $attribute->name . ' (ناموجود)' }}">
                             <span class="ui-variant-shape"
                                   data-colorname="{{ $attribute->name }}"
-                                  style="background-color: {{ $attribute->value }}">
-                            </span>
-
-                                                <input type="radio"
-                                                       title="{{ $attribute->name }}"
-                                                       data-product="{{ $product->slug }}"
-                                                       value="{{ $attribute->id }}"
-                                                       name="attributes_group[{{ $loop->parent->iteration }}][]"
-                                                       id="variant"
-                                                       class="js-variant-selector variant-selector"
-                                                    {{ $isSelected ? 'checked' : '' }}>
-
-                                                <span class="ui-variant-check @if($attribute->name == "سفید") ui-variant-check-white @endif"></span>
-                                            </label>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
-
-                        @else
-                            {{-- نمایش سایر انواع ویژگی‌ها --}}
-                            <div class="product-variant dt-sl type-container">
-                                <div class="section-title d-flex align-items-baseline text-sm-title no-after-title-wide mb-1">
-                                    <h6 class="mb-0 mx-1 d-block">
-                                        {{ $attributeGroup->name }}: <span id="attributeGroup-{{ $attributeGroup->id }}"></span>
-                                    </h6>
-                                </div>
-
-                                <ul class="product-variants float-right type-list ml-3 mt-2 {{ $attributeGroup->type == 'select' ? 'mt-2' : '' }}">
-                                    @foreach ($attributes as $attribute)
-                                        @php
-                                            // بررسی موجودی
-                                            $hasStock = $isFirstGroup
-                                                ? $product->hasAttributeStock($attribute)
-                                                : $product->hasAttributeStock($attribute, $currentSelectedAttrIds);
-
-                                            // بررسی انتخاب شده بودن
-                                            $isSelected = (bool) $selected_price->get_attributes()->find($attribute->id);
-
-                                            if ($isSelected) {
-                                                $hasSelectedInGroup = true;
-                                                $prevAttribute = $attribute;
-                                                $selectedAttributesIds[] = $attribute->id;
-                                            }
-
-                                            // تنظیم انتخاب پیش‌فرض برای آخرین آیتم در صورت عدم انتخاب
-                                            if ($loop->last && !$isSelected && !$hasSelectedInGroup) {
-                                                $isSelected = true;
-                                                $hasSelectedInGroup = true;
-                                                $prevAttribute = $attribute;
-                                                $selectedAttributesIds[] = $attribute->id;
-                                            }
-                                        @endphp
-
-                                        <li class="js-c-ui-variant product-attribute {{ $hasStock ? '' : 'unavailable' }}"
-                                            title="{{ $hasStock ? '' : 'ناموجود' }}">
-
-                                            <label for="attribute-{{$loop->parent->iteration}}-{{ $attribute->id }}" class="ui-variant mb-0 variant-selector">
-                                                <input data-product="{{ $product->slug }}"
-                                                       type="radio"
-                                                       value="{{ $attribute->id }}"
-                                                       name="attributes_group[{{ $loop->parent->iteration }}][]"
-                                                       class="variant-selector"
-                                                       id="attribute-{{$loop->parent->iteration}}-{{ $attribute->id }}"
-                                                    {{ $isSelected ? 'checked' : '' }}
-                                                    {{ $hasStock ? '' : 'disabled' }}>
-
-                                                <div class="ui-variant--check {{ $attributeGroup->type == 'select' ? 'select' : '' }}">
-                                <span class="m-0" {{ $attributeGroup->type != 'color' ? 'product-warranty-span' : '' }}>
-                                    {{ $attributeGroup->type != 'color' ? $attribute->name : '' }}
-                                </span>
-                                                </div>
-                                            </label>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
-
-                        @php
-                            $groups[] = $attributeGroup;
-                            $groupIndex++;
-                        @endphp
+                                  style="background-color: {{ $attribute->value }}"></span>
+                            <input type="radio"
+                                   title="{{ $attribute->name }}"
+                                   data-product="{{ $product->slug }}"
+                                   value="{{ $attribute->id }}"
+                                   name="attributes_group[{{ $loop->parent->iteration }}][]"
+                                   id="variant-color-{{ $attribute->id }}"
+                                   class="js-variant-selector variant-selector"
+                                {{ $isSelected ? 'checked' : '' }}
+                                {{ $hasStock ? '' : 'disabled' }}>
+                            <span class="ui-variant-name font-14">{{ $attribute->name }}</span>
+                            <span class="ui-variant-check @if($attribute->name == "سفید") ui-variant-check-white @endif"></span>
+                        </label>
                     @endforeach
+                </div>
+            </div>
 
-                    {{-- تنظیم مجدد متغیرها در صورت نیاز به استفاده مجدد --}}
-                    @php
-                        $prevAttribute = null;
-                        $groups = null;
-                        $selectedAttributesIds = [];
-                        $groupIndex = 0;
-                    @endphp
-                            {{--end-color--}}
+        @else
+            {{-- سایر ویژگی‌ها (سایز/انتخابی) — چیپ‌های متنی سانیار --}}
+            <div class="product-meta-color mt-3 product-variant product-variants">
+                <h5 class="font-16 mb-2">
+                    {{ $attributeGroup->name }}: <span id="attributeGroup-{{ $attributeGroup->id }}"></span>
+                </h5>
+                <div class="product-meta-color-items d-flex flex-wrap gap-2 type-list">
+                    @foreach ($attributes as $attribute)
+                        @php
+                            // بررسی موجودی
+                            $hasStock = $isFirstGroup
+                                ? $product->hasAttributeStock($attribute)
+                                : $product->hasAttributeStock($attribute, $currentSelectedAttrIds);
 
-                        @if ($product->specialSpecifications()->count())
-                        <div class="product-params">
-                            <ul data-title="ویژگی‌های محصول">
+                            // بررسی انتخاب شده بودن
+                            $isSelected = (bool) $selected_price->get_attributes()->find($attribute->id);
 
-                                <li class="title-product-features">
-                                    ویژگی‌های محصول
-                                </li>
-                                    @foreach ($product->specialSpecifications() as $specification)
-                                    <li class='{{$loop->index>=3 ? 'product-params-more' : ''}}'>
-                                        <span>{{ $specification->name }}: </span>
-                                        <span> {{ $specification->pivot->value }} </span>
-                                    </li>
-                                @endforeach
-                                @if ($product->specialSpecifications()->count() > 3)
-                                <li class="product-params-more-handler">
-                                    <a class="link-border" href="">
-                                        <span class="show-more">موارد بیشتر</span>
-                                        <span class="show-less">بستن</span>
-                                    </a>
-                                </li>
-                                @endif
-                            </ul>
+                            if ($isSelected) {
+                                $hasSelectedInGroup = true;
+                                $prevAttribute = $attribute;
+                                $selectedAttributesIds[] = $attribute->id;
+                            }
 
+                            // تنظیم انتخاب پیش‌فرض برای آخرین آیتم در صورت عدم انتخاب
+                            if ($loop->last && !$isSelected && !$hasSelectedInGroup) {
+                                $isSelected = true;
+                                $hasSelectedInGroup = true;
+                                $prevAttribute = $attribute;
+                                $selectedAttributesIds[] = $attribute->id;
+                            }
+                        @endphp
 
-                                <p class="little-des pt-0 mt-0"></p>
-
-                            @if ($product->short_description)
-                            <div class="product-additional-info">
-                                <div class="product-additional-item is-masked">
-                                    <p>{!! nl2br($product->short_description) !!}</p>
-                                    <a class="mask-handler link-border" href=''>
-                                        <span class="show-more">مشاهده بیشتر</span>
-                                        <span class="show-less">مشاهده کمتر</span>
-                                    </a>
-                                    <div class="shadow-box"></div>
-                                </div>
+                        <label class="js-c-ui-variant product-attribute ui-variant mb-0 {{ $hasStock ? '' : 'unavailable' }} {{ $isSelected ? 'selected' : '' }}"
+                               for="attribute-{{ $loop->parent->iteration }}-{{ $attribute->id }}"
+                               title="{{ $hasStock ? '' : 'ناموجود' }}">
+                            <input data-product="{{ $product->slug }}"
+                                   type="radio"
+                                   value="{{ $attribute->id }}"
+                                   name="attributes_group[{{ $loop->parent->iteration }}][]"
+                                   class="variant-selector"
+                                   id="attribute-{{ $loop->parent->iteration }}-{{ $attribute->id }}"
+                                {{ $isSelected ? 'checked' : '' }}
+                                {{ $hasStock ? '' : 'disabled' }}>
+                            <div class="ui-variant--check {{ $attributeGroup->type == 'select' ? 'select' : '' }}">
+                                <span class="font-14">{{ $attribute->name }}</span>
                             </div>
-                                @endif
-                        </div>
-                        @endif
-
-
-                    @if ($product->sizeType)
-                        <div class="mt-3 size-guide">
-                            <img src="{{ theme_asset('img/size.png') }}" width="25" alt="size">
-                            <a href="javascript:void(0)" data-toggle="modal" data-target="#size-modal" class="mt-4 link--with-border-bottom">راهنمای سایزبندی</a>
-                        </div>
-                    @endif
+                        </label>
+                    @endforeach
                 </div>
             </div>
-            <div class="col-lg-4 col-md-4 col-xs-12 pull-left" style="padding: 0px; position: relative; overflow: visible; box-sizing: border-box; min-height: 1px;">
-                @include('front::products.partials.product-info-sidebar')
-            </div>
+        @endif
+
+        @php
+            $groups[] = $attributeGroup;
+            $groupIndex++;
+        @endphp
+    @endforeach
+
+    @php
+        $prevAttribute = null;
+        $groups = null;
+        $selectedAttributesIds = [];
+        $groupIndex = 0;
+    @endphp
+
+    @if ($product->sizeType)
+        <div class="mt-3 size-guide d-flex align-items-center gap-2">
+            <img src="{{ theme_asset('img/size.png') }}" width="25" alt="size">
+            <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#size-modal"
+               class="mt-0 link--with-border-bottom font-14">راهنمای سایزبندی</a>
         </div>
+    @endif
 
-                @php
-                    $selected_price = $product->getPriceWithAttributes($attributes_id);
-                @endphp
-            @endif
+    {{-- باکس اقدام: فروشنده + قیمت + افزودن به سبد --}}
+    @include('front::products.partials.product-info-sidebar')
 
-
-            <?php
-            $sevices_sliders = App\Models\Slider::whereJsonContains('groups', 'sevices_sliders')
-                ->where('published', true)
-                ->get()
-            ?>
-            @if(count($sevices_sliders))
-                <div class="product-feature-body" id="stores-tag">
-                    <div class="product-feature">
-                        <div class="row">
-                            @foreach($sevices_sliders->take(5) as $sevices_slider)
-
-                                <div class="product-feature-col">
-                                    <a class="product-feature-item">
-                                        <img src="{{asset($sevices_slider->image)}}"
-                                             alt="{{$sevices_slider->title}}">
-                                        <span><br>{{$sevices_slider->title}}
-                                            </span>
-                                    </a>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-            @endif
-    </section>
 </div>
-

@@ -441,3 +441,103 @@
 .product-star i:not(.active) {
     color: #e5e9ec;
 }
+
+/* ============================================================
+   SaniarTheme — چیپ‌های انتخاب ویژگی (رنگ/سایز) با مارکاپ سانیار
+   (ساختار input داخل label برای سازگاری با show.js — :has برای حالت انتخاب)
+   ============================================================ */
+
+.product-meta-color-items {
+    --chip-border: #e9ecef;
+}
+
+.product-meta-color-items .ui-variant-color,
+.product-meta-color-items .ui-variant {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--chip-border);
+    border-radius: 0.75rem;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    margin: 0;
+    font-weight: normal;
+    position: relative;
+}
+
+.product-meta-color-items .ui-variant-color:hover,
+.product-meta-color-items .ui-variant:hover {
+    border-color: var(--main-color-one, #0f5132);
+}
+
+.product-meta-color-items .ui-variant-color input,
+.product-meta-color-items .ui-variant input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+    margin: 0;
+}
+
+.product-meta-color-items .ui-variant-shape {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: inline-block;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+}
+
+.product-meta-color-items .ui-variant-check {
+    display: none;
+}
+
+.product-meta-color-items .ui-variant-color:has(input:checked),
+.product-meta-color-items .ui-variant:has(input:checked),
+.product-meta-color-items .ui-variant-color.selected,
+.product-meta-color-items .ui-variant.selected {
+    border-color: var(--main-color-one, #0f5132);
+    box-shadow: 0 0 0 2px rgba(15, 81, 50, 0.15);
+    color: var(--main-color-one, #0f5132);
+    font-weight: bold;
+}
+
+.product-meta-color-items .unavailable {
+    opacity: 0.45;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
+.product-meta-color-items .unavailable:hover {
+    border-color: var(--chip-border);
+    box-shadow: none;
+}
+
+/* نشان درصد تخفیف باکس خرید */
+.product-seller-price-real .discount.show-discount {
+    display: inline-block;
+    background: var(--main-color-two, #dc3545);
+    color: #fff;
+    border-radius: 0.5rem;
+    padding: 0 0.4rem;
+    font-size: 12px;
+    margin-right: 0.35rem;
+}
+
+/* اسکلتون لودینگ تغییر ویژگی */
+.product-seller-info.loading-skeleton {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+/* ردیف‌های اضافی فروشندگان — مخفی تا کلیک «بیشتر» */
+tr.table-suppliers-row.in-filter {
+    display: none;
+}
+
+tr.table-suppliers-row.in-filter.shown {
+    display: table-row;
+}

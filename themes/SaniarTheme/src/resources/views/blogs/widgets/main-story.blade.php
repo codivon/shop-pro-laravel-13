@@ -246,12 +246,5 @@
     </div>
     <script src="{{theme_asset('js/plugins/plyr/plyr.js')}}"></script>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const player = new Plyr('.story-video-player', {
-            controls: ['current-time'],
-            settings: ['captions', 'quality', 'speed']
-        });
-    });
-</script>
+<script src="{{theme_asset('js/story-player.js')}}"></script>
 @endpush

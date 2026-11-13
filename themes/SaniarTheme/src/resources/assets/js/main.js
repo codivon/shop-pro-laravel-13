@@ -439,7 +439,8 @@ $(document).ready(function () {
 
     $(".table-suppliers-more a").on('click', function (e) {
         e.preventDefault();
-        $(".in-list").slideToggle(200);
+        // سانیار — ردیف‌های جدول فروشندگان با کلاس toggle می‌شوند (slideToggle روی tr درست کار نمی‌کند)
+        $("tr.table-suppliers-row.in-list").toggleClass('shown');
         $(this).find('.show-more').fadeToggle(0);
         $(this).find('.show-less').fadeToggle(0);
     });
@@ -638,7 +639,7 @@ $(document).on('click', '.add-to-cart-single', function () {
             if (data.status == 'success') {
                 showCustomToast('با موفقیت به سبد اضافه شد','success');
 
-                $('#cart-list-item').replaceWith(data.cart);
+                $('.cart-canvas').replaceWith(data.cart);
             } else {
                 Swal.fire({
                     type: 'error',

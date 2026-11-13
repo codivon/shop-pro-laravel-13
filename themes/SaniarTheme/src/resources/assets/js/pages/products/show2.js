@@ -119,7 +119,7 @@ $(document).on('click', '.add-to-cart', function () {
                     footer: '<h5><a href="/cart">مشاهده سبد خرید</a></h5>'
                 });*/
                 showCustomToast('با موفقیت به سبد اضافه شد','success');
-                $('#cart-list-item').replaceWith(data.cart);
+                $('.cart-canvas').replaceWith(data.cart);
             } else {
                 Swal.fire({
                     type: 'error',

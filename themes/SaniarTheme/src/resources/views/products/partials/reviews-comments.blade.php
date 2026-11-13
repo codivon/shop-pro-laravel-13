@@ -90,9 +90,6 @@
 
                     </li>
 
-                    <script>
-                        $('#Newscomments .paginationPager').addClass('hide');
-                    </script>
             @break
 
             @endif

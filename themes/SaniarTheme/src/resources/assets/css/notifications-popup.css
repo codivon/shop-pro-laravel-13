@@ -1,0 +1,81 @@
+/* پاپ‌آپ اعلان‌ها (npop) — استخراج‌شده از popup-message.blade.php */
+            .npop-overlay {
+                position: fixed; inset: 0; z-index: 9999;
+                background: rgba(15, 23, 42, .6);
+                backdrop-filter: blur(5px);
+                -webkit-backdrop-filter: blur(5px);
+                display: flex; align-items: center; justify-content: center;
+                padding: 20px;
+                opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s;
+            }
+            .npop-overlay.is-open { opacity: 1; visibility: visible; }
+
+            .npop {
+                width: 100%; max-width: 460px; background: #fff; border-radius: 22px;
+                overflow: hidden; position: relative;
+                transform: translateY(18px) scale(.95);
+                transition: transform .35s cubic-bezier(.34, 1.56, .64, 1);
+                box-shadow: 0 30px 60px -15px rgba(15, 23, 42, .4);
+                --c1: #34D399; --c2: #059669; --soft: #D1FAE5;
+            }
+            .npop-overlay.is-open .npop { transform: none; }
+
+            .npop__banner { display: block; height: 7px; background: linear-gradient(90deg, var(--c1), var(--c2)); }
+
+            .npop__counter {
+                position: absolute; top: 18px; inset-inline-start: 18px; z-index: 2;
+                background: rgba(255, 255, 255, .92); border: 1px solid #eef0f5;
+                color: #475569; font-size: 11px; font-weight: 800;
+                padding: 4px 12px; border-radius: 99px;
+            }
+
+            .npop__body { padding: 30px 26px 8px; text-align: center; }
+            .npop__icon {
+                width: 78px; height: 78px; border-radius: 50%; margin: 0 auto 16px;
+                background: linear-gradient(135deg, var(--c1), var(--c2));
+                display: grid; place-items: center; color: #fff; font-size: 36px;
+                box-shadow: 0 16px 30px -10px var(--c2);
+                animation: npop-bounce 2.6s ease-in-out infinite;
+            }
+            @keyframes npop-bounce {
+                0%, 100% { transform: translateY(0) rotate(0deg); }
+                10%  { transform: translateY(-6px) rotate(-6deg); }
+                20%  { transform: translateY(0) rotate(0deg); }
+                30%  { transform: translateY(-4px) rotate(5deg); }
+                40%  { transform: translateY(0) rotate(0deg); }
+            }
+
+            .npop__badge {
+                display: inline-flex; align-items: center; gap: 5px;
+                font-size: 11.5px; font-weight: 800; padding: 4px 14px;
+                border-radius: 99px; color: var(--c2); background: var(--soft);
+                margin-bottom: 12px;
+            }
+            .npop__badge i { font-size: 13px; }
+
+            .npop__title { font-size: 18px; font-weight: 800; color: #1e293b; margin: 0 0 8px; }
+            .npop__msg {
+                font-size: 14px; color: #475569; line-height: 2; margin: 0;
+                max-height: 250px; overflow-y: auto; white-space: pre-line; word-break: break-word;
+            }
+            .npop__msg::-webkit-scrollbar { width: 5px; }
+            .npop__msg::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
+
+            .npop__foot { padding: 18px 26px 26px; }
+            .npop__btn {
+                width: 100%; border: none; border-radius: 14px; padding: 13px;
+                font-size: 14.5px; font-weight: 800; font-family: inherit;
+                color: #fff; background: linear-gradient(135deg, var(--c1), var(--c2));
+                cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+                transition: .2s;
+            }
+            .npop__btn i { font-size: 19px; }
+            .npop__btn:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 12px 22px -8px var(--c2); }
+            .npop__btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+            @media (max-width: 480px) {
+                .npop__body { padding: 22px 18px 6px; }
+                .npop__foot { padding: 14px 18px 20px; }
+                .npop__title { font-size: 16px; }
+                .npop__msg { font-size: 13px; max-height: 200px; }
+            }
