@@ -188,7 +188,21 @@
             {{-- سایر ویژگی‌ها (سایز/انتخابی) — چیپ‌های متنی سانیار --}}
             <div class="product-meta-color mt-3 product-variant product-variants">
                 <h5 class="font-16 mb-2">
-                    {{ $attributeGroup->name }}: <span id="attributeGroup-{{ $attributeGroup->id }}"></span>
+                    {{ $attributeGroup->name }}:
+                    @php
+                        /* فاز ۱۵۴ — نام تنوع انتخاب‌شده در جای خالی جلوی عنوان گروه نمایش
+                           داده می‌شود (همان رفتار «رنگ: مشکی»)؛ اگر تنوعی از این گروه
+                           انتخاب نشده بود، همان آیتم آخر که انتخاب خودکار بلید است نشان داده
+                           می‌شود تا جلوی عنوان گروه خالی نماند. گارد null برای کالای
+                           ناموجود که selected_price ندارد. */
+                        $selectedGroupAttr = $selected_price
+                            ? $selected_price->get_attributes()->where('attribute_group_id', $attributeGroup->id)->first()
+                            : null;
+                        if (!$selectedGroupAttr) {
+                            $selectedGroupAttr = collect($attributes)->last();
+                        }
+                    @endphp
+                    <span class="main-color-one-color" id="attributeGroup-{{ $attributeGroup->id }}">{{ $selectedGroupAttr ? $selectedGroupAttr->name : '' }}</span>
                 </h5>
                 <div class="product-meta-color-items d-flex flex-wrap gap-2 type-list">
                     @foreach ($attributes as $attribute)

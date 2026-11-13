@@ -732,6 +732,15 @@ $(document).on('click', '.product-attribute:not(.unavailable)', function () {
     var product = input.data('product');
     var groups = [];
 
+    // فاز ۱۵۴ — رفع تأخیر یک‌کلیکی تغییر قیمت:
+    // رویدادِ کلیک روی label «قبل از» عوض‌شدن state رادیو اجرا می‌شود؛ پس
+    // اگر مجموعهٔ انتخاب‌ها همین‌جا خوانده شود، همان انتخاب قبلی به سرور
+    // می‌رود و قیمت همیشه یک کلیک عقب می‌ماند. ابتدا تنوع کلیک‌شده را
+    // خودمان انتخاب می‌کنیم، بعد مجموعه را جمع می‌زنیم.
+    if (input.length && !input.prop('disabled')) {
+        input.prop('checked', true);
+    }
+
     $('.product-info-block input:checked').each(function (index, el) {
         groups.push($(el).val());
     });
@@ -1013,3 +1022,65 @@ if (!document.querySelector('#stores-loading-style')) {
     `;
     document.head.appendChild(style);
 }
+
+/* ============================================================
+   فاز ۱۵۴ — صفحهٔ تک‌محصول: تب‌ها + «موارد بیشتر» ویژگی‌ها
+   ============================================================ */
+
+// فعال‌سازی تب Nام — liهای .box-tabs و divهای .tab یک‌به‌یک هم‌ترازند
+// (هر دو با شرط‌های توضیحات/مشخصات رندر می‌شوند) — این تابع برای
+// صفحهٔ فیزیکی و دانلودی هر دو کار می‌کند.
+function activateProductTab($box, index) {
+    var $tabs = $box.find('.box-tabs > .box-tabs-tab');
+    var $contents = $box.find('.tab-active-content > .tab');
+
+    if (index < 0 || index >= $contents.length) return;
+
+    $tabs.removeClass('active-tabs');
+    $tabs.eq(index).addClass('active-tabs');
+
+    $contents.each(function (i) {
+        $(this).css('display', i === index ? 'block' : 'none');
+    });
+}
+
+// کلیک روی تب‌های مشخصات کلی/فنی/نظرات/پرسش و پاسخ
+$(document).on('click', '.p-tabs .box-tabs .box-tabs-tab', function (e) {
+    e.preventDefault();
+    var $li = $(this);
+    var index = $li.parent('.box-tabs').children('.box-tabs-tab').index($li);
+    activateProductTab($li.closest('.p-tabs'), index);
+});
+
+// دکمه‌های «X دیدگاه» / «X پرسش و پاسخ» بالای صفحه — پرش به تب مربوطه
+$(document).on('click', '[data-activate-tab]', function (e) {
+    e.preventDefault();
+    var name = $(this).data('activate-tab');
+    var $box = $('.p-tabs').first();
+    if (!$box.length) return;
+
+    var $contents = $box.find('.tab-active-content > .tab');
+    var $target = name === 'questions'
+        ? $contents.filter('.js-faq-container').first()
+        : $contents.filter('.comments').first();
+
+    var index = $contents.index($target);
+    if (index < 0) return;
+
+    activateProductTab($box, index);
+
+    if ($box.offset()) {
+        $('html, body').animate({ scrollTop: $box.offset().top - 130 }, 300);
+    }
+});
+
+// «موارد بیشتر» ویژگی‌های کالا — سلکتور قدیمی main.js با مارکاپ تم
+// هم‌خوان نبود (‎.product-params-more-handler a روی خودِ <a> بایند
+// می‌شد نه فرزندش)؛ این‌جا delegated و اسکوپ‌شده بایند می‌شود.
+$(document).on('click', '.product-params-more-handler', function (e) {
+    e.preventDefault();
+    var $handler = $(this);
+    var $items = $handler.closest('.product-meta-feature-items').find('.product-params-more');
+    $items.stop(true, true).slideToggle(200);
+    $handler.toggleClass('open');
+});

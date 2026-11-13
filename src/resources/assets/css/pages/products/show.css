@@ -541,3 +541,312 @@ tr.table-suppliers-row.in-filter {
 tr.table-suppliers-row.in-filter.shown {
     display: table-row;
 }
+
+/* ============================================================
+   فاز ۱۵۴ — صفحهٔ تک‌محصول: باگ‌های گزارش‌شده
+   ============================================================ */
+
+/* ---------- ۱) رفع چیپ‌های گارانتی/سایز — قاعدهٔ قدیمی style.css
+   (.product-meta-color-items label span) برای مارکاپ مرجع (span دایرهٔ
+   ۲۰ پیکسلی رنگ) نوشته شده بود و متن چیپ‌های متنی تم را داخل همان
+   دایرهٔ ۲۰px می‌چپاند (نتیجه: چیپ‌های بلند و باریک با متن عمودی).
+   برای spanهای متنیِ تم ریست می‌شود؛ span شکلِ رنگ جداگانه در همین فایل
+   استایل خودش را دارد. ---------- */
+.product-meta-color-items .ui-variant-color .ui-variant-name,
+.product-meta-color-items .ui-variant .ui-variant--check span {
+    width: auto;
+    height: auto;
+    line-height: normal;
+    border-radius: 0;
+    margin-left: 0;
+    display: inline;
+    position: static;
+}
+
+/* متن چیپ‌های متنی روی موبایل هم ریز نشود */
+.product-meta-color-items .ui-variant .ui-variant--check {
+    white-space: normal;
+    line-height: 1.6;
+}
+
+/* ---------- ۲) ویژگی‌های کالا زیر عنوان — فقط چند مورد اول،
+   بقیه با «موارد بیشتر» (هم‌تراز قالب مرجع) ---------- */
+.product-meta-feature-items .product-params-more {
+    display: none;
+}
+
+.product-params-more-handler {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.product-params-more-handler .show-less {
+    display: none;
+}
+
+.product-params-more-handler.open .show-more {
+    display: none;
+}
+
+.product-params-more-handler.open .show-less {
+    display: inline;
+}
+
+/* ---------- ۳) تب‌های صفحهٔ محصول (مشخصات کلی/فنی/نظرات/پرسش و پاسخ)
+   — استایل کامل از قالب مرجع سانیار (product-desc-tab) ---------- */
+.product-page .p-tabs .box-tabs-main {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, .04);
+    overflow: hidden;
+}
+
+.product-page .p-tabs .box-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    list-style: none;
+    margin: 0;
+    padding: 0 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.product-page .p-tabs .box-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.product-page .p-tabs .box-tabs .box-tabs-tab {
+    flex-shrink: 0;
+    margin-left: 5px;
+}
+
+.product-page .p-tabs .box-tabs .box-tabs-tab > a {
+    display: block;
+    white-space: nowrap;
+    color: var(--main-color-one, #275fe0);
+    padding: 14px 12px 12px;
+    margin-bottom: -1px;
+    border-bottom: 3px solid transparent;
+    background: transparent;
+    border-top: 0;
+    border-left: 0;
+    border-right: 0;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: normal;
+    text-decoration: none;
+    transition: border-color .15s linear;
+}
+
+.product-page .p-tabs .box-tabs .box-tabs-tab > a:hover {
+    color: var(--main-color-one-hover, #2256d1);
+}
+
+.product-page .p-tabs .box-tabs .box-tabs-tab.active-tabs > a {
+    color: var(--main-color-one, #275fe0);
+    font-weight: bold;
+    border-bottom-color: var(--main-color-one, #275fe0);
+}
+
+/* بدنهٔ تب‌ها */
+.product-page .p-tabs .tabs-content {
+    padding-top: 16px;
+}
+
+.product-page .p-tabs .tab-active-content > .tab {
+    display: none;
+}
+
+/* نقد و بررسی اجمالی */
+.product-page .p-tabs .params-headline,
+.product-page .p-tabs .comments-headline,
+.product-page .p-tabs .faq-headline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-site, #333);
+    margin: 0 0 18px;
+}
+
+.product-page .p-tabs .params-headline span,
+.product-page .p-tabs .comments-headline span,
+.product-page .p-tabs .faq-headline span {
+    color: var(--text-muted-two, #929292);
+    font-size: 14px;
+    font-weight: normal;
+}
+
+.product-page .p-tabs .content-expert-summary p {
+    line-height: 2;
+    color: var(--text-muted, #565757);
+    font-size: 14px;
+}
+
+/* ماسک «ادامه مطلب» توضیحات */
+.product-page .p-tabs .is-masked .mask-text-product-summary {
+    max-height: 220px;
+    overflow: hidden;
+    position: relative;
+}
+
+.product-page .p-tabs .is-masked .mask-text-product-summary.active {
+    max-height: none;
+}
+
+.product-page .p-tabs .is-masked .shadow-box {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: linear-gradient(rgba(255, 255, 255, 0), #fff);
+}
+
+.product-page .p-tabs .is-masked .mask-text-product-summary.active ~ .shadow-box {
+    display: none;
+}
+
+/* مشخصات فنی — ردیف‌های کلید/مقدار */
+.product-page .p-tabs .params-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-site, #333);
+    margin: 22px 0 12px;
+}
+
+.product-page .p-tabs .params-title::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--main-color-one, #275fe0);
+    flex-shrink: 0;
+}
+
+.product-page .p-tabs .params-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid #f1f1f3;
+}
+
+.product-page .p-tabs .params-list > li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    border-bottom: 1px solid #f1f1f3;
+}
+
+.product-page .p-tabs .params-list .params-list-key {
+    font-size: 14px;
+    color: var(--text-muted-two, #929292);
+    font-weight: normal;
+}
+
+.product-page .p-tabs .params-list .params-list-value {
+    font-size: 14px;
+    color: var(--text-muted, #565757);
+    line-height: 1.9;
+    word-break: break-word;
+}
+
+.product-page .p-tabs .params-list > li > div:first-child {
+    border-left: 1px solid #f1f1f3;
+    padding: 10px 8px 10px 0;
+    margin-left: 12px;
+}
+
+/* نظرات — سربرگ امتیاز */
+.product-page .p-tabs .comments-summary-box {
+    text-align: center;
+}
+
+.product-page .p-tabs .comments-side-rating-main {
+    font-size: 40px;
+    line-height: 1.3;
+}
+
+.product-page .p-tabs .comments-summary-note {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+}
+
+/* مرتب‌سازی نظرات/پرسش‌ها */
+.product-page .p-tabs .filter-items {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.product-page .p-tabs .filter-items .sort-row-text {
+    color: var(--text-muted-two, #929292);
+}
+
+.product-page .p-tabs .filter-items .nav-link {
+    color: var(--text-muted, #565757);
+    padding: 4px 2px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.product-page .p-tabs .filter-items .nav-link.active {
+    color: var(--main-color-one, #275fe0);
+    font-weight: 700;
+    border-bottom-color: var(--main-color-one, #275fe0);
+    background: transparent;
+}
+
+/* پرسش و پاسخ */
+.product-page .p-tabs .js-faq-container .faq-headline {
+    margin-bottom: 14px;
+}
+
+/* ---------- ۴) هدر متا: امتیاز و گارانتی اصالت (هم‌تراز مرجع) ---------- */
+.product-meta-rating .count-comment {
+    margin-left: 7px;
+    padding-left: 5px;
+    border-left: 2px solid #ddd;
+}
+
+.product-meta-rating .count-rating {
+    display: flex;
+    align-items: center;
+}
+
+.product-meta-rating .count-rating i {
+    display: inherit;
+    font-size: 16px;
+    color: gold;
+    margin-right: 5px;
+}
+
+.product-meta-garanty {
+    display: flex;
+    align-items: center;
+}
+
+.product-meta-garanty i {
+    margin-left: 7px;
+    color: #0b8502;
+}
