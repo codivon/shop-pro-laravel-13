@@ -9,6 +9,7 @@ use App\Models\InstalledTheme;
 use App\Services\ModuleRecoveryService;
 use App\Services\PackageApiService;
 use App\Services\PackageInstallerService;
+use App\Services\PackageSubscriptionService;
 use App\Support\MarketplaceSettings;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -117,9 +118,18 @@ class PackageInstalled extends Component
             return false;
         }
 
+        /*
+         * فاز ۱۵۰ — پوشش اشتراک: لایسنس تکی منقضی اما پکیج داخل اشتراکِ فعالِ بازار
+         * ⇒ تا پایان اشتراک آپدیت بلاک نمی‌شود (گزارش کاربر). فقط برای ماژول‌های
+         * واقعاً منقضی سراغ API می‌رویم (کش ۳۰ دقیقه‌ای هر اسلاگ در سرویس).
+         */
         if ($installed->isExpired()) {
-            $this->dispatch('toast', message: 'لایسنس ماژول منقضی شده است. ابتدا آن را تمدید کنید.', type: 'error');
-            return false;
+            $coverage = app(PackageSubscriptionService::class)->coverageUntil($slug);
+
+            if ($coverage === null) {
+                $this->dispatch('toast', message: 'لایسنس ماژول منقضی شده است. ابتدا آن را تمدید کنید.', type: 'error');
+                return false;
+            }
         }
 
         UpdatePackageJob::dispatch($slug, auth('adminPanel')->id());
@@ -360,6 +370,19 @@ class PackageInstalled extends Component
     }
 
     /* ---------------- ابزار ---------------- */
+
+    /**
+     * فاز ۱۵۰ — پوشش اشتراکِ فعالِ بازار برای یک ماژول (یا null).
+     * فقط برای ماژول‌های منقضیِ محلی سراغ API می‌رویم — ماژولِ سالم نیازی به پرس‌وجو ندارد.
+     */
+    public function subscriptionCoverage(InstalledModule $module): ?\Carbon\CarbonInterface
+    {
+        if (! $module->isExpired()) {
+            return null;
+        }
+
+        return app(PackageSubscriptionService::class)->coverageUntil($module->slug);
+    }
 
     public static function jdate($date, $format = 'Y/m/d'): string
     {

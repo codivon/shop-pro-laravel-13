@@ -76,8 +76,24 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-xs">
-                                @if ($module->isExpired())
+                                @php
+                                    // فاز ۱۵۰ — پوشش اشتراک: فقط برای منقضی‌های محلی سراغ API می‌رود (کش‌شده)
+                                    $subCoverage = $this->subscriptionCoverage($module);
+                                @endphp
+                                @if ($module->isExpired($subCoverage))
                                     <span class="ap-badge bg-red-50 text-red-700 dark:bg-red-500/12 dark:text-red-400">منقضی شده</span>
+                                @elseif ($subCoverage !== null)
+                                    @if ($subCoverage->diffInYears(now()) > 5)
+                                        <span class="ap-badge bg-violet-50 text-violet-700 dark:bg-violet-500/12 dark:text-violet-400"
+                                              title="لایسنس تکی منقضی شده اما این پکیج با اشتراک فعال معتبر است">
+                                            پوشش اشتراک فعال
+                                        </span>
+                                    @else
+                                        <span class="ap-badge bg-violet-50 text-violet-700 dark:bg-violet-500/12 dark:text-violet-400"
+                                              title="لایسنس تکی منقضی شده اما این پکیج با اشتراک فعال تا پایان اشتراک معتبر است">
+                                            پوشش اشتراک تا {{ \App\Livewire\Admin\Packages\PackageInstalled::jdate($subCoverage, 'Y/m/d') }}
+                                        </span>
+                                    @endif
                                 @elseif ($module->license_expires_at)
                                     {{ \App\Livewire\Admin\Packages\PackageInstalled::jdate($module->license_expires_at, 'Y/m/d') }}
                                 @else

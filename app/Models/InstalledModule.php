@@ -44,8 +44,18 @@ class InstalledModule extends Model
 
     /* ---------------- Helpers ---------------- */
 
-    public function isExpired(): bool
+    /**
+     * فاز ۱۵۰ — پوشش اشتراک: اگر اشتراکِ فعالِ بازار این پکیج را پوشش دهد،
+     * پکیج تا پایان اشتراک منقضی شمرده نمی‌شود حتی اگر لایسنسِ تکی محلی گذشته
+     * باشد. پارامتر اختیاری است → همهٔ فراخوانی‌های قدیمی بدون آرگومان، رفتار
+     * قبلی را دارند (فقط لایسنس محلی).
+     */
+    public function isExpired(?\Carbon\CarbonInterface $subscriptionCoversUntil = null): bool
     {
+        if ($subscriptionCoversUntil !== null && $subscriptionCoversUntil->isFuture()) {
+            return false;
+        }
+
         return $this->license_expires_at && $this->license_expires_at->isPast();
     }
 

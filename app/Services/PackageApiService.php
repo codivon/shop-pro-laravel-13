@@ -34,10 +34,13 @@ class PackageApiService
 
     /* ===================================================================
      *  جزئیات یک پکیج
+     *  فاز ۱۵۰ — پارامتر اختیاری تایم‌اوت: فراخوانیِ درون‌صفحه‌ای (مثل پوشش
+     *  اشتراک در صفحهٔ نصب‌شده‌ها) هرگز نباید رندر را ۳۰ ثانیه بلاک کند؛
+     *  پیش‌فرض null = همان رفتار قبلی.
      * =================================================================== */
-    public function getPackage(string $slug): array
+    public function getPackage(string $slug, ?int $timeoutSec = null): array
     {
-        return $this->request('GET', "/api/v1/packages/{$slug}");
+        return $this->request('GET', "/api/v1/packages/{$slug}", [], false, $timeoutSec);
     }
 
     /* ===================================================================

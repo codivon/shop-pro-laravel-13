@@ -3523,3 +3523,36 @@ DigiPay v1.3.0 (اسنپ‌پی + ری‌برندینگ) پوش شد؛ CreditPay
 - `app/Livewire/Admin/Taxonomy/AttributeGroupAttributes.php` — state انتخاب گروهی + `updatedSelectAll` + `bulkDelete` + ریست در `updating`
 - `resources/views/admin-panel/livewire/admin/taxonomy/attribute-group-attributes.blade.php` — چک‌باکس‌ها، نوار انتخاب، مودال گروهی، لودینگ
 - مستندات: ADMIN_PANEL_PROGRESS.md (رکورد فاز ۱۴۹)
+
+## فاز ۱۵۰ — پوشش اشتراک برای پکیج‌های نصب‌شده: «منقضی شده» نادرست برای پکیج‌های داخل اشتراک فعال
+
+> **گزارش کاربر:** بعضی پکیج‌ها در صفحهٔ نصب‌شده‌ها «منقضی شده» زده‌اند در حالی که اشتراکِ فعال دارم که این پکیج‌ها را در بازهٔ اشتراک رایگان می‌کند. پکیجِ تک‌خریدشده باید فقط با لایسنس خودش قضاوت شود و پکیج‌های داخل اشتراک تا پایان اشتراک نباید منقضی بشوند.
+
+### بازدید زندهٔ تولید (agent-browser با دسترسی کاربر)
+- ورود به `https://shop.opashop.ir/admin/admin/packages/installed` (admin) — جدول واقعی: ۹ ماژول نصب‌شده؛ **۳ ماژول «منقضی شده»** با انقضای لایسنس ۱۴۰۵/۰۸/۲۲: `marketing-messaging`، `logistics`، `accounting` + خطای `last_error` آن‌ها: «لایسنس محلی یافت نشد — … یا اشتراک را تمدید کنید» (از ModuleRecoveryService — این ماژول‌ها با بازیابی از دیسک بازسازی شده‌اند و کلید لایسنسِ اشتراکیِ محلی ندارند)؛ `price-updater`: «کلید لایسنس ثبت نشده است.» با انقضای «نامحدود». بقیه (auto-pricing، smart-assembly، artificial-intelligence، customer-club، seo-audit) با انقضای آینده سالم‌اند.
+
+### تشخیص ریشه
+- `InstalledModule::isExpired()` فقط `license_expires_at` محلی را می‌دید؛ اشتراکِ فعالِ بازار (که پکیج را پوشش می‌دهد) هیچ نقشی در قضاوت نداشت. منبع حقیقتِ «این پکیج در اشتراک فعال هست یا نه» سرور بازار است: پاسخ `GET /api/v1/packages/{slug}` شامل `subscription: { is_free_with_subscription, subscription_expires_at, plan_name, days_remaining }` (همان قراردادی که `checkPurchaseState` در اولویت ۱ استفاده می‌کند).
+
+### طراحی
+| بخش | شرح |
+|---|---|
+| سرویس جدید `PackageSubscriptionService` | `subscriptionFor(slug)`: پاسخ خام `subscription` بازار با **کش ۳۰ دقیقه‌ای هر اسلاگ** (شامل پاسخ منفی تا هر لود صفحه N زنگ نزند)؛ خطای ارتباط **کش نمی‌شود** (بار بعد تلاش مجدد) و `coverageUntil(slug)`: فقط اگر `is_free_with_subscription` و انقضا در آینده → Carbon پایان پوشش؛ اشتراکِ بی‌تاریخ = پوشش فعال. تایم‌اوت API فقط ۶ ثانیه (فراخوانی درون‌صفحه‌ای). |
+| مدل | `isExpired(?CarbonInterface $subscriptionCoversUntil = null)` — پارامتر اختیاری: اگر پوشش آینده باشد false؛ فراخوانی‌های قدیمی بدون آرگومان دقیقاً رفتار قبلی (BC برای پنل قدیمی و LicenseVerifier). |
+| کامپوننت `PackageInstalled` | `subscriptionCoverage($module)`: **فقط برای ماژول‌های منقضیِ محلی** سراغ API می‌رود (ماژول سالم هیچ کوئری اضافه ندارد) + گیت آپدیت `dispatchUpdateJob` هم پوشش‌آگاه شد: منقضیِ محلی اما پوشش‌شده ⇒ بلاک نمی‌شود. |
+| بج Blade | چهار حالت: منقضی بدون پوشش (قرمز «منقضی شده») / منقضی اما پوشش‌شده (**بنفش «پوشش اشتراک تا {جلالی}»** یا «پوشش اشتراک فعال» برای پوشش خیلی دور) / انقضای آینده (تاریخ جلالی) / بی‌تاریخ («نامحدود»). |
+
+### محدودیت‌های شناخته‌شده (مستند برای چت پکیج‌ها)
+- **آپدیت واقعیِ پکیج پوشش‌شده:** جریان `PackageInstallerService::update()` به `verifyLicense` بازار وابسته است (هم `version` و هم `download_token` از پاسخ می‌آید)؛ اگر سرور بازار برای پکیج‌های اشتراکیِ دارای لایسنسِ منقضی، verify نامعتبر بدهد، دانلود از سمت فروشگاه قابل bypass نیست — رفعِ ریشه‌ای باید در سرور بازار انجام شود (verify-license برای پکیج‌های داخل اشتراک فعال، valid=true با expires_at = پایان اشتراک بدهد و لایسنسِ اشتراکی صادر/تمید کند). گیت محلی فروشگاه (فاز ۱۵۰) دیگر مانع نیست.
+- پنل قدیمی (`back/packages/*`) با پارامتر پیش‌فرض، رفتار قبلی را دارد.
+
+### راستی‌آزمایی و محدودیت سندباکس
+- سندباکس PHP ندارد؛ تغییرات ایستا بازبینی شد (BC همهٔ فراخوانی‌های `getPackage` تک‌آرگومان، کلیدهای کش، شکل پاسخ `data`/ریشه، چهار حالت بج). بعد از دیپلوی: صفحهٔ نصب‌شده‌ها باید برای `marketing-messaging`/`logistics`/`accounting` بج بنفش «پوشش اشتراک تا …» نشان دهد (اگر اشتراک فعال این پکیج‌ها را پوشش دهد) و برای پکیج تک‌خریدِ منقضی بدون پوشش همچنان قرمز.
+
+### فایل‌های فاز ۱۵۰
+- `app/Services/PackageSubscriptionService.php` — جدید: حل‌کنندهٔ پوشش اشتراک با کش ۳۰ دقیقه‌ای
+- `app/Services/PackageApiService.php` — پارامتر اختیاری تایم‌اوت در `getPackage` (BC)
+- `app/Models/InstalledModule.php` — `isExpired` پوشش‌آگاه (پارامتر اختیاری، BC)
+- `app/Livewire/Admin/Packages/PackageInstalled.php` — `subscriptionCoverage` + گیت آپدیت پوشش‌آگاه
+- `resources/views/admin-panel/livewire/admin/packages/installed.blade.php` — بج چهارحالته
+- مستندات: ADMIN_PANEL_PROGRESS.md (رکورد فاز ۱۵۰)
