@@ -1,6 +1,8 @@
 # Ignore everything in this directory
 *
-# Except this file
+# Except these files and theme folders
 !.gitignore
 !WeblakShop/
 !WeblakShop/**
+!SaniarTheme/
+!SaniarTheme/**

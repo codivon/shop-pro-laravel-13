@@ -1,0 +1,61 @@
+.admin-loggedin-navbar {
+    top: 0 !important;
+    display: contents !important;
+
+}
+
+.admin-loggedin-navbar .container-fluid {
+    background-color: #1c1c25;
+
+    height: 38px;
+    position: sticky !important;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1020;
+}
+
+.header-main-page.fixed {
+    top: 38px;
+}
+
+.admin-loggedin-navbar .container-fluid a.nav-link {
+    color: #fff !important;
+    font-size: 11px !important;
+    font-weight: 400 !important;
+}
+
+.admin-loggedin-navbar .list .list-item-has-children .sub-menu {
+    background-color: #1c1c25 !important;
+}
+
+.admin-loggedin-navbar .dropdown-user-menu a.navbar-brand {
+    color: #fff !important;
+    cursor: pointer;
+}
+
+.admin-loggedin-navbar .dropdown-user-menu img {
+    width: 30px;
+    height: 30px;
+    border-radius: 100%;
+    padding: 0 !important;
+}
+
+.admin-loggedin-navbar .dropdown-user-menu .list-item.menu-col-1 .sub-menu {
+    left: 0;
+    right: auto;
+}
+
+@media only screen and (max-width: 430px) {
+    .admin-loggedin-navbar .dropdown-username {
+        display: none;
+    }
+}
+
+.admin-loggedin-navbar .container-fluid {
+    flex-wrap: nowrap !important;
+}
+
+.admin-loggedin-navbar .dropdown-user-menu {
+    left: 8px
+}
