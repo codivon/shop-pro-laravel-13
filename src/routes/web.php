@@ -56,6 +56,13 @@ Route::group(['as' => 'front.'], function () {
             Route::post('/comments/reply', [ArticleController::class, 'commentReply'])->name('reply');
             Route::post('/comments/{comment}/like', [ArticleController::class, 'commentLike'])->name('like');
         });
+
+        // ─── استوری‌ها (ویجت main-story تمپلیت سانیار) ───
+        // لایک استوری = همان لایک پست (Post با تریت HasLikes)
+        Route::post('stories/like', [ArticleController::class, 'likeToggle'])->name('setStoryLike');
+        // ردیابی «دیده‌شدن» و تعامل استوری — endpoint سبک JSON (بدون دیتابیس)
+        Route::post('stories/seen', fn () => response()->json(['status' => 'ok']))->name('setStorySeen');
+        Route::post('stories/interaction', fn () => response()->json(['status' => 'ok']))->name('setStoryInteraction');
     });
 
     //    Route::resource('blog/articles', ArticleController::class)->only(['index', 'show']);
@@ -192,12 +199,14 @@ Route::group(['as' => 'front.'], function () {
         Route::delete('discount', [DiscountController::class, 'destroy'])->name('discount.destroy');
 
         // ------------------ orders
-        Route::resource('profile/orders', OrderController::class);
+        // فاز ۱۵۲ تم — نام‌گذاری resourceها با نام‌های کوتاه (front.orders.* و…)
+        // چون ویوهای تم و کدهای هسته (مثل Listenerهای سفارش) با همین نام‌ها صدا می‌زنند
+        Route::resource('profile/orders', OrderController::class)->names('orders');
         Route::get('profile/orders/pay/{order}', [OrderController::class, 'pay'])->name('orders.pay');
         Route::get('profile/orders/{order}/print', [OrderController::class, 'print'])->name('orders.print');
         // ------------------ wallet
         Route::post('profile/wallet/withdraw', [WalletController::class, 'withdraw'])->name('wallet.withdraw');
-        Route::resource('profile/wallet', WalletController::class)->only(['index', 'store', 'show']);
+        Route::resource('profile/wallet', WalletController::class)->only(['index', 'store', 'show'])->names('wallet');
 
         Route::get('profile/notifications', [UserController::class, 'notifications'])->name('notifications.index');
         Route::post('profile/notifications/mark-as-read', [UserController::class, 'markAsRead'])->name('notifications.mark-as-read');
@@ -230,10 +239,10 @@ Route::group(['as' => 'front.'], function () {
         Route::post('blogs/{post}/comments', [BlogController::class, 'comments'])->name('post.comments');
 
         // ------------------ favorites
-        Route::resource('profile/favorites', FavoriteController::class)->only(['index', 'store', 'destroy']);
+        Route::resource('profile/favorites', FavoriteController::class)->only(['index', 'store', 'destroy'])->names('favorites');
 
         // ------------------ addresses
-        Route::resource('profile/addresses', AddressesController::class)->only(['index', 'store', 'destroy', 'show', 'update']);
+        Route::resource('profile/addresses', AddressesController::class)->only(['index', 'store', 'destroy', 'show', 'update'])->names('addresses');
         Route::get('profile/addresses/active/{address}', [AddressesController::class, 'active_address'])->name('addresses.active');
 
         // ------------------ user-history
@@ -241,9 +250,9 @@ Route::group(['as' => 'front.'], function () {
         Route::delete('profile/user-history', [UserHistoryController::class, 'destroy'])->name('user.user-history.delete');
 
         // ------------------ comments
-        Route::resource('profile/comments', CommentController::class)->only(['index', 'store', 'destroy']);
+        Route::resource('profile/comments', CommentController::class)->only(['index', 'store', 'destroy'])->names('comments');
         // ------------------ tickets
-        Route::resource('profile/tickets', TicketController::class)->except(['destroy']);
+        Route::resource('profile/tickets', TicketController::class)->except(['destroy'])->names('tickets');
 
         Route::prefix('profile/returns')->name('returns.')->middleware(['auth', 'verified'])->group(function () {
             Route::get('/', [ReturnController::class, 'index'])->name('index');

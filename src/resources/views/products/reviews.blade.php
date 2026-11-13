@@ -13,8 +13,9 @@
         <div class="col-12">
             <div class="product-page">
 
-                <form action="{{route('front.products.reviews.store',$product)}}" method="post" id="addCommentForm">
+                <form action="{{route('front.reviews.store')}}" method="post" id="addCommentForm">
                     @csrf
+                    <input type="hidden" name="product_id" value="{{ $product->id }}">
                     <section class="product-comment">
                         <div class="comments-product">
                             <div class="comments-product-row">

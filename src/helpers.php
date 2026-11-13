@@ -12,6 +12,17 @@ use Illuminate\Support\Facades\DB;
 use App\Services\WidgetRegistry;
 use App\Models\Tag;
 
+/*
+ * گارد یکتایی لود helpers قالب — فاز ۱۵۲ تم سانیار
+ * اگر این فایل به هر دلیل دوباره include شود (مثلاً از مسیر دیگر یا
+ * provider تکراری)، توابع دوباره تعریف نمی‌شوند و از «Cannot redeclare
+ * function» جلوگیری می‌شود.
+ */
+if (defined('SANIAR_THEME_HELPERS_LOADED')) {
+    return;
+}
+define('SANIAR_THEME_HELPERS_LOADED', 1);
+
 /**
  * FIX مقیاس: middleware throttle فقط در production — در تست/سندباکس محدودیتی نیست.
  */

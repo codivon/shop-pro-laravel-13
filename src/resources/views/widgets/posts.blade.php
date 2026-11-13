@@ -13,7 +13,7 @@
                     <h5 class="font-16 ms-3">آخرین مطالب <span class="main-color-one-color d-inline-block">وبلاگ</span></h5>
                 </div>
                 <div class="link">
-                    <a href="{{ route('front.blogs.index') }}" class="border-animate fromCenter pb-1 fw-bold">
+                    <a href="{{ route('front.blog.index') }}" class="border-animate fromCenter pb-1 fw-bold">
                         مشاهده همه
                         <i class="bi bi-chevron-double-left main-color-one-color"></i>
                     </a>

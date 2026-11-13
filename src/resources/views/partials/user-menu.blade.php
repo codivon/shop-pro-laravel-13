@@ -9,7 +9,7 @@
         <li><a href="{{ route('front.wallet.index') }}" class="dropdown-item"><i class="bi bi-wallet2 me-2"></i>کیف پول</a></li>
         <li><a href="{{ route('front.addresses.index') }}" class="dropdown-item"><i class="bi bi-pin-map me-2"></i>آدرس های من</a></li>
         <li><a href="{{ route('front.notifications.index') }}" class="dropdown-item"><i class="bi bi-bell me-2"></i>پیام ها و اطلاعیه ها</a></li>
-        <li><a href="{{ route('front.user.comments') }}" class="dropdown-item"><i class="bi bi-chat-dots me-2"></i>نظرات من</a></li>
+        <li><a href="{{ route('front.comments.index') }}" class="dropdown-item"><i class="bi bi-chat-dots me-2"></i>نظرات من</a></li>
         <li><a href="{{ route('front.tickets.index') }}" class="dropdown-item"><i class="bi bi-question-circle me-2"></i>درخواست پشتیبانی</a></li>
         <li><a href="{{ route('front.favorites.index') }}" class="dropdown-item"><i class="bi bi-heart me-2"></i>محصولات مورد علاقه</a></li>
         <li><a href="{{ route('front.user.user-history') }}" class="dropdown-item"><i class="bi bi-clock-history me-2"></i>بازدید های اخیر</a></li>
