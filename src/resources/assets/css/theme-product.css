@@ -1,0 +1,809 @@
+/* ============================================================
+   theme-product.css — فاز ۱۵۵
+   اصلاحات بصری صفحهٔ تک‌محصول سانیار (SaniarTheme)
+   فقط استایل؛ هیچ اسکریپت/استایل اینلاینی در بلید استفاده نشده.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   ۱) گالری — تصویر اصلی (جانشین قاعدهٔ قدیمی #img-product-zoom)
+   زوم ez-plus حذف شده؛ تصویر اصلی با کلاس جدید سایز می‌گیرد.
+   ------------------------------------------------------------ */
+.product-page .pro_gallery .product-main-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 14px;
+    background: #fff;
+    object-fit: contain;
+}
+
+/* نوار بندانگشتی‌های گالری — فعال با قاب آبی (فایل show.css قاب را دارد؛
+   اینجا فاصله و هم‌ترازی نوار تکمیل می‌شود) */
+.product-page .pro_gallery #gallery_01f .gallery-items .item img {
+    width: 100%;
+    height: 74px;
+    object-fit: contain;
+    background: #fff;
+}
+
+/* ضد آرتیفکت‌های احتمالی زوم — هر باقی‌ماندهٔ DOM پلاگین پنهان شود */
+.product-page .zoomContainer,
+.product-page .zoomWindowContainer,
+.product-page .zoomLens,
+.product-page .zoomWrapper img.tn {
+    display: none !important;
+}
+
+/* ------------------------------------------------------------
+   ۲) ردیف فروشنده/شناسه/ارسال — هم‌تراز قالب مرجع
+   (داخل ستون اطلاعات، بالای باکس قیمت؛ قاب یکپارچه و مرتب)
+   ------------------------------------------------------------ */
+.product-page .product-seller-info .product-seller-row--info {
+    background: #fff;
+    border: 1px solid #eef0f3;
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: var(--shadow-sm);
+}
+
+.product-page .product-seller-info .product-seller-row--info .product-seller-first-line {
+    color: var(--text-muted-two, #929292);
+}
+
+.product-page .product-seller-info .product-seller-row--info .table-name {
+    color: var(--color-site, #333);
+}
+
+.product-page .product-seller-info .product-seller-row--info .performance-label {
+    color: #0b8502;
+    background: rgba(24, 157, 14, .08);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 12px;
+}
+
+.product-page .product-seller-info .product-seller-row--info .sku-label {
+    cursor: pointer;
+}
+
+@media (max-width: 767.98px) {
+    .product-page .product-seller-info .product-seller-row--info {
+        font-size: 13px;
+    }
+}
+
+/* ------------------------------------------------------------
+   ۳) باکس قیمت/خرید — هم‌خوان با مارکاپ مرجع (product-meta-action)
+   ------------------------------------------------------------ */
+.product-page .product-seller-info .product-meta-action {
+    background: #eff1f4;
+    border-radius: 14px;
+    padding: 16px 14px;
+    box-shadow: var(--shadow-lg);
+    margin-top: 16px;
+}
+
+.product-page .product-seller-info .product-meta-action .old-price,
+.product-page .product-seller-info .product-meta-action .product-seller-price-real.text-danger del {
+    border-left: 2px solid #c6cad2;
+    padding-left: 10px;
+    margin-left: 6px;
+}
+
+.product-page .product-seller-info .product-meta-action .new-price {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.product-page .product-seller-info .btn-add-to-cart {
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+/* فلش لحظه‌ای قیمت هنگام تغییر تنوع */
+@keyframes dtPriceFlash {
+    0% { background-color: var(--main-color-one-shadow, #407bff31); }
+    100% { background-color: transparent; }
+}
+
+.product-page #price-real .product-seller-price-prev.dt-price-updated {
+    animation: dtPriceFlash .55s ease-out;
+    border-radius: 6px;
+    padding: 0 4px;
+}
+
+/* ------------------------------------------------------------
+   ۴) چیپ‌های انتخاب تنوع — حالت انتخاب با تیک آبی (هم‌تراز مرجع)
+   ------------------------------------------------------------ */
+.product-page .product-meta-color-items .ui-variant-color,
+.product-page .product-meta-color-items .ui-variant {
+    min-height: 42px;
+}
+
+.product-page .product-meta-color-items .ui-variant-color.selected::after,
+.product-page .product-meta-color-items .ui-variant.selected::after {
+    content: "\F26E";
+    font-family: "bootstrap-icons", serif;
+    font-size: 13px;
+    color: var(--main-color-one, #275fe0);
+    margin-right: 6px;
+}
+
+.product-page .product-meta-color-items .unavailable::after {
+    content: none;
+}
+
+/* ردیف‌های ثابت (تک‌گزینه‌ای: اندازه/وضعیت/اصالت) — از رابط کاربری حذف،
+   فقط اینپوت مخفی برای ارسال صحیح انتخاب‌ها */
+.product-variants-constant {
+    display: none;
+}
+
+/* ------------------------------------------------------------
+   ۵) تب‌های پایین صفحه — نکات تکمیلی (استایل پایه در show.css)
+   ------------------------------------------------------------ */
+.product-page .p-tabs .box-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: #fff;
+}
+
+/* مشخصات فنی — ردیف‌ها روی موبایل زیر هم */
+@media (max-width: 767.98px) {
+    .product-page .p-tabs .params-list .params-list-key,
+    .product-page .p-tabs .params-list .params-list-value {
+        width: 100%;
+    }
+
+    .product-page .p-tabs .params-list > li > div:first-child {
+        border-left: 0;
+        padding-left: 0;
+        margin-left: 0;
+    }
+}
+
+/* ------------------------------------------------------------
+   ۶) کارت‌های دیدگاه‌ها (نظرات کاربران) — هم‌تراز کارت مرجع
+   ------------------------------------------------------------ */
+.product-page .p-tabs .comments-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.product-page .p-tabs .comments-list > li {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+}
+
+.product-page .p-tabs .comments-list .article {
+    background: #fff;
+    border: 1px solid #eef0f3;
+    border-radius: 14px;
+    box-shadow: var(--shadow-sm);
+    padding: 16px 18px;
+}
+
+.product-page .p-tabs .comments-list .article .header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #e9ecef;
+    margin-bottom: 10px;
+}
+
+.product-page .p-tabs .comments-list .article .header .badge {
+    font-weight: 700;
+    font-size: 13px;
+    border-radius: 8px;
+}
+
+.product-page .p-tabs .comments-list .article .header .rating-badge {
+    background: rgba(24, 157, 14, .1);
+    color: #0b8502;
+    padding: 3px 10px;
+}
+
+.product-page .p-tabs .comments-list .article .header .buyer-badge {
+    background: rgba(39, 95, 224, .08);
+    color: var(--main-color-one, #275fe0);
+    padding: 3px 10px;
+}
+
+.product-page .p-tabs .comments-list .article .header .store-badge {
+    background: rgba(255, 164, 27, .14);
+    color: #a36a00;
+    padding: 3px 10px;
+}
+
+.product-page .p-tabs .comments-list .article .header .review-title {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--color-site, #333);
+}
+
+.product-page .p-tabs .comments-list .article .header .review-meta {
+    color: var(--text-muted-two, #929292);
+    font-size: 12px;
+}
+
+.product-page .p-tabs .comments-list .article p {
+    color: var(--text-muted, #565757);
+    line-height: 2;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+/* پیشنهاد/عدم پیشنهاد خریدار */
+.product-page .p-tabs .comments-list .user-suggest {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+
+.product-page .p-tabs .comments-list .user-suggest.text-success {
+    background: rgba(24, 157, 14, .1);
+}
+
+.product-page .p-tabs .comments-list .user-suggest.text-muted {
+    background: #f1f2f5;
+    color: var(--text-muted-two, #929292) !important;
+}
+
+.product-page .p-tabs .comments-list .user-suggest.text-danger {
+    background: rgba(239, 57, 78, .09);
+}
+
+/* نقاط قوت / ضعف */
+.product-page .p-tabs .comments-list .content-expert-evaluation-positive ul {
+    list-style: none;
+    margin: 0 0 4px;
+    padding: 0;
+}
+
+.product-page .p-tabs .comments-list .content-expert-evaluation-positive li {
+    font-size: 13px;
+    color: var(--text-muted, #565757);
+    margin-bottom: 4px;
+}
+
+.product-page .p-tabs .comments-list .badge-positive,
+.product-page .p-tabs .comments-list .badge-negative {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    font-size: 13px;
+    font-weight: 700;
+    margin-left: 6px;
+}
+
+.product-page .p-tabs .comments-list .badge-positive {
+    background: rgba(24, 157, 14, .12);
+    color: #0b8502;
+}
+
+.product-page .p-tabs .comments-list .badge-negative {
+    background: rgba(239, 57, 78, .12);
+    color: #c8102e;
+}
+
+/* فوتر کارت دیدگاه — مفید بود */
+.product-page .p-tabs .comments-list .article .footer {
+    padding-top: 10px;
+    border-top: 1px dashed #e9ecef;
+}
+
+.product-page .p-tabs .comments-list .comment-like-container {
+    color: var(--text-muted-two, #929292);
+    font-size: 13px;
+}
+
+.product-page .p-tabs .comments-list .btn-like {
+    background: #f4f5f9;
+    border: 1px solid #e9ecef;
+    border-radius: 20px;
+    padding: 3px 16px;
+    font-size: 13px;
+    color: var(--color-site, #333);
+    transition: all .15s ease;
+}
+
+.product-page .p-tabs .comments-list .btn-like:hover {
+    border-color: var(--main-color-one, #275fe0);
+    color: var(--main-color-one, #275fe0);
+}
+
+/* صفحه‌بندی دیدگاه‌ها */
+.product-page .p-tabs .paginationPager {
+    margin-top: 14px;
+}
+
+/* ------------------------------------------------------------
+   ۷) پرسش و پاسخ — فرم و فهرست پرسش/پاسخ
+   ------------------------------------------------------------ */
+.product-page .p-tabs .js-faq-container .form-faq {
+    background: #fff;
+    border: 1px solid #eef0f3;
+    border-radius: 14px;
+    box-shadow: var(--shadow-sm);
+    padding: 16px 18px;
+    margin-bottom: 18px;
+}
+
+.product-page .p-tabs .js-faq-container .ui-textarea textarea,
+.product-page .p-tabs .js-faq-container .ui-textarea-field {
+    width: 100%;
+    min-height: 96px;
+    border: 1px solid #e2e5ea;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: var(--color-site, #333);
+    background: #fff;
+    resize: vertical;
+    transition: border-color .15s ease, box-shadow .15s ease;
+    outline: none;
+}
+
+.product-page .p-tabs .js-faq-container .ui-textarea textarea:focus,
+.product-page .p-tabs .js-faq-container .ui-textarea-field:focus {
+    border-color: var(--main-color-one, #275fe0);
+    box-shadow: 0 0 0 3px var(--main-color-one-shadow, #407bff31);
+}
+
+.product-page .p-tabs .js-faq-container .comment-submit-btn {
+    background: var(--main-color-one, #275fe0);
+    color: #fff;
+    border: 0;
+    border-radius: 24px;
+    padding: 8px 34px;
+    font-size: 14px;
+    transition: background .15s ease;
+}
+
+.product-page .p-tabs .js-faq-container .comment-submit-btn:hover {
+    background: var(--main-color-one-hover, #2256d1);
+}
+
+.product-page .p-tabs .js-faq-container .account-agree {
+    display: none; /* چک‌باکس بی‌برچسب قدیمی — عنصر زینتی بدون عملکرد */
+}
+
+/* آواتار پرسش */
+.product-page .p-tabs .comments-list .faq-header-question {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: rgba(39, 95, 224, .08);
+    color: var(--main-color-one, #275fe0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    margin-left: 10px;
+}
+
+.product-page .p-tabs .comments-list .question-body {
+    font-weight: 600;
+    color: var(--color-site, #333);
+    line-height: 1.9;
+    padding-top: 6px;
+}
+
+/* پاسخ */
+.product-page .p-tabs .comments-list .answer {
+    margin: 12px 0 0 0;
+    padding: 12px 14px;
+    background: #f8f9fc;
+    border-radius: 10px;
+    border-right: 3px solid var(--main-color-one, #275fe0);
+}
+
+.product-page .p-tabs .comments-list .form-question-answer > span {
+    flex-shrink: 0;
+    background: var(--main-color-one, #275fe0);
+    color: #fff;
+    border-radius: 20px;
+    font-size: 12px;
+    padding: 1px 12px;
+    margin-left: 8px;
+    height: fit-content;
+    margin-top: 2px;
+}
+
+.product-page .p-tabs .comments-list .form-question-answer p {
+    margin: 0;
+    color: var(--text-muted, #565757);
+    font-size: 14px;
+    line-height: 1.9;
+}
+
+.product-page .p-tabs .comments-list .answer .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.product-page .p-tabs .comments-list .question-answer-name {
+    font-size: 12px;
+    color: var(--text-muted-two, #929292);
+}
+
+/* لینک پاسخ به پرسش */
+.product-page .p-tabs .comments-list .comment-replay {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+/* ------------------------------------------------------------
+   ۸) مودال افزودن نظر — بازطراحی سانیار
+   ------------------------------------------------------------ */
+.modal.review-modal .modal-content {
+    border: 0;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: var(--shadow-xl);
+}
+
+.modal.review-modal .modal-header {
+    border-bottom: 1px solid #eef0f3;
+    padding: 16px 22px;
+    background: #fff;
+}
+
+.modal.review-modal .modal-header .modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-site, #333);
+}
+
+.modal.review-modal .modal-header .modal-title small {
+    display: block;
+    font-size: 12px;
+    font-weight: normal;
+    color: var(--text-muted-two, #929292);
+    margin-top: 2px;
+}
+
+.modal.review-modal .modal-body {
+    padding: 22px;
+    background: #fff;
+}
+
+.modal.review-modal .form-row-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-site, #333);
+    margin-bottom: 8px;
+}
+
+.modal.review-modal .form-row-title .text-danger {
+    color: #ef394e;
+}
+
+/* ورودی‌ها با حلقهٔ فوکوس */
+.modal.review-modal .input-ui,
+.modal.review-modal textarea.input-ui {
+    width: 100%;
+    border: 1px solid #e2e5ea;
+    border-radius: 10px;
+    padding: 9px 14px;
+    font-size: 14px;
+    color: var(--color-site, #333);
+    background: #fff;
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.modal.review-modal .input-ui:focus {
+    border-color: var(--main-color-one, #275fe0);
+    box-shadow: 0 0 0 3px var(--main-color-one-shadow, #407bff31);
+}
+
+/* ویجت امتیاز ستاره‌ای
+   ترتیب DOM نزولی (۵→۱) + direction:ltr: ستارهٔ ۱ سمت راست (RTL)؛
+   سلکتور «~» همهٔ ستاره‌های «کوچک‌تر یا مساوی» انتخاب را پر می‌کند. */
+.review-star-rating {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 4px;
+    direction: ltr;
+}
+
+.review-star-rating .review-star {
+    cursor: pointer;
+    font-size: 26px;
+    line-height: 1;
+    color: #dfe3e8;
+    transition: color .12s ease, transform .12s ease;
+    background: transparent;
+    border: 0;
+    padding: 0 2px;
+    margin: 0;
+}
+
+.review-star-rating .review-star:hover {
+    transform: scale(1.12);
+}
+
+.review-star-rating input[type="radio"]:checked ~ .review-star i,
+.review-star-rating .review-star:hover i,
+.review-star-rating .review-star:hover ~ .review-star i {
+    color: #ffb400;
+}
+
+.review-star-rating + .review-rating-text {
+    margin-right: 12px;
+    font-size: 13px;
+    color: var(--text-muted, #565757);
+}
+
+.review-star-rating input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 1px;
+    height: 1px;
+}
+
+/* پیشنهاد به دیگران */
+.modal.review-modal .review-suggest-item label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 96px;
+    border: 1px solid #e2e5ea;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--text-muted, #565757);
+    cursor: pointer;
+    background: #fff;
+    transition: all .15s ease;
+    margin: 0;
+}
+
+.modal.review-modal .review-suggest-item label i {
+    font-size: 20px;
+}
+
+.modal.review-modal .review-suggest-item label:hover {
+    border-color: var(--main-color-one, #275fe0);
+}
+
+.modal.review-modal .review-suggest-item.active label,
+.modal.review-modal .review-suggest-item label.active {
+    border-color: var(--main-color-one, #275fe0);
+    color: var(--main-color-one, #275fe0);
+    background: rgba(39, 95, 224, .05);
+    font-weight: 600;
+}
+
+.modal.review-modal .review-suggest-item input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* نقاط قوت/ضعف — دکمهٔ افزودن */
+.modal.review-modal .ui-input--add-point {
+    position: relative;
+}
+
+.modal.review-modal .ui-input--add-point .ui-input-point {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    border: 0;
+    background: var(--main-color-one, #275fe0);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.review-modal .ui-input--add-point .ui-input-point::before {
+    content: "\F64D"; /* bootstrap-icons plus-lg */
+    font-family: "bootstrap-icons", serif;
+    font-size: 13px;
+}
+
+.modal.review-modal .form-comment-dynamic-labels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.modal.review-modal .ui-dynamic-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 20px;
+    font-size: 12px;
+    padding: 4px 12px;
+}
+
+.modal.review-modal .ui-dynamic-label--positive {
+    background: rgba(24, 157, 14, .1);
+    color: #0b8502;
+}
+
+.modal.review-modal .ui-dynamic-label--negative {
+    background: rgba(239, 57, 78, .1);
+    color: #c8102e;
+}
+
+.modal.review-modal .ui-dynamic-label-remove {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.modal.review-modal .ui-dynamic-label-remove::before {
+    content: "\F62A"; /* bootstrap-icons x */
+    font-family: "bootstrap-icons", serif;
+    font-size: 12px;
+}
+
+/* ستون راهنما */
+.modal.review-modal .review-guideline {
+    background: #f8f9fc;
+    border-radius: 14px;
+    padding: 18px 20px;
+    height: 100%;
+}
+
+.modal.review-modal .review-guideline h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-site, #333);
+    margin-bottom: 12px;
+}
+
+.modal.review-modal .review-guideline p {
+    font-size: 12.5px;
+    color: var(--text-muted, #565757);
+    line-height: 2;
+    margin-bottom: 8px;
+    padding-right: 14px;
+    position: relative;
+}
+
+.modal.review-modal .review-guideline p::before {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 10px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--main-color-one, #275fe0);
+    opacity: .5;
+}
+
+/* دکمهٔ ثبت — آبی اصلی (حذف قرمز قدیمی) */
+.modal.review-modal .comment-submit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--main-color-one, #275fe0);
+    color: #fff;
+    border: 0;
+    border-radius: 24px;
+    padding: 10px 46px;
+    font-size: 15px;
+    font-weight: 600;
+    transition: background .15s ease;
+}
+
+.modal.review-modal .comment-submit-btn:hover {
+    background: var(--main-color-one-hover, #2256d1);
+    color: #fff;
+}
+
+.modal.review-modal .review-disclaimer {
+    font-size: 12px;
+    color: var(--text-muted-two, #929292);
+    margin-top: 10px;
+    margin-bottom: 0;
+}
+
+.modal.review-modal .review-disclaimer a {
+    color: var(--main-color-one, #275fe0);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--main-color-one, #275fe0);
+}
+
+@media (max-width: 767.98px) {
+    .modal.review-modal .comment-submit-btn {
+        width: 100%;
+    }
+}
+
+/* ------------------------------------------------------------
+   ۹) شناسه کالا انتهای صفحه — ظاهر آرام و کم‌رنگ
+   ------------------------------------------------------------ */
+.product-page .footer-product-id {
+    justify-content: flex-start;
+    border-top: 1px dashed #e9ecef;
+    margin-top: 6px;
+}
+
+.product-page .footer-product-id span:last-child {
+    direction: ltr;
+    color: var(--text-muted, #565757);
+    font-weight: 600;
+}
+
+/* ------------------------------------------------------------
+   ۱۰) نان‌ریز و سربرگ متا — ترازبندی نهایی
+   ------------------------------------------------------------ */
+.product-page .product-meta-title h1 {
+    line-height: 2;
+}
+
+.product-page .bread-crumb .breadcrumb-item + .breadcrumb-item::before {
+    color: #c6cad2;
+}
+
+/* اسلایدر محصولات مرتبط — سربرگ */
+.product-page .related-products-slider .header-content h5 {
+    font-weight: 700;
+}
+
+/* ------------------------------------------------------------
+   جدول فروشندگان — روی موبایل داخل ناحیهٔ خودش اسکرول شود
+   (به‌جای شکستن کل صفحه)
+   ------------------------------------------------------------ */
+.product-page .table-suppliers-store {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.product-page .table-suppliers-store .table.main-table {
+    min-width: 760px;
+}
+
+/* ------------------------------------------------------------
+   ۱۱) موبایل — چیدمان ستون‌ها
+   ------------------------------------------------------------ */
+@media (max-width: 991.98px) {
+    .product-page .pro_gallery {
+        max-width: 420px;
+        margin: 0 auto;
+    }
+}

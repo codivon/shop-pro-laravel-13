@@ -62,6 +62,11 @@
     <link rel="stylesheet" href="{{ theme_asset('css/style.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('css/responsive.css') }}">
 
+    {{-- فاز ۱۵۵ — اصلاحات ظاهری ریز (هدر/محصول/صفحات) --}}
+    <link rel="stylesheet" href="{{ theme_asset('css/theme-header.css') }}">
+    <link rel="stylesheet" href="{{ theme_asset('css/theme-product.css') }}">
+    <link rel="stylesheet" href="{{ theme_asset('css/theme-pages.css') }}">
+
     {{-- CSS عملکردی مشترک (توست‌ها + آیکون‌های منوهای داینامیک) --}}
     <link rel="stylesheet" href="{{ theme_asset('js/plugins/toastr/toastr.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('plugin/go-to-top/style.css') }}">
@@ -71,6 +76,11 @@
 
     @if(auth('adminPanel')->check())
         <link rel="stylesheet" href="{{ theme_asset('css/admin-loggedin-navbar.css') }}">
+    @endif
+
+    {{-- آیکون‌های اعلان‌ها (mdi) — فقط برای کاربر وارد شده تا رندر هدر کند نشود --}}
+    @if(auth('web')->check())
+        <link rel="stylesheet" href="{{ theme_asset('css/materialdesignicons.css') }}">
     @endif
 
     @stack('styles')
@@ -198,8 +208,7 @@
 
             <ul class="dropdown-user-menu list float-right hidden-md new-list-menu">
                 <li class="list-item list-item-has-children menu-col-1">
-                    <a class="navbar-brand "  role="button" id="adminDropdown" data-bs-toggle="dropdown"
-                       aria-expanded="false">
+                    <a class="navbar-brand" role="button" aria-haspopup="true" aria-expanded="false">
                         <img src="{{ auth('adminPanel')->user()->image_url }}" alt="Avatar Logo" class="rounded-pill">
                         <span class="dropdown-username">{{auth('adminPanel')->user()->full_name}}</span>
                     </a>
@@ -331,63 +340,14 @@
                     <form action="{{ route('front.products.index') }}" id="search-form">
                         <div class="search-filed">
                             <input type="text" name="q" id="search-input" class="form-control search-input"
-                                   autocomplete="off" placeholder="نام کالای مورد نظر خود را جستجو کنید…">
+                                   autocomplete="off" placeholder="جستجوی محصولات ...">
                             <button type="submit" id="search-header-btn-search"
                                     class="btn search-btn main-color-one-bg rounded-pill"><i class="bi bi-search"></i></button>
                         </div>
                     </form>
 
-                    <div class="search-result" id="search-result">
-
-                    </div>
-                    <div class="search-result search-result-fixed">
-                        <hr class="first-hr">
-                        <div class="search-results-list js-search-ad-banner">
-                            <div class="main-slider d-contents">
-                                <div class="main-slider-container">
-                                    <div id="carouselExampleIndicators2" class="carousel slide"
-                                         data-ride="carousel2" style="max-height: 189px;">
-                                        @if(count(get_slider_search())>1)
-                                            <ol class="carousel-indicators">
-                                                @for($i=1;$i<= count(get_slider_search());$i++)
-                                                    <li data-target="#carouselExampleIndicators2"
-                                                        data-slide-to="{{$i}}"
-                                                        class="@if($i==0)active @endif"></li>
-                                                @endfor
-                                            </ol>
-                                        @endif
-                                        <div class="carousel-inner">
-                                            @foreach(get_slider_search() as $slider_search)
-                                                <div class="carousel-item @if ($loop->first)active @endif">
-                                                    <img class="d-block w-100"
-                                                         src="{{asset($slider_search->image)}}"
-                                                         alt="{{$slider_search->title ?: $slider_search->image}}">
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                        @if(count(get_slider_search())>1)
-                                            <a class="carousel-control-prev" href="#carouselExampleIndicators2"
-                                               role="button"
-                                               data-slide="prev">
-                                                <span class="fa fa-angle-left" aria-hidden="true"></span>
-                                                <span class="sr-only">Previous</span>
-                                            </a>
-                                            <a class="carousel-control-next" href="#carouselExampleIndicators2"
-                                               role="button"
-                                               data-slide="next">
-                                                <span class="fa fa-angle-right" aria-hidden="true"></span>
-                                                <span class="sr-only">Next</span>
-                                            </a>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <p class="mt-3 mb-2">
-                            نام کالای مورد نظر خود را جستجو کنید…
-                        </p>
-                    </div>
+                    {{-- نتایج جستجوی زنده — فقط با محتوا نمایش داده می‌شود --}}
+                    <div class="search-result" id="search-result"></div>
                 </div>
             </div>
             {{-- پایان جستجو --}}
@@ -521,6 +481,7 @@
 <script src="{{theme_asset('plugin/go-to-top/script.js')}}"></script>
 <script src="{{theme_asset('plugin/rasta-contact/script.js')}}"></script>
 <script src="{{theme_asset('js/saniar-init.js')}}"></script>
+<script src="{{theme_asset('js/theme-header.js')}}"></script>
 
 {{-- اسکریپت‌های عملکردی فروشگاه --}}
 <script src="{{ theme_asset("js/plugins/sweetalert2.all.min.js") }}"></script>

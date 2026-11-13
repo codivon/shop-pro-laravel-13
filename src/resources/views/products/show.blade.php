@@ -117,17 +117,19 @@
                                             @endif
                                         </ul>
 
-                                        <img class="zoom-img mt-3" id="img-product-zoom" src="{{$product->image ? asset($product->image) : asset('/no-image-product.svg') }}"
-                                             data-zoom-image="{{$product->image ? asset($product->image) : asset('/no-image-product.svg')}}"
+                                        {{-- فاز ۱۵۵ — زوم تصویر حذف شد (ez-plus دیگر لود/فراخوانی نمی‌شود)؛
+                                             تصویر اصلی با کلاس product-main-image سایز می‌گیرد --}}
+                                        <img class="product-main-image mt-3"
+                                             src="{{$product->image ? asset($product->image) : asset('/no-image-product.svg') }}"
                                              alt="{{ $product->title }}"/>
                                         @if($product->gallery()->count())
+                                            {{-- فاز ۱۵۵ — بندانگشتی‌ها بدون ez-plus؛ تعویض تصویر با theme-product.js --}}
                                             <div id="gallery_01f">
                                                 <ul class="gallery-items owl-carousel owl-theme" id="gallery-slider">
                                                     @foreach ($product->gallery()->orderBy('ordering')->get() as $item)
                                                         <li class="item">
-                                                            <a class="elevatezoom-gallery active" data-update=""
-                                                               data-image="{{$item->image ? asset($item->image) : asset('/no-image-product.svg')}}"
-                                                               data-zoom-image="{{$item->image ? asset($item->image) : asset('/no-image-product.svg')}}">
+                                                            <a href="javascript:void(0)" class="js-gallery-thumb active"
+                                                               data-image="{{$item->image ? asset($item->image) : asset('/no-image-product.svg')}}">
                                                                 <img src="{{$item->image ? asset($item->image) : asset('/no-image-product.svg')}}"
                                                                      alt="{{ $product->title }}"/></a>
                                                         </li>
@@ -777,9 +779,7 @@
 
 @endsection
 
-@push('scripts-top-js')
- <script src="{{theme_asset('js/jquery.ez-plus.js')}}"></script>
-@endpush
+{{-- فاز ۱۵۵ — پوش ez-plus حذف شد: زوم تصویر محصول کاملأ برداشته شده --}}
 
 @push('scripts')
      <script src="{{theme_asset('js/theia-sticky-sidebar.min.js')}}"></script>
@@ -790,4 +790,6 @@
      @endif
    <script src="{{ theme_asset('js/pages/products/show.js') }}?v=16"></script>
    <script src="{{ theme_asset('js/pages/comments.js') }}"></script>
+   {{-- فاز ۱۵۵ — منطق لحظه‌ای قیمت + تعویض تصویر گالری (بدون اسکریپت اینلاین) --}}
+   <script src="{{ theme_asset('js/theme-product.js') }}?v=1"></script>
 @endpush

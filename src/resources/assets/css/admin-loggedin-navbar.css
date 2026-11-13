@@ -1,61 +1,214 @@
-.admin-loggedin-navbar {
-    top: 0 !important;
-    display: contents !important;
+/* =====================================================================
+   admin-loggedin-navbar.css — نوار مدیریت بالای سایت برای ادمین وارد شده
+   کاملا بازنویسی‌شده با اسکوپ .admin-loggedin-navbar
+   (کلاس‌های قدیمی new-list-menu / sub-menu بدون CSS قدیمی تم были خالی)
+   ===================================================================== */
 
+/* ---------- خود نوار ---------- */
+.admin-loggedin-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    min-height: 48px;
+    padding: 0;
+    margin: 0;
+    background-color: #1c1c25;
+    border-radius: 0;
+    font-size: 13px;
+    flex-wrap: nowrap;
 }
 
 .admin-loggedin-navbar .container-fluid {
-    background-color: #1c1c25;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 48px;
+    padding: 0 12px;
+    background-color: transparent;
+    position: static;
+}
 
-    height: 38px;
-    position: sticky !important;
-    top: 0;
+/* ---------- لیست افقی آیتم‌ها ---------- */
+.admin-loggedin-navbar ul.new-list-menu {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 2px;
+}
+
+.admin-loggedin-navbar .list-item {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    margin: 0;
+    padding: 0;
+}
+
+.admin-loggedin-navbar .list-item > .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 14px;
+    color: rgba(255, 255, 255, .92) !important;
+    font-size: 13px;
+    line-height: 1;
+    white-space: nowrap;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    transition: 0.2s all ease-in-out;
+    -webkit-transition: 0.2s all ease-in-out;
+}
+
+.admin-loggedin-navbar .list-item > .nav-link:hover,
+.admin-loggedin-navbar .list-item > .nav-link:focus {
+    color: #fff !important;
+    background: rgba(255, 255, 255, .08) !important;
+    border-radius: 8px;
+}
+
+.admin-loggedin-navbar .nav-link i {
+    font-size: 14px;
+    opacity: .85;
+}
+
+/* ---------- تریگر آواتار (سمت چپ نوار) ---------- */
+.admin-loggedin-navbar .dropdown-user-menu .navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    margin: 0;
+    color: #fff !important;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.admin-loggedin-navbar .dropdown-user-menu .navbar-brand img {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.admin-loggedin-navbar .dropdown-username {
+    font-size: 13px;
+    color: rgba(255, 255, 255, .92) !important;
+}
+
+/* ---------- پنل‌های کشویی (hover) ---------- */
+.admin-loggedin-navbar .list-item-has-children > .sub-menu {
+    display: block;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    min-width: 225px;
+    margin: 0;
+    padding: 8px 0;
+    list-style: none;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: 0.18s all ease-in-out;
+    -webkit-transition: 0.18s all ease-in-out;
+    z-index: 1050;
+}
+
+.admin-loggedin-navbar .list-item-has-children:hover > .sub-menu,
+.admin-loggedin-navbar .list-item-has-children:focus-within > .sub-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+}
+
+/* پل hover — فاصله بین نوار و پنل را پر می‌کند */
+.admin-loggedin-navbar .list-item-has-children > .sub-menu::before {
+    content: '';
+    position: absolute;
+    top: -12px;
     right: 0;
     left: 0;
-    z-index: 1020;
+    height: 12px;
+}
+
+/* پنل آواتار به لبه چپ چسبیده باشد (RTL) */
+.admin-loggedin-navbar .dropdown-user-menu .list-item-has-children > .sub-menu {
+    right: auto;
+    left: 0;
+}
+
+/* ---------- آیتم‌های داخل پنل ---------- */
+.admin-loggedin-navbar .sub-menu .list-item {
+    display: block;
+}
+
+.admin-loggedin-navbar .sub-menu .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 16px;
+    color: #444 !important;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: nowrap;
+    background: transparent;
+    transition: 0.15s all ease-in-out;
+    -webkit-transition: 0.15s all ease-in-out;
+}
+
+.admin-loggedin-navbar .sub-menu .nav-link i {
+    font-size: 14px;
+    color: var(--main-color-one);
+    opacity: 1;
+}
+
+.admin-loggedin-navbar .sub-menu .nav-link:hover {
+    color: var(--main-color-one) !important;
+    background: #f7f7f7;
+    border-radius: 0;
+}
+
+/* ---------- مگا منوی تمپلیت زیر نوار ادمین بچسبد ---------- */
+.admin-loggedin-navbar ~ .mega-menu {
+    top: 48px;
 }
 
 .header-main-page.fixed {
-    top: 38px;
+    top: 48px;
 }
 
-.admin-loggedin-navbar .container-fluid a.nav-link {
-    color: #fff !important;
-    font-size: 11px !important;
-    font-weight: 400 !important;
-}
+/* ---------- موبایل ---------- */
+@media (max-width: 575px) {
+    .admin-loggedin-navbar .container-fluid {
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
 
-.admin-loggedin-navbar .list .list-item-has-children .sub-menu {
-    background-color: #1c1c25 !important;
-}
+    .admin-loggedin-navbar .container-fluid::-webkit-scrollbar {
+        display: none;
+    }
 
-.admin-loggedin-navbar .dropdown-user-menu a.navbar-brand {
-    color: #fff !important;
-    cursor: pointer;
-}
-
-.admin-loggedin-navbar .dropdown-user-menu img {
-    width: 30px;
-    height: 30px;
-    border-radius: 100%;
-    padding: 0 !important;
-}
-
-.admin-loggedin-navbar .dropdown-user-menu .list-item.menu-col-1 .sub-menu {
-    left: 0;
-    right: auto;
-}
-
-@media only screen and (max-width: 430px) {
     .admin-loggedin-navbar .dropdown-username {
         display: none;
     }
-}
 
-.admin-loggedin-navbar .container-fluid {
-    flex-wrap: nowrap !important;
-}
+    .admin-loggedin-navbar .list-item > .nav-link {
+        padding: 0 9px;
+    }
 
-.admin-loggedin-navbar .dropdown-user-menu {
-    left: 8px
+    .admin-loggedin-navbar .sub-menu .nav-link {
+        padding: 9px 12px;
+    }
 }

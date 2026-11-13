@@ -120,6 +120,10 @@
         $groups = [];
         $selectedAttributesIds = [];
         $groupIndex = 0;
+        /* فاز ۱۵۵ — گروه‌های تک‌گزینه‌ای (ثابت: اندازه/وضعیت کالا/اصالت کالا …)
+           ردیف انتخابگر زیر عنوان نمی‌گیرند؛ اینپوت مخفی‌شان رندر می‌شود تا
+           موتور قیمت (AJAX prices) همچنان مجموعهٔ کامل ویژگی‌ها را بگیرد. */
+        $constantVariants = [];
     @endphp
 
     @foreach ($attributeGroups as $attributeGroup)
@@ -128,6 +132,20 @@
 
             // اگر گروه ویژگی قابل نمایش نباشد، رد شو
             if (!$attributes) continue;
+
+            $groupAttributes = collect($attributes)->values();
+
+            if ($groupAttributes->count() <= 1) {
+                $single = $groupAttributes->first();
+                if ($single) {
+                    $selectedAttributesIds[] = $single->id;
+                    $prevAttribute = $single;
+                    $constantVariants[] = ['group' => $attributeGroup, 'attribute' => $single];
+                }
+                $groups[] = $attributeGroup;
+                $groupIndex++;
+                continue;
+            }
 
             $isFirstGroup = ($groupIndex == 0);
             $hasSelectedInGroup = false;
@@ -190,19 +208,23 @@
                 <h5 class="font-16 mb-2">
                     {{ $attributeGroup->name }}:
                     @php
-                        /* فاز ۱۵۴ — نام تنوع انتخاب‌شده در جای خالی جلوی عنوان گروه نمایش
-                           داده می‌شود (همان رفتار «رنگ: مشکی»)؛ اگر تنوعی از این گروه
-                           انتخاب نشده بود، همان آیتم آخر که انتخاب خودکار بلید است نشان داده
-                           می‌شود تا جلوی عنوان گروه خالی نماند. گارد null برای کالای
-                           ناموجود که selected_price ندارد. */
+                        /* فاز ۱۵۴/۱۵۵ — نام تنوع انتخاب‌شده جلوی عنوان گروه.
+                           فاز ۱۵۵: اگر نام ویژگی با نام گروه شروع شود (مثل «گارانتی» و
+                           «گارانتی ۱۸ ماهه …»)، آن پیشوند از سربرگ بریده می‌شود تا متن
+                           دوبار تکرار نشود؛ متن کامل روی چیپ‌ها حفظ می‌ماند. */
                         $selectedGroupAttr = $selected_price
                             ? $selected_price->get_attributes()->where('attribute_group_id', $attributeGroup->id)->first()
                             : null;
                         if (!$selectedGroupAttr) {
                             $selectedGroupAttr = collect($attributes)->last();
                         }
+
+                        $headingAttrName = $selectedGroupAttr ? $selectedGroupAttr->name : '';
+                        if ($headingAttrName && mb_strpos($headingAttrName, $attributeGroup->name . ' ') === 0) {
+                            $headingAttrName = trim(mb_substr($headingAttrName, mb_strlen($attributeGroup->name . ' ')));
+                        }
                     @endphp
-                    <span class="main-color-one-color" id="attributeGroup-{{ $attributeGroup->id }}">{{ $selectedGroupAttr ? $selectedGroupAttr->name : '' }}</span>
+                    <span class="main-color-one-color" id="attributeGroup-{{ $attributeGroup->id }}">{{ $headingAttrName }}</span>
                 </h5>
                 <div class="product-meta-color-items d-flex flex-wrap gap-2 type-list">
                     @foreach ($attributes as $attribute)
@@ -263,6 +285,19 @@
         $groupIndex = 0;
     @endphp
 
+    {{-- فاز ۱۵۵ — اینپوت‌های مخفی گروه‌های تک‌گزینه‌ای: بدون ردیف انتخابگر زیر عنوان،
+         اما در مجموعهٔ انتخاب‌های JS (موتور قیمت) حساب می‌شوند --}}
+    @if (count($constantVariants))
+        <div class="product-variants-constant js-product-variants-constant" aria-hidden="true">
+            @foreach ($constantVariants as $constantVariant)
+                <input type="radio" value="{{ $constantVariant['attribute']->id }}"
+                       name="attributes_group[{{ $constantVariant['group']->id }}][]"
+                       data-product="{{ $product->slug }}"
+                       id="attribute-constant-{{ $constantVariant['attribute']->id }}" checked>
+            @endforeach
+        </div>
+    @endif
+
     @if ($product->sizeType)
         <div class="mt-3 size-guide d-flex align-items-center gap-2">
             <img src="{{ theme_asset('img/size.png') }}" width="25" alt="size">
@@ -273,5 +308,26 @@
 
     {{-- باکس اقدام: فروشنده + قیمت + افزودن به سبد --}}
     @include('front::products.partials.product-info-sidebar')
+
+    {{-- فاز ۱۵۵ — جزیرهٔ دادهٔ تنوع‌ها برای به‌روزرسانی لحظه‌ای قیمت سمت کلاینت (theme-product.js).
+         چون همین پارشال پس از هر تغییر تنوع جایگزین می‌شود، جزیرهٔ داده هم همیشه تازه است. --}}
+    @php
+        $variants_payload = [];
+        try {
+            foreach ($product->getPrices()->get() as $variant_price) {
+                $variants_payload[] = [
+                    'id'       => (int) $variant_price->id,
+                    'attrs'    => $variant_price->get_attributes()->pluck('id')->map(fn ($v) => (int) $v)->values()->all(),
+                    'price'    => number_format($variant_price->regularPrice()),
+                    'sale'     => number_format($variant_price->salePrice()),
+                    'discount' => $variant_price->hasDiscount() ? (int) $variant_price->discount() : 0,
+                    'stock'    => (int) $variant_price->stock,
+                ];
+            }
+        } catch (\Throwable $variants_exception) {
+            $variants_payload = [];
+        }
+    @endphp
+    <script type="application/json" id="js-product-variants-data" aria-hidden="true">{!! json_encode($variants_payload, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
 
 </div>

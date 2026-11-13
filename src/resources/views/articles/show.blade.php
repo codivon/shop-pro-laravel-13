@@ -106,12 +106,12 @@
                                     @endphp
 
                                     @if($isMedia)
-                                        <video class="articles-video-player shadow-box rounded-3 w-100 mb-4" controls poster="{{ asset($post->image) }}">
+                                        <video class="articles-video-player shadow-box rounded-3 w-100 mb-4" controls poster="{{ $post->image ? asset($post->image) : theme_asset('image/blog-1.jpg') }}">
                                             <source src="{{ asset($mediaUrl) }}" type="video/mp4">
                                             مرورگر شما از ویدیو پشتیبانی نمی‌کند.
                                         </video>
                                     @else
-                                        <img class="shadow-box rounded-3 w-100 mb-4" src="{{ asset($post->image) }}" alt="{{ $post->title }}" loading="lazy">
+                                        <img class="shadow-box rounded-3 w-100 mb-4" src="{{ $post->image ? asset($post->image) : theme_asset('image/blog-1.jpg') }}" alt="{{ $post->title }}" loading="lazy">
                                         <div class="d-flex align-items-center text-muted mb-3">
                                             <i class="bi bi-clock-history main-color-one-color me-1"></i>
                                             زمان مطالعه: <span class="fw-bold ms-1">{{ $readingTime }} دقیقه</span>

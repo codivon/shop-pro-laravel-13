@@ -6,7 +6,7 @@
                 <div class="blog-item position-relative">
                     <a href="{{ route('front.articles.show', $post->slug) }}">
                         <div class="image">
-                            <img src="{{ $post->image ? asset($post->image) : asset('/no-image-product.svg') }}"
+                            <img src="{{ $post->image ? asset($post->image) : theme_asset('image/blog-1.jpg') }}"
                                  alt="{{ $post->title }}" class="img-fluid" loading="lazy">
                         </div>
                         <div class="title">
@@ -34,10 +34,10 @@
                     {{-- متا (خارج از لینک کارت تا لینک‌های تودرتو نداشته باشیم) --}}
                     <div class="d-flex align-items-center justify-content-between px-3 pb-3 flex-wrap gap-1">
                         <div class="d-flex align-items-center">
-                            <img class="rounded-circle me-2" src="{{ $post->admin->imageUrl }}"
-                                 alt="{{ $post->admin->full_name ?? 'ناشناس' }}" width="24" height="24" loading="lazy">
-                            <a class="text-muted font-12" href="{{ route('front.articles.index', ['profile' => $post->admin->username]) }}">
-                                {{ $post->admin->full_name ?? 'ناشناس' }}
+                            <img class="rounded-circle me-2" src="{{ $post->admin?->imageUrl ?? theme_asset('image/logo.png') }}"
+                                 alt="{{ $post->admin?->full_name ?? 'ناشناس' }}" width="24" height="24" loading="lazy">
+                            <a class="text-muted font-12" href="{{ route('front.articles.index', ['profile' => $post->admin?->username]) }}">
+                                {{ $post->admin?->full_name ?? 'ناشناس' }}
                             </a>
                         </div>
                         @if($post->categories->isNotEmpty())

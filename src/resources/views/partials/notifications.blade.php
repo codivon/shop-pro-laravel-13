@@ -8,7 +8,8 @@
     <div class="dropdown dropdown-notification front-dropdown-notification nav-item">
         <a class="nav-link nav-link-label notification-trigger"
            href="{{ $notificationsRoute }}"
-           data-toggle="dropdown"
+           data-bs-toggle="dropdown"
+           data-bs-auto-close="outside"
            aria-expanded="false"
            aria-label="{{ trans('front::messages.header.new-notification') }}">
             <i class="mdi mdi-bell-outline"></i>

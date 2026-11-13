@@ -18,7 +18,23 @@
          data-site-title="{{ option('info_site_title', 'او پی شاپ') }}"
          data-mapir-key="{{ option('map_api') }}"></div>
 
-    {{-- تماس با ما — سانیار content-box --}}
+    {{-- بردکرامب — مطابق contact-us.html قالب سانیار --}}
+    <div class="bread-crumb pt-3">
+        <div class="container-fluid">
+            <div class="content-box">
+                <div class="container-fluid">
+                    <nav aria-label="breadcrumb" class="my-lg-0 my-2">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="{{ route('front.index') }}" class="font-14 text-muted">خانه</a></li>
+                            <li class="breadcrumb-item active main-color-one-color font-14" aria-current="page">تماس با ما</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- تماس با ما — ساختار contact-us.html قالب سانیار --}}
     <div class="content">
         <div class="container-fluid py-3">
             <div class="content-box">
@@ -28,69 +44,91 @@
                         <h2>تماس با ما</h2>
                     </div>
 
-                    <div class="mb-4">
-                        {!! option('dt_show_contact_top_description') !!}
+                    @if(option('dt_show_contact_top_description'))
+                        <div class="mb-4">
+                            {!! option('dt_show_contact_top_description') !!}
+                        </div>
+                    @endif
+
+                    {{-- کارت‌های تماس + تصویر — سانیار --}}
+                    <div class="row align-items-center">
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <a href="{{ option('info_phone_number') ? 'tel:' . preg_replace('/\s+/', '', option('info_phone_number')) : route('front.contact.index') }}">
+                                    <img src="{{ theme_asset('image/contact-page-eleman-3.png') }}" alt="تماس تلفنی" class="img-fluid w-100">
+                                </a>
+                            </div>
+                            <div class="mb-3">
+                                <a href="{{ option('social_telegram') ?: '#' }}" target="_blank" rel="noopener">
+                                    <img src="{{ theme_asset('image/contact-page-eleman-1.png') }}" alt="تلگرام" class="img-fluid w-100">
+                                </a>
+                            </div>
+                            <div class="mb-3">
+                                <a href="{{ option('social_whatsapp') ?: '#' }}" target="_blank" rel="noopener">
+                                    <img src="{{ theme_asset('image/contact-page-eleman-2.png') }}" alt="واتساپ" class="img-fluid w-100">
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <img src="{{ theme_asset('image/contact_us.svg') }}" alt="تماس با ما" class="img-fluid w-100">
+                        </div>
                     </div>
 
-                    <div class="row gy-3">
-                        @if (option('dt_show_form_in_contact') == 'yes')
-                            <div class="{{ option('dt_show_map_in_contact') != 'no' ? 'col-lg-6' : 'col-lg-12' }}">
-                                <div class="comment-form">
-                                    <div class="title-panel mb-3">
-                                        <h6 class="font-18">پیام خود را با ما در میان بگذارید</h6>
+                    {{-- فرم تماس — سانیار comment-form --}}
+                    @if (option('dt_show_form_in_contact', 'yes') == 'yes')
+                        <div class="comment-form">
+                            <div class="title-panel mb-3">
+                                <h6 class="font-18">پیام خود را با ما در میان بگذارید</h6>
+                            </div>
+                            <form id="contact-form" class="contact-us-form" action="{{ route('front.contact.store') }}" method="POST">
+                                @csrf
+                                <div class="contact-us-form-body">
+                                    <div class="form-group mb-2">
+                                        <label for="name" class="form-label">
+                                            نام و نام‌خانوادگی
+                                            <span class="text-danger ms-1">*</span>
+                                        </label>
+                                        <input type="text" id="name" class="ui-input-field form-control" name="name">
                                     </div>
-                                    <form id="contact-form" class="contact-us-form" action="{{ route('front.contact.store') }}" method="POST">
-                                        <div class="contact-us-form-body">
-                                            <div class="form-group mb-2">
-                                                <label for="name" class="form-label">
-                                                    نام و نام‌خانوادگی
-                                                    <span class="text-danger ms-1">*</span>
-                                                </label>
-                                                <input type="text" id="name" class="ui-input-field form-control" name="name">
-                                            </div>
-                                            <div class="form-group mb-2">
-                                                <label for="email" class="form-label">
-                                                    ایمیل
-                                                    <span class="text-danger ms-1">*</span>
-                                                </label>
-                                                <input type="text" id="email" name="email" class="ui-input-field form-control text-end">
-                                            </div>
-                                            <div class="form-group mb-2">
-                                                <label for="subject" class="form-label">
-                                                    موضوع
-                                                    <span class="text-danger ms-1">*</span>
-                                                </label>
-                                                <input type="text" id="subject" name="subject" class="ui-input-field form-control">
-                                            </div>
+                                    <div class="form-group mb-2">
+                                        <label for="email" class="form-label">
+                                            ایمیل
+                                            <span class="text-danger ms-1">*</span>
+                                        </label>
+                                        <input type="text" id="email" name="email" class="ui-input-field form-control text-end">
+                                    </div>
+                                    <div class="form-group mb-2">
+                                        <label for="subject" class="form-label">
+                                            موضوع
+                                            <span class="text-danger ms-1">*</span>
+                                        </label>
+                                        <input type="text" id="subject" name="subject" class="ui-input-field form-control">
+                                    </div>
 
-                                            <div class="form-group mb-2">
-                                                <label for="message" class="form-label">
-                                                    متن پیام
-                                                    <span class="text-danger ms-1">*</span>
-                                                </label>
-                                                <textarea name="message" id="message" cols="30" rows="7"
-                                                          class="ui-textarea-field form-control"></textarea>
-                                            </div>
+                                    <div class="form-group mb-2">
+                                        <label for="message" class="form-label">
+                                            متن پیام
+                                            <span class="text-danger ms-1">*</span>
+                                        </label>
+                                        <textarea name="message" id="message" cols="30" rows="7"
+                                                  class="ui-textarea-field form-control"></textarea>
+                                    </div>
 
-                                            <x-captcha />
+                                    <x-captcha />
 
-                                            <div class="mt-4">
-                                                <button type="submit" class="contact-us-form-submit btn main-color-three-bg border-0 px-5 rounded-3">ثبت و ارسال</button>
-                                            </div>
-                                        </div>
-                                    </form>
+                                    <div class="mt-4">
+                                        <button type="submit" class="contact-us-form-submit btn main-color-three-bg border-0 px-5 rounded-3">ثبت و ارسال</button>
+                                    </div>
                                 </div>
-                            </div>
-                        @endif
+                            </form>
+                        </div>
+                    @endif
 
-                        @if (option('dt_show_map_in_contact') == 'yes')
-                            <div class="{{ option('dt_show_form_in_contact') == 'yes' ? 'col-lg-6' : 'col-lg-12' }}">
-                                <div class="rounded-3 overflow-hidden shadow-box">
-                                    <div id="map"></div>
-                                </div>
-                            </div>
-                        @endif
-                    </div>
+                    @if (option('dt_show_map_in_contact') == 'yes')
+                        <div class="rounded-3 overflow-hidden shadow-box mt-4">
+                            <div id="map"></div>
+                        </div>
+                    @endif
 
                     @if (option('dt_show_contact_bottom_description') == 'yes')
                         <hr class="info-page-separator">

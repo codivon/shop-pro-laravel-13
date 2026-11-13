@@ -33,7 +33,8 @@
         <div class="js-seller-info-changable product-actions">
 
             @if(option('multi_vendor_system_status','false')=="true")
-                <div class="product-seller-row d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                {{-- فاز ۱۵۵ — ردیف فروشنده/عملکرد/شناسه/ارسال داخل ستون اطلاعات، بالای باکس قیمت --}}
+                <div class="product-seller-row product-seller-row--info d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                     <div class="d-flex align-items-center gap-2">
                         <div class="product-seller-first-line font-14">فروشنده:</div>
 
@@ -56,14 +57,14 @@
                             </a>
                         @endif
 
-                        <span class="text-success font-13 d-flex align-items-center gap-1">
+                        <span class="performance-label font-13 d-flex align-items-center gap-1">
                             <i class="bi bi-graph-up-arrow"></i> عملکرد: عالی
                         </span>
                     </div>
 
                     <div class="d-flex align-items-center gap-3">
-                        <span class="clickable text-muted font-13 d-flex align-items-center gap-1" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="کپی شناسه محصول">
-                            <i class="bi bi-qr-code"></i> شناسه: <span dir="ltr">{{ $selected_price->product->product_id }}</span>
+                        <span class="sku-label clickable text-muted font-13 d-flex align-items-center gap-1" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="کپی شناسه محصول">
+                            <i class="bi bi-qr-code"></i> شناسه: <span dir="ltr">{{ $selected_price->product->product_id ?: $product->id }}</span>
                         </span>
 
                         <span class="text-muted font-13 d-flex align-items-center gap-1">

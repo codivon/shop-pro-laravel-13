@@ -25,9 +25,9 @@
                         @foreach($suggestions as $suggestion)
                             <div class="swiper-slide">
                                 <div class="blog-item position-relative">
-                                    <a href="{{ route('front.articles.show', $post) }}">
+                                    <a href="{{ route('front.articles.show', $suggestion->slug) }}">
                                         <div class="image">
-                                            <img src="{{ $suggestion->image ? asset($suggestion->image) : asset('/no-image-product.svg') }}"
+                                            <img src="{{ $suggestion->image ? asset($suggestion->image) : theme_asset('image/blog-1.jpg') }}"
                                                  alt="{{ $suggestion->title }}" class="img-fluid" loading="lazy">
                                         </div>
                                         <div class="title">
@@ -49,9 +49,9 @@
                                             </h4>
                                             <div class="d-flex align-items-center mt-2">
                                                 <img class="rounded-circle me-2"
-                                                     src="{{ $post->admin->imageUrl }}"
-                                                     alt="{{ $suggestion->admin->full_name ?? 'ناشناس' }} " width="24" height="24" loading="lazy">
-                                                <span class="text-muted font-12">{{ $suggestion->admin->full_name ?? 'ناشناس' }}</span>
+                                                     src="{{ $suggestion->admin?->imageUrl ?? theme_asset('image/logo.png') }}"
+                                                     alt="{{ $suggestion->admin?->full_name ?? 'ناشناس' }} " width="24" height="24" loading="lazy">
+                                                <span class="text-muted font-12">{{ $suggestion->admin?->full_name ?? 'ناشناس' }}</span>
                                             </div>
                                         </div>
                                     </a>
@@ -83,7 +83,7 @@
                                 <a href="{{ route('front.articles.show', $latestPost->slug) }}" class="nav-link">
                                     <div class="mini-blog-item">
                                         <div class="image">
-                                            <img src="{{ $latestPost->image ? asset($latestPost->image) : asset('/no-image-product.svg') }}" class="img-fluid" alt="{{ $latestPost->title }}" loading="lazy">
+                                            <img src="{{ $latestPost->image ? asset($latestPost->image) : theme_asset('image/blog-1.jpg') }}" class="img-fluid" alt="{{ $latestPost->title }}" loading="lazy">
                                         </div>
                                         <div class="d-flex align-items-start desc flex-wrap flex-column justify-content-between">
                                             <h5 class="title">{{ $latestPost->title }}</h5>

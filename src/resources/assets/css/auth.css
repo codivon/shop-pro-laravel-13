@@ -86,21 +86,12 @@
     text-decoration: underline;
 }
 
-/* فاصله فرم داخل کارت */
-.auth-form .comment-item input.form-control,
-.auth-form .comment-item textarea.form-control {
-    border-radius: 0;
-    border: 0;
-    border-bottom: 2px solid #e9ecef;
-    padding-right: 0;
-    background: transparent;
-    box-shadow: none;
-}
+/* ورودی‌های فرم داخل کارت — مطابق register.html قالب سانیار
+   (.comment-item input.form-control در style.css قالب استایل باکس‌دار دارد؛
+   استایل قبلی «فقط خط زیر» با طراحی سانیار تضاد داشت و حذف شد) */
 .auth-form .comment-item input.form-control:focus,
 .auth-form .comment-item textarea.form-control:focus {
-    border-bottom-color: var(--main-color-one, #e8a33d);
     box-shadow: none;
-    background: transparent;
 }
 
 input.disabled {

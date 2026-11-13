@@ -72,6 +72,7 @@
     <script src="{{ asset('back/assets/js/customToast.js') }}?v=8"></script>
     <script src="{{ theme_asset("js/scripts.js") }}?v=11"></script>
     <script src="{{theme_asset('js/jquery.countdown.min.js')}}"></script>
+    <script src="{{theme_asset('js/owl.carousel.min.js')}}"></script>
     <script src="{{theme_asset('js/main.js')}}"></script>
 
     <script>

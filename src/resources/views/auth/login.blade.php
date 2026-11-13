@@ -15,9 +15,9 @@
             {{-- کارت ورود — ساختار register.html قالب سانیار --}}
             <div class="auth-form shadow-xl rounded-3 mt-5 bg-white">
                 <div class="auth-form-title d-flex align-items-center justify-content-between title-panel mb-4 slider-title-desc-center">
-                    <h2 class="text-center h4 text-muted title-font">ورود | ثبت‌نام</h2>
+                    <h2 class="text-center h4 text-muted title-font">ورود / ثبت‌نام</h2>
                     <a href="{{ route('front.index') }}">
-                        <img src="{{ option('info_logo', theme_asset('image/logo.png')) }}" width="120" alt="{{ option('info_site_title', 'او پی شاپ') }}">
+                        <img src="{{ option('info_logo', theme_asset('image/logo.png')) }}" width="150" alt="{{ option('info_site_title', 'او پی شاپ') }}">
                     </a>
                 </div>
 
@@ -37,11 +37,10 @@
                         </div>
                     @endif
 
-                    <label for="email-phone" class="form-label">سلام!<br>
-
-                        لطفا شماره موبایل یا ایمیل خود را وارد کنید</label>
+                    {{-- ساختار register.html قالب سانیار: input سپس label شناور داخل comment-item --}}
                     <div class="comment-item mb-3">
-                        <input name="username" type="text" id="email-phone" value="{{old('username')}}" class="form-control" placeholder="" autofocus required>
+                        <input name="username" type="text" id="email-phone" value="{{old('username')}}" class="form-control" placeholder=" " required>
+                        <label for="email-phone" class="form-label label-float">شماره موبایل یا ایمیل خود را وارد کنید</label>
                     </div>
                     @error('username')
                     <span class="invalid-feedback" role="alert" style="margin: 10px 0;">
@@ -63,12 +62,9 @@
 
                     <div class="form-group">
                         <button type="submit" class="main-color-one-bg py-3 btn w-100 rounded-3 border-0">
-                            ورود
+                            ورود / ثبت نام
                         </button>
                     </div>
-                    <label class="mt-3 font-12 text-muted">ورود شما به معنای پذیرش شرایط {{ option('info_site_title', 'او پی شاپ') }} وقوانین حریم‌خصوصیاست
-
-                    </label>
                 </form>
 
             </div>

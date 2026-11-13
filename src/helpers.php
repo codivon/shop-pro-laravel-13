@@ -754,11 +754,19 @@ function front_search_match($query, string $term): void
         static $fulltextAvailable = null;
 
         if ($fulltextAvailable === null) {
-            $fulltextAvailable = DB::table('information_schema.statistics')
-                ->where('table_schema', DB::raw('DATABASE()'))
-                ->where('table_name', 'products')
-                ->where('index_type', 'FULLTEXT')
-                ->count() > 0;
+            // FIX: بررسی FULLTEXT فقط روی MySQL/معنای معتبر دارد؛ روی SQLite/Postgres
+            // جدول information_schema.statistics وجود ندارد و همین چک باعث خطای ۵۰۰
+            // در صفحهٔ جستجو می‌شد — پس روی درایورهای غیر MySQL مستقیم به LIKE می‌رویم.
+            try {
+                $fulltextAvailable = DB::getDriverName() === 'mysql'
+                    && DB::table('information_schema.statistics')
+                        ->where('table_schema', DB::raw('DATABASE()'))
+                        ->where('table_name', 'products')
+                        ->where('index_type', 'FULLTEXT')
+                        ->count() > 0;
+            } catch (\Throwable $e) {
+                $fulltextAvailable = false;
+            }
         }
 
         if ($fulltextAvailable) {

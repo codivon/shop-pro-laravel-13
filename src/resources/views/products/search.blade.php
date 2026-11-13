@@ -144,14 +144,10 @@
                                     </div>
                                 @endif
 
-                                {{-- تب مقالات --}}
+                                {{-- تب مقالات — articles-list خودش گرید سانیار را رندر می‌کند (بدون حلقه تکراری) --}}
                                 @if($posts->count() > 0)
                                     <div class="tab-pane fade" id="posts" role="tabpanel" aria-labelledby="posts-tab">
-                                        <div class="row g-3">
-                                            @foreach($posts as $post)
-                                                @include('front::articles.partials.articles-list', ['posts' => $posts])
-                                            @endforeach
-                                        </div>
+                                        @include('front::articles.partials.articles-list', ['posts' => $posts])
                                     </div>
                                 @endif
                             </div>
