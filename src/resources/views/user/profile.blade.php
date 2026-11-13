@@ -175,7 +175,11 @@
     <div class="content mt-4">
         <div class="container-fluid">
             <div class="adplacement">
-                @include('front::widgets.middle-banners-4',['widget'=>$widgets])
+                {{-- فاز ۱۵۳ — در نصب تازه ممکن است ویجت «بنر چهارتایی» هنوز ساخته/فعال نشده باشد؛
+                     پاس دادن null به پارشال ویجت باعث Fatal «Attempt to read property key on null» می‌شد. --}}
+                @if($widgets)
+                    @include('front::widgets.middle-banners-4',['widget'=>$widgets])
+                @endif
             </div>
 
             @if($special_products->count())

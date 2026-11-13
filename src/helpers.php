@@ -90,6 +90,16 @@ function front_category_children($category)
 if (!function_exists('get_widget')) {
 function get_widget($widget)
 {
+    /*
+     * فاز ۱۵۳ — گارد null: اگر رکورد ویجت در دیتابیس نباشد (نصب تازه یا ویجت
+     * غیرفعال‌شده)، برخی کنترلرها first() خالی پاس می‌دهند و دسترسی به
+     * $widget->key باعث «Attempt to read property key on null» می‌شد.
+     * آرایهٔ خالی برمی‌گردد تا ویوها با @if/count() بدون Fatal مدیریتش کنند.
+     */
+    if (empty($widget) || !isset($widget->key)) {
+        return [];
+    }
+
     if (WidgetRegistry::has($widget->key)) {
         return WidgetRegistry::handle($widget->key, $widget);
     }
