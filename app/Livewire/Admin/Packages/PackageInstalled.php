@@ -11,6 +11,7 @@ use App\Services\PackageApiService;
 use App\Services\PackageInstallerService;
 use App\Services\PackageSubscriptionService;
 use App\Support\MarketplaceSettings;
+use App\Support\PackageMedia;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -154,10 +155,23 @@ class PackageInstalled extends Component
         }
 
         $this->updatingSlug = $slug;
+
+        /*
+         * فاز ۱۵۱ — تصویر مودال آپدیت می‌پرید: کش بازار معمولاً «مسیر نسبی»
+         * ذخیره می‌کند و مرورگر آن را روی دامنهٔ خودِ شاپ ۴۰۴ می‌زد (همان ریشهٔ
+         * فاز ۱۴ — الان در PackageMedia::thumbnailUrl متمرکز است). thumbnail_url
+         * از meta (آرایهٔ کامل پاسخ API در کش) با اولویت خوانده می‌شود.
+         */
+        $meta   = (array) ($installed->cache->meta ?? []);
+        $thumb  = PackageMedia::thumbnailUrl([
+            'thumbnail_url' => $meta['thumbnail_url'] ?? null,
+            'thumbnail'     => $installed->cache->thumbnail,
+        ]);
+
         $this->updateModal = [
             'name'           => $installed->displayName(),
             'version'        => (string) $installed->version,
-            'thumbnail'      => (string) ($installed->cache->thumbnail ?? ''),
+            'thumbnail'      => (string) $thumb,
             'latest_version' => $installed->cache->latest_version ?? null,
             'changelog'      => [],
             'state'          => 'idle',
@@ -372,16 +386,31 @@ class PackageInstalled extends Component
     /* ---------------- ابزار ---------------- */
 
     /**
-     * فاز ۱۵۰ — پوشش اشتراکِ فعالِ بازار برای یک ماژول (یا null).
-     * فقط برای ماژول‌های منقضیِ محلی سراغ API می‌رویم — ماژولِ سالم نیازی به پرس‌وجو ندارد.
+     * فاز ۱۵۱ — نقشهٔ پوشش اشتراکِ ماژول‌های صفحهٔ جاری (computed یک‌بار در هر رندر).
+     * همهٔ ماژول‌ها پرسیده می‌شوند نه فقط منقضی‌های محلی — گزارش کاربر: هر پکیجی
+     * که جزو اشتراک است باید «با اشتراک معتبر» بنشیند. یک درخواست دسته‌ای + کش
+     * ۳۰ دقیقه‌ای هر اسلاگ (سرویس) ⇒ لودهای بعدی صفر تماس شبکه.
+     *
+     * @return array<string, ?\Carbon\CarbonInterface>
      */
-    public function subscriptionCoverage(InstalledModule $module): ?\Carbon\CarbonInterface
+    public function getSubscriptionsProperty(): array
     {
-        if (! $module->isExpired()) {
-            return null;
+        return app(PackageSubscriptionService::class)
+            ->coverageMap($this->modules->getCollection()->pluck('slug')->all());
+    }
+
+    /**
+     * فاز ۱۵۱ — خطاهای «لایسنس/اشتراک» برای پکیجِ پوشش‌شده با اشتراک معنایی
+     * ندارند (لایسنسِ آن همان اشتراک است) و نباید قرمز نشان داده شوند؛
+     * خطاهای فنی دیگر (شکست نصب و…) مثل قبل نمایش داده می‌شوند.
+     */
+    public function isLicenseNoiseError(?string $error): bool
+    {
+        if ($error === null || trim($error) === '') {
+            return false;
         }
 
-        return app(PackageSubscriptionService::class)->coverageUntil($module->slug);
+        return str_contains($error, 'لایسنس') || str_contains($error, 'اشتراک');
     }
 
     public static function jdate($date, $format = 'Y/m/d'): string

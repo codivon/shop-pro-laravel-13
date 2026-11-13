@@ -45,6 +45,10 @@
                 </thead>
                 <tbody class="divide-y divide-line dark:divide-night-line">
                     @forelse ($this->modules as $module)
+                        @php
+                            // فاز ۱۵۱ — پوشش اشتراک برای «همهٔ» ماژول‌های صفحه (نقشهٔ دسته‌ای کش‌شده؛ نه فقط منقضی‌های محلی) — یک‌بار در ابتدای ردیف تا هر دو ستون (وضعیت + لایسنس) استفاده کنند
+                            $subCoverage = $this->subscriptions[$module->slug] ?? null;
+                        @endphp
                         <tr class="transition-colors hover:bg-surface-2 dark:hover:bg-night-3">
                             <td class="px-4 py-3">
                                 {{-- فاز ۸۶ — نمایش «عنوان» ماژول (module.json پکیج → کش بازار → نام فنی) --}}
@@ -71,28 +75,36 @@
                                     ][$module->status] ?? [$module->status, 'bg-surface-2 text-ink-2 dark:bg-night-3 dark:text-night-ink-2'];
                                 @endphp
                                 <span class="ap-badge {{ $statusMeta[1] }}">{{ $statusMeta[0] }}</span>
-                                @if ($module->last_error)
+                                {{-- فاز ۱۵۱ — هر پکیجی که جزو اشتراک فعال بازار است، مستقل از لایسنس تکی، «با اشتراک معتبر» نشان می‌گیرد --}}
+                                @if ($subCoverage !== null)
+                                    <span class="ap-badge bg-violet-50 text-violet-700 dark:bg-violet-500/12 dark:text-violet-400"
+                                          title="این پکیج جزو اشتراک فعال است و تا پایان اشتراک بدون لایسنس تکی هم معتبر می‌ماند">
+                                        با اشتراک معتبر
+                                    </span>
+                                @endif
+                                {{-- فاز ۱۵۱ — خطای «لایسنس/اشتراک» برای پوشش‌شده‌ها معنایی ندارد (لایسنسِ آن همان اشتراک است)؛ خطاهای فنی دیگر مثل قبلی نمایش داده می‌شوند --}}
+                                @if ($module->last_error && ($subCoverage === null || ! $this->isLicenseNoiseError($module->last_error)))
                                     <p class="mt-1 max-w-[220px] truncate text-[11px] text-red-500" title="{{ $module->last_error }}">{{ $module->last_error }}</p>
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-xs">
-                                @php
-                                    // فاز ۱۵۰ — پوشش اشتراک: فقط برای منقضی‌های محلی سراغ API می‌رود (کش‌شده)
-                                    $subCoverage = $this->subscriptionCoverage($module);
-                                @endphp
                                 @if ($module->isExpired($subCoverage))
                                     <span class="ap-badge bg-red-50 text-red-700 dark:bg-red-500/12 dark:text-red-400">منقضی شده</span>
                                 @elseif ($subCoverage !== null)
                                     @if ($subCoverage->diffInYears(now()) > 5)
                                         <span class="ap-badge bg-violet-50 text-violet-700 dark:bg-violet-500/12 dark:text-violet-400"
-                                              title="لایسنس تکی منقضی شده اما این پکیج با اشتراک فعال معتبر است">
-                                            پوشش اشتراک فعال
+                                              title="این پکیج جزو اشتراک فعال است و تا پایان اشتراک معتبر می‌ماند">
+                                            با اشتراک معتبر
                                         </span>
                                     @else
                                         <span class="ap-badge bg-violet-50 text-violet-700 dark:bg-violet-500/12 dark:text-violet-400"
-                                              title="لایسنس تکی منقضی شده اما این پکیج با اشتراک فعال تا پایان اشتراک معتبر است">
-                                            پوشش اشتراک تا {{ \App\Livewire\Admin\Packages\PackageInstalled::jdate($subCoverage, 'Y/m/d') }}
+                                              title="این پکیج جزو اشتراک فعال است و تا پایان اشتراک معتبر می‌ماند">
+                                            با اشتراک معتبر تا {{ \App\Livewire\Admin\Packages\PackageInstalled::jdate($subCoverage, 'Y/m/d') }}
                                         </span>
+                                    @endif
+                                    @if ($module->license_expires_at)
+                                        {{-- لایسنس تکیِ خودِ پکیج هم برای شفافیت نمایش داده می‌شود --}}
+                                        <p class="mt-1 text-[11px] text-ink-3 dark:text-night-ink-2">لایسنس تکی: {{ \App\Livewire\Admin\Packages\PackageInstalled::jdate($module->license_expires_at, 'Y/m/d') }}</p>
                                     @endif
                                 @elseif ($module->license_expires_at)
                                     {{ \App\Livewire\Admin\Packages\PackageInstalled::jdate($module->license_expires_at, 'Y/m/d') }}
