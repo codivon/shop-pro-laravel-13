@@ -126,26 +126,26 @@
             count = parseInt(cartHtml.getAttribute('data-cart-count') || '0', 10) || 0;
         }
 
-        /* جایگزین: شمارش آیتم‌ها در DOM تازه (بدون ردیف فاکتور) */
+        /* جایگزین: شمارش آیتم‌های محصول در DOM تازه (آیتم‌های دارای تصویر —
+           ردیف فاکتور و باکس «سبد خالی» تصویر ندارند) */
         var fresh = document.querySelector('.cart-canvas .cart-canvases');
         if (!count && fresh) {
-            count = fresh.querySelectorAll(':scope > .item').length;
-            if (fresh.querySelector(':scope > .item .factor')) { count -= 1; }
+            count = fresh.querySelectorAll(':scope > .item .image').length;
         }
         if (count < 0) { count = 0; }
 
         document.querySelectorAll('.header-cart-counter').forEach(function (el) {
             el.textContent = String(count);
-            el.classList.toggle('d-none', count === 0);
         });
 
-        /* پاک‌سازی بک‌دراپ‌های یتیم — عامل اصلی به‌هم‌ریختن ظاهر سایدبار */
-        document.querySelectorAll('.offcanvas-backdrop').forEach(function (node) {
-            node.remove();
-        });
-
-        /* اگر سایدبار قبل از جایگزینی باز بود، دوباره بازش کن */
+        /* اگر سایدبار قبل از جایگزینی باز بود: بک‌دراپ یتیمِ نمونهٔ قدیمی
+           پاک می‌شود (فقط در همین حالت ممکن است وجود داشته باشد) و
+           سایدبار تازه دوباره باز می‌شود */
         if (wasOpen) {
+            document.querySelectorAll('.offcanvas-backdrop').forEach(function (node) {
+                node.remove();
+            });
+
             var canvas = document.getElementById('offcanvasCart');
             if (canvas && window.bootstrap && window.bootstrap.Offcanvas) {
                 window.bootstrap.Offcanvas.getOrCreateInstance(canvas).show();
@@ -184,27 +184,28 @@
        تا صفحه هنگام لود چشمک نزند.
        ========================================================= */
     function initThemeToggle() {
-        var toggle = document.getElementById('theme-toggle');
-        if (!toggle || toggle.dataset.bound === '1') { return; }
-        toggle.dataset.bound = '1';
+        /* همگام‌سازی وضعیت اولیهٔ aria با تم اعمال‌شده در theme-init.js */
+        var initialDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
-        toggle.addEventListener('click', function () {
-            var root = document.documentElement;
-            var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        /* همهٔ کلیدها (دسکتاپ + موبایل) با کلاس بایند می‌شوند — نه id یکتا */
+        document.querySelectorAll('.theme-toggle-btn').forEach(function (toggle) {
+            toggle.setAttribute('aria-pressed', initialDark ? 'true' : 'false');
 
-            root.setAttribute('data-theme', next);
-            try { localStorage.setItem('saniar-theme', next); } catch (e) { /* حافظه در دسترس نیست */ }
+            if (toggle.dataset.bound === '1') { return; }
+            toggle.dataset.bound = '1';
 
-            /* همگام‌سازی همهٔ کلیدهای موجود در صفحه */
-            document.querySelectorAll('#theme-toggle').forEach(function (btn) {
-                btn.classList.toggle('is-dark', next === 'dark');
-                btn.setAttribute('aria-pressed', next === 'dark' ? 'true' : 'false');
-                btn.setAttribute('title', next === 'dark' ? 'حالت روز' : 'حالت شب');
+            toggle.addEventListener('click', function () {
+                var root = document.documentElement;
+                var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+
+                root.setAttribute('data-theme', next);
+                try { localStorage.setItem('saniar-theme', next); } catch (e) { /* حافظه در دسترس نیست */ }
+
+                /* همگام‌سازی همهٔ کلیدهای موجود در صفحه */
+                document.querySelectorAll('.theme-toggle-btn').forEach(function (btn) {
+                    btn.setAttribute('aria-pressed', next === 'dark' ? 'true' : 'false');
+                });
             });
-
-            try {
-                document.dispatchEvent(new CustomEvent('saniar-theme-changed', { detail: { theme: next } }));
-            } catch (e) { /* مرورگر قدیمی */ }
         });
     }
 

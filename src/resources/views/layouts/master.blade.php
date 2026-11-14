@@ -312,8 +312,7 @@
             <div class="d-lg-none d-block col-6 order-lg-5 order-2">
                 <div class="d-flex align-items-center justify-content-end">
                     {{-- فاز ۱۵۶ — کلید روز/شب (موبایل) --}}
-                    <button type="button" id="theme-toggle"
-                            class="theme-toggle-btn me-2 shadow-sm"
+                    <button type="button" class="theme-toggle-btn me-2 shadow-sm"
                             aria-pressed="false" aria-label="تغییر حالت روز و شب"
                             title="تغییر حالت روز و شب">
                         <i class="bi bi-sun icon-sun"></i>
@@ -394,8 +393,7 @@
                     @endif
 
                     {{-- فاز ۱۵۶ — کلید روز/شب: جایگزین آیکون علاقه‌مندی هدر --}}
-                    <button type="button" id="theme-toggle"
-                            class="theme-toggle-btn shadow-sm"
+                    <button type="button" class="theme-toggle-btn shadow-sm"
                             aria-pressed="false" aria-label="تغییر حالت روز و شب"
                             title="تغییر حالت روز و شب">
                         <i class="bi bi-sun icon-sun"></i>

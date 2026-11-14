@@ -16,6 +16,13 @@ html[data-theme="dark"] {
     --dk-text-soft: #a7adbb;
     --dk-text-muted: #818898;
     --dk-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+
+    /* فاز ۱۵۶ — بازنویسی متغیرهای خود تم برای پس‌زمینهٔ تیره
+       (به‌جای دست‌بردن به کلاس‌ها — همهٔ اجزا خودکار هماهنگ می‌شوند) */
+    --main-color-one: #5b8af5;
+    --main-color-one-hover: #7599f7;
+    --bg-site: #12141a;
+    --color-site: #e6e8ee;
 }
 
 /* ---------- بدنه و متن‌ها ---------- */
@@ -52,9 +59,7 @@ html[data-theme="dark"] a:hover .font-14 {
     color: #cfd3dc;
 }
 
-html[data-theme="dark"] .main-color-one-color {
-    color: #5bd0c8 !important;
-}
+/* رنگ برند از طریق متغیر --main-color-one در بالا روشن‌تر شد */
 
 /* ---------- هدر ---------- */
 html[data-theme="dark"] header {
