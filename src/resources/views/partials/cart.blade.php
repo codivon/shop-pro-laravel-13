@@ -26,7 +26,8 @@
                                 <div class="image">
                                     <a href="{{ route('front.products.show', ['product' => $product]) }}"
                                         class="d-block js-mini-cart-link" title="{{ $product->title }}">
-                                        <img src="{{ $product->image ? asset($product->image) : theme_asset('image/product/no-image.png') }}"
+                                        {{-- فاز ۱۶۱ — fallback به asset هسته (فایل قبلی تم وجود نداشت و 404 می‌داد) --}}
+                                        <img src="{{ $product->image ? asset($product->image) : asset('no-image-product.svg') }}"
                                              alt="{{ $product->title }}" class="img-fluid">
                                     </a>
                                 </div>
