@@ -25,37 +25,7 @@
 
         <!-- start content -->
         <div class="content">
-            <div class="container-fluid">
-
-                <div class="line-step-container d-sm-block d-none">
-                    <div class="line-step">
-                        <div class="line-step-boxs">
-                            <div class="line-step-box complete">
-                                <a href="{{ route('front.cart') }}">
-                                    <p>سبد خرید</p>
-                                    <div class="icon">1</div>
-                                </a>
-                            </div>
-                            <div class="line-step-box disabled">
-                                <a href="{{ route('front.checkout') }}">
-                                    <p>جزییات پرداخت</p>
-                                    <div class="icon">2</div>
-                                </a>
-                            </div>
-                            <div class="line-step-box disabled">
-                                <a href="javascript:void(0)">
-                                    <p>تکمیل سفارش</p>
-                                    <div class="icon">3</div>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            {{-- فاز ۱۶۱ — کل ناحیهٔ سبد در یک پارشال است تا پس از تغییرات
-                 ای‌جکسی (تعداد/حذف) بدون رفرش صفحه جایگزین شود --}}
+            {{-- فاز ۱۷۱ — نوار مراحل (سبد خرید / جزئیات پرداخت / تکمیل سفارش) به درخواست کاربر حذف شد --}}
             @if($cart && $cart->products()->count())
                 @include('front::carts.partials.cart-page-area', ['cart' => $cart])
             @else

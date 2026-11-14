@@ -1,4 +1,7 @@
-@extends('front::layouts.master')
+{{-- فاز ۱۷۱ — نتیجهٔ پرداخت هم روی لایهٔ سادهٔ چک‌اوت (بدون هدر/فوتر اصلی) --}}
+@extends('front::layouts.checkout')
+
+@section('checkout-back-url', route('front.index'))
 
 @section('content')
     <!-- Start main-content -->
@@ -27,36 +30,7 @@
 
         <!-- start content -->
         <div class="content">
-            <div class="container-fluid">
-
-                <div class="line-step-container d-sm-block d-none">
-                    <div class="line-step">
-                        <div class="line-step-boxs">
-                            <div class="line-step-box complete">
-                                <a href="{{ route('front.cart') }}">
-                                    <p>سبد خرید</p>
-                                    <div class="icon">1</div>
-                                </a>
-                            </div>
-                            <div class="line-step-box complete">
-                                <a href="{{ route('front.checkout') }}">
-                                    <p>جزییات پرداخت</p>
-                                    <div class="icon">2</div>
-                                </a>
-                            </div>
-                            <div
-                                class="line-step-box {{ (session('message') == 'ok' or $order->status == 'paid') ? 'complete' : '' }}">
-                                <a href="javascript:void(0)">
-                                    <p>تکمیل سفارش</p>
-                                    <div class="icon">3</div>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
+            {{-- فاز ۱۷۱ — نوار مراحل حذف شد --}}
             <div class="container-fluid">
 
                 @php

@@ -23,9 +23,11 @@
     }
 
     // ---------- باکس‌های شیوه پرداخت ----------
+    /* فاز ۱۷۱ — درگاه‌ها حالا کارت‌های col-6/col-md-4 هستند (gateway-slot)؛
+       نزدیک‌ترین والد slot/ستون را پیدا کن تا با تغییر گرید هم کار کند */
     function syncGatewayBoxes() {
         $('input[name="gateway"]').each(function () {
-            var $box = $(this).closest('.col-12').find('.bank-item');
+            var $box = $(this).closest('.gateway-slot, .wallet-select, .col-12').find('.bank-item');
             if ($(this).prop('checked')) {
                 $box.addClass('active');
             } else {

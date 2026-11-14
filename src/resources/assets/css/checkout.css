@@ -781,4 +781,266 @@
     }
 }
 
+/* ============ فاز ۱۷۱ ============ */
+
+/* ---------- صفحهٔ چک‌اوت روی لایهٔ ساده (بدون هدر/فوتر اصلی) ---------- */
+
+.checkout-simple-page {
+    background: #f2f4f7;
+}
+
+.snr-checkout-main {
+    padding-bottom: 40px;
+}
+
+/* هدر سادهٔ دیجی‌کالایی: دکمهٔ بازگشت + لوگو دقیقاً وسط */
+.snr-checkout-header {
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    background: #fff;
+    box-shadow: 0 2px 12px rgb(0 0 0 / 5%);
+}
+
+.snr-checkout-header-inner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+}
+
+.snr-checkout-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #3f4451;
+    text-decoration: none;
+    padding: 8px 14px;
+    margin-right: -14px;
+    border-radius: 10px;
+    transition: 0.2s all ease-in-out;
+    -webkit-transition: 0.2s all ease-in-out;
+}
+
+.snr-checkout-back:hover {
+    background: #f4f5f7;
+    color: var(--main-color-one, #0fabc9);
+}
+
+.snr-checkout-back i {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.snr-checkout-logo {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: inline-flex;
+    align-items: center;
+}
+
+.snr-checkout-logo img {
+    max-height: 42px;
+    max-width: 150px;
+    object-fit: contain;
+}
+
+/* تعادل عرض دکمهٔ بازگشت تا لوگو واقعاً وسط بماند */
+.snr-checkout-header-spacer {
+    width: 96px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 767px) {
+    .snr-checkout-header-inner {
+        height: 56px;
+    }
+
+    .snr-checkout-logo img {
+        max-height: 32px;
+        max-width: 120px;
+    }
+
+    .snr-checkout-back span {
+        font-size: 13px;
+    }
+}
+
+/* ---------- فاصلهٔ پرداخت اقساطی/اعتباری از درگاه‌های آنلاین ---------- */
+
+.snr-credit-pay-area {
+    margin-bottom: 6px;
+}
+
+/* ---------- کارت‌های درگاه پرداخت (فاز ۱۷۱) ---------- */
+
+.snr-gateways-head {
+    border-top: 1px dashed #e3e6ea;
+    padding-top: 16px;
+    margin-top: 18px;
+    margin-bottom: 12px;
+}
+
+.snr-gateway-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 7px;
+    height: 100%;
+    padding: 14px 10px 12px;
+    border: 2px solid #eef0f3;
+    border-radius: 14px;
+    background: #fff;
+    transition: 0.2s all ease-in-out;
+    -webkit-transition: 0.2s all ease-in-out;
+}
+
+.snr-gateway-card:hover {
+    border-color: #d7dce3;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgb(15 23 42 / 6%);
+}
+
+.snr-gateway-card.active {
+    border-color: var(--main-color-one, #0fabc9);
+    background: #fbfeff;
+}
+
+.snr-gateway-logo {
+    width: 68px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f7f8fa;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.snr-gateway-logo img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.snr-gateway-logo i {
+    font-size: 26px;
+    color: #a9b0ba;
+}
+
+.snr-gateway-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #23262b;
+    line-height: 1.7;
+    word-break: break-word;
+}
+
+.snr-gateway-sub {
+    font-size: 11.5px;
+    color: #98a0ab;
+}
+
+/* تیک سبز انتخاب درگاه (وارث از bank-item.active::before) کمی داخل‌تر */
+.snr-gateway-card.active::before {
+    bottom: -8px;
+    left: 2px;
+}
+
+/* ---------- کد تخفیف (پنل زیر درگاه‌ها، جدا با hr) ---------- */
+
+.snr-discount-divider {
+    border-top: 1px dashed #dfe3e8;
+    opacity: 1;
+}
+
+#discount-inline-box {
+    padding-top: 2px;
+}
+
+.snr-discount-form-row .form-control {
+    height: 44px;
+    background: #f7f8fa;
+    border: 1px solid #e8ebef;
+}
+
+.snr-discount-form-row .form-control:focus {
+    background: #fff;
+    border-color: var(--main-color-one, #0fabc9);
+    box-shadow: 0 0 0 3px rgb(15 171 201 / 10%);
+}
+
+.snr-discount-form-row .btn {
+    height: 44px;
+}
+
+.snr-discount-applied {
+    background: #f7f8fa;
+    border: 1px dashed #dfe3e8;
+    border-radius: 12px;
+    padding: 10px 14px;
+}
+
+/* سوییچ روشن/خاموش (بدون وابستگی به فرم‌کلاس‌های بوت‌استرپ) */
+.snr-switch {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 26px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.snr-switch input {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.snr-switch-slider {
+    position: absolute;
+    inset: 0;
+    background: #d3d8de;
+    border-radius: 30px;
+    transition: 0.25s all ease-in-out;
+    -webkit-transition: 0.25s all ease-in-out;
+}
+
+.snr-switch-slider::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    top: 3px;
+    right: 3px;
+    transition: 0.25s all ease-in-out;
+    -webkit-transition: 0.25s all ease-in-out;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 20%);
+}
+
+.snr-switch input:checked ~ .snr-switch-slider {
+    background: var(--main-color-one, #0fabc9);
+}
+
+.snr-switch input:checked ~ .snr-switch-slider::before {
+    right: 23px;
+}
+
+.snr-switch input:focus-visible ~ .snr-switch-slider {
+    outline: 2px solid var(--main-color-one, #0fabc9);
+    outline-offset: 2px;
+}
+
 

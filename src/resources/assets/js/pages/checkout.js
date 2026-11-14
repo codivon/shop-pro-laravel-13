@@ -311,47 +311,97 @@ jQuery('#checkout-form').on('submit', function(e) {
         return false;
     }
 });
-// ==================== Discount Form ====================
-
-$('#discount-create-form').validate({
-    rules: {
-        code: { required: true }
-    }
-});
+// ==================== Discount (فاز ۱۷۱ — پنل تختِ زیر درگاه‌های پرداخت) ====================
+/* پنل کد تخفیف دیگر مودال/فرم جدا نیست؛ داخل فرم چک‌اوت است و فرم تو در تو
+   مجاز نیست، پس ثبت و حذف کد با ایجکسی از طریق دکمه انجام می‌شود. */
 
 $.validator.addMethod('regex', function(value, element, regexp) {
     var re = new RegExp(regexp);
     return this.optional(element) || re.test(value);
 }, 'لطفا یک مقدار معتبر وارد کنید');
 
-$('#discount-create-form').submit(function (e) {
+// ثبت کد تخفیف
+$(document).on('click', '#discount-inline-submit', function (e) {
     e.preventDefault();
-    var formData = new FormData(this);
 
-    if ($(this).valid()) {
-        $.ajax({
-            url: $(this).attr('action'),
-            type: 'POST',
-            data: formData,
-            success: function (data) {
-                showCustomToast('کد تخفیف با موفقیت ثبت شد','success')
-                setTimeout(function () {
-                    location.reload();
-                }, 1000);
-            },
-            beforeSend: function (xhr) {
-                block('.block-div');
-                block('.checkout-summary');
-            },
-            complete: function () {
-                unblock('.block-div');
-                unblock('.checkout-summary');
-            },
-            cache: false,
-            contentType: false,
-            processData: false
-        });
+    var $box = $('#discount-inline-box');
+    var code = $.trim($('#discount-inline-code').val() || '');
+
+    if (!code) {
+        showCustomToast('لطفاً کد تخفیف را وارد کنید.', 'error');
+        return;
     }
+
+    var $btn = $(this);
+    $btn.prop('disabled', true);
+
+    $.ajax({
+        url: $box.data('store-url'),
+        type: 'POST',
+        data: {
+            code: code,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function () {
+            showCustomToast('کد تخفیف با موفقیت ثبت شد', 'success');
+            setTimeout(function () {
+                location.reload();
+            }, 1000);
+        },
+        error: function (xhr) {
+            $btn.prop('disabled', false);
+            var msg = (xhr.responseJSON && xhr.responseJSON.message)
+                ? xhr.responseJSON.message
+                : 'ثبت کد تخفیف انجام نشد؛ کد را بررسی کنید.';
+            showCustomToast(msg, 'error');
+        },
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader("X-CSRF-TOKEN", $('meta[name="csrf-token"]').attr('content'));
+            block('.block-div');
+            block('.checkout-summary');
+        },
+        complete: function () {
+            unblock('.block-div');
+            unblock('.checkout-summary');
+        }
+    });
+});
+
+// حذف کد تخفیف ثبت‌شده
+$(document).on('click', '#discount-inline-remove', function (e) {
+    e.preventDefault();
+
+    var $box = $('#discount-inline-box');
+    var $btn = $(this);
+    $btn.prop('disabled', true);
+
+    $.ajax({
+        url: $box.data('remove-url'),
+        type: 'POST',
+        data: {
+            _method: 'DELETE',
+            _token: $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function () {
+            showCustomToast('کد تخفیف حذف شد', 'success');
+            setTimeout(function () {
+                location.reload();
+            }, 800);
+        },
+        error: function () {
+            $btn.prop('disabled', false);
+            showCustomToast('حذف کد تخفیف انجام نشد', 'error');
+        },
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader("X-CSRF-TOKEN", $('meta[name="csrf-token"]').attr('content'));
+            block('.block-div');
+            block('.checkout-summary');
+        },
+        complete: function () {
+            unblock('.block-div');
+            unblock('.checkout-summary');
+        }
+    });
 });
 
 // ==================== Wallet ====================

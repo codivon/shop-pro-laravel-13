@@ -1,11 +1,12 @@
-@extends('front::layouts.master')
+{{-- فاز ۱۷۱ — چک‌اوت روی لایهٔ ساده (هدر دیجی‌کالایی، بدون هدر/فوتر اصلی سایت) --}}
+@extends('front::layouts.checkout')
 
 @push('styles')
     <link rel="stylesheet" href="{{ theme_asset('css/vendor/nice-select.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/mapir/css/mapp.min.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/mapir/css/fa/style.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('css/map-selected-styles.css') }}" />
-    <link rel="stylesheet" href="{{ theme_asset('css/checkout.css') }}?v=170" />
+    <link rel="stylesheet" href="{{ theme_asset('css/checkout.css') }}?v=171" />
 @endpush
 
 @section('content')
@@ -35,59 +36,10 @@
 
         <!-- start content -->
         <div class="content">
-            <div class="container-fluid">
-
-                <div class="line-step-container d-sm-block d-none">
-                    <div class="line-step">
-                        <div class="line-step-boxs">
-                            <div class="line-step-box complete">
-                                <a href="{{ route('front.cart') }}">
-                                    <p>سبد خرید</p>
-                                    <div class="icon">1</div>
-                                </a>
-                            </div>
-                            <div class="line-step-box complete">
-                                <a href="javascript:void(0)">
-                                    <p>جزییات پرداخت</p>
-                                    <div class="icon">2</div>
-                                </a>
-                            </div>
-                            <div class="line-step-box disabled">
-                                <a href="javascript:void(0)">
-                                    <p>تکمیل سفارش</p>
-                                    <div class="icon">3</div>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
+            {{-- فاز ۱۷۱ — نوار مراحل (سبد خرید / جزئیات پرداخت / تکمیل سفارش) حذف شد
+                 و بخش کد تخفیف به زیر درگاه‌های پرداخت منتقل شد --}}
             <div class="container-fluid">
                 <div class="check-out-form">
-
-                    {{-- کد تخفیف --}}
-                    @if ($cart->discount)
-                        <div class="content-box rounded-3 p-3 mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-patch-check-fill main-color-one-color me-1 font-20"></i>
-                                <span class="font-14">کد تخفیف ثبت شده:</span>
-                                <strong class="ms-1 font-14">{{ $cart->discount->code }}</strong>
-                            </div>
-                            <form action="{{ route('front.discount.destroy') }}" method="POST" class="mb-0">
-                                @csrf
-                                @method('delete')
-                                <button type="submit" class="btn btn-sm btn-danger rounded-3">حذف کد تخفیف</button>
-                            </form>
-                        </div>
-                    @else
-                        <div class="show-discount-modal pointer py-3 mb-3" data-bs-toggle="modal"
-                            data-bs-target="#discountModal">
-                            <i class="bi bi-patch-exclamation main-color-one-color me-1" style="font-size: 40px;"></i>
-                            کوپن تخفیف دارید برای نوشتن کد اینجا کلیک کنید
-                        </div>
-                    @endif
 
                     <div class="row gy-3">
                         {{-- فاز ۱۷۰ — سایدبار «سفارش شما» کوچک‌تر شد (col-lg-3) تا محصولات مرسوله کنار هم ۲تایی جا شوند --}}
@@ -331,40 +283,6 @@
         </div>
     </div>
 
-    {{-- مودال کد تخفیف --}}
-    @if (!$cart->discount)
-        <div class="discount-modal">
-            <div class="modal fade" id="discountModal" tabindex="-1" aria-labelledby="discountModalLabel"
-                aria-hidden="true">
-                <div class="modal-dialog modal-md modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h6 class="modal-title" id="discountModalLabel">کد تخفیف</h6>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <h4 class="font-16 mb-3">
-                                اگر شما کد تخفیف دارید ، برای ثبت آن از طریق زیر اقدام کنید.
-                            </h4>
-                            <form id="discount-create-form" action="{{ route('front.discount.store') }}"
-                                class="mb-0">
-                                @csrf
-                                <div class="form-group mb-3">
-                                    <label for="discount-code" class="form-label">کد تخفیف:</label>
-                                    <input type="text" name="code" class="form-control rounded-3"
-                                        placeholder="برای مثال eyd1402" id="discount-code" required>
-                                </div>
-                                <button type="submit" class="btn main-color-one-bg border-0 rounded-3">ثبت کد
-                                    تخفیف</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
-
     <input name="map_api" type="hidden" value="{{ option('map_api') }}">
 @endsection
 
@@ -378,8 +296,8 @@
     <script src="{{ theme_asset('js/plugins/jquery-validation/localization/messages_fa.min.js') }}?v=2"></script>
     <script src="{{ theme_asset('js/jquery.nice-select.min.js') }}"></script>
     <script src="{{ theme_asset('js/pages/addresses/map-select-scripts.js') }}?v=161"></script>
-    <script src="{{ theme_asset('js/pages/carts/checkout.js') }}?v=161"></script>
-    <script src="{{ theme_asset('js/pages/checkout.js') }}?v=11"></script>
+    <script src="{{ theme_asset('js/pages/carts/checkout.js') }}?v=171"></script>
+    <script src="{{ theme_asset('js/pages/checkout.js') }}?v=171"></script>
     <script src="{{ theme_asset('js/pages/addresses/index.js') }}?v=161"></script>
     <script src="{{ theme_asset('js/pages/addresses/add-edit-address.js?v=2') }}"></script>
 @endpush
