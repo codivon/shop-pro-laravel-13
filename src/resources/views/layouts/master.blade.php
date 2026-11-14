@@ -64,7 +64,7 @@
     <link rel="stylesheet" href="{{ theme_asset('plugin/swiper/swiper-bundle.min.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('plugin/timer/timer.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('plugin/bootstrap-touchspin/jquery.bootstrap-touchspin.min.css') }}">
-    <link rel="stylesheet" href="{{ theme_asset('css/style.css') }}?v=161">
+    <link rel="stylesheet" href="{{ theme_asset('css/style.css') }}?v=164">
     <link rel="stylesheet" href="{{ theme_asset('css/responsive.css') }}">
 
     {{-- فاز ۱۵۷ — اسلایدر owl در ویجت‌های پنل کاربری استفاده می‌شود؛
@@ -490,13 +490,13 @@
 <script src="{{theme_asset('plugin/swiper/swiper-bundle.min.js')}}"></script>
 <script src="{{theme_asset('plugin/timer/timer.js')}}"></script>
 <script src="{{theme_asset('plugin/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js')}}"></script>
-<script src="{{theme_asset('js/app.js')}}"></script>
+<script src="{{theme_asset('js/app.js')}}?v=164"></script>
 <script src="{{theme_asset('js/jquery-app.js')}}?v=2"></script>
 
 {{-- سانیار — پلاگین‌های جانبی تمپلیت --}}
 {{-- فاز ۱۵۶ — پلاگین go-to-top حذف شد؛ دکمهٔ مستطیلی «برگشت به بالا» در theme-header.js --}}
 <script src="{{theme_asset('plugin/rasta-contact/script.js')}}"></script>
-<script src="{{theme_asset('js/saniar-init.js')}}"></script>
+<script src="{{theme_asset('js/saniar-init.js')}}?v=164"></script>
 <script src="{{theme_asset('js/theme-header.js')}}?v=21"></script>
 
 {{-- اسکریپت‌های عملکردی فروشگاه --}}

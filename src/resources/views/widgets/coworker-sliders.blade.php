@@ -1,7 +1,9 @@
 {{-- نوار برندها (service) سانیار — از گروه coworker_sliders --}}
+{{-- فاز ۱۶۴ — عنوان از تنظیمات خود ابزارک (پیش‌فرض: نام سایت) --}}
 @php
     $variables = get_widget($widget);
     $coworker_sliders = $variables['coworker_sliders'];
+    $widget_title = $widget->option('title');
 @endphp
 
 @if(count($coworker_sliders))
@@ -11,7 +13,7 @@
                 <div class="col-lg-3">
                     <div class="service-title">
                         <h6 class="font-25 text-white mb-3">
-                            {{ option('info_site_title', 'فروشگاه سانیار') }}
+                            {{ $widget_title ?: option('info_site_title', 'فروشگاه سانیار') }}
                         </h6>
                         <p class="mb-0 text-white font-13">برترین برندهای اصلی و خارجی</p>
                     </div>

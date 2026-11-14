@@ -17,6 +17,14 @@ return [
                 'attributes' => 'required'
             ],
             [
+                'title' => 'تعداد اسلایدر موبایل',
+                'key' => 'mobile_number',
+                'input-type' => 'input',
+                'type' => 'number',
+                'default' => '5',
+                'class' => 'col-md-4 col-6',
+            ],
+            [
                 'title' => 'ترتیب نمایش',
                 'key' => 'ordering',
                 'input-type' => 'select',
@@ -38,6 +46,8 @@ return [
         ]
     ],
 
+    /* فاز ۱۶۴ — تنظیمات مخصوص همین ابزارک: هر نمونه می‌تواند چیدمان متفاوتی داشته باشد
+       (فقط اسلایدر / اسلایدر + ستون شگفت‌انگیز با تایمر / اسلایدر + دو بنر کناری) */
     'main-slider' => [
         'title' => 'اسلایدر اصلی و محصولات شگفت‌انگیز',
         'image' => 'widgets/slider.jpg',
@@ -52,18 +62,71 @@ return [
                 'attributes' => 'required'
             ],
             [
-                'title'      => 'جایگاه بنر',
+                'title'      => 'نمایش ستون محصولات شگفت‌انگیز با تایمر',
+                'key'        => 'show_moment',
+                'input-type' => 'select',
+                'class'      => 'col-md-4 col-6',
+                'default'    => 'yes',
+                'options'    => [
+                    [
+                        'value' => 'yes',
+                        'title' => 'بله'
+                    ],
+                    [
+                        'value' => 'no',
+                        'title' => 'خیر'
+                    ]
+                ],
+                'attributes' => 'required'
+            ],
+            [
+                'title'      => 'تعداد محصولات ستون شگفت‌انگیز',
+                'key'        => 'moment_number',
+                'input-type' => 'input',
+                'type'       => 'number',
+                'default'    => '6',
+                'class'      => 'col-md-4 col-6',
+            ],
+            [
+                'title'      => 'نمایش دو بنر کناری',
+                'key'        => 'show_banners',
+                'input-type' => 'select',
+                'class'      => 'col-md-4 col-6',
+                'default'    => 'no',
+                'options'    => [
+                    [
+                        'value' => 'no',
+                        'title' => 'خیر'
+                    ],
+                    [
+                        'value' => 'yes',
+                        'title' => 'بله'
+                    ]
+                ],
+                'attributes' => 'required'
+            ],
+            [
+                'title'      => 'تعداد بنر کناری',
+                'key'        => 'banner_number',
+                'input-type' => 'input',
+                'type'       => 'number',
+                'default'    => '2',
+                'class'      => 'col-md-4 col-6',
+            ],
+            [
+                'title'      => 'جایگاه ستون کناری (شگفت‌انگیز/بنر)',
                 'key'        => 'banner_position',
                 'input-type' => 'select',
                 'class'      => 'col-md-4 col-6',
+                'default'    => 'right',
                 'options'    => [
-                    [
-                        'value' => 'left',
-                        'title' => 'سمت چپ'
-                    ],
                     [
                         'value' => 'right',
                         'title' => 'سمت راست'
+                    ],
+                    [
+                        'value' => 'left',
+                        'title' => 'سمت چپ'
                     ]
                 ],
                 'attributes' => 'required'
@@ -86,7 +149,9 @@ return [
             ],
         ],
         'rules' => [
-            'number' => 'required',
+            'number'          => 'required',
+            'show_moment'     => 'required|in:yes,no',
+            'show_banners'    => 'required|in:yes,no',
             'banner_position' => 'required|in:right,left'
         ]
     ],
@@ -122,9 +187,33 @@ return [
                     ]
                 ],
             ],
+            [
+                'title'      => 'انتخاب دسته بندی ها (اختیاری)',
+                'key'        => 'categories',
+                'input-type' => 'product_categories',
+                'class'      => 'col-md-9',
+            ],
+            [
+                'title'      => 'شامل محصولات زیر دسته ها',
+                'key'        => 'sub_category_products',
+                'input-type' => 'select',
+                'class'      => 'col-md-3',
+                'options'    => [
+                    [
+                        'value' => 'yes',
+                        'title' => 'بله'
+                    ],
+                    [
+                        'value' => 'no',
+                        'title' => 'خیر'
+                    ]
+                ],
+            ],
         ],
         'rules' => [
-            'number' => 'required',
+            'number'     => 'required',
+            'categories' => 'nullable|array',
+            'categories.*' => 'exists:categories,id',
         ]
     ],
 
@@ -140,6 +229,32 @@ return [
                 'type'       => 'number',
                 'default'    => '5',
                 'class'      => 'col-md-4 col-6',
+                'attributes' => 'required'
+            ],
+            [
+                'title'      => 'تعداد بنر کناری',
+                'key'        => 'banner_number',
+                'input-type' => 'input',
+                'type'       => 'number',
+                'default'    => '2',
+                'class'      => 'col-md-4 col-6',
+            ],
+            [
+                'title'      => 'جایگاه بنرها',
+                'key'        => 'banner_position',
+                'input-type' => 'select',
+                'class'      => 'col-md-4 col-6',
+                'default'    => 'right',
+                'options'    => [
+                    [
+                        'value' => 'right',
+                        'title' => 'سمت راست'
+                    ],
+                    [
+                        'value' => 'left',
+                        'title' => 'سمت چپ'
+                    ]
+                ],
                 'attributes' => 'required'
             ],
             [
@@ -160,7 +275,8 @@ return [
             ],
         ],
         'rules' => [
-            'number' => 'required',
+            'number'          => 'required',
+            'banner_position' => 'required|in:right,left'
         ]
     ],
 
@@ -887,11 +1003,19 @@ return [
                 'input-type' => 'product_categories',
                 'class'      => 'col-md-12',
             ],
+            [
+                'title'      => 'لینک دکمه مشاهده همه (اختیاری)',
+                'key'        => 'link',
+                'input-type' => 'input',
+                'type'       => 'text',
+                'class'      => 'col-md-6 col-6',
+            ],
 
         ],
         'rules' => [
             'categories'      => 'required|array',
             'categories.*'    => 'exists:categories,id',
+            'link'            => 'nullable|string',
         ]
     ],
 

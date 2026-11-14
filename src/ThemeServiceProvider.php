@@ -52,6 +52,13 @@ class ThemeServiceProvider extends ServiceProvider
             $this->loadRoutesFrom(__DIR__ . '/routes/web.php');
         });
 
+        /* فاز ۱۶۴ — rate-limiter جستجوی لحظه‌ای هدر.
+           روت search/suggest متعلق به تم است و نام limiter آن (front-suggest)
+           باید همین‌جا ثبت شود؛ در غیر این صورت در production با
+           MissingRateLimiterException («Rate limiter [App\Models\User::front-suggest]
+           is not defined») خطای ۵۰۰ می‌داد و جستجوی لحظه‌ای از کار می‌افتاد. */
+        $this->registerRateLimiters();
+
         $this->loadTranslationsFrom(__DIR__ . '/resources/lang', 'front');
 
         // load views
@@ -61,6 +68,24 @@ class ThemeServiceProvider extends ServiceProvider
         // کامپوزرها lazy هستند (فقط هنگام رندر ویو اجرا می‌شوند)؛ بدون ثبت در
         // حالت کنسول، ویوهای تم در تست‌ها با متغیرهای تعریف‌نشده 500 می‌دهند
         $this->viewComposer();
+    }
+
+    /**
+     * فاز ۱۶۴ — rate-limiterهای تعریف‌شده در تم.
+     * سبک همان هسته (AppServiceProvider::registerRateLimiters): در تست/سندباکس
+     * محدودیتی نیست و فقط در production سقف دارد تا ربات‌ها جستجو را هدر ندهند.
+     */
+    private function registerRateLimiters(): void
+    {
+        $isProduction = $this->app->environment('production');
+
+        \Illuminate\Support\Facades\RateLimiter::for('front-suggest', function ($request) use ($isProduction) {
+            if (! $isProduction) {
+                return \Illuminate\Cache\RateLimiting\Limit::none();
+            }
+
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(600)->by(optional($request->user())->id ?: 'suggest|'.$request->ip());
+        });
     }
 
     private function viewComposer()

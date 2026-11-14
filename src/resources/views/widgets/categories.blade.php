@@ -1,7 +1,9 @@
 {{-- گرید دسته‌بندی محصولات سانیار --}}
+{{-- فاز ۱۶۴ — عنوان/لینک از تنظیمات خود ابزارک --}}
 @php
     $variables = get_widget($widget);
     $categories = $variables['categories'];
+    $widget_link = $widget->option('link') ?: route('front.products.index');
 @endphp
 
 @if(count($categories))
@@ -13,7 +15,7 @@
                     <h5 class="font-16 ms-3">دسته بندی<span class="main-color-one-color d-inline-block ms-1">محصولات</span></h5>
                 </div>
                 <div class="link">
-                    <a href="{{ route('front.products.index') }}" class="border-animate fromCenter pb-1 fw-bold">
+                    <a href="{{ $widget_link }}" class="border-animate fromCenter pb-1 fw-bold">
                         مشاهده همه
                         <i class="bi bi-chevron-double-left main-color-one-color"></i>
                     </a>

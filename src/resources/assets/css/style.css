@@ -5672,6 +5672,69 @@ div.countdown-bar div:nth-of-type(2) span {
     color: #807ca4;
 }
 
+/* فاز ۱۶۴ — ویجت سوالات متداول: رنگ/عرض/چیدمان از تنظیمات خود ابزارک
+   (--faq-block-color و --faq-text-color و max-width از بلید تزریق می‌شوند) */
+.faq-parent .faq-title i.bi-patch-question {
+    color: var(--faq-block-color, var(--main-color-one, #4f46e5));
+}
+
+.faq-parent .faq-title h4 {
+    color: var(--faq-block-color, var(--main-color-one, #4f46e5));
+}
+
+.faq-parent .faq-title p {
+    color: #807ca4;
+}
+
+/* چیدمان افقی — هدر در راست (ستون رنگی) */
+.faq-layout-side {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    margin-inline: auto;
+}
+
+.faq-layout-side > .faq-title {
+    flex: 0 0 auto;
+    width: 240px;
+    background: var(--faq-block-color, #4f46e5);
+    border-radius: 14px;
+    padding: 1.5rem 1rem;
+}
+
+.faq-layout-side > .faq-title h4,
+.faq-layout-side > .faq-title i.bi-patch-question {
+    color: var(--faq-text-color, #ffffff);
+}
+
+.faq-layout-side > .faq-title p {
+    color: var(--faq-text-color, #ffffff);
+    opacity: .85;
+}
+
+.faq-layout-side > .accordion-style {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+@media (max-width: 767.98px) {
+    .faq-layout-side {
+        flex-direction: column;
+    }
+
+    .faq-layout-side > .faq-title {
+        width: 100%;
+    }
+}
+
+/* فاز ۱۶۴ — متن تولتیپ سراسری (customToast) همیشه سفید — گزارش کاربر */
+.toast-item,
+.toast-item span,
+.toast-item div,
+.toast-item .toast-item-close {
+    color: #ffffff !important;
+}
+
 .card-style1 {
     box-shadow: 0 0 10px 0 rgb(89 75 128 / 9%);
 }

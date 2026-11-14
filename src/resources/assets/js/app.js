@@ -20,8 +20,9 @@ function saniarSwiper(el, config) {
     return new Swiper(el, config);
 }
 
-/* ========= اسلایدر اصلی صفحهٔ اصلی (#homeSlider) ========= */
-document.querySelectorAll('#homeSlider').forEach(function (el) {
+/* ========= اسلایدر اصلی صفحهٔ اصلی (js-home-slider — فاز ۱۶۴ کلاس شد تا چند
+   نمونهٔ main-slider با id یکتا روی یک صفحه مقداردهی شوند) ========= */
+document.querySelectorAll('.js-home-slider').forEach(function (el) {
     if (el.dataset.swiperBound === '1') { return; }
     el.dataset.swiperBound = '1';
     saniarSwiper(el, {
@@ -36,8 +37,8 @@ document.querySelectorAll('#homeSlider').forEach(function (el) {
     });
 });
 
-/* ============== پیشنهاد لحظه‌ای (#suggetMoment) ============== */
-document.querySelectorAll('#suggetMoment').forEach(function (el) {
+/* ============== پیشنهاد لحظه‌ای (js-moment-slider — فاز ۱۶۴ کلاس شد) ============== */
+document.querySelectorAll('.js-moment-slider').forEach(function (el) {
     if (el.dataset.swiperBound === '1') { return; }
     el.dataset.swiperBound = '1';
     var progressBar = el.querySelector('.swiper-progress-bar');

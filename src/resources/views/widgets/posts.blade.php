@@ -1,7 +1,12 @@
 {{-- اسلایدر وبلاگ سانیار --}}
+{{-- فاز ۱۶۴ — عنوان/لینک/عنوان لینک از تنظیمات خود ابزارک --}}
 @php
     $variables = get_widget($widget);
     $posts = $variables['posts'];
+
+    $widget_title   = $widget->option('title');
+    $widget_link    = $widget->option('link') ?: route('front.blog.index');
+    $widget_link_title = $widget->option('link_title', 'مشاهده همه');
 @endphp
 
 @if(count($posts))
@@ -10,11 +15,11 @@
             <div class="header-content mb-4 bg-white shadow-box rounded-3 p-3 d-flex align-items-center justify-content-between flex-wrap">
                 <div class="title d-flex align-items-center">
                     <img loading="lazy" decoding="async" src="{{ theme_asset('image/square.png') }}" alt="" class="img-fluid">
-                    <h5 class="font-16 ms-3">آخرین مطالب <span class="main-color-one-color d-inline-block">وبلاگ</span></h5>
+                    <h5 class="font-16 ms-3">{{ $widget_title ?: 'آخرین مطالب وبلاگ' }}</h5>
                 </div>
                 <div class="link">
-                    <a href="{{ route('front.blog.index') }}" class="border-animate fromCenter pb-1 fw-bold">
-                        مشاهده همه
+                    <a href="{{ $widget_link }}" class="border-animate fromCenter pb-1 fw-bold">
+                        {{ $widget_link_title ?: 'مشاهده همه' }}
                         <i class="bi bi-chevron-double-left main-color-one-color"></i>
                     </a>
                 </div>

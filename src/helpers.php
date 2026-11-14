@@ -130,12 +130,13 @@ function get_widget_uncached($widget)
                 ->take($widget->option('number', 5))
                 ->get();
 
+            /* فاز ۱۶۴ — تعداد اسلایدر موبایل از تنظیمات خود ابزارک */
             $variables['mobile_sliders'] = Slider::detectLang()
                 ->whereJsonContains('groups', 'mobile_sliders')
                 ->whereJsonContains('pages', $widget->page)
                 ->where('published', true)
                 ->orderBy('ordering', $widget->option('ordering', 'asc'))
-                ->take($widget->option('number', 5))
+                ->take($widget->option('mobile_number', $widget->option('number', 5)))
                 ->get();
 
             break;
@@ -168,21 +169,43 @@ function get_widget_uncached($widget)
                 ->take($widget->option('number', 5))
                 ->get();
 
-            $variables['index_slider_banners'] = Banner::whereJsonContains('groups', 'index_slider_banners')
-                ->whereJsonContains('pages', $widget->page)
-                ->where('published', true)
-                ->orderBy('ordering', $widget->option('ordering', 'asc'))
-                ->take(2)
-                ->get();
+            /* فاز ۱۶۴ — تنظیمات مخصوص همین نمونه ابزارک:
+               ستون محصولات شگفت‌انگیز با تایمر + دو بنر کناری هرکدام با کلید
+               «بله/خیر» خودشان — تا هر نمونه main-slider چیدمان متفاوتی بگیرد */
+            $variables['moment_products'] = collect();
+            if ($widget->option('show_moment', 'yes') === 'yes') {
+                $variables['moment_products'] = Product::query()
+                    ->with('lowestPrice', 'category:id,title,slug')
+                    ->select('id', 'title', 'type', 'category_id', 'slug', 'image', 'special', 'image_alt')
+                    ->published()
+                    ->available()
+                    ->special()
+                    ->orderByStock()
+                    ->latest()
+                    ->take(((int) $widget->option('moment_number', 6)) ?: 6)
+                    ->get();
+            }
+
+            $variables['index_slider_banners'] = collect();
+            if ($widget->option('show_banners', 'no') === 'yes') {
+                $variables['index_slider_banners'] = Banner::whereJsonContains('groups', 'index_slider_banners')
+                    ->whereJsonContains('pages', $widget->page)
+                    ->where('published', true)
+                    ->orderBy('ordering', $widget->option('ordering', 'asc'))
+                    ->take(((int) $widget->option('banner_number', 2)) ?: 2)
+                    ->get();
+            }
 
             break;
         }
 
         case 'middle-banners': {
-            $variables['index_middle_banners'] = Banner::whereJsonContains('groups', 'index_middle_banners')
+            /* فاز ۱۶۴ — گروه بنرها از تنظیمات خود ابزارک («گروه») + تعداد قابل نمایش */
+            $variables['index_middle_banners'] = Banner::whereJsonContains('groups', $widget->option('place', 'index_middle_banners'))
                 ->whereJsonContains('pages', $widget->page)
                 ->where('published', true)
                 ->orderBy('ordering', $widget->option('ordering', 'asc'))
+                ->take($widget->option('number', 1) ?: 1)
                 ->get();
 
             break;
@@ -243,31 +266,36 @@ function get_widget_uncached($widget)
                     ->get();
             }
 
+            /* فاز ۱۶۴ — تعداد بنر کناری از تنظیمات خود ابزارک (پیش‌فرض ۲ بنر زیر هم) */
             $variables['index_slider_banners'] = Banner::whereJsonContains('groups', 'index_slider_banners')
                 ->whereJsonContains('pages', $widget->page)
                 ->where('published', true)
                 ->orderBy('ordering', $widget->option('ordering', 'asc'))
-                ->take(2)
+                ->take((int) $widget->option('banner_number', 2) ?: 2)
                 ->get();
 
             break;
         }
 
         case 'middle-banners-2': {
-            $variables['index_middle_2_banners'] = Banner::whereJsonContains('groups', 'index_middle_2_banners')
+            /* فاز ۱۶۴ — گروه بنرها از تنظیمات خود ابزارک + تعداد قابل نمایش */
+            $variables['index_middle_2_banners'] = Banner::whereJsonContains('groups', $widget->option('place', 'index_middle_2_banners'))
                 ->whereJsonContains('pages', $widget->page)
                 ->where('published', true)
                 ->orderBy('ordering', $widget->option('ordering', 'asc'))
+                ->take($widget->option('number', 2) ?: 2)
                 ->get();
 
             break;
         }
 
         case 'middle-banners-4': {
-            $variables['index_middle_4_banners'] = Banner::whereJsonContains('groups', 'index_middle_4_banners')
+            /* فاز ۱۶۴ — گروه بنرها از تنظیمات خود ابزارک + تعداد قابل نمایش */
+            $variables['index_middle_4_banners'] = Banner::whereJsonContains('groups', $widget->option('place', 'index_middle_4_banners'))
                 ->whereJsonContains('pages', $widget->page)
                 ->where('published', true)
                 ->orderBy('ordering', $widget->option('ordering', 'asc'))
+                ->take($widget->option('number', 4) ?: 4)
                 ->get();
 
             break;

@@ -155,6 +155,60 @@
             syncCart();
         });
 
+        /* فاز ۱۶۴ — دکمهٔ «تسویه حساب» (سبد → مرحلهٔ بعد):
+           اول تغییرات سبد ذخیره می‌شود (موجودی دوباره کنترل می‌شود)،
+           سپس به صفحهٔ پرداخت هدایت می‌شود.
+           قبلاً این دکمه در صفحهٔ سبد هیچ کاری نمی‌کرد، چون هندلرهای عمومی فقط
+           فرم #checkout-form صفحهٔ پرداخت را تریگر می‌کردند که در صفحهٔ سبد
+           وجود ندارد (رفع باگ «وارد مرحله بعد نمیشه»). */
+        $(document).on('click', '#checkout-link', function (e) {
+            if (!$('#cart-update-form').length) {
+                return; /* صفحهٔ پرداخت — هندلر خودش در checkout.js است */
+            }
+
+            e.preventDefault();
+
+            var btn = this;
+            var redirectUrl = $(btn).data('redirect');
+            if (!redirectUrl) return;
+
+            clearTimeout(syncTimer);
+            block(btn);
+            if ($('.checkout-summary').length) { block('.checkout-summary'); }
+
+            $.ajax({
+                url: $('#cart-update-form').attr('action'),
+                type: 'POST',
+                data: $('#cart-update-form').serialize(),
+                success: function (res) {
+                    applyCartPayload(res);
+                    window.location.href = redirectUrl;
+                },
+                error: function (request) {
+                    var res = request.responseJSON;
+                    var errors = res && res.errors;
+                    if (errors && errors.length) {
+                        errors.forEach(function (error) {
+                            showCustomToast(error, 'error');
+                        });
+                    } else {
+                        showCustomToast('خطایی رخ داده است.', 'error');
+                    }
+                    /* وضعیت واقعی سبد برمی‌گردد تا تعداد/جمع کل درست شود */
+                    if (res && res.area) {
+                        applyCartPayload(res);
+                    }
+                },
+                complete: function () {
+                    unblock(btn);
+                    if ($('.checkout-summary').length) { unblock('.checkout-summary'); }
+                },
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader('X-CSRF-TOKEN', $('meta[name="csrf-token"]').attr('content'));
+                }
+            });
+        });
+
         /* ------------------ حذف محصول ------------------ */
 
         $(document).on('click', '.remove-card', function (e) {
