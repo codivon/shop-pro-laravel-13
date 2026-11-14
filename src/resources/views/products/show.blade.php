@@ -807,5 +807,5 @@
    <script src="{{ theme_asset('js/pages/products/show.js') }}?v=18"></script>
    <script src="{{ theme_asset('js/pages/comments.js') }}"></script>
    {{-- فاز ۱۵۵ — منطق لحظه‌ای قیمت + تعویض تصویر گالری (بدون اسکریپت اینلاین) --}}
-   <script src="{{ theme_asset('js/theme-product.js') }}?v=2"></script>
+   <script src="{{ theme_asset('js/theme-product.js') }}?v=3"></script>
 @endpush

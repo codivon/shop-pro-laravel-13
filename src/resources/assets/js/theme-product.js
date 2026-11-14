@@ -42,7 +42,7 @@
         return null;
     }
 
-    function applyVariantPriceInstantly() {
+    function applyVariantPriceInstantly(preferServerPrice) {
         var variants = readVariantsData();
         if (!variants) return;
 
@@ -53,6 +53,23 @@
 
         var match = findMatchingPrice(variants, checkedIds);
         if (!match) return;
+
+        /* فاز ۱۶۰ — پس از تعویض پارشال (AJAX)، رندرِ سرور مرجع است؛ اگر بین
+           ردیف‌های هم‌ویژگی (چندفروشندگی) چند قیمت بود، همان price_id که
+           سرور روی دکمهٔ افزودن به سبد گذاشته انتخاب می‌شود تا مینی‌باکس
+           با باکس اصلی یکی بماند. */
+        if (preferServerPrice) {
+            var renderedBtn = document.querySelector('.product-info-block .btn-add-to-cart[data-price_id]');
+            if (renderedBtn) {
+                var renderedId = parseInt(renderedBtn.getAttribute('data-price_id'), 10);
+                for (var r = 0; r < variants.length; r++) {
+                    if (variants[r].id === renderedId) {
+                        match = variants[r];
+                        break;
+                    }
+                }
+            }
+        }
 
         /* ستون قیمت قبلی/درصد تخفیف (اولین ستون باکس اقدام) */
         var priceBox = document.querySelector('.product-info-block .product-meta-action');
@@ -173,6 +190,31 @@
 
         applyVariantPriceInstantly();
     }, true);
+
+    /* ---------------------------------------------------------
+       فاز ۱۶۰ — رفع «خرید سریع با تغییر تنوع به‌روز نمی‌شود»:
+       ۱) show.js در کلیک روی چیپ تنوع، checked را با prop() ست می‌کند
+          (قبل از فعال‌سازی پیش‌فرض لیبل)؛ چون وضعیت رادیو قبل از کلیک
+          سینتِتیک مرورگر عوض شده، رویداد change هرگز fire نمی‌شود و
+          شنوندهٔ بالا با ماوس بی‌اثر بود. پس کلیک چیپ‌ها هم گوش داده
+          می‌شود (با تأخیر یک تیک تا show.js وضعیت را ست کند).
+       ۲) پس از پایان AJAX تعویض پارشال (replaceWith) هم دوباره
+          همگام‌سازی می‌شود تا برچسب تنوع/موجودی/قیمت با وضعیت سرور
+          قفل شود (مثلاً وقتی گروهی انتخاب پیش‌فرض سرور می‌گیرد).
+       --------------------------------------------------------- */
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('.product-info-block .product-attribute')) return;
+        setTimeout(function () { applyVariantPriceInstantly(false); }, 0);
+    }, true);
+
+    if (window.jQuery) {
+        jQuery(document).on('ajaxComplete', function () {
+            /* فقط وقتی جزیرهٔ دادهٔ تنوع‌ها در صفحه هست (صفحهٔ تک‌محصول) */
+            if (document.getElementById('js-product-variants-data')) {
+                applyVariantPriceInstantly(true);
+            }
+        });
+    }
 
     /* ---------------------------------------------------------
        ۲) گالری — اسلایدر تصویر اصلی همگام با بندانگشتی‌ها (فاز ۱۵۸)

@@ -778,6 +778,11 @@
     line-height: 2;
 }
 
+/* فاز ۱۶۰ — عنوان انگلیسی محصول زیر عنوان فارسی: راست‌چین (درخواست کاربر) */
+.product-page .product-meta-title .product-title-en {
+    text-align: right;
+}
+
 .product-page .bread-crumb .breadcrumb-item + .breadcrumb-item::before {
     color: #c6cad2;
 }

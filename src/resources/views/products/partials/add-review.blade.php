@@ -1,5 +1,5 @@
 @push('styles')
-    <link rel="stylesheet" href="{{ theme_asset('css/theme-product.css') }}?v=1">
+    <link rel="stylesheet" href="{{ theme_asset('css/theme-product.css') }}?v=19">
 @endpush
 
 {{-- ============================================================

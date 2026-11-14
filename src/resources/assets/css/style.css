@@ -1581,6 +1581,8 @@ figure.avatar img {
 .product-box .product-image{
     height: 180px;
     display: flex;
+    align-items: center;
+    justify-content: center;
     margin: 5px 0;
     position: relative;
 }
@@ -1594,6 +1596,27 @@ figure.avatar img {
     display: block;
     margin: auto;
     transition: 0.5s all ease-in-out;
+}
+
+/* فاز ۱۶۰ — باگ وسط‌چین‌نبودن تصویر کارت‌ها (گزارش کاربر):
+   آیتم فلکسِ واقعیِ .product-image، تگ <a> دور تصویر است نه خود img؛
+   لینک با عرضِ محتوا (هم‌عرض عکس) در ابتدای محور اصلی (سمت راست در RTL)
+   می‌چسبید و margin:auto روی img هم بی‌اثر بود. لینک حالا تمام‌عرض است
+   و تصویر داخلش با flex وسط‌چین می‌شود. */
+.product-box .product-image .product-image-link{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+/* فاز ۱۶۰ — وسط‌چین تصویر در کارت‌های قدیمی (بلوک «محصولات مرتبط»،
+   بنر بالای صفحه و…) که ساختار product-box را ندارند */
+a.image-data-src{
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .product-box .two-image {
@@ -3921,7 +3944,8 @@ div#btncollapzion {
    همان ظاهر nav-link هستی پنل — پدینگ، رنگ، آیکون و هاور یکسان */
 .profile-box-nav ul li a.profile-menu-url{
     display: block;
-    padding: .55rem .75rem;
+    /* فاز ۱۶۰ — درخواست کاربر: پدینگ راست صفر شود */
+    padding: .55rem 0 .55rem .75rem;
     color: var(--color-site);
     text-decoration: none;
     border-radius: 5px;

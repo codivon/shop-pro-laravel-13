@@ -62,7 +62,7 @@
     <link rel="stylesheet" href="{{ theme_asset('plugin/swiper/swiper-bundle.min.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('plugin/timer/timer.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('plugin/bootstrap-touchspin/jquery.bootstrap-touchspin.min.css') }}">
-    <link rel="stylesheet" href="{{ theme_asset('css/style.css') }}">
+    <link rel="stylesheet" href="{{ theme_asset('css/style.css') }}?v=160">
     <link rel="stylesheet" href="{{ theme_asset('css/responsive.css') }}">
 
     {{-- فاز ۱۵۷ — اسلایدر owl در ویجت‌های پنل کاربری استفاده می‌شود؛
@@ -70,12 +70,12 @@
     <link rel="stylesheet" href="{{ theme_asset('css/owl.carousel.min.css') }}">
 
     {{-- فاز ۱۵۵ — اصلاحات ظاهری ریز (هدر/محصول/صفحات) --}}
-    <link rel="stylesheet" href="{{ theme_asset('css/theme-header.css') }}">
-    <link rel="stylesheet" href="{{ theme_asset('css/theme-product.css') }}?v=18">
+    <link rel="stylesheet" href="{{ theme_asset('css/theme-header.css') }}?v=160">
+    <link rel="stylesheet" href="{{ theme_asset('css/theme-product.css') }}?v=19">
     <link rel="stylesheet" href="{{ theme_asset('css/theme-pages.css') }}">
 
     {{-- فاز ۱۵۶/۱۵۸ — حالت شب (دارک مود) — بعد از همهٔ استایل‌ها تا بتواند بازنویسی کند --}}
-    <link rel="stylesheet" href="{{ theme_asset('css/theme-dark.css') }}?v=19">
+    <link rel="stylesheet" href="{{ theme_asset('css/theme-dark.css') }}?v=20">
 
     {{-- CSS عملکردی مشترک (توست‌ها + آیکون‌های منوهای داینامیک) --}}
     <link rel="stylesheet" href="{{ theme_asset('js/plugins/toastr/toastr.css') }}">

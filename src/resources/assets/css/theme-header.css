@@ -188,7 +188,9 @@
     width: 50px;
     height: 50px;
     padding: 0;
-    margin-left: 16px;
+    /* فاز ۱۶۰ — درخواست کاربر: margin چپ/راست ۷px */
+    margin-left: 7px;
+    margin-right: 7px;
     background: #fff;
     border: 1px solid #eee;
     border-radius: 50%;
@@ -198,6 +200,13 @@
     line-height: 1;
     transition: 0.2s all ease-in-out;
     -webkit-transition: 0.2s all ease-in-out;
+}
+
+/* فاز ۱۶۰ — درخواست کاربر: سایز آیکون زنگوله ۳۰px.
+   (قاعدهٔ سراسری پلتفرم «a {font-size: … !important}» روی خود تگ a اثر
+   می‌گذارد؛ برای همین سایز روی خود <i> ست می‌شود) */
+.front-dropdown-notification .notification-trigger i {
+    font-size: 30px;
 }
 
 .front-dropdown-notification .notification-trigger:hover,

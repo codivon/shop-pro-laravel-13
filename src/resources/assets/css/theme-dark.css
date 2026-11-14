@@ -114,6 +114,68 @@ html[data-theme="dark"] .search-result-panel {
     box-shadow: var(--dk-shadow);
 }
 
+/* ---------- فاز ۱۶۰ — زنگولهٔ اعلان‌ها در تم تیره (گزارش کاربر:
+   «آیکون نوتیفیکیشن در هدر در تم تاریک هنوز سفید است») ---------- */
+html[data-theme="dark"] .front-dropdown-notification .notification-trigger {
+    background: var(--dk-surface);
+    border-color: var(--dk-border);
+    color: var(--dk-text-soft);
+    box-shadow: none;
+}
+
+html[data-theme="dark"] .front-dropdown-notification .notification-trigger:hover,
+html[data-theme="dark"] .front-dropdown-notification .notification-trigger:focus {
+    background: var(--dk-surface-2);
+    color: var(--main-color-one);
+}
+
+html[data-theme="dark"] .front-dropdown-notification .badge-notif-count {
+    border-color: var(--dk-surface);
+}
+
+/* پنل کشویی اعلان‌ها */
+html[data-theme="dark"] .front-dropdown-notification .notif-dropdown {
+    background: var(--dk-surface);
+    border-color: var(--dk-border);
+    box-shadow: var(--dk-shadow);
+}
+
+html[data-theme="dark"] .notif-dropdown-header {
+    background: var(--dk-bg-soft);
+    border-bottom-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .notif-header-title {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .notif-card:hover {
+    background: var(--dk-bg-soft);
+}
+
+html[data-theme="dark"] .notif-card-title {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .notif-card-text,
+html[data-theme="dark"] .notif-card-time,
+html[data-theme="dark"] .notif-empty-text,
+html[data-theme="dark"] .notif-empty-sub {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .notif-empty-icon {
+    color: #3a4152;
+}
+
+html[data-theme="dark"] .notif-dropdown-footer {
+    border-top-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .notif-dropdown-footer .notif-footer-link:hover {
+    background: var(--dk-bg-soft);
+}
+
 /* ---------- مگا منو ---------- */
 html[data-theme="dark"] .mega-menu,
 html[data-theme="dark"] .mega-menu .top-menu-parent,
@@ -1633,6 +1695,90 @@ html[data-theme="dark"] .product-page .p-tabs .comments-filter {
     background: var(--dk-surface);
     border-color: var(--dk-border);
     box-shadow: none;
+}
+
+/* ---------- فاز ۱۶۰ — باقی‌ماندهٔ سفیدی‌های نظرات/پرسش‌ها (گزارش کاربر) ---------- */
+/* نوار مرتب‌سازی: خودِ UL در style.css پس‌زمینهٔ سفید و سایه دارد و در فاز قبل
+   پوشش داده نشده بود؛ بدون این قانون، نوار مرتب‌سازی در تم تیره سفید می‌ماند */
+html[data-theme="dark"] .product-page .p-tabs .filter-items {
+    background-color: transparent;
+    box-shadow: none;
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-filter .filter-items,
+html[data-theme="dark"] .product-page .p-tabs .qa-filter .filter-items {
+    background-color: transparent;
+    box-shadow: none;
+}
+
+/* سربرگ کارت دیدگاه: خط‌چین روشن */
+html[data-theme="dark"] .product-page .p-tabs .comments-list .article .header {
+    border-bottom-color: var(--dk-border);
+}
+
+/* فاز ۱۶۰ — قاعدهٔ عمومی «html[data-theme=dark] .footer» (پس‌زمینهٔ فوتر
+   سایت) به فوترِ داخل کارت دیدگاه/پاسخ هم می‌چسبید و نوار سیاهِ جدا ایجاد
+   می‌کرد؛ داخل کارت‌ها شفاف می‌شود تا پس‌زمینهٔ خود کارت دیده شود */
+html[data-theme="dark"] .product-page .p-tabs .comments-list .article .footer,
+html[data-theme="dark"] .product-page .p-tabs .comments-list .article .review-footer,
+html[data-theme="dark"] .product-page .p-tabs .comments-list .qa-answer .footer,
+html[data-theme="dark"] .product-page .p-tabs .comments-list .qa-answer .qa-answer-footer {
+    background: transparent;
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .article .header .review-meta {
+    color: var(--dk-text-muted);
+}
+
+/* نشان «از فروشگاه …» — کهربایی خوانا روی تیره */
+html[data-theme="dark"] .product-page .p-tabs .comments-list .article .header .store-badge {
+    color: #e2a94f;
+}
+
+/* دکمه‌های بله/خیرِ «آیا این دیدگاه مفید بود؟» */
+html[data-theme="dark"] .product-page .p-tabs .comments-list .btn-like {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border);
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .btn-like:hover {
+    background: var(--dk-bg-soft);
+    border-color: var(--main-color-one, #7599f7);
+    color: var(--main-color-one, #7599f7);
+}
+
+/* حالت «مطمئن نیستم» و متادیتای پاسخ */
+html[data-theme="dark"] .product-page .p-tabs .comments-list .user-suggest.suggest-neutral,
+html[data-theme="dark"] .product-page .p-tabs .comments-list .user-suggest.text-muted {
+    background: var(--dk-surface-2);
+    color: var(--dk-text-muted) !important;
+}
+
+/* امتیاز عددی، ستارهٔ خالی و نقاط قوت/ضعف — نسخهٔ خوانا روی تیره */
+html[data-theme="dark"] .product-page .p-tabs .comments-list .article .header .rating-badge,
+html[data-theme="dark"] .product-page .p-tabs .comments-list .review-rating-box .rating-badge {
+    color: #7ee08a;
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .review-stars .bi-star {
+    color: #4a5261;
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .point-positive {
+    color: #7ee08a;
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .point-negative {
+    color: #ff7b8a;
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .badge-positive {
+    color: #7ee08a;
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .badge-negative {
+    color: #ff7b8a;
 }
 
 /* ---------- امتیاز داخل باکس فروشنده ---------- */

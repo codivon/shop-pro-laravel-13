@@ -27,7 +27,9 @@
             <div class="col-lg-8">
                 <h1 class="font-18 fw-bold mb-1">{{ $product->title }}</h1>
                 @if ($product->title_en)
-                    <p class="mb-0 mt-1 text-muted font-13" dir="ltr">{{ $product->title_en }}</p>
+                    {{-- فاز ۱۶۰ — هم‌ترازی راست (درخواست کاربر)؛ dir=ltr فقط برای
+                         رندر صحیح حروف لاتین می‌ماند --}}
+                    <p class="product-title-en mb-0 mt-1 text-muted font-13" dir="ltr">{{ $product->title_en }}</p>
                 @endif
             </div>
             <div class="col-lg-4">
@@ -302,19 +304,28 @@
     @php
         $variants_payload = [];
         try {
-            foreach ($product->getPrices()->get() as $variant_price) {
-                /* فاز ۱۵۹ — نام فارسی هر ویژگی هم داخل جزیره می‌آید تا برچسب
-                   «تنوع انتخاب‌شده» در خرید سریع، همیشه کامل و صحیح باشد */
-                $variantAttributes = $variant_price->get_attributes();
-                $variants_payload[] = [
-                    'id'         => (int) $variant_price->id,
-                    'attrs'      => $variantAttributes->pluck('id')->map(fn ($v) => (int) $v)->values()->all(),
-                    'attr_names' => $variantAttributes->map(fn ($a) => trim((string) $a->name))->filter()->values()->all(),
-                    'price'      => number_format($variant_price->regularPrice()),
-                    'sale'       => number_format($variant_price->salePrice()),
-                    'discount'   => $variant_price->hasDiscount() ? (int) $variant_price->discount() : 0,
-                    'stock'      => (int) $variant_price->stock,
-                ];
+            /* فاز ۱۶۰ — منبع داده از getPrices() به prices() تغییر کرد.
+               getPrices() (saleablePrices) با فیلتر stock>0 و فروشنده‌های فعال،
+               روی محصولات ناموجود یا در حالت چندفروشندگیِ بدون فعال‌سازی،
+               خالی برمی‌گشت؛ جزیرهٔ JSON خالی می‌شد و به‌روزرسانی لحظه‌ایِ
+               خرید سریع از کار می‌افتاد. prices() همهٔ ردیف‌های قیمت محصول
+               را می‌دهد؛ صحت قیمت نهایی همچنان با پاسخ سرور تضمین می‌شود. */
+            foreach ($product->prices()->get() as $variant_price) {
+                /* فاز ۱۶۰ — خطای یک ردیف قیمت، کل جزیره را خالی نکند */
+                try {
+                    $variantAttributes = $variant_price->get_attributes();
+                    $variants_payload[] = [
+                        'id'         => (int) $variant_price->id,
+                        'attrs'      => $variantAttributes->pluck('id')->map(fn ($v) => (int) $v)->values()->all(),
+                        'attr_names' => $variantAttributes->map(fn ($a) => trim((string) $a->name))->filter()->values()->all(),
+                        'price'      => number_format($variant_price->regularPrice()),
+                        'sale'       => number_format($variant_price->salePrice()),
+                        'discount'   => $variant_price->hasDiscount() ? (int) $variant_price->discount() : 0,
+                        'stock'      => (int) $variant_price->stock,
+                    ];
+                } catch (\Throwable $variant_row_exception) {
+                    continue;
+                }
             }
         } catch (\Throwable $variants_exception) {
             $variants_payload = [];
