@@ -7,97 +7,238 @@
     'use strict';
 
     function initHeaderSearch() {
-        var form = document.getElementById('search-form');
-        var input = document.getElementById('search-input');
-        var panel = document.getElementById('search-result');
-        var btn = document.getElementById('search-header-btn-search');
+        /* =========================================================
+           فاز ۱۶۳ — جستجوی لحظه‌ای پیشرفتهٔ سانیار
+           - فوکوس روی جستجو → پنل «جستجوهای اخیر + پرطرفدار + بنر»
+           - تایپ (۲ کاراکتر به بعد) → نتایج زنده: دسته‌بندی/برند/محصول
+           - همه از GET /search/suggest (JSON + کش سمت سرور)
+           - جستجوهای اخیر در localStorage مرورگر کاربر
+           ========================================================= */
+        var suggestUrl = (document.querySelector('meta[name="saniar-suggest"]') || {}).content || '/search/suggest';
 
-        function hidePanel() {
-            if (!panel) { return; }
-            panel.classList.remove('open', 'd-none');
-            panel.innerHTML = '';
+        /* ---------- ابزارها ---------- */
+        function escapeHtml(text) {
+            return String(text == null ? '' : text)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
         }
 
-        function showPanel(html) {
-            if (!panel) { return; }
-            // کلاس d-none ممکن است توسط اسکریپت‌های قدیمی اضافه شده باشد
-            panel.classList.remove('d-none');
-            panel.innerHTML = html;
+        function getRecent() {
+            try {
+                var list = JSON.parse(localStorage.getItem('saniarRecentSearches') || '[]');
+                return Array.isArray(list) ? list : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function pushRecent(term) {
+            term = (term || '').trim();
+            if (!term) { return; }
+            var list = getRecent().filter(function (t) { return t !== term; });
+            list.unshift(term);
+            try { localStorage.setItem('saniarRecentSearches', JSON.stringify(list.slice(0, 6))); } catch (e) { /* */ }
+        }
+
+        /* ---------- رندر ---------- */
+        function chip(term, withIcon) {
+            return '<button type="button" class="sr2-chip js-sr2-term" data-term="' + escapeHtml(term) + '">' +
+                (withIcon ? '<i class="bi bi-arrow-left-right"></i>' : '') +
+                '<span>' + escapeHtml(term) + '</span>' +
+                '</button>';
+        }
+
+        function resultRow(item, icon, withThumb, contextPrefix) {
+            var thumb = withThumb
+                ? (item.image
+                    ? '<span class="sr2-thumb"><img src="' + escapeHtml(item.image) + '" loading="lazy" alt=""></span>'
+                    : '<span class="sr2-thumb sr2-thumb-empty"><i class="bi bi-box"></i></span>')
+                : '<span class="sr2-row-icon"><i class="bi ' + icon + '"></i></span>';
+
+            return '<a href="' + escapeHtml(item.url) + '" class="sr2-row">' +
+                '<span class="sr2-row-main">' + thumb +
+                '<span class="sr2-row-title">' + escapeHtml(item.title) + '</span></span>' +
+                (item.context ? '<span class="sr2-row-context">' + escapeHtml((contextPrefix || '') + item.context) + '</span>' : '') +
+                '</a>';
+        }
+
+        function renderEmptyState(panel, data) {
+            var recent = getRecent();
+            var popular = (data && data.popular) || [];
+            var banner = data && data.banner;
+            var html = '';
+            var hasSection = false;
+
+            if (recent.length) {
+                hasSection = true;
+                html += '<div class="sr2-section"><div class="sr2-heading">جستجوهای اخیر</div><div class="sr2-chips">';
+                recent.forEach(function (t) { html += chip(t, false); });
+                html += '</div></div>';
+            }
+
+            if (popular.length) {
+                hasSection = true;
+                html += '<div class="sr2-section"><div class="sr2-heading">جستجوهای پرطرفدار</div><div class="sr2-chips">';
+                popular.forEach(function (t) { html += chip(t, true); });
+                html += '</div></div>';
+            }
+
+            if (banner) {
+                hasSection = true;
+                html += '<a href="' + escapeHtml(banner.link || '#') + '" class="sr2-banner">' +
+                    '<span class="sr2-banner-text">' +
+                    '<span class="sr2-banner-title">' + escapeHtml(banner.title || '') + '</span>' +
+                    '<span class="sr2-banner-sub">' + escapeHtml(banner.subtitle || '') + '</span>' +
+                    '</span>' +
+                    '<i class="bi bi-arrow-left"></i>' +
+                    '</a>';
+            }
+
+            panel.innerHTML = hasSection ? html : '<div class="sr2-empty">چیزی برای نمایش نیست</div>';
             panel.classList.add('open');
         }
 
-        // ---------- جستجوی زنده ----------
-        if (input && panel) {
-            var timer = null;
-            var request = null;
+        function renderResults(panel, data, q) {
+            var html = '';
 
-            var runSearch = function () {
+            if (data.categories && data.categories.length) {
+                html += '<div class="sr2-section"><div class="sr2-heading">دسته‌بندی‌ها</div>';
+                data.categories.forEach(function (item) { html += resultRow(item, 'bi-grid', false, 'در فروشی '); });
+                html += '</div>';
+            }
+
+            if (data.brands && data.brands.length) {
+                html += '<div class="sr2-section"><div class="sr2-heading">برندها</div>';
+                data.brands.forEach(function (item) {
+                    html += resultRow({ title: item.title, url: item.url, context: 'همه کالاهای برند ' + item.title }, 'bi-award', false, '');
+                });
+                html += '</div>';
+            }
+
+            if (data.products && data.products.length) {
+                html += '<div class="sr2-section"><div class="sr2-heading">محصولات</div>';
+                data.products.forEach(function (item) { html += resultRow(item, 'bi-box', true, 'در فروشی '); });
+                html += '</div>';
+            }
+
+            if (data.all) {
+                html += '<a href="' + escapeHtml(data.all) + '" class="sr2-row sr2-all">' +
+                    '<span class="sr2-row-main"><span class="sr2-row-icon"><i class="bi bi-search"></i></span>' +
+                    '<span class="sr2-row-title">مشاهده همهٔ نتایج «' + escapeHtml(q) + '»</span></span>' +
+                    '<span class="sr2-row-context"><i class="bi bi-arrow-left"></i></span>' +
+                    '</a>';
+            }
+
+            panel.innerHTML = html || '<div class="sr2-empty">نتیجه‌ای برای «' + escapeHtml(q) + '» یافت نشد</div>';
+            panel.classList.add('open');
+        }
+
+        /* ---------- اتصال به هر فرم جستجو (دسکتاپ + موبایل) ---------- */
+        document.querySelectorAll('.search-form').forEach(function (form) {
+            var input = form.querySelector('input[name="q"]');
+            if (!input || input.dataset.sr2Bound === '1') { return; }
+            input.dataset.sr2Bound = '1';
+
+            var panel = document.createElement('div');
+            panel.className = 'saniar-search-panel';
+            form.appendChild(panel);
+
+            var hidePanel = function () {
+                panel.classList.remove('open');
+                panel.innerHTML = '';
+            };
+
+            var timer = null;
+            var controller = null;
+
+            var fetchSuggest = function (term, done) {
+                if (controller && controller.abort) { controller.abort(); }
+                if (window.AbortController) { controller = new AbortController(); }
+
+                fetch(suggestUrl + '?q=' + encodeURIComponent(term), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    signal: controller ? controller.signal : undefined
+                })
+                    .then(function (res) { return res.ok ? res.json() : {}; })
+                    .then(done)
+                    .catch(function () { /* لغو یا خطای شبکه — پنل دست نمی‌خورد */ });
+            };
+
+            /* فوکوس / کلیک با ورودی خالی → پنل اخیر + پرطرفدار */
+            var showIdlePanel = function () {
+                if ((input.value || '').trim().length >= 2) { return; }
+                fetchSuggest('', function (data) {
+                    if ((input.value || '').trim().length >= 2) { return; }
+                    renderEmptyState(panel, data);
+                });
+            };
+
+            input.addEventListener('focus', showIdlePanel);
+            input.addEventListener('click', showIdlePanel);
+
+            /* تایپ → نتایج زنده */
+            input.addEventListener('input', function () {
+                window.clearTimeout(timer);
                 var q = (input.value || '').trim();
 
                 if (q.length < 2) {
-                    hidePanel();
+                    timer = window.setTimeout(showIdlePanel, 120);
                     return;
                 }
 
-                if (request && request.abort) { request.abort(); }
+                panel.innerHTML = '<div class="sr2-empty"><i class="bi bi-arrow-repeat"></i> در حال جستجو…</div>';
+                panel.classList.add('open');
 
-                showPanel('<div class="sr-empty"><i class="bi bi-arrow-repeat"></i> در حال جستجو…</div>');
-
-                request = fetch('/search', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') || {}).content || ''
-                    },
-                    body: JSON.stringify({ q: q })
-                })
-                    .then(function (res) { return res.ok ? res.json() : { html: '' }; })
-                    .then(function (data) {
-                        var html = (data && data.html) ? data.html : '';
-                        if ((input.value || '').trim().length < 2) { return; }
-                        if (!html.replace(/\s/g, '').length) {
-                            showPanel('<div class="sr-empty">نتیجه‌ای یافت نشد</div>');
-                        } else {
-                            showPanel(html);
-                        }
-                    })
-                    .catch(function () {
-                        // درخواست لغو شده یا خطای شبکه — پنل را دست نمی‌زنیم
+                timer = window.setTimeout(function () {
+                    if ((input.value || '').trim() !== q) { return; }
+                    fetchSuggest(q, function (data) {
+                        if ((input.value || '').trim() !== q) { return; }
+                        renderResults(panel, data, q);
                     });
-            };
-
-            input.addEventListener('keyup', function () {
-                window.clearTimeout(timer);
-                timer = window.setTimeout(runSearch, 350);
+                }, 250);
             });
 
-            input.addEventListener('focus', function () {
-                if (panel.innerHTML.replace(/\s/g, '').length) {
-                    panel.classList.remove('d-none');
-                    panel.classList.add('open');
-                }
+            /* کلیک روی چیپ‌ها → جستجوی همان عبارت */
+            panel.addEventListener('click', function (e) {
+                var chipEl = e.target.closest('.js-sr2-term');
+                if (!chipEl) { return; }
+                e.preventDefault();
+                var term = chipEl.getAttribute('data-term') || '';
+                input.value = term;
+                pushRecent(term);
+                window.location.href = form.getAttribute('action') + '?q=' + encodeURIComponent(term);
             });
 
-            // بستن با کلیک بیرون از باکس جستجو
+            /* ذخیرهٔ عبارت هنگام جستجو */
+            form.addEventListener('submit', function () {
+                pushRecent(input.value);
+            });
+
+            /* بستن با کلیک بیرون */
             document.addEventListener('click', function (e) {
-                if (!e.target.closest('.search-header')) {
-                    hidePanel();
-                }
+                if (!form.contains(e.target)) { hidePanel(); }
             });
 
-            // بستن با Escape
+            /* بستن با Escape */
             document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape') { hidePanel(); }
             });
-        }
+        });
+
+        /* ---------- سازگاری با بلوک قدیمی (panel#search-result) ---------- */
+        var legacyPanel = document.getElementById('search-result');
+        if (legacyPanel) { legacyPanel.remove(); }
 
         // ---------- دکمه جستجو (اسکریپت قدیمی event را preventDefault می‌کند) ----------
-        if (btn && form) {
-            btn.addEventListener('click', function (e) {
+        var desktopForm = document.getElementById('search-form');
+        var desktopInput = document.getElementById('search-input');
+        var searchBtn = document.getElementById('search-header-btn-search');
+
+        if (searchBtn && desktopForm) {
+            searchBtn.addEventListener('click', function (e) {
                 e.preventDefault();
-                if (input && (input.value || '').trim().length > 0) {
-                    form.submit();
+                if (desktopInput && (desktopInput.value || '').trim().length > 0) {
+                    desktopForm.submit();
                 }
             });
         }

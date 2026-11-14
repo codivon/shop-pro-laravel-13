@@ -149,6 +149,18 @@ function get_widget_uncached($widget)
                 ->take($widget->option('number', 5))
                 ->get();
 
+            /* فاز ۱۶۳ — فالبک: اگر ادمین اسلایدری در گروه main_sliders نگذاشته،
+               اسلایدرهای گروه fullscreen_slider (که روی سایت موجود است) نمایش داده
+               می‌شوند تا ابزار همیشه کار کند و صفحهٔ خالی دیده نشود. */
+            if (count($variables['main_sliders']) === 0) {
+                $variables['main_sliders'] = Slider::whereJsonContains('groups', 'fullscreen_slider')
+                    ->whereJsonContains('pages', $widget->page)
+                    ->where('published', true)
+                    ->orderBy('ordering', $widget->option('ordering', 'asc'))
+                    ->take($widget->option('number', 5))
+                    ->get();
+            }
+
             $variables['mobile_sliders'] = Slider::whereJsonContains('groups', 'mobile_sliders')
                 ->whereJsonContains('pages', $widget->page)
                 ->where('published', true)
@@ -171,6 +183,71 @@ function get_widget_uncached($widget)
                 ->whereJsonContains('pages', $widget->page)
                 ->where('published', true)
                 ->orderBy('ordering', $widget->option('ordering', 'asc'))
+                ->get();
+
+            break;
+        }
+
+        /* فاز ۱۶۳ — اسلایدر شگفت‌انگیز سانیار: محصولات ویژه با تایمر + قیمت/تخفیف */
+        case 'amazing-slider': {
+            $amazingQuery = Product::query()
+                ->with(['lowestPrice', 'category:id,title,slug', 'labels:id,title'])
+                ->select(
+                    'id',
+                    'title',
+                    'title_en',
+                    'short_description',
+                    'type',
+                    'category_id',
+                    'slug',
+                    'image',
+                    'special',
+                    'special_end_date',
+                    'image_alt'
+                )
+                ->published()
+                ->available()
+                ->special()
+                ->orderByStock();
+
+            $amazingCategoryFilter = $widget->options->where('key', 'categories')->first();
+            if ($ids = front_widget_category_ids($amazingCategoryFilter, $widget->option('sub_category_products', 'yes') == 'yes')) {
+                $amazingQuery->whereIn('category_id', $ids);
+            }
+
+            $variables['amazing_products'] = $amazingQuery
+                ->orderBy('ordering', $widget->option('ordering', 'asc'))
+                ->take((int) $widget->option('number', 6))
+                ->get();
+
+            break;
+        }
+
+        /* فاز ۱۶۳ — اسلایدر + دو بنر زیر هم کنارش (همان گروه‌های main-slider
+           تا اسلایدر/بنرهای آپلودشدهٔ ادمین بدون تنظیم مجدد نمایش داده شوند) */
+        case 'slider-side-banners': {
+            $variables['main_sliders'] = Slider::whereJsonContains('groups', 'main_sliders')
+                ->whereJsonContains('pages', $widget->page)
+                ->where('published', true)
+                ->orderBy('ordering', $widget->option('ordering', 'asc'))
+                ->take($widget->option('number', 5))
+                ->get();
+
+            /* فالبک گروه fullscreen_slider — ابزار بدون آپلود جدید کار کند */
+            if (count($variables['main_sliders']) === 0) {
+                $variables['main_sliders'] = Slider::whereJsonContains('groups', 'fullscreen_slider')
+                    ->whereJsonContains('pages', $widget->page)
+                    ->where('published', true)
+                    ->orderBy('ordering', $widget->option('ordering', 'asc'))
+                    ->take($widget->option('number', 5))
+                    ->get();
+            }
+
+            $variables['index_slider_banners'] = Banner::whereJsonContains('groups', 'index_slider_banners')
+                ->whereJsonContains('pages', $widget->page)
+                ->where('published', true)
+                ->orderBy('ordering', $widget->option('ordering', 'asc'))
+                ->take(2)
                 ->get();
 
             break;

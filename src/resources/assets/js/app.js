@@ -1,173 +1,169 @@
-//========= start home slider =========///
-var swiper = new Swiper("#homeSlider", {
-  spaceBetween: 30,
-  centeredSlides: true,
-  loop: true,
-  autoplay: {
-    delay: 3000,
-    disableOnInteraction: false,
-  },
-  effect: "fade",
-  pagination: {
-    el: ".swiper-pagination",
-    clickable: true,
-  },
-  navigation: {
-    nextEl: ".swiper-button-next",
-    prevEl: ".swiper-button-prev",
-  },
+/* =========================================================================
+   app.js — مقداردهی اسلایدرهای Swiper تمپلیت سانیار
+   فاز ۱۶۳ — همهٔ مقداردهی‌ها «اسکوپ‌شده روی خود نمونه» شدند:
+   قبلاً همهٔ اسلایدرها با سلکتور سراسری (.swiper-button-next / .swiper-pagination)
+   مقداردهی می‌شدند؛ در نتیجه هر دکمهٔ ناوبری، «همهٔ» اسلایدرهای صفحه را
+   جلو می‌برد و با وجود چند اسلایدر در صفحهٔ اصلی، رفتارها قاطی می‌شد.
+   حالا هر نمونه فقط گره‌های داخل خودش را کنترل می‌کند.
+   ========================================================================= */
+
+/* ساخت نمونهٔ Swiper با گره‌های اسکوپ‌شدهٔ خودِ المنت */
+function saniarSwiper(el, config) {
+    if (!el || !window.Swiper) { return null; }
+    config = config || {};
+    config.pagination = config.pagination || {};
+    config.navigation = config.navigation || {};
+    if (config.pagination.el === undefined) { config.pagination.el = el.querySelector('.swiper-pagination'); }
+    if (config.navigation.nextEl === undefined) { config.navigation.nextEl = el.querySelector('.swiper-button-next'); }
+    if (config.navigation.prevEl === undefined) { config.navigation.prevEl = el.querySelector('.swiper-button-prev'); }
+    if (config.pagination.el) { config.pagination.clickable = true; }
+    return new Swiper(el, config);
+}
+
+/* ========= اسلایدر اصلی صفحهٔ اصلی (#homeSlider) ========= */
+document.querySelectorAll('#homeSlider').forEach(function (el) {
+    if (el.dataset.swiperBound === '1') { return; }
+    el.dataset.swiperBound = '1';
+    saniarSwiper(el, {
+        spaceBetween: 30,
+        centeredSlides: true,
+        loop: el.querySelectorAll('.swiper-slide').length > 1,
+        autoplay: {
+            delay: 3000,
+            disableOnInteraction: false,
+        },
+        effect: "fade",
+    });
 });
 
-
-///=============end home slider ============/
-
-//============= sugget moment =============//
-
-var swiperSugget = new Swiper("#suggetMoment", {
-  slidesPerView: 1,
-  spaceBetween: 30,
-  loop: true,
-  autoplay: {
-    delay: 3000,
-    disableOnInteraction: false,
-  },
-  speed: 500,
-  on: {
-    init: function () {
-      $(".swiper-progress-bar").removeClass("animate");
-      $(".swiper-progress-bar").removeClass("active");
-      $(".swiper-progress-bar").eq(0).addClass("animate");
-      $(".swiper-progress-bar").eq(0).addClass("active");
-    },
-    slideChangeTransitionStart: function () {
-      $(".swiper-progress-bar").removeClass("animate");
-      $(".swiper-progress-bar").removeClass("active");
-      $(".swiper-progress-bar").eq(0).addClass("active");
-    },
-    slideChangeTransitionEnd: function () {
-      $(".swiper-progress-bar").eq(0).addClass("animate");
-    }
-  }
+/* ============== پیشنهاد لحظه‌ای (#suggetMoment) ============== */
+document.querySelectorAll('#suggetMoment').forEach(function (el) {
+    if (el.dataset.swiperBound === '1') { return; }
+    el.dataset.swiperBound = '1';
+    var progressBar = el.querySelector('.swiper-progress-bar');
+    saniarSwiper(el, {
+        slidesPerView: 1,
+        spaceBetween: 30,
+        loop: el.querySelectorAll('.swiper-slide').length > 1,
+        autoplay: {
+            delay: 3000,
+            disableOnInteraction: false,
+        },
+        speed: 500,
+        on: {
+            init: function () {
+                if (!progressBar) { return; }
+                progressBar.classList.remove('animate', 'active');
+                progressBar.classList.add('animate', 'active');
+            },
+            slideChangeTransitionStart: function () {
+                if (!progressBar) { return; }
+                progressBar.classList.remove('animate', 'active');
+                progressBar.classList.add('active');
+            },
+            slideChangeTransitionEnd: function () {
+                if (progressBar) { progressBar.classList.add('animate'); }
+            }
+        }
+    });
 });
 
-//============= end sugget moment =============//
+/* ============== اسلایدر شگفت انگیز (امازینگ) ============== */
+/* جفت اصلی/فهرست کنار هم در یک ریشهٔ .amazing-slider مقداردهی می‌شوند */
+document.querySelectorAll('.amazing-slider').forEach(function (root) {
+    if (root.dataset.swiperBound === '1') { return; }
+    root.dataset.swiperBound = '1';
 
-//============= start amazing =============//
+    var linkEl = root.querySelector('.amazing-slider-link');
+    var sliderEl = root.querySelector('.amazing-slider-slider');
+    if (!linkEl || !sliderEl) { return; }
 
-///offer
-///offer gallery
-var swiper = new Swiper(".amazing-slider-link", {
-  spaceBetween: 10,
-  slidesPerView: 4,
-  freeMode: true,
-  watchSlidesProgress: true,
-  allowTouchMove: false,
-});
-var swiper2 = new Swiper(".amazing-slider-slider", {
-  effect: "fade",
-  speed: 1000,
-  loop: true,
-  autoplay: {
-    delay: 5000,
-    disableOnInteraction: false,
-  },
-  spaceBetween: 10,
-  thumbs: {
-    swiper: swiper,
-  },
-  pagination: {
-    el: ".swiper-pagination",
-    clickable: true,
-  },
-});
+    var thumbs = saniarSwiper(linkEl, {
+        spaceBetween: 10,
+        slidesPerView: 4,
+        freeMode: true,
+        watchSlidesProgress: true,
+        allowTouchMove: false,
+    });
 
+    var mainConfig = {
+        effect: "fade",
+        speed: 1000,
+        loop: sliderEl.querySelectorAll('.swiper-slide').length > 1,
+        autoplay: {
+            delay: 5000,
+            disableOnInteraction: false,
+        },
+        spaceBetween: 10,
+    };
 
-//============= end amazing =============//
+    /* اتصال thumbs — فقط از طریق کانفیگ (API درست Swiper) */
+    if (thumbs) { mainConfig.thumbs = { swiper: thumbs }; }
 
-//========= start product box ==============/
-
-var swiper = new Swiper(".product-slider-swiper", {
-  slidesPerView: 5,
-  spaceBetween: 10,
-  navigation: {
-    nextEl: ".swiper-button-next",
-    prevEl: ".swiper-button-prev",
-  },
-  breakpoints: {
-    100: {
-      slidesPerView: 1,
-      spaceBetween: 20,
-    },
-    576: {
-      slidesPerView: 2,
-      spaceBetween: 20,
-    },
-    768: {
-      slidesPerView: 2,
-      spaceBetween: 20,
-    },
-    1024: {
-      slidesPerView: 3,
-      spaceBetween: 20,
-    },
-    1200: {
-      slidesPerView: 4,
-      spaceBetween: 20,
-    },
-    1400: {
-      slidesPerView: 5,
-      spaceBetween: 20,
-    }},
+    saniarSwiper(sliderEl, mainConfig);
 });
 
-//========= end product box ==============/
-
-
-//=========== product gallery ===================//
-
-var proSwiper = new Swiper(".product-gallery-thumb", {
-  spaceBetween: 10,
-  slidesPerView: 4,
-  freeMode: true,
-  watchSlidesProgress: true,
-  breakpoints: {
-    // when window width is >= 320px
-    320: {
-      slidesPerView: 3,
-      spaceBetween: 10
-    },
-    // when window width is >= 480px
-    400: {
-      slidesPerView: 4,
-      spaceBetween: 10
-    },
-  },
-});
-var proThumbswiper = new Swiper(".product-gallery", {
-  spaceBetween: 10,
-  navigation: {
-    nextEl: ".swiper-button-next",
-    prevEl: ".swiper-button-prev",
-  },
-  pagination: {
-    el: ".swiper-pagination",
-    clickable: true,
-  },
-  zoom: {
-    maxRatio: 3,
-    minRation: 1
-  },
-  thumbs: {
-    swiper: proSwiper,
-  },
+/* ========= اسلایدر ردیف محصولات (چند نمونه در صفحه) ========= */
+document.querySelectorAll('.product-slider-swiper').forEach(function (el) {
+    if (el.dataset.swiperBound === '1') { return; }
+    el.dataset.swiperBound = '1';
+    saniarSwiper(el, {
+        slidesPerView: 5,
+        spaceBetween: 10,
+        breakpoints: {
+            100:  { slidesPerView: 1, spaceBetween: 20 },
+            576:  { slidesPerView: 2, spaceBetween: 20 },
+            768:  { slidesPerView: 2, spaceBetween: 20 },
+            1024: { slidesPerView: 3, spaceBetween: 20 },
+            1200: { slidesPerView: 4, spaceBetween: 20 },
+            1400: { slidesPerView: 5, spaceBetween: 20 },
+        },
+    });
 });
 
-//=========== end product gallery ===================//
-
-//========= start new category ==============/
-var swiper = new Swiper(".free-mode", {
-  slidesPerView: "auto",
-  spaceBetween: 10,
-  freeMode: true,
+/* ============ گالری تصاویر صفحهٔ محصول ============ */
+document.querySelectorAll('.product-gallery-thumb').forEach(function (el) {
+    if (el.dataset.swiperBound === '1') { return; }
+    el.dataset.swiperBound = '1';
+    saniarSwiper(el, {
+        spaceBetween: 10,
+        slidesPerView: 4,
+        freeMode: true,
+        watchSlidesProgress: true,
+        breakpoints: {
+            320: { slidesPerView: 3, spaceBetween: 10 },
+            400: { slidesPerView: 4, spaceBetween: 10 },
+        },
+    });
 });
-//========= end new category ==============/
+
+document.querySelectorAll('.product-gallery').forEach(function (el) {
+    if (el.dataset.swiperBound === '1') { return; }
+    el.dataset.swiperBound = '1';
+
+    var thumbEl = document.querySelector('.product-gallery-thumb');
+    var thumbsInstance = thumbEl && thumbEl.swiper ? thumbEl.swiper : null;
+
+    var galleryConfig = {
+        spaceBetween: 10,
+        zoom: {
+            maxRatio: 3,
+            minRation: 1
+        },
+    };
+
+    if (thumbsInstance) { galleryConfig.thumbs = { swiper: thumbsInstance }; }
+
+    saniarSwiper(el, galleryConfig);
+});
+
+/* ========= اسلایدر افقی دسته‌بندی‌ها (free-mode) ========= */
+document.querySelectorAll('.free-mode').forEach(function (el) {
+    if (el.dataset.swiperBound === '1') { return; }
+    el.dataset.swiperBound = '1';
+    saniarSwiper(el, {
+        slidesPerView: "auto",
+        spaceBetween: 10,
+        freeMode: true,
+    });
+});

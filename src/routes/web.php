@@ -109,6 +109,11 @@ Route::group(['as' => 'front.'], function () {
         ->middleware(array_filter([production_throttle('front-ajax-search')]))
         ->name('products.ajax_search');
 
+    // فاز ۱۶۳ — جستجوی لحظه‌ای پیشرفتهٔ هدر (محصولات + دسته‌بندی + برند؛ JSON + کش)
+    Route::get('search/suggest', [ProductController::class, 'suggest'])
+        ->middleware(array_filter([production_throttle('front-suggest')]))
+        ->name('products.suggest');
+
     // ------------------ cart
     Route::get('cart', [CartController::class, 'show'])->name('cart');
     Route::post('cart/{product}', [CartController::class, 'store'])->name('cart.store');

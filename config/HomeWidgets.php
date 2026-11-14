@@ -39,7 +39,7 @@ return [
     ],
 
     'main-slider' => [
-        'title' => 'اسلایدر اصلی و بنر کناری',
+        'title' => 'اسلایدر اصلی و محصولات شگفت‌انگیز',
         'image' => 'widgets/slider.jpg',
         'options' => [
             [
@@ -88,6 +88,79 @@ return [
         'rules' => [
             'number' => 'required',
             'banner_position' => 'required|in:right,left'
+        ]
+    ],
+
+    /* فاز ۱۶۳ — اسلایدر شگفت‌انگیز سانیار (اسلاید بزرگ جزئیات محصول + فهرست
+       کارت‌های کوچک کنارش با تایمر؛ مطابق index.html تمپلیت سانیار) */
+    'amazing-slider' => [
+        'title' => 'اسلایدر شگفت انگیز',
+        'image' => 'widgets/special.jpg',
+        'options' => [
+            [
+                'title'      => 'تعداد محصولات',
+                'key'        => 'number',
+                'input-type' => 'input',
+                'type'       => 'number',
+                'default'    => '6',
+                'class'      => 'col-md-4 col-6',
+                'attributes' => 'required'
+            ],
+            [
+                'title'      => 'ترتیب نمایش',
+                'key'        => 'ordering',
+                'input-type' => 'select',
+                'class'      => 'col-md-4',
+                'options'    => [
+                    [
+                        'value' => 'asc',
+                        'title' => 'صعودی'
+                    ],
+                    [
+                        'value' => 'desc',
+                        'title' => 'نزولی'
+                    ]
+                ],
+            ],
+        ],
+        'rules' => [
+            'number' => 'required',
+        ]
+    ],
+
+    /* فاز ۱۶۳ — اسلایدر + دو بنر زیر هم کنارش (گروه بنرها: index_slider_banners) */
+    'slider-side-banners' => [
+        'title' => 'اسلایدر و دو بنر کناری',
+        'image' => 'widgets/banner.png',
+        'options' => [
+            [
+                'title'      => 'تعداد اسلایدر',
+                'key'        => 'number',
+                'input-type' => 'input',
+                'type'       => 'number',
+                'default'    => '5',
+                'class'      => 'col-md-4 col-6',
+                'attributes' => 'required'
+            ],
+            [
+                'title'      => 'ترتیب نمایش',
+                'key'        => 'ordering',
+                'input-type' => 'select',
+                'class'      => 'col-md-4',
+                'options'    => [
+                    [
+                        'value' => 'asc',
+                        'title' => 'صعودی'
+                    ],
+                    [
+                        'value' => 'desc',
+                        'title' => 'نزولی'
+                    ]
+                ],
+            ],
+        ],
+        'rules' => [
+            'number' => 'required',
         ]
     ],
 

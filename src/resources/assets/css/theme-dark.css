@@ -2162,3 +2162,171 @@ html[data-theme="dark"] #add-edit-address-modal .add-address-success {
 html[data-theme="dark"] #add-edit-address-modal .add-address-unsuccess {
     color: #f87171;
 }
+
+/* ============================================================
+   فاز ۱۶۳ — اسلایدر شگفت انگیز + اسلایدر و دو بنر کناری (دارک)
+   ============================================================ */
+
+/* هدر ویجت شگفت‌انگیز */
+html[data-theme="dark"] .amazing .header-content,
+html[data-theme="dark"] .amazing .header-content.bg-white {
+    background-color: var(--dk-surface) !important;
+}
+
+html[data-theme="dark"] .amazing .header-content h5 {
+    color: var(--dk-text);
+}
+
+/* اسلاید بزرگ جزئیات محصول */
+html[data-theme="dark"] .amazing-slider .slider-item,
+html[data-theme="dark"] .amazing-slider .slider-item.bg-white {
+    background-color: var(--dk-surface) !important;
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .amazing-slider .slider-item .title h3 a {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .amazing-slider .slider-item .title h3 a:hover {
+    color: var(--main-color-one);
+}
+
+html[data-theme="dark"] .amazing-slider .slider-item .short-desc p {
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .amazing-slider .slider-item .meta {
+    border-top-color: var(--dk-border);
+    border-bottom-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .amazing-slider .slider-item .meta .nav-link {
+    color: var(--dk-text-soft);
+}
+
+/* برچسب تخفیف */
+html[data-theme="dark"] .amazing-slider .slider-item .discount.danger-label {
+    background-color: rgba(248, 113, 113, 0.16);
+    color: #f87171;
+}
+
+/* شمارندهٔ معکوس */
+html[data-theme="dark"] .amazing-slider .countdown-container .countdown-value {
+    background: var(--dk-surface-2);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .amazing-slider .countdown-container .countdown-heading {
+    color: var(--dk-text-muted);
+}
+
+/* فهرست کارت‌های کوچک کنار اسلایدر */
+html[data-theme="dark"] .amazing-slider .parent .item,
+html[data-theme="dark"] .amazing-slider-link .swiper-slide .item {
+    background-color: var(--dk-surface);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .amazing-slider-link .item h6 {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .amazing-slider-link .item p.text-muted {
+    color: var(--dk-text-muted) !important;
+}
+
+html[data-theme="dark"] .amazing-slider-link .item .price .old-price.price-discount {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .amazing-slider-link .swiper-slide-thumb-active .item {
+    border-right-color: var(--main-color-one);
+    background-color: var(--dk-surface-2);
+}
+
+/* اسلایدر و دو بنر کناری */
+html[data-theme="dark"] .main-slider .slider.shadow-box {
+    background-color: var(--dk-surface);
+}
+
+/* پازیشن اسلایدرها روی سطح تیره */
+html[data-theme="dark"] .swiper-pagination-bullet {
+    background-color: var(--dk-text-muted);
+    opacity: 0.6;
+}
+
+html[data-theme="dark"] .swiper-pagination-bullet-active {
+    background-color: var(--main-color-one);
+    opacity: 1;
+}
+
+html[data-theme="dark"] .main-slider .swiper-button-next,
+html[data-theme="dark"] .main-slider .swiper-button-prev,
+html[data-theme="dark"] .saniar-side-slider .swiper-button-next,
+html[data-theme="dark"] .saniar-side-slider .swiper-button-prev {
+    background-color: var(--dk-surface-2);
+    color: var(--dk-text);
+}
+
+/* ============================================================
+   فاز ۱۶۳ — پنل جستجوی لحظه‌ای پیشرفته (دارک)
+   ============================================================ */
+html[data-theme="dark"] .saniar-search-panel {
+    background-color: var(--dk-surface);
+    border-color: var(--dk-border);
+    box-shadow: var(--dk-shadow);
+}
+
+html[data-theme="dark"] .saniar-search-panel::-webkit-scrollbar-thumb {
+    background: var(--dk-surface-2);
+}
+
+html[data-theme="dark"] .sr2-section + .sr2-section {
+    border-top-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .sr2-heading {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .sr2-chip {
+    background-color: var(--dk-surface-2);
+    border-color: var(--dk-border);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .sr2-chip:hover {
+    border-color: var(--main-color-one);
+    color: var(--main-color-one);
+    background-color: rgba(36, 52, 77, 0.35);
+}
+
+html[data-theme="dark"] .sr2-row:hover {
+    background: var(--dk-surface-2);
+}
+
+html[data-theme="dark"] .sr2-row-icon {
+    background: var(--dk-surface-2);
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .sr2-thumb {
+    background: var(--dk-surface-2);
+}
+
+html[data-theme="dark"] .sr2-row-title {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .sr2-row-context {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .sr2-row.sr2-all {
+    background: rgba(36, 52, 77, 0.35);
+}
+
+html[data-theme="dark"] .sr2-empty {
+    color: var(--dk-text-muted);
+}

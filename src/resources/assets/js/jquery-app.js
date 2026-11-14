@@ -75,7 +75,11 @@ $(function () {
     })
 
     ///شمارنده محصول برای اضافه کردن به سبد خرید
-    $("input[name='count']").TouchSpin({
+    /* فاز ۱۶۳ — ورودی‌های سبد کشویی هدر (.js-mini-qty) نباید TouchSpin شوند:
+       TouchSpin با markup خودش input-group تزریق می‌کند و ظاهر سایدبار
+       پس از رفرش صفحه به‌هم می‌ریزد و دکمه‌های +/− ای‌جکسی آن از کار
+       می‌افتند. شمارندهٔ سبد کشویی منطق اختصاصی خودش را دارد (main.js). */
+    $("input[name='count']").not('.js-mini-qty').not('.cart-canvas input').TouchSpin({
         min: 1,
         max: '1000000000000000',
         buttondown_class: "btn-counter waves-effect waves-light",

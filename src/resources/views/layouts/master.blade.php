@@ -48,6 +48,8 @@
 
     {{-- اندپوینت جستجوی زنده برای JS هدر --}}
     <meta name="saniar-ajax-search" content="{{ route('front.products.index') }}">
+    {{-- فاز ۱۶۳ — اندپوینت جستجوی لحظه‌ای پیشرفته (محصولات/دسته‌بندی/برند) --}}
+    <meta name="saniar-suggest" content="{{ route('front.products.suggest') }}">
 
     {{-- Styles --}}
     @stack('befor-styles')
@@ -291,7 +293,7 @@
                                     <div class="search-form">
                                         <form action="{{ route('front.products.index') }}" id="search-form-mobile">
                                             <div class="search-filed">
-                                                <input type="text" name="q" placeholder="جستجوی محصولات ..."
+                                                <input type="text" name="q" placeholder="جستجو در همه کالاها ..."
                                                        class="form-control search-input">
                                                 <button type="submit"
                                                         class="btn search-btn main-color-one-bg rounded-pill"><i
@@ -358,14 +360,13 @@
                     <form action="{{ route('front.products.index') }}" id="search-form">
                         <div class="search-filed">
                             <input type="text" name="q" id="search-input" class="form-control search-input"
-                                   autocomplete="off" placeholder="جستجوی محصولات ...">
+                                   autocomplete="off" placeholder="جستجو در همه کالاها ...">
                             <button type="submit" id="search-header-btn-search"
                                     class="btn search-btn main-color-one-bg rounded-pill"><i class="bi bi-search"></i></button>
                         </div>
                     </form>
 
-                    {{-- نتایج جستجوی زنده — فقط با محتوا نمایش داده می‌شود --}}
-                    <div class="search-result" id="search-result"></div>
+                    {{-- فاز ۱۶۳ — پنل جستجوی لحظه‌ای توسط theme-header.js ساخته می‌شود --}}
                 </div>
             </div>
             {{-- پایان جستجو --}}
@@ -490,13 +491,13 @@
 <script src="{{theme_asset('plugin/timer/timer.js')}}"></script>
 <script src="{{theme_asset('plugin/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js')}}"></script>
 <script src="{{theme_asset('js/app.js')}}"></script>
-<script src="{{theme_asset('js/jquery-app.js')}}"></script>
+<script src="{{theme_asset('js/jquery-app.js')}}?v=2"></script>
 
 {{-- سانیار — پلاگین‌های جانبی تمپلیت --}}
 {{-- فاز ۱۵۶ — پلاگین go-to-top حذف شد؛ دکمهٔ مستطیلی «برگشت به بالا» در theme-header.js --}}
 <script src="{{theme_asset('plugin/rasta-contact/script.js')}}"></script>
 <script src="{{theme_asset('js/saniar-init.js')}}"></script>
-<script src="{{theme_asset('js/theme-header.js')}}?v=20"></script>
+<script src="{{theme_asset('js/theme-header.js')}}?v=21"></script>
 
 {{-- اسکریپت‌های عملکردی فروشگاه --}}
 <script src="{{ theme_asset("js/plugins/sweetalert2.all.min.js") }}"></script>

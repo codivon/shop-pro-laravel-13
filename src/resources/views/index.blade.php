@@ -49,6 +49,14 @@
                         @include('front::widgets.fullscreen-slider')
                         @break
 
+                    @case('amazing-slider')
+                        @include('front::widgets.amazing-slider')
+                        @break
+
+                    @case('slider-side-banners')
+                        @include('front::widgets.slider-side-banners')
+                        @break
+
                     @case('products-moment-block')
                         @include('front::widgets.products-moment-block')
                         @break

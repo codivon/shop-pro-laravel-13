@@ -262,6 +262,168 @@ class ProductController extends Controller
         ]);
     }
 
+    /**
+     * فاز ۱۶۳ — جستجوی لحظه‌ای پیشرفتهٔ هدر (Instant Search)
+     *
+     * GET /search/suggest?q=...   → محصولات + دسته‌بندی‌ها + برندها (JSON)
+     * GET /search/suggest         → جستجوهای پرطرفدار (برای پنل بازِ خالی)
+     *
+     * سرعت:
+     *  - کل پاسخ هر عبارت تا ۱۰ دقیقه در کش (خنثی‌سازی با تغییر ترم)
+     *  - محصولات با front_search_match (FULLTEXT روی MySQL / LIKE روی بقیه)
+     *  - دسته/برند با LIKE روی جدول‌های کوچک + کش
+     *  - ایندکس‌های کمکی یک‌بار در اولین فراخوانی ساخته می‌شوند (گارد کامل)
+     */
+    public function suggest(Request $request)
+    {
+        $searchTerm = trim((string) $request->query('q', ''));
+
+        /* ---------- پنل خالی: جستجوهای پرطرفدار ---------- */
+        if (mb_strlen($searchTerm) < 2) {
+            $popular = Cache::remember('front.search.popular', 1800, function () {
+                try {
+                    return DB::table('searches')
+                        ->select('keyword', DB::raw('COUNT(*) AS total'))
+                        ->whereNotNull('keyword')
+                        ->where('keyword', '!=', '')
+                        ->groupBy('keyword')
+                        ->orderByDesc('total')
+                        ->limit(8)
+                        ->get()
+                        ->pluck('keyword')
+                        ->values();
+                } catch (\Throwable $e) {
+                    return collect();
+                }
+            });
+
+            return response()->json([
+                'popular' => $popular,
+                'banner'  => [
+                    'title' => option('dt_search_banner_title', 'جشنوارهٔ فروش ویژه'),
+                    'subtitle' => option('dt_search_banner_subtitle', 'تا ۷۰٪ تخفیف'),
+                    'link' => route('front.products.discount'),
+                ],
+            ]);
+        }
+
+        /* ---------- جستجوی زنده: کش + ایندکس ---------- */
+        $cacheKey = 'front.search.suggest.' . md5($searchTerm);
+
+        $payload = Cache::remember($cacheKey, 600, function () use ($searchTerm) {
+            $this->ensureSearchIndexes();
+
+            /* محصولات — ستون‌های سبک + عنوان دسته برای «در فروشی …» */
+            $products = DB::table('products')
+                ->leftJoin('categories', 'categories.id', '=', 'products.category_id')
+                ->select(
+                    'products.id',
+                    'products.title',
+                    'products.slug',
+                    'products.image',
+                    'categories.title AS category_title'
+                )
+                ->where('products.published', 1)
+                ->where(function ($q) use ($searchTerm) {
+                    front_search_match($q, $searchTerm);
+                })
+                ->orderByRaw("CASE
+                    WHEN products.title LIKE ? THEN 1
+                    WHEN products.title LIKE ? THEN 2
+                    ELSE 3
+                END", [$searchTerm . '%', '%' . $searchTerm . '%'])
+                ->orderByDesc('products.sell')
+                ->limit(6)
+                ->get();
+
+            /* دسته‌بندی‌ها */
+            $categories = DB::table('categories')
+                ->select('id', 'title', 'slug', 'type')
+                ->where('published', 1)
+                ->where('type', 'productcat')
+                ->where('title', 'like', '%' . $searchTerm . '%')
+                ->limit(4)
+                ->get();
+
+            /* برندها */
+            $brands = DB::table('brands')
+                ->select('id', 'name', 'slug', 'image')
+                ->where(function ($q) use ($searchTerm) {
+                    $q->where('name', 'like', '%' . $searchTerm . '%')
+                        ->orWhere('name_en', 'like', '%' . $searchTerm . '%');
+                })
+                ->limit(3)
+                ->get();
+
+            return [
+                'products'   => $products->map(function ($item) {
+                    return [
+                        'title' => $item->title,
+                        /* فاز ۱۶۳ — لینک با slug (کلید روتِ مدل‌ها slug است؛ id به 404 می‌رسد) */
+                        'url'   => route('front.products.show', ['product' => $item->slug ?: $item->id]),
+                        'image' => $item->image ? asset($item->image) : '',
+                        'context' => $item->category_title ?: '',
+                    ];
+                }),
+                'categories' => $categories->map(function ($item) {
+                    return [
+                        'title' => $item->title,
+                        'url'   => route('front.products.category-products', ['category' => $item->slug ?: $item->id]),
+                    ];
+                }),
+                'brands'     => $brands->map(function ($item) {
+                    return [
+                        'title' => $item->name,
+                        'url'   => route('front.brands.show', ['brand' => $item->slug ?: $item->id]),
+                        'image' => $item->image ? asset($item->image) : '',
+                    ];
+                }),
+                'all'        => route('front.products.index', ['q' => $searchTerm]),
+            ];
+        });
+
+        return response()->json($payload);
+    }
+
+    /**
+     * فاز ۱۶۳ — ایندکس‌های کمکی جستجو (یک‌بار؛ با گارد try/catch و کش نتیجه).
+     * روی MySQL ساخته می‌شوند؛ روی درایورهای دیگر (SQLite/…) بی‌اثر است.
+     */
+    private function ensureSearchIndexes(): void
+    {
+        if (Cache::get('front.search.indexes.ok')) {
+            return;
+        }
+
+        try {
+            if (DB::getDriverName() === 'mysql') {
+                $indexes = [
+                    'categories' => 'saniar_categories_title_index',
+                    'brands'     => 'saniar_brands_name_index',
+                    'searches'   => 'saniar_searches_keyword_index',
+                ];
+
+                foreach ($indexes as $table => $index) {
+                    $exists = DB::table('information_schema.statistics')
+                        ->where('table_schema', DB::raw('DATABASE()'))
+                        ->where('table_name', $table)
+                        ->where('index_name', $index)
+                        ->count();
+
+                    if (!$exists) {
+                        $column = $table === 'categories' ? 'title(191)' : ($table === 'brands' ? 'name(191)' : 'keyword(191)');
+                        DB::statement("ALTER TABLE `{$table}` ADD INDEX `{$index}` ({$column})");
+                    }
+                }
+            }
+
+            Cache::put('front.search.indexes.ok', 1, now()->addDay());
+        } catch (\Throwable $e) {
+            /* ساخت ایندکس هرگز نباید جستجو را بشکند */
+            Cache::put('front.search.indexes.ok', 1, now()->addHour());
+        }
+    }
+
     public function show(Product $product)
     {
         if (!$product->isShowable()) {
