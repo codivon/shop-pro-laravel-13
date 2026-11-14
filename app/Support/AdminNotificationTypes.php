@@ -13,9 +13,21 @@ class AdminNotificationTypes
             'UserRegistered'         => ['title' => 'کاربر جدید ثبت‌نام کرد',            'icon' => 'icon-user',            'c1' => '#38BDF8', 'c2' => '#0284C7', 'can' => 'users.view'],
             'ContactCreated'         => ['title' => 'پیام جدید از فرم تماس',            'icon' => 'icon-mail',            'c1' => '#818CF8', 'c2' => '#4F46E5', 'can' => 'contacts.index'],
             'TicketCreated'          => ['title' => 'تیکت جدید دریافت شد',              'icon' => 'icon-life-buoy',       'c1' => '#38BDF8', 'c2' => '#0369A1', 'can' => 'tickets.show'],
-            'CommentPostCreated'     => ['title' => 'دیدگاه جدید روی مقاله',            'icon' => 'icon-message-square',  'c1' => '#A78BFA', 'c2' => '#7C3AED', 'can' => 'comments.index'],
-            'CommentProductCreated'  => ['title' => 'دیدگاه جدید روی محصول',            'icon' => 'icon-message-circle',  'c1' => '#A78BFA', 'c2' => '#7C3AED', 'can' => 'comments.index'],
-            'QuestionProductCreated' => ['title' => 'پرسش جدید روی محصول',              'icon' => 'icon-help-circle',     'c1' => '#C084FC', 'c2' => '#9333EA', 'can' => 'comments.index'],
+            /*
+             * فاز ۱۵۴ — گیت‌های سه نوع دیدگاه/پرسش از پرمیشنِ مردهٔ «comments.index»
+             * (مال پنل قدیمی) به نام‌های واقعی جدول permissions اصلاح شدند:
+             * قبلاً Gate::allows برای «comments.index» همیشه false برمی‌گشت (چنین
+             * پرمیشنی در جدول وجود ندارد ⇒ گیت تعریف‌نشده ⇒ انکار ضمنی) و صفحهٔ
+             * اعلان‌های پنل این اعلان‌ها را با @continue مخفی می‌کرد — در حالی که
+             * شمارندهٔ «کل اعلان‌ها» و دراپ‌داون هدر آن‌ها را می‌دیدند (گزارش کاربر:
+             * «دو اعلان در صفحهٔ اعلان‌ها نمایش داده نمی‌شود»).
+             * نام‌های جدید با پرمیشنِ منوی مقصدِ npLink هم‌خوانند:
+             *   posts.comments → np.comments.posts | products.reviews → np.reviews.index
+             *   products.comments → np.comments.products
+             */
+            'CommentPostCreated'     => ['title' => 'دیدگاه جدید روی مقاله',            'icon' => 'icon-message-square',  'c1' => '#A78BFA', 'c2' => '#7C3AED', 'can' => 'posts.comments'],
+            'CommentProductCreated'  => ['title' => 'دیدگاه جدید روی محصول',            'icon' => 'icon-message-circle',  'c1' => '#A78BFA', 'c2' => '#7C3AED', 'can' => 'products.reviews'],
+            'QuestionProductCreated' => ['title' => 'پرسش جدید روی محصول',              'icon' => 'icon-help-circle',     'c1' => '#C084FC', 'c2' => '#9333EA', 'can' => 'products.comments'],
             'UserRequestDeposit'     => ['title' => 'درخواست تسویه کاربر',              'icon' => 'icon-credit-card',     'c1' => '#FB923C', 'c2' => '#EA580C', 'can' => 'request_deposit'],
             'SellerRequestDeposit'   => ['title' => 'درخواست تسویه فروشنده',            'icon' => 'icon-credit-card',     'c1' => '#FB923C', 'c2' => '#EA580C', 'can' => 'request_deposit'],
             'SellerProductCreated'   => ['title' => 'محصول جدید ثبت شد',                'icon' => 'icon-package',         'c1' => '#FBBF24', 'c2' => '#D97706', 'can' => 'sellers.products'],

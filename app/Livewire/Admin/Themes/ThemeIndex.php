@@ -137,7 +137,9 @@ class ThemeIndex extends Component
             File::moveDirectory($path . $uuid . '/' . $newTheme, Storage::disk('themes')->path($newTheme));
             File::deleteDirectory($path . $uuid);
 
-            change_env('CURRENT_THEME', $newTheme);
+            // فاز ۱۵۴ — cacheConfig=false (هم‌ rationale activate: بدون بوت اپ دوم در میانهٔ درخواست)
+            change_env('CURRENT_THEME', $newTheme, false);
+            config(['general.current_theme' => $newTheme]);
             Artisan::call('dump-autoload');
 
             \App\Providers\AppServiceProvider::loadTheme();
@@ -204,7 +206,19 @@ class ThemeIndex extends Component
         }
 
         try {
-            change_env('CURRENT_THEME', $theme);
+            /*
+             * فاز ۱۵۴ — cacheConfig=false مثل بقیهٔ پنل (فازهای ۲۵/۱۴۱): change_env با
+             * cacheConfig=true وسط درخواستِ Livewire «config:cache» می‌زد ⇒ بوت اپ دوم
+             * ⇒ ComponentHookRegistry::boot در اپ دوم WeakMap قلاب‌ها را پاک می‌کرد ⇒
+             * memo پاسخِ همین آپدیت بدون کلید children/… می‌شد و آپدیتِ بعدی (سوییچ دوم)
+             * در hydrate لایووایر با «Undefined array key "children"» (SupportNestingComponents:62)
+             * می‌مُرد. گزارش کاربر: سوییچ اول بعد از رفرش انجام می‌شود، سوییچ دوم ارور —
+             * رفرش می‌کند و سوییچ اعمال شده است.
+             */
+            change_env('CURRENT_THEME', $theme, false);
+
+            // بازتاب فوری در رپازیتوری همین درخواست تا رندر مجدد Livewire تم جدید را «فعال» نشان دهد
+            config(['general.current_theme' => $theme]);
         } catch (Throwable $e) {
             report($e);
             $this->dispatch('toast', message: 'خطا در ثبت قالب فعال: ' . $e->getMessage(), type: 'error');

@@ -3588,3 +3588,36 @@ DigiPay v1.3.0 (اسنپ‌پی + ری‌برندینگ) پوش شد؛ CreditPay
 - `app/Livewire/Admin/Packages/PackageInstalled.php` — computed `subscriptions` + `isLicenseNoiseError` + رفع thumbnail مودال (حذف `subscriptionCoverage`)
 - `resources/views/admin-panel/livewire/admin/packages/installed.blade.php` — بج دوحالتهٔ وضعیت، لایسنس پوشش‌محور با خط لایسنس تکی ثانویه
 - مستندات: ADMIN_PANEL_PROGRESS.md (رکورد فاز ۱۵۱)
+
+## فاز ۱۵۴ — دو رفع: ① اعلان‌های «دیدگاه/پرسش روی محصول» در صفحهٔ اعلان‌های پنل نمایش داده نمی‌شدند ② خطای «Undefined array key "children"» در سوییچ دوم قالب
+
+> **گزارش کاربر:** ① دو اعلان در صفحهٔ «اعلان‌های پنل» نمایش داده نمی‌شود (در اسکرین‌شات: آمار «کل اعلان‌ها 4» ولی لیست فقط ۲ مورد). ② در admin/themes با کلیک «تنظیم به عنوان قالب اصلی» ارور «Undefined array key "children"» می‌آید؛ بعد از رفرش سوییچ اعمال شده است و سوییچ دوم دوباره ارور می‌دهد. هر دو روی تولید زنده با agent-browser بازتولید و ریشه‌یابی شد.
+
+### ① اعلان‌های مخفی — تشخیص و رفع
+- بازتولید زنده: صفحهٔ اعلان‌های پنل «کل اعلان‌ها 4 / خوانده‌نشده 2» ولی فقط ۲ ردیف (UserRegistered/SellerRegistered)؛ دراپ‌داون هدر هر ۴ مورد را نشان می‌داد.
+- ریشه: انواع `CommentProductCreated`/`QuestionProductCreated`/`CommentPostCreated` در نقشهٔ `AdminNotificationTypes::meta` گیتِ `'can' => 'comments.index'` داشتند — پرمیشنی که در پنل جدید وجود ندارد (config پرمیشن‌ها: `products.reviews`/`products.comments`/`posts.comments`). جدول permissions چنین ردیفی ندارد ⇒ گیت تعریف‌نشده ⇒ `Gate::allows` = false ⇒ صفحهٔ پنل با `@continue(!$meta['allowed'])` آن‌ها را بی‌صدا حذف می‌کرد؛ دراپ‌داون هدر گیت‌نمایی ندارد و می‌نشانِشان.
+- رفع: سه گیت به نام‌های واقعی پرمیشن‌ها اصلاح شدند (`posts.comments`/`products.reviews`/`products.comments`) — دقیقاً هم‌خوان با پرمیشن منوی مقصد `npLink` (np.comments.posts / np.reviews.index / np.comments.products). بعد از دیپلوی، اعلان‌های دیدگاه/پرسش برای ادمین (level=creator ⇒ عبور از همهٔ گیت‌های تعریف‌شده) نمایش داده می‌شوند.
+
+### ② «Undefined array key "children"» — ریشه‌یابی زندهٔ کامل
+- بازتولید زندهٔ مرحله‌به‌مرحله: سوییچ اول بعد از لود صفحه = ۲۰۰ OK؛ سوییچ دوم در همان سشن = ۵۰۰ با استثنای `SupportNestingComponents.php:62` (`$children = $memo['children']`)؛ با این حال activate اجرا شده و تم عوض شده (رفرش نشان می‌دهد). آپدیت‌های عادی دیگر همان صفحه (toggle آپلود ×۲) هر دو ۲۰۰ و memo سالم.
+- کاوش payload با هُک fetch: memo درخواست اول = `[id,name,path,method,release,children,scripts,assets,errors,locale,islands]` ولی memo **پاسخِ** سوییچِ فعال‌سازی فقط `[id,name,path,method,release]` — کلیدهای قلاب‌های ComponentHook (children/scripts/assets/errors/locale/islands) حذف شده بودند؛ path/method (PersistentMiddleware) و release (SupportReleaseTokens) مانده بودند.
+- ریشه: `change_env('CURRENT_THEME', …)` بدون پارامتر سوم = `cacheConfig=true` ⇒ **`config:cache` وسط درخواستِ Livewire** ⇒ بوت نمونهٔ دوم Application (همان ریشهٔ فاز ۱۴۱) ⇒ `ComponentHookRegistry::boot()` در اپ دوم `static::$components` (WeakMap قلاب‌ها) را از نو می‌سازد ⇒ در ادامهٔ همان درخواست، `proxyCallToHooks('callDehydrate')` با WeakMap خالی هیچ قلابی را اجرا نمی‌کند ⇒ memo پاسخ بدون children ⇒ آپدیت بعدی با memo خراب در hydrate لایووایر می‌میرد. کلیدهای EventBus-محور (path/method/release) چون دوباره رجیستر می‌شوند سالم می‌مانند.
+- نکتهٔ مضحک: `ThemeIndex::activate` بعد از `change_env` (که config:cache می‌زد) بلافاصله `config:clear` می‌زد — کل کارِ بیهوده + مخرب.
+
+### رفع
+| نقطه | تغییر |
+|---|---|
+| `ThemeIndex::activate` | `change_env('CURRENT_THEME', $theme, false)` — بدون config:cache در میانهٔ درخواست (هم‌الگوی فازهای ۲۵/۱۴۱ که بقیهٔ پنل رعایت می‌کردند) + `config(['general.current_theme' => $theme])` برای بازتاب فوری تم فعال در رندرِ همین درخواست (دیگر «رفرش لازم نیست» تا بج فعال عوض شود) |
+| `ThemeIndex::store` (نصب قالب از پنل) | همان اصلاح برای `$newTheme` |
+| `PackageInstallerService::activateTheme` (جاب نصب/آپدیت قالب) | `change_env(..., false)` — config:cache وسط پروسهٔ جاب هم اپ دوم بوت می‌کند؛ خط بعدی `config:clear` قبلاً وجود دارد |
+| `AdminNotificationTypes::meta` | سه گیت دیدگاه/پرسش به پرمیشن‌های واقعی |
+
+### راستی‌آزمایی و محدودیت سندباکس
+- سندباکس PHP ندارد؛ دیاگنوز با agent-browser روی تولید (لاگین، بازتولید دو باگ، تحلیل payloadLivewire) + بازبینی ایستای vendor Livewire 4.4 (ComponentHookRegistry/SupportNestingComponents/PersistentMiddleware/ReleaseTokens). تم تولید در جریان تست یک‌بار به SaniarTheme و سپس به WeblakShop برگردانده شد (وضعیت نهایی = وضعیت اولیه).
+- بعد از دیپلوی: ① صفحهٔ اعلان‌ها باید ۴ ردیف را نشان دهد ② سوییچ پیاپی قالب بدون رفرش باید کار کند و ارور children نباشد.
+
+### فایل‌های فاز ۱۵۴
+- `app/Support/AdminNotificationTypes.php` — اصلاح سه گیت
+- `app/Livewire/Admin/Themes/ThemeIndex.php` — cacheConfig=false + بازتاب فوری config (activate و store)
+- `app/Services/PackageInstallerService.php` — cacheConfig=false در activateTheme
+- مستندات: ADMIN_PANEL_PROGRESS.md (رکورد فاز ۱۵۴)

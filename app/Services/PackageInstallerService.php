@@ -1626,7 +1626,9 @@ class PackageInstallerService
             \App\Services\ThemeAssetLinker::linkOrCopy($targetPath, $linkPath);
         }
 
-        change_env('CURRENT_THEME', $themeDirName);
+        // فاز ۱۵۴ — cacheConfig=false: config:cache وسط پروسهٔ جاب/درخواست اپ دوم را بوت می‌کند
+        // (هم‌ rationale فازهای ۲۵/۱۴۱)؛ خط بعدی config:clear هم هست.
+        change_env('CURRENT_THEME', $themeDirName, false);
         Artisan::call('config:clear');
     }
 
