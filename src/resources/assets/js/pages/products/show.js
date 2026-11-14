@@ -112,7 +112,8 @@ $(document).on('click', '.add-to-cart', function () {
         type: 'POST',
         url: $(btn).data('action'),
         data: {
-            quantity: $('#cart-quantity').val(),
+            /* فاز ۱۵۹ — فیلد تعداد از خرید سریع حذف شد؛ اگر جایی نبود ۱ */
+            quantity: $('#cart-quantity').val() || 1,
             price_id: $(btn).data('price_id')
         },
         success: function (data) {

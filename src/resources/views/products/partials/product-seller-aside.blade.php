@@ -30,27 +30,38 @@
     @endphp
 
     <div class="product-seller-aside mt-3 w-100">
-        {{-- فاز ۱۵۸ — امتیاز/دیدگاه/پرسش‌ها داخل باکس فروشنده (درخواست کاربر) --}}
-        <div class="product-meta-rating aside-rating">
-            @if ($product->rating)
-                <div class="d-flex align-items-center justify-content-lg-end">
-                    <div class="count-comment text-muted cursor-pointer" data-activate-tab="comments">
-                        {{ $product->reviews_count }} دیدگاه
-                    </div>
-                    <div class="count-rating ms-2">
-                        <span>({{ $product->reviews_count }}) {{ $product->rating }}</span>
-                        <i class="bi bi-star-fill"></i>
-                    </div>
-                </div>
-                @if ($product->comments()->accepted()->count())
-                    <div class="d-flex align-items-center justify-content-lg-end mt-1">
-                        <div class="count-comment text-muted cursor-pointer" data-activate-tab="questions">
-                            {{ $product->comments()->accepted()->count() }} پرسش و پاسخ
-                        </div>
-                    </div>
+        {{-- فاز ۱۵۹ — بازطراحی امتیاز/دیدگاه/پرسش‌ها: دو کارت آماری مدرن و هماهنگ با تم تیره --}}
+        @php
+            $reviewsCount = (int) ($product->reviews_count ?? 0);
+            $questionsCount = (int) $product->comments()->accepted()->count();
+            $ratingValue = $product->rating ? ((float) $product->rating) : null;
+        @endphp
+        @if ($ratingValue || $questionsCount)
+            <div class="product-meta-rating aside-rating rating-cards">
+                @if ($ratingValue)
+                    <button type="button" class="rating-card rating-card-score" data-activate-tab="comments"
+                            aria-label="مشاهده دیدگاه‌های محصول">
+                        <span class="rating-card-top">
+                            <span class="rating-card-value">{{ $ratingValue }}</span>
+                            <i class="bi bi-star-fill"></i>
+                        </span>
+                        <span class="rating-card-stars" aria-hidden="true">
+                            @for ($i = 1; $i <= 5; $i++)
+                                <i class="bi {{ $i <= round($ratingValue) ? 'bi-star-fill' : 'bi-star' }}"></i>
+                            @endfor
+                        </span>
+                        <span class="rating-card-label">{{ $reviewsCount }} دیدگاه</span>
+                    </button>
                 @endif
-            @endif
-        </div>
+                <button type="button" class="rating-card rating-card-qa {{ $ratingValue ? '' : 'rating-card-full' }}"
+                        data-activate-tab="questions" aria-label="مشاهده پرسش و پاسخ‌های محصول">
+                    <i class="bi bi-patch-question rating-card-icon"></i>
+                    <span class="rating-card-label">
+                        {{ $questionsCount ? $questionsCount . ' پرسش و پاسخ' : 'ثبت پرسش' }}
+                    </span>
+                </button>
+            </div>
+        @endif
 
         <ul class="product-seller-aside-list">
 

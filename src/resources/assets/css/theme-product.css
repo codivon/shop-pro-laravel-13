@@ -27,6 +27,10 @@
 }
 
 /* ضد آرتیفکت‌های احتمالی زوم — هر باقی‌ماندهٔ DOM پلاگین پنهان شود */
+/* فاز ۱۵۹ — فلش‌های owl-nav گالری و نوار تاج مخفی (درخواست کاربر) */
+.product-page .pro_gallery .owl-nav {
+    display: none !important;
+}
 .product-page .zoomContainer,
 .product-page .zoomWindowContainer,
 .product-page .zoomLens,
@@ -1092,7 +1096,9 @@
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    /* فاز ۱۵۹ — درخواست کاربر: متن تنوع در چند سطر شکسته شود، نه بریدن */
+    white-space: normal;
+    word-break: break-word;
 }
 
 .quick-buy-box .quick-buy-meta {
@@ -1181,28 +1187,10 @@
     gap: 8px;
 }
 
-.quick-buy-box .quick-buy-qty {
-    width: 86px;
-    flex-shrink: 0;
-}
-
-.quick-buy-box .quick-buy-qty .form-control {
-    height: 100%;
-    min-height: 42px;
-    border-radius: 10px;
-    text-align: center;
-    font-weight: 700;
-}
-
-.quick-buy-box .quick-buy-qty .btn-counter {
-    background: #f1f2f6;
-    border: 0;
-    border-radius: 6px;
-    color: var(--color-site, #333);
-}
-
+/* فاز ۱۵۹ — کنترل تعداد حذف شد؛ دکمهٔ خرید تمام‌عرض است */
 .quick-buy-box .btn-add-to-cart {
     flex: 1;
+    width: 100%;
     border-radius: 10px;
     padding: 10px 12px;
     font-weight: 700;
@@ -1725,6 +1713,54 @@
 }
 
 /* ------------------------------------------------------------
+   فاز ۱۵۹ — بخش نظرات: کارت امتیاز یکپارچه + دکمهٔ افزودن نظر
+   ------------------------------------------------------------ */
+.product-page .p-tabs .comments-summary-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.product-page .p-tabs .comments-summary-note {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px dashed #e7e7ec;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+}
+
+.product-page .p-tabs .comments-summary-note > span {
+    font-size: 13px;
+    color: var(--text-muted, #565757);
+    font-weight: 600;
+}
+
+.product-page .p-tabs .comments-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    color: var(--text-muted, #565757);
+    font-size: 13.5px;
+    min-height: 180px;
+    justify-content: center;
+    height: 100%;
+}
+
+.product-page .p-tabs .comments-empty-state i {
+    font-size: 34px;
+    color: #cdd2da;
+}
+
+.product-page .p-tabs .comments-empty-state b {
+    font-size: 14.5px;
+    color: var(--color-site, #333);
+}
+
+/* ------------------------------------------------------------
    F) لینک‌شدن کارت محصول + امتیاز داخل باکس فروشنده
    ------------------------------------------------------------ */
 .product-box .product-image-link,
@@ -1741,42 +1777,86 @@
     color: var(--main-color-one, #275fe0);
 }
 
-/* امتیاز/دیدگاه داخل باکس فروشنده */
-.product-seller-aside .aside-rating {
+/* فاز ۱۵۹ — بازطراحی امتیاز/دیدگاه/پرسش‌ها: دو کارت آماری مدرن */
+.product-seller-aside .aside-rating.rating-cards {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
-    padding-bottom: 10px;
+    gap: 10px;
+    padding-bottom: 12px;
     margin-bottom: 12px;
     border-bottom: 1px dashed #e7e7ec;
 }
 
-.product-seller-aside .aside-rating .count-comment {
-    font-size: 12.5px;
-    transition: color .15s ease;
+.product-seller-aside .rating-card {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 10px 8px;
+    background: #f7f8fa;
+    border: 1px solid #eceef2;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color .2s ease, background .2s ease, transform .2s ease, box-shadow .2s ease;
+    font-family: inherit;
 }
 
-.product-seller-aside .aside-rating .count-comment:hover {
-    color: var(--main-color-one, #275fe0);
+.product-seller-aside .rating-card:hover {
+    border-color: var(--main-color-one, #275fe0);
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(39, 95, 224, .08);
+    transform: translateY(-1px);
 }
 
-.product-seller-aside .aside-rating .count-rating {
+.product-seller-aside .rating-card-full {
+    flex-basis: 100%;
+    flex-direction: row;
+    justify-content: center;
+    gap: 8px;
+}
+
+.product-seller-aside .rating-card-top {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    font-size: 12.5px;
-    font-weight: 700;
+    line-height: 1;
+}
+
+.product-seller-aside .rating-card-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text-color, #31353c);
+}
+
+.product-seller-aside .rating-card-top > i {
+    font-size: 15px;
     color: #f5a623;
 }
 
-.product-seller-aside .aside-rating .count-rating i {
-    font-size: 13px;
+.product-seller-aside .rating-card-stars {
+    display: inline-flex;
+    gap: 2px;
+    font-size: 11px;
     color: #f5a623;
 }
 
-@media (max-width: 991.98px) {
-    .product-seller-aside .aside-rating {
-        align-items: flex-start;
-    }
+.product-seller-aside .rating-card-stars .bi-star {
+    color: #d4d7dd;
+}
+
+.product-seller-aside .rating-card-label {
+    font-size: 12px;
+    color: var(--text-muted-two, #7c8087);
+    transition: color .15s ease;
+}
+
+.product-seller-aside .rating-card:hover .rating-card-label {
+    color: var(--main-color-one, #275fe0);
+}
+
+.product-seller-aside .rating-card-icon {
+    font-size: 20px;
+    color: var(--main-color-one, #275fe0);
+    line-height: 1;
 }

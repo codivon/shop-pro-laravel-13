@@ -353,7 +353,9 @@
                                             </h2>
                                             <div class="comments-summary row gy-3">
                                                 <div class="col-lg-4 col-md-4 col-12">
-                                                    <div class="comments-summary-box shadow-box rounded-3 p-3 h-100">
+                                                    {{-- فاز ۱۵۹ — دکمهٔ «افزودن نظر جدید» داخل همان کارت امتیاز
+                                                         (قبلاً در باکس جدا در پایین ستون گم شده بود) --}}
+                                                    <div class="comments-summary-box shadow-box rounded-3 p-3 h-100 comments-summary-card">
                                                         <div class="comments-side-rating-container">
                                                             <div class="comments-side-rating text-center">
                                                                 @if ($reviews->count())
@@ -404,25 +406,24 @@
                                                                 @endforeach
                                                             </ul>
                                                         @endif
-                                                    </div>
+                                                        <div class="comments-summary-note">
+                                                            <span>شما هم درباره این کالا دیدگاه ثبت کنید</span>
+                                                            @if (auth('web')->check())
+                                                                <button type="button" data-bs-toggle="modal"
+                                                                        data-bs-target="#add-product-review-modal"
+                                                                        class="btn border-0 main-color-one-bg rounded-pill mt-2">
+                                                                    <i class="bi bi-chat-square-text me-1"></i>
+                                                                    افزودن نظر جدید
+                                                                </button>
+                                                            @else
+                                                                <a href="{{ route('login', ['redirect', route('front.products.show', ['product' => $product])]) }}"
+                                                                   class="btn border-0 main-color-one-bg rounded-pill mt-2">
+                                                                    افزودن نظر جدید
+                                                                    <i class="bi bi-chat-square-text me-1"></i>
+                                                                </a>
 
-                                                    <div class="comments-summary-note shadow-box rounded-3 p-3 mt-3">
-                                                        <span>شما هم درباره این کالا دیدگاه ثبت کنید</span>
-                                                        @if (auth('web')->check())
-                                                            <button type="button" data-bs-toggle="modal"
-                                                                    data-bs-target="#add-product-review-modal"
-                                                                    class="btn border-0 main-color-one-bg rounded-pill mt-2">
-                                                                <i class="bi bi-chat-square-text me-1"></i>
-                                                                افزودن نظر جدید
-                                                            </button>
-                                                        @else
-                                                            <a href="{{ route('login', ['redirect', route('front.products.show', ['product' => $product])]) }}"
-                                                               class="btn border-0 main-color-one-bg rounded-pill mt-2">
-                                                                افزودن نظر جدید
-                                                                <i class="bi bi-chat-square-text me-1"></i>
-                                                            </a>
-
-                                                        @endif
+                                                            @endif
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-8 col-md-8 col-12">
@@ -478,14 +479,12 @@
                                                             </div>
                                                         </div>
                                                     @else
-                                                        <p>
-                                                            <b>شما هم می‌توانید در مورد این کالا نظر دهید.</b><br>
-
-                                                            اگر این محصول را قبلا
-                                                            از {{ option('info_site_title', 'او پی شاپ') }} خریده باشید،
-                                                            دیدگاه شما به عنوان خریدار ثبت خواهد شد.
-
-                                                        </p>
+                                                        {{-- فاز ۱۵۹ — حالت خالی دیدگاه‌ها به‌صورت کارت مرتب --}}
+                                                        <div class="comments-empty-state shadow-box rounded-3 p-4">
+                                                            <i class="bi bi-chat-square-text"></i>
+                                                            <b>شما هم می‌توانید در مورد این کالا نظر دهید.</b>
+                                                            <span>اگر این محصول را قبلا از {{ option('info_site_title', 'او پی شاپ') }} خریده باشید، دیدگاه شما به عنوان خریدار ثبت خواهد شد.</span>
+                                                        </div>
                                                     @endif
                                                 </div>
                                             </div>

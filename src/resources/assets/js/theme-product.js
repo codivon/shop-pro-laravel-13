@@ -130,17 +130,24 @@
                 }
             }
 
-            /* برچسب تنوع انتخاب‌شده (از خود چیپ‌های انتخاب‌شده خوانده می‌شود) */
+            /* برچسب تنوع انتخاب‌شده — فاز ۱۵۹: از نام‌های ویژگیِ خودِ تنوع
+               منطبق (attr_names در جزیرهٔ JSON) خوانده می‌شود تا همیشه کامل
+               باشد (رنگ + گارانتی و…). اگر جزیره نام نداشت، از چیپ‌های
+               انتخاب‌شده خوانده می‌شود. */
             var miniLabel = mini.querySelector('.js-mini-variant-label');
             if (miniLabel) {
                 var names = [];
-                document.querySelectorAll('.product-info-block input[type="radio"]:checked').forEach(function (input) {
-                    var chip = input.closest('.product-attribute');
-                    var text = chip ? (chip.getAttribute('title') || chip.textContent || '').trim() : '';
-                    var nameEl = chip ? chip.querySelector('.ui-variant-name, .ui-variant--check span') : null;
-                    if (nameEl) { text = nameEl.textContent.trim(); }
-                    if (text) { names.push(text); }
-                });
+                if (match.attr_names && match.attr_names.length) {
+                    names = match.attr_names.slice();
+                } else {
+                    document.querySelectorAll('.product-info-block input[type="radio"]:checked').forEach(function (input) {
+                        var chip = input.closest('.product-attribute');
+                        var text = chip ? (chip.getAttribute('title') || chip.textContent || '').trim() : '';
+                        var nameEl = chip ? chip.querySelector('.ui-variant-name, .ui-variant--check span') : null;
+                        if (nameEl) { text = nameEl.textContent.trim(); }
+                        if (text) { names.push(text); }
+                    });
+                }
                 miniLabel.textContent = names.length ? names.join(' ، ') : 'تنوع پیش‌فرض';
             }
 
@@ -180,12 +187,11 @@
         $main.owlCarousel({
             items: 1,
             rtl: true,
-            nav: true,
+            nav: false,
             dots: true,
             loop: false,
             lazyLoad: false,
             smartSpeed: 350,
-            navText: ['<i class="bi bi-chevron-right" aria-hidden="true"></i>', '<i class="bi bi-chevron-left" aria-hidden="true"></i>'],
             responsive: {
                 0: { dotsEach: 4 },
                 768: { dotsEach: false }

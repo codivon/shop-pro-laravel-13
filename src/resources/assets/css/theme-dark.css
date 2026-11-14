@@ -335,6 +335,27 @@ html[data-theme="dark"] .question-item {
     border-color: var(--dk-border) !important;
 }
 
+/* فاز ۱۵۹ — ریشهٔ سفیدماندن کارت‌های دیدگاه/پرسش در تم تیره:
+   قاعدهٔ روشن با specificity بالاتر (product-page .p-tabs .comments-list .article)
+   بر قاعدهٔ بالا می‌چربید؛ این‌جا با همان سطح specificity خنثی می‌شود. */
+html[data-theme="dark"] .product-page .p-tabs .comments-list .article,
+html[data-theme="dark"] .product-page .p-tabs .comments-list .qa-article {
+    background-color: var(--dk-bg-soft);
+    border-color: var(--dk-border);
+    box-shadow: none;
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .article p,
+html[data-theme="dark"] .product-page .p-tabs .comments-list .review-body,
+html[data-theme="dark"] .product-page .p-tabs .comments-list .question-body {
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .article .footer {
+    border-top-color: var(--dk-border);
+}
+
 /* ---------- فرم‌ها ---------- */
 html[data-theme="dark"] .form-control,
 html[data-theme="dark"] .form-select,
@@ -922,6 +943,23 @@ html[data-theme="dark"] .panel-box {
 html[data-theme="dark"] .panel-side a,
 html[data-theme="dark"] .panel-side .font-14 {
     color: var(--dk-text-soft);
+}
+
+/* فاز ۱۵۹ — آیتم‌های منوی پکیج‌ها در پنل مشتری — هماهنگ با تم تیره */
+html[data-theme="dark"] .profile-box-nav ul li a.profile-menu-url {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .profile-box-nav ul li a.profile-menu-url:hover,
+html[data-theme="dark"] .profile-box-nav ul li a.profile-menu-url:hover > i,
+html[data-theme="dark"] .profile-box-nav ul li a.profile-menu-url:hover > span[class*="fa-"],
+html[data-theme="dark"] .profile-box-nav ul li:hover a.profile-menu-url {
+    color: var(--main-color-one, #7599f7);
+}
+
+html[data-theme="dark"] .profile-box-nav ul li a.profile-menu-url .badge.badge-primary {
+    background-color: rgba(91, 138, 245, .18) !important;
+    color: #9db9fa !important;
 }
 
 /* ---------- ۱۰) صفحهٔ ورود / ثبت‌نام ---------- */
@@ -1602,18 +1640,62 @@ html[data-theme="dark"] .product-seller-aside .aside-rating {
     border-bottom-color: var(--dk-border);
 }
 
-html[data-theme="dark"] .product-seller-aside .aside-rating .count-rating,
-html[data-theme="dark"] .product-seller-aside .aside-rating .count-rating i {
-    color: #f5c169;
+/* فاز ۱۵۹ — کارت‌های آماری امتیاز/پرسش در تم تیره */
+html[data-theme="dark"] .product-seller-aside .rating-card {
+    background: var(--dk-surface-2, #242a35);
+    border-color: var(--dk-border, #303743);
 }
 
-html[data-theme="dark"] .product-seller-aside .aside-rating .count-comment:hover {
-    color: var(--main-color-one, #7599f7);
+html[data-theme="dark"] .product-seller-aside .rating-card:hover {
+    background: var(--dk-surface, #2a313e);
+    border-color: var(--main-color-one, #7599f7);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .35);
+}
+
+html[data-theme="dark"] .product-seller-aside .rating-card-value {
+    color: var(--dk-text, #e7eaf0);
+}
+
+html[data-theme="dark"] .product-seller-aside .rating-card-label {
+    color: var(--dk-text-muted, #97a0af);
+}
+
+html[data-theme="dark"] .product-seller-aside .rating-card:hover .rating-card-label {
+    color: #7599f7;
+}
+
+html[data-theme="dark"] .product-seller-aside .rating-card-stars .bi-star {
+    color: #4a5261;
+}
+
+html[data-theme="dark"] .product-seller-aside .rating-card-icon {
+    color: #7599f7;
 }
 
 /* ---------- نقد و بررسی اجمالی — ماسک «ادامه مطلب» ---------- */
 html[data-theme="dark"] .product-page .p-tabs .is-masked .shadow-box {
     background: linear-gradient(rgba(30, 34, 43, 0), var(--dk-surface));
+}
+
+/* فاز ۱۵۹ — کارت امتیاز یکپارچه + حالت خالی نظرات در تم تیره */
+html[data-theme="dark"] .product-page .p-tabs .comments-summary-note {
+    border-top-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-summary-note > span {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-empty-state {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-empty-state i {
+    color: #3a4152;
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-empty-state b {
+    color: var(--dk-text);
 }
 
 /* ---------- فاز ۱۵۸ — مودال افزودن نظر در تم تیره ---------- */
@@ -1696,4 +1778,182 @@ html[data-theme="dark"] .product-mini-buy-box,
 html[data-theme="dark"] .mini-buy-box {
     background: var(--dk-surface);
     border-color: var(--dk-border);
+}
+
+/* ============================================================
+   فاز ۱۵۹ — صفحات پکیج‌ها در پنل مشتری (خودکفا با کلاس‌های اختصاصی)
+   باشگاه مشتریان (ccf-*/ccr-*/ccg-*)، مرسولات من (lgf-*/lgg-*)
+   و پیام‌ها (ump-*) — هماهنگ‌سازی کامل با تم تیره
+   ============================================================ */
+
+/* ---------- اسکوپ کلی: رنگ متن پایه ---------- */
+html[data-theme="dark"] .ccf-scope,
+html[data-theme="dark"] .ccr-scope,
+html[data-theme="dark"] .lgf-scope {
+    color: var(--dk-text);
+}
+
+/* ---------- کارت‌ها و کاشی‌ها ---------- */
+html[data-theme="dark"] .ccf-card,
+html[data-theme="dark"] .ccf-tile,
+html[data-theme="dark"] .ccf-tile--gold,
+html[data-theme="dark"] .ccf-tile--people,
+html[data-theme="dark"] .ccr-card,
+html[data-theme="dark"] .ccr-tile,
+html[data-theme="dark"] .ccr-tile--ok,
+html[data-theme="dark"] .ccr-tile--gift {
+    background-color: var(--dk-surface) !important;
+    border-color: var(--dk-border) !important;
+    color: var(--dk-text);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .3);
+}
+
+html[data-theme="dark"] .ccf-card-desc,
+html[data-theme="dark"] .ccf-tile-label,
+html[data-theme="dark"] .ccf-tile-meta,
+html[data-theme="dark"] .ccr-card-desc,
+html[data-theme="dark"] .ccr-tile-label,
+html[data-theme="dark"] .ccr-muted,
+html[data-theme="dark"] .ccr-tier-note,
+html[data-theme="dark"] .ccf-empty,
+html[data-theme="dark"] .ccr-empty {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .ccf-card-title,
+html[data-theme="dark"] .ccf-tile-value,
+html[data-theme="dark"] .ccf-sec-title,
+html[data-theme="dark"] .ccf-empty-title,
+html[data-theme="dark"] .ccr-card-title,
+html[data-theme="dark"] .ccr-tile-value,
+html[data-theme="dark"] .ccr-sec-title,
+html[data-theme="dark"] .ccr-empty-title,
+html[data-theme="dark"] .ccr-rule-title,
+html[data-theme="dark"] .ccr-code-value {
+    color: var(--dk-text);
+}
+
+/* آیکون‌های داخل کارت‌ها — تُرکِ تیره */
+html[data-theme="dark"] .ccf-card-ico,
+html[data-theme="dark"] .ccf-tile-ico,
+html[data-theme="dark"] .ccr-card-ico,
+html[data-theme="dark"] .ccr-tile-ico,
+html[data-theme="dark"] .ccr-rule-ico,
+html[data-theme="dark"] .ccf-empty-ico,
+html[data-theme="dark"] .ccr-empty-ico {
+    background-color: rgba(20, 184, 166, .14);
+    color: #5eead4;
+}
+
+/* ---------- باکس‌های تُرکی (پرسش/کد معرف) ---------- */
+html[data-theme="dark"] .ccf-ref-box,
+html[data-theme="dark"] .ccr-code-box {
+    background-color: rgba(20, 184, 166, .1) !important;
+    border-color: rgba(20, 184, 166, .35) !important;
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .ccf-pill {
+    background-color: rgba(16, 185, 129, .14) !important;
+    border-color: rgba(16, 185, 129, .3) !important;
+    color: #6ee7b7 !important;
+}
+
+/* ---------- جدول امتیازها ---------- */
+html[data-theme="dark"] .ccf-table-wrap {
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .ccf-table {
+    color: var(--dk-text);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .ccf-table th {
+    background-color: var(--dk-surface-2);
+    color: var(--dk-text-soft);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .ccf-table td {
+    border-color: var(--dk-border);
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .ccf-table tbody tr:hover td {
+    background-color: var(--dk-surface-2);
+}
+
+/* ---------- دکمه‌ها و اینپوت‌ها ---------- */
+html[data-theme="dark"] .ccf-btn--outline,
+html[data-theme="dark"] .ccr-chip-btn {
+    background-color: rgba(20, 184, 166, .12) !important;
+    border-color: rgba(20, 184, 166, .4) !important;
+    color: #5eead4 !important;
+}
+
+html[data-theme="dark"] .ccf-btn--outline:hover,
+html[data-theme="dark"] .ccr-chip-btn:hover {
+    background-color: rgba(20, 184, 166, .22) !important;
+}
+
+html[data-theme="dark"] .ccr-link-input,
+html[data-theme="dark"] .ccf-redeem-input-wrap input,
+html[data-theme="dark"] .ccf-input-code {
+    background-color: var(--dk-surface-2);
+    border-color: var(--dk-border);
+    color: var(--dk-text);
+}
+
+/* ---------- نوار سطح باشگاه (tier) ---------- */
+html[data-theme="dark"] .ccr-tier-bar {
+    background-color: var(--dk-surface-2);
+}
+
+html[data-theme="dark"] .ccr-tier-badge,
+html[data-theme="dark"] .ccr-tier-badge--off {
+    background-color: var(--dk-surface-2);
+    color: var(--dk-text-muted);
+    border-color: var(--dk-border);
+}
+
+/* ---------- بنر راهنما (ccg/lgg) — دکمهٔ سفیدِ خراب ---------- */
+html[data-theme="dark"] .ccg-guide-btn,
+html[data-theme="dark"] .lgg-guide-btn {
+    background-color: rgba(255, 255, 255, .16) !important;
+    border-color: rgba(255, 255, 255, .4) !important;
+    color: #fff !important;
+}
+
+html[data-theme="dark"] .ccg-guide-btn:hover,
+html[data-theme="dark"] .lgg-guide-btn:hover {
+    background-color: rgba(255, 255, 255, .26) !important;
+}
+
+/* ---------- قوانین معرفی دوستان ---------- */
+html[data-theme="dark"] .ccr-rule {
+    background-color: var(--dk-surface-2);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .ccr-rule--me {
+    border-color: rgba(20, 184, 166, .4);
+}
+
+html[data-theme="dark"] .ccr-rule-value {
+    color: #5eead4;
+}
+
+/* ---------- خالی‌بودن لیست‌ها ---------- */
+html[data-theme="dark"] .lgf-empty,
+html[data-theme="dark"] .ump-empty {
+    background-color: var(--dk-surface) !important;
+    border-color: var(--dk-border) !important;
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .lgf-empty-ico,
+html[data-theme="dark"] .ump-empty i,
+html[data-theme="dark"] .lgf-empty i {
+    color: #3a4152;
 }

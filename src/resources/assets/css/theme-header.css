@@ -157,9 +157,10 @@
     min-height: 56px;
 }
 
-/* پل نامرئی hover — مگای اول (ul.main-menu):
-   از ::after استفاده شده چون ::before در style.css برای پس‌زمینه سایدبار گرفته شده */
-.top-menu-menu ul.main-menu::after,
+/* پل نامرئی hover — دراپ‌داون‌های عمومی (sub-menu و level-one):
+   مگای اول (ul.main-menu) از فاز ۱۵۹ اسکرول‌بار داخلی دارد و عناصر خارج از
+   لبه‌اش clip می‌شوند؛ البته پنل مگا ۲px با ردیف دکمه همپوشانی دارد و حلقهٔ
+   hover بدون پل هم برقرار است. */
 .top-menu-menu > ul > li > ul.sub-menu.mega-container::after,
 .top-menu-menu > ul > li > ul.level-one::after {
     content: '';

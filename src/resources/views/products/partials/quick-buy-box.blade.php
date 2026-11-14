@@ -72,9 +72,8 @@
         </div>
 
         <div class="quick-buy-action">
-            <div class="quick-buy-qty">
-                <input id="cart-quantity" type="text" name="count" value="1" class="form-control text-center" aria-label="تعداد">
-            </div>
+            {{-- فاز ۱۵۹ — کنترل تعداد از خرید سریع حذف شد (درخواست کاربر)؛
+                 تعداد همیشه ۱ در نظر گرفته می‌شود (show.js) --}}
             <button type="button"
                     class="btn-add-to-cart add-to-cart btn border-0 main-color-three-bg text-white"
                     data-price_id="{{ $selected_price->id }}"

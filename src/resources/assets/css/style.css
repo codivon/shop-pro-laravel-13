@@ -781,31 +781,6 @@ header{
     -o-transition: 0.2s all ease-in-out;
 }
 
-/* فاز ۱۵۸ — دراپ‌داون دسته‌بندی‌ها (مگای اول سانیار):
-   به‌جای چندستونه‌شدن افقی، تک‌ستون با ارتفاع محدود و اسکرول داخلی */
-.top-menu-menu ul>li>ul.sub-menu.mega-container {
-    left: auto;
-    right: 0;
-    width: max-content;
-    min-width: 260px;
-    max-width: 360px;
-    height: auto;
-    max-height: 420px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    flex-wrap: nowrap;
-    align-content: flex-start;
-    padding: 10px 14px;
-    border-radius: 0 0 14px 14px;
-    box-shadow: var(--shadow-lg);
-}
-
-.top-menu-menu ul>li>ul.sub-menu.mega-container > li {
-    width: 100%;
-    margin-left: 0;
-}
-
-
 .back-menu {
     background-position: bottom left !important;
     background-size: 300px !important;
@@ -864,59 +839,63 @@ header{
 
 /* ///////////main menu /////////// */
 
-/* فاز ۱۵۸ — پنل مگا منو: تک‌ستون با ارتفاع محدود و اسکرول داخلی
-   (قبلاً ردیف‌ها افقی می‌پیچیدند و پنل با تعداد دسته‌ها بی‌نهایت بزرگ می‌شد) */
+/* فاز ۱۵۹ — بازگشت به چیدمان اصلی سانیار: پنل تمام‌عرض، ستون دسته‌ها سمت راست
+   و ستون فرعی سمت چپ (عین تمپلیت اصلی). با زیاد شدن تعداد دسته‌ها، ستونِ راست
+   (ردیف‌ها) خودش اسکرول می‌گیرد؛ ستونِ چپ (زیرمنو) هم اسکرول مستقل خودش را
+   دارد — دو اسکرول کاملاً جدا از هم. جهت ltr پنل فقط برای این است که
+   اسکرول‌بارِ ردیف‌ها سمت راست ستون بیفتد؛ خود ردیف‌ها rtl هستند. */
 .top-menu-menu ul.main-menu {
     background: #fff;
     display: none;
     box-shadow: var(--shadow-md);
     height: auto;
     min-width: 200px;
-    width: 450px;
-    max-width: calc(100vw - 40px);
     min-height: 400px;
-    max-height: 430px;
+    max-height: min(480px, calc(100vh - 180px));
     position: absolute;
     top: 50px;
-    left: auto;
-    right: 0;
+    left: 20px;
+    right: 20px;
     opacity: 0;
     visibility: hidden;
     padding: 0;
-    flex-direction: column;
+    align-content: flex-end;
+    align-items: flex-end;
+    /* فاز ۱۵۹ — ردیف‌ها همیشه یک ستون واحد بمانند و به‌جای شکستن به
+       ستون دوم، در همین ستون اسکرول بخورند */
     flex-wrap: nowrap;
-    align-items: flex-start;
     overflow-y: auto;
     overflow-x: hidden;
+    direction: ltr;
     transition: 0.4s all ease-in-out;
-    border-radius: 0 0 14px 14px;
+    border-radius: 0;
 }
 
 .top-menu-menu ul.main-menu.active {
     display: flex;
-    left: auto;
+    left: 0;
     right: 0;
 }
 
-/* اسکرول‌بار داخلی پنل مگا منو */
+/* اسکرول‌بار ستون دسته‌ها (راست) و ستون فرعی (چپ) — جدا از هم */
 .top-menu-menu ul.main-menu::-webkit-scrollbar,
-.top-menu-menu ul>li>ul.sub-menu.mega-container::-webkit-scrollbar {
+.top-menu-menu ul.main-menu>li>ul.main-menu-sub::-webkit-scrollbar {
     width: 6px;
 }
 
 .top-menu-menu ul.main-menu::-webkit-scrollbar-track,
-.top-menu-menu ul>li>ul.sub-menu.mega-container::-webkit-scrollbar-track {
+.top-menu-menu ul.main-menu>li>ul.main-menu-sub::-webkit-scrollbar-track {
     background: transparent;
 }
 
 .top-menu-menu ul.main-menu::-webkit-scrollbar-thumb,
-.top-menu-menu ul>li>ul.sub-menu.mega-container::-webkit-scrollbar-thumb {
+.top-menu-menu ul.main-menu>li>ul.main-menu-sub::-webkit-scrollbar-thumb {
     background: #d5d8de;
     border-radius: 6px;
 }
 
 .top-menu-menu ul.main-menu,
-.top-menu-menu ul>li>ul.sub-menu.mega-container {
+.top-menu-menu ul.main-menu>li>ul.main-menu-sub {
     scrollbar-width: thin;
     scrollbar-color: #d5d8de transparent;
 }
@@ -991,11 +970,11 @@ header{
     padding: 5px 0;
 }
 
-/* فاز ۱۵۸ — ردیف‌ها مرجع موقعیت ستون فرعی می‌شوند تا با اسکرول پنل جابجا شوند */
+/* فاز ۱۵۹ — ردیف‌ها درون پنل ltr باید rtl بمانند */
 .top-menu-menu ul.main-menu>li {
     background-color: #eee;
     border-radius: 0;
-    position: relative;
+    direction: rtl;
 }
 
 /* فاز ۱۵۸ — بک‌گراند سفید حذف شد (کاربر): در تم تاریک ردیف را خراب می‌کرد */
@@ -1608,7 +1587,10 @@ figure.avatar img {
 
 .product-box .product-image img{
     height: 100%;
-    object-fit: cover;
+    /* فاز ۱۵۹ — درخواست کاربر: تصویر محصول در کارت‌ها وسط‌چین و کامل دیده شود
+       (قبلاً object-fit:cover عکس را کراپ می‌کرد و محصول از مرکز خارج می‌افتاد) */
+    object-fit: contain;
+    object-position: center;
     display: block;
     margin: auto;
     transition: 0.5s all ease-in-out;
@@ -3933,6 +3915,40 @@ div#btncollapzion {
 .profile-box-nav ul li.active a,.profile-box-nav ul li.active a i{
     color: var(--main-color-one);
     font-weight: bold;
+}
+
+/* فاز ۱۵۹ — آیتم‌های منوی پکیج‌ها در پنل مشتری (profile-menu-url):
+   همان ظاهر nav-link هستی پنل — پدینگ، رنگ، آیکون و هاور یکسان */
+.profile-box-nav ul li a.profile-menu-url{
+    display: block;
+    padding: .55rem .75rem;
+    color: var(--color-site);
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 14px;
+    line-height: 1.9;
+    transition: 0.3s;
+}
+
+.profile-box-nav ul li a.profile-menu-url > i,
+.profile-box-nav ul li a.profile-menu-url > span[class*="fa-"],
+.profile-box-nav ul li a.profile-menu-url > span[class*="bi-"]{
+    margin-left: 10px;
+    font-size: 18px;
+    width: 20px;
+    display: inline-block;
+    text-align: center;
+}
+
+.profile-box-nav ul li a.profile-menu-url .badge{
+    font-size: 11px;
+    margin-right: 4px;
+}
+
+.profile-box-nav ul li a.profile-menu-url:hover,
+.profile-box-nav ul li a.profile-menu-url:hover > i,
+.profile-box-nav ul li a.profile-menu-url:hover > span[class*="fa-"]{
+    color: var(--main-color-one);
 }
 
 .img-profile-panel{

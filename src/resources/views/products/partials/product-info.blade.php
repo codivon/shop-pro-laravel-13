@@ -303,13 +303,17 @@
         $variants_payload = [];
         try {
             foreach ($product->getPrices()->get() as $variant_price) {
+                /* فاز ۱۵۹ — نام فارسی هر ویژگی هم داخل جزیره می‌آید تا برچسب
+                   «تنوع انتخاب‌شده» در خرید سریع، همیشه کامل و صحیح باشد */
+                $variantAttributes = $variant_price->get_attributes();
                 $variants_payload[] = [
-                    'id'       => (int) $variant_price->id,
-                    'attrs'    => $variant_price->get_attributes()->pluck('id')->map(fn ($v) => (int) $v)->values()->all(),
-                    'price'    => number_format($variant_price->regularPrice()),
-                    'sale'     => number_format($variant_price->salePrice()),
-                    'discount' => $variant_price->hasDiscount() ? (int) $variant_price->discount() : 0,
-                    'stock'    => (int) $variant_price->stock,
+                    'id'         => (int) $variant_price->id,
+                    'attrs'      => $variantAttributes->pluck('id')->map(fn ($v) => (int) $v)->values()->all(),
+                    'attr_names' => $variantAttributes->map(fn ($a) => trim((string) $a->name))->filter()->values()->all(),
+                    'price'      => number_format($variant_price->regularPrice()),
+                    'sale'       => number_format($variant_price->salePrice()),
+                    'discount'   => $variant_price->hasDiscount() ? (int) $variant_price->discount() : 0,
+                    'stock'      => (int) $variant_price->stock,
                 ];
             }
         } catch (\Throwable $variants_exception) {

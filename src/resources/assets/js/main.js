@@ -391,11 +391,11 @@ $(document).ready(function () {
     // favorites product-----------------------
 
     //single-product------------------
+    /* فاز ۱۵۹ — فلش‌های owl-nav نوار تاج حذف شد (درخواست کاربر) */
     $("#gallery-slider").owlCarousel({
         rtl: true,
         margin: 10,
-        nav: true,
-        navText: ['<i class="fa fa-angle-right"></i>', '<i class="fa fa-angle-left"></i>'],
+        nav: false,
         dots: false,
         responsiveClass: true,
         responsive: {

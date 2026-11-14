@@ -13,18 +13,34 @@ $(function () {
     ///۲) mouseleave با event delegation متصل می‌شود؛ قبلاً هنگام لود صفحه هیچ
     ///   عنصری کلاس main-menu-sub-active را نداشت، پس هندلر هرگز متصل نمی‌شد
     ///   و منوها بعد از خروج موس باز می‌ماندند.
-    $(document).on('mouseenter', '.main-menu-head', function () {
-        $(this).find('.main-menu-sub').first().addClass('main-menu-sub-active');
+    /* باز/بسته شدن کل پنل مگا منو با ورود و خروج موس از دکمهٔ «دسته‌بندی کالاها» */
+    $(document).on('mouseenter', '.top-menu-menu .main-menu-head', function () {
         $(this).children().addClass('active');
     })
-    $(document).on('mouseleave', '.main-menu-head', function () {
-        $(this).find('.main-menu-sub').first().removeClass('main-menu-sub-active');
+    $(document).on('mouseleave', '.top-menu-menu .main-menu-head', function () {
         $(this).children().removeClass('active');
     })
     /* هاور روی ردیف‌های مگا منو — به‌جای بایند مستقیم روی li (که با هاور روی
        آیتم‌های ستون فرعی می‌شکست)، روی خود پنل delegate می‌شود و همیشه به
        «ردیف» سطح اول (‎> li) تحویل می‌شود؛ ورود موس به ستون فرعی هم ردیف
-       و ستون خودش را باز نگه می‌دارد. */
+       و ستون خودش را باز نگه می‌دارد.
+
+       فاز ۱۵۹ — ستون فرعی با position:fixed هم‌ترازِ لبهٔ پنل جای‌گذاری می‌شود
+       تا با اسکرولِ مستقلِ ستون دسته‌ها (سمت راست) جابجا نشود؛ اسکرول ستون
+       فرعی (سمت چپ) هم کاملاً جدا می‌ماند. استایل‌های inline عمداً پاک
+       نمی‌شوند تا در لحظهٔ محو‌شدن، منو نپرد. */
+    function placeMegaFlyout(sub) {
+        var panel = sub.closest('ul.main-menu');
+        if (!panel) { return; }
+        var rect = panel.getBoundingClientRect();
+        if (!rect.width) { return; }
+        /* ستون ردیف‌ها ۲۰۰px از لبهٔ راست پنل است؛ ستون فرعی باید دقیقاً
+           از همان‌جا به سمت چپ باز شود (هم‌ترازِ چیدمان اصلی سانیار) */
+        sub.style.position = 'fixed';
+        sub.style.top = Math.round(rect.top) + 'px';
+        sub.style.right = Math.round(window.innerWidth - rect.right + 200) + 'px';
+    }
+
     $(document).on('mouseover', '.top-menu-menu ul.main-menu', function (event) {
         var row = event.target.closest('.top-menu-menu ul.main-menu > li');
         if (!row || !this.contains(row)) { return; }
@@ -36,8 +52,18 @@ $(function () {
         $row.parent().children('li').removeClass('main-menu-sub-active-li');
         $row.addClass('main-menu-sub-active-li');
         $('.top-menu-menu .main-menu-sub').removeClass('main-menu-sub-active');
-        $row.children('ul').addClass('main-menu-sub-active');
+        var sub = $row.children('ul').addClass('main-menu-sub-active').get(0);
+        if (sub) { placeMegaFlyout(sub); }
     });
+
+    /* باز شدن اولین ستون فرعی هنگام هاور روی دکمهٔ «دسته‌بندی کالاها» */
+    $(document).on('mouseenter', '.top-menu-menu .main-menu-head', function () {
+        var sub = $(this).children('ul.main-menu').children('li').children('ul.main-menu-sub').first().get(0);
+        if (sub) {
+            placeMegaFlyout(sub);
+            $(sub).addClass('main-menu-sub-active');
+        }
+    })
     /* خروج موس از ستون فرعی → بستن همان ستون */
     $(document).on('mouseleave', '.top-menu-menu .main-menu-sub-active', function () {
         $(this).removeClass('main-menu-sub-active');
