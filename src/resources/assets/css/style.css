@@ -5698,3 +5698,43 @@ div.countdown-bar div:nth-of-type(2) span {
 
 
 /* end faq */
+
+/* ============================================================
+   فاز ۱۶۱ — سبد کشویی هدر: کنترل تعداد زنده (+/−) و حذف ای‌جکسی
+   ============================================================ */
+.cart-canvases .item .action .js-mini-counter {
+    background-color: #f7f7f9;
+    border: 1px solid #ececf1;
+    border-radius: 8px;
+    padding: 2px 6px;
+}
+
+.cart-canvases .item .action .js-mini-counter .js-mini-qty-btn {
+    color: #8a8f9c;
+    line-height: 1;
+    transition: 0.2s all ease-in-out;
+}
+
+.cart-canvases .item .action .js-mini-counter .js-mini-qty-btn:hover {
+    color: var(--main-color-one, #24344d);
+}
+
+.cart-canvases .item .action .js-mini-counter .js-mini-qty {
+    background-color: transparent;
+    border: 0;
+    width: 34px;
+    font-weight: 600;
+    color: #24344d;
+    padding: 0;
+    height: auto;
+}
+
+/* عنوان آیتم سبد کشویی — لینک فقط روی تصویر/عنوان */
+.cart-canvases .item .js-mini-cart-link .title h6 {
+    color: #24344d;
+    transition: 0.2s all ease-in-out;
+}
+
+.cart-canvases .item .js-mini-cart-link:hover .title h6 {
+    color: var(--main-color-one, #24344d);
+}

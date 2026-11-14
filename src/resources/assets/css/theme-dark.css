@@ -2103,3 +2103,62 @@ html[data-theme="dark"] .ump-empty i,
 html[data-theme="dark"] .lgf-empty i {
     color: #3a4152;
 }
+
+/* ============================================================
+   فاز ۱۶۱ — کنترل تعداد جدید سبد کشویی هدر (js-mini-counter)
+   ============================================================ */
+html[data-theme="dark"] .cart-canvases .item .action .js-mini-counter {
+    background-color: var(--dk-surface-2);
+    border: 1px solid var(--dk-border);
+    border-radius: 8px;
+    padding: 2px 6px;
+}
+
+html[data-theme="dark"] .cart-canvases .item .action .js-mini-counter .js-mini-qty-btn {
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .cart-canvases .item .action .js-mini-counter .js-mini-qty-btn:hover {
+    color: #fff;
+}
+
+html[data-theme="dark"] .cart-canvases .item .action .js-mini-counter .js-mini-qty {
+    background-color: transparent;
+    color: var(--dk-text);
+    border: 0;
+    width: 34px;
+    font-weight: 600;
+}
+
+/* صفحهٔ سبد — حالت خالی و باکس‌های رندر مجدد */
+html[data-theme="dark"] #cart-main-area .content-box,
+html[data-theme="dark"] .cart-product .content-box {
+    background-color: var(--dk-surface) !important;
+    color: var(--dk-text);
+}
+
+/* مودال آدرس — فیلدهای استانی/شهری در تم تاریک */
+html[data-theme="dark"] #add-edit-address-modal .modal-content {
+    background-color: var(--dk-surface);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] #add-edit-address-modal .form-label,
+html[data-theme="dark"] #add-edit-address-modal .modal-title {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] #add-edit-address-modal .form-control,
+html[data-theme="dark"] #add-edit-address-modal .form-select {
+    background-color: var(--dk-surface-2);
+    border-color: var(--dk-border);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] #add-edit-address-modal .add-address-success {
+    color: #4ade80;
+}
+
+html[data-theme="dark"] #add-edit-address-modal .add-address-unsuccess {
+    color: #f87171;
+}

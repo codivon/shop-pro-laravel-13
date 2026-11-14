@@ -1000,3 +1000,100 @@ function Get_All_Tags($tag_name)
     return \App\Models\Tag::whereIn('id',$ids)->get();
 }
 }
+
+/* ============================================================
+   فاز ۱۶۱ — جزیرهٔ دادهٔ تنوع‌ها برای به‌روزرسانی لحظه‌ای خرید سریع
+   (theme-product.js → #js-product-variants-data)
+   ============================================================
+   چرا کوئری خام و نه روابط Eloquent؟
+   روی سایت واقعی، ساخت جزیره با مدل‌ها (prices()->get() +
+   regularPrice()/salePrice()/get_attributes()) برای «همهٔ» محصولات
+   استثنا می‌داد و جزیره همیشه [] رندر می‌شد؛ نتیجهٔ قابل بازتولید:
+   باکس خرید سریع با تغییر تنوع به‌روز نمی‌شد. این نسخه با DB خام
+   (بدون اکسسور/رویداد مدل) کاملاً مقاوم است و گردکردن قیمت را
+   مطابق Price::toRoundPrice هسته بازتولید می‌کند.
+   ============================================================ */
+if (!function_exists('saniar_variants_payload')) {
+function saniar_variants_payload($product): array
+{
+    try {
+        $priceRows = \Illuminate\Support\Facades\DB::table('prices')
+            ->where('product_id', $product->id)
+            ->whereNull('deleted_at')
+            ->get(['id', 'price', 'discount_price', 'discount', 'discount_expire_at', 'stock']);
+
+        if ($priceRows->isEmpty()) {
+            return [];
+        }
+
+        $attributeRows = \Illuminate\Support\Facades\DB::table('attribute_price')
+            ->join('attributes', 'attributes.id', '=', 'attribute_price.attribute_id')
+            ->whereIn('attribute_price.price_id', $priceRows->pluck('id'))
+            ->get(['attribute_price.price_id', 'attributes.id', 'attributes.name']);
+
+        $attributesByPrice = $attributeRows->groupBy('price_id');
+
+        /* گردکردن قیمت — بازتولید Price::toRoundPrice */
+        $roundingAmount = $product->rounding_amount ?? 'default';
+        if ($roundingAmount == 'default') {
+            $roundingAmount = option('default_rounding_amount', 'no');
+        }
+        $roundingType = $product->rounding_type ?? 'default';
+        if ($roundingType == 'default') {
+            $roundingType = option('default_rounding_type', 'close');
+        }
+
+        $round = function ($value) use ($roundingAmount, $roundingType) {
+            $value = (float) $value;
+            if (in_array((string) $roundingAmount, ['100', '1000', '10000', '100000'])) {
+                if ($roundingType == 'up') {
+                    $value = ceil($value / $roundingAmount) * $roundingAmount;
+                } else if ($roundingType == 'down') {
+                    $value = floor($value / $roundingAmount) * $roundingAmount;
+                } else {
+                    $value = round($value / $roundingAmount) * $roundingAmount;
+                }
+            }
+            return $value;
+        };
+
+        $payload = [];
+
+        foreach ($priceRows as $row) {
+            /* خطای یک ردیف، کل جزیره را خالی نکند */
+            try {
+                $hasDiscount = false;
+                if (!empty($row->discount)) {
+                    try {
+                        $hasDiscount = is_null($row->discount_expire_at)
+                            || \Carbon\Carbon::parse($row->discount_expire_at)->gt(now());
+                    } catch (\Throwable $dateError) {
+                        $hasDiscount = false;
+                    }
+                }
+
+                $regular = $round($row->price);
+                $sale = $hasDiscount ? $round($row->discount_price ?? $row->price) : $regular;
+
+                $attrs = $attributesByPrice->get($row->id, collect());
+
+                $payload[] = [
+                    'id'         => (int) $row->id,
+                    'attrs'      => $attrs->pluck('id')->map(fn ($v) => (int) $v)->values()->all(),
+                    'attr_names' => $attrs->pluck('name')->map(fn ($n) => trim((string) $n))->filter()->values()->all(),
+                    'price'      => number_format($regular),
+                    'sale'       => number_format($sale),
+                    'discount'   => $hasDiscount ? (int) $row->discount : 0,
+                    'stock'      => (int) $row->stock,
+                ];
+            } catch (\Throwable $variant_row_exception) {
+                continue;
+            }
+        }
+
+        return $payload;
+    } catch (\Throwable $variants_exception) {
+        return [];
+    }
+}
+}

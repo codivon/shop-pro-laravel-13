@@ -757,6 +757,20 @@ $(document).on('click', '.product-attribute:not(.unavailable)', function () {
         success: function (data) {
             $('.product-info-block').replaceWith(data);
 
+            /* فاز ۱۶۱ — خرید سریع: جایگزینی با رندر سرور.
+               پاسخ AJAX یک نسخهٔ پنهان (.js-quick-buy-replacement) از کارت
+               خرید سریع هم دارد؛ با نمونهٔ زندهٔ صفحه جایگزین می‌شود تا
+               قیمت/تنوع/موجودی خرید سریع دقیقاً با انتخاب تنوع یکی باشد. */
+            var $replacement = $('.product-info-block .js-quick-buy-replacement').first();
+            if ($replacement.length) {
+                var $freshBox = $replacement.find('.js-mini-buy-box.quick-buy-box').first();
+                var $liveBox = $('.js-mini-buy-box.quick-buy-box').first();
+                if ($freshBox.length && $liveBox.length) {
+                    $liveBox.replaceWith($freshBox.clone(true, true));
+                }
+                $replacement.remove();
+            }
+
             // بعد از لود، فروشنده‌ها رو بروزرسانی کن
             setTimeout(function() {
                 updateStoresByColor();

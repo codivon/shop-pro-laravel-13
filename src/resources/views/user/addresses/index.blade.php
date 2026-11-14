@@ -107,7 +107,10 @@
 @push('scripts')
 
     {{-- مودال ثبت / ویرایش آدرس (نقشه + اطلاعات) — شناسه‌ها و نام فیلدها دست‌نخورده --}}
-    <div class="modal fade" id="add-edit-address-modal" role="dialog" aria-hidden="true">
+    {{-- data-store-url: فاز ۱۶۱ — مسیر ذخیرهٔ آدرس برای بازنشانی اکشن فرم
+         هنگام بستن مودال (رفع خطای ۴۰۵ پس از خالی‌شدن اکشن) --}}
+    <div class="modal fade" id="add-edit-address-modal" role="dialog" aria-hidden="true"
+        data-store-url="{{ route('front.addresses.store') }}">
         <div class="modal-dialog modal-lg" role="document">
             <div id="showMap" class="modal-content">
                 <div class="modal-header">
@@ -319,7 +322,7 @@
     <script src="{{ theme_asset('js/plugins/jquery-validation/jquery.validate.min.js') }}"></script>
 
     <script src="{{ theme_asset('js/plugins/jquery-validation/localization/messages_fa.min.js') }}?v=2"></script>
-    <script src="{{ theme_asset('js/pages/addresses/index.js') }}"></script>
+    <script src="{{ theme_asset('js/pages/addresses/index.js') }}?v=161"></script>
     <script src="{{ theme_asset('js/pages/addresses/add-edit-address.js?v=2') }}"></script>
 
 @endpush

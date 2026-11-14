@@ -142,6 +142,10 @@ class CartController extends Controller
         }
 
         if (!empty($errors)) {
+            /* فاز ۱۶۱ — پاسخ ای‌جکسی هم شکل قبلی (errors) را حفظ می‌کند */
+            if ($request->ajax() || $request->wantsJson()) {
+                return response(['status' => 'error', 'errors' => $errors], 406);
+            }
             return response(['errors' => $errors], 406);
         }
 
@@ -156,6 +160,12 @@ class CartController extends Controller
             }
         }
 
+        /* فاز ۱۶۱ — تغییرات سبد با AJAX و بدون رفرش صفحه:
+           رندر مجدد ناحیهٔ سبد + سایدبار + سبد کشویی هدر */
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json($this->ajaxPayload());
+        }
+
         return response('success');
     }
 
@@ -167,6 +177,43 @@ class CartController extends Controller
             DB::table('cart_product')->where('cart_id', $cart->id)->where('id', $id)->delete();
         }
 
+        /* فاز ۱۶۱ — حذف محصول با AJAX و بدون رفرش صفحه */
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json($this->ajaxPayload());
+        }
+
         return redirect()->route('front.cart');
+    }
+
+    /**
+     * فاز ۱۶۱ — دادهٔ مشترک پاسخ‌های ای‌جکسی سبد خرید:
+     * ناحیهٔ صفحهٔ سبد (آیتم‌ها یا حالت خالی) + سایدبار + سبد کشویی + شمارنده
+     */
+    private function ajaxPayload(): array
+    {
+        /* رابطهٔ products بعد از تغییرات باید تازه شود */
+        $cart = get_cart();
+
+        if ($cart) {
+            $cart->unsetRelation('products');
+            $cart->load('products');
+        }
+
+        $hasItems = $cart && $cart->products->count();
+
+        return [
+            'status'    => 'success',
+            'cart_count' => $hasItems ? $cart->products->count() : 0,
+            /* ناحیهٔ اصلی صفحهٔ سبد — یا لیست یا حالت خالی */
+            'area'      => $hasItems
+                ? view('front::carts.partials.cart-page-area', ['cart' => $cart])->render()
+                : view('front::carts.partials.cart-empty-area')->render(),
+            /* سایدبار سفارش شما (در صفحهٔ سبد و پرداخت) */
+            'sidebar'   => $hasItems
+                ? view('front::carts.partials.checkout-sidebar', ['cart' => $cart])->render()
+                : '',
+            /* سبد کشویی هدر (سایدبار سمت چپ) */
+            'cart'      => view('front::partials.cart', ['render_cart' => $cart])->render(),
+        ];
     }
 }

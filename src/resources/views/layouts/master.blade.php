@@ -62,7 +62,7 @@
     <link rel="stylesheet" href="{{ theme_asset('plugin/swiper/swiper-bundle.min.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('plugin/timer/timer.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('plugin/bootstrap-touchspin/jquery.bootstrap-touchspin.min.css') }}">
-    <link rel="stylesheet" href="{{ theme_asset('css/style.css') }}?v=160">
+    <link rel="stylesheet" href="{{ theme_asset('css/style.css') }}?v=161">
     <link rel="stylesheet" href="{{ theme_asset('css/responsive.css') }}">
 
     {{-- فاز ۱۵۷ — اسلایدر owl در ویجت‌های پنل کاربری استفاده می‌شود؛
@@ -70,12 +70,12 @@
     <link rel="stylesheet" href="{{ theme_asset('css/owl.carousel.min.css') }}">
 
     {{-- فاز ۱۵۵ — اصلاحات ظاهری ریز (هدر/محصول/صفحات) --}}
-    <link rel="stylesheet" href="{{ theme_asset('css/theme-header.css') }}?v=160">
-    <link rel="stylesheet" href="{{ theme_asset('css/theme-product.css') }}?v=19">
+    <link rel="stylesheet" href="{{ theme_asset('css/theme-header.css') }}?v=161">
+    <link rel="stylesheet" href="{{ theme_asset('css/theme-product.css') }}?v=20">
     <link rel="stylesheet" href="{{ theme_asset('css/theme-pages.css') }}">
 
     {{-- فاز ۱۵۶/۱۵۸ — حالت شب (دارک مود) — بعد از همهٔ استایل‌ها تا بتواند بازنویسی کند --}}
-    <link rel="stylesheet" href="{{ theme_asset('css/theme-dark.css') }}?v=20">
+    <link rel="stylesheet" href="{{ theme_asset('css/theme-dark.css') }}?v=21">
 
     {{-- CSS عملکردی مشترک (توست‌ها + آیکون‌های منوهای داینامیک) --}}
     <link rel="stylesheet" href="{{ theme_asset('js/plugins/toastr/toastr.css') }}">
@@ -496,7 +496,7 @@
 {{-- فاز ۱۵۶ — پلاگین go-to-top حذف شد؛ دکمهٔ مستطیلی «برگشت به بالا» در theme-header.js --}}
 <script src="{{theme_asset('plugin/rasta-contact/script.js')}}"></script>
 <script src="{{theme_asset('js/saniar-init.js')}}"></script>
-<script src="{{theme_asset('js/theme-header.js')}}?v=19"></script>
+<script src="{{theme_asset('js/theme-header.js')}}?v=20"></script>
 
 {{-- اسکریپت‌های عملکردی فروشگاه --}}
 <script src="{{ theme_asset("js/plugins/sweetalert2.all.min.js") }}"></script>
@@ -508,7 +508,7 @@
 <script src="{{theme_asset('js/owl.carousel.min.js')}}"></script>
 <script src="{{ asset('back/assets/js/customToast.js') }}?v=8"></script>
 <script src="{{ theme_asset("js/scripts.js") }}?v=11"></script>
-<script src="{{theme_asset('js/main.js')}}?v=17"></script>
+<script src="{{theme_asset('js/main.js')}}?v=18"></script>
 @stack('scripts')
 
 {!! option('info_scripts') !!}

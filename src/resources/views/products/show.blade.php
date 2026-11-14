@@ -804,8 +804,8 @@
      @if(option('dt_price_alert_status', '1') == '1')
         <script src="{{ theme_asset('js/pages/products/price-alert.js') }}"></script>
      @endif
-   <script src="{{ theme_asset('js/pages/products/show.js') }}?v=18"></script>
+   <script src="{{ theme_asset('js/pages/products/show.js') }}?v=19"></script>
    <script src="{{ theme_asset('js/pages/comments.js') }}"></script>
    {{-- فاز ۱۵۵ — منطق لحظه‌ای قیمت + تعویض تصویر گالری (بدون اسکریپت اینلاین) --}}
-   <script src="{{ theme_asset('js/theme-product.js') }}?v=3"></script>
+   <script src="{{ theme_asset('js/theme-product.js') }}?v=4"></script>
 @endpush

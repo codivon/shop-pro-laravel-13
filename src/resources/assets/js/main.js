@@ -666,6 +666,138 @@ $(document).on('click', '.add-to-cart-single', function () {
     });
 });
 
+/* ============================================================
+   فاز ۱۶۱ — سبد کشویی هدر (سایدبار سمت چپ) بدون خروج از صفحه:
+   - حذف محصول با AJAX (بدون سابمیت فرم داخل تگ a)
+   - تغییر تعداد با دکمه‌های +/− به‌صورت زنده
+   - جمع کل آیتم‌ها و شمارندهٔ هدر بلافاصله به‌روز می‌شود
+   ============================================================ */
+
+/* اعمال پاسخ مشترک سبد (offcanvas + شمارنده) */
+function saniarApplyCartResponse(res) {
+    if (!res) return;
+
+    /* ناحیهٔ صفحهٔ سبد — اگر در صفحهٔ سبد باشیم */
+    if (res.area && $('#cart-main-area').length) {
+        $('#cart-main-area').replaceWith(res.area);
+    }
+
+    /* سایدبار «سفارش شما» — صفحهٔ سبد/پرداخت */
+    if (typeof res.sidebar === 'string') {
+        if (res.sidebar && $('#checkout-sidebar').length) {
+            $('#checkout-sidebar').replaceWith(res.sidebar);
+        } else if (!res.sidebar && $('#checkout-sidebar').length) {
+            $('#checkout-sidebar').replaceWith('<span id="checkout-sidebar"></span>');
+        }
+    }
+
+    /* سبد کشویی هدر + شمارنده */
+    if (res.cart) {
+        var wasOpen = $('.cart-canvas').hasClass('show');
+        $('.cart-canvas').replaceWith(res.cart);
+        window.SaniarThemeCartSync && window.SaniarThemeCartSync(res.cart, wasOpen);
+    }
+
+    /* صفحهٔ پرداخت: سایدبار تازه هزینهٔ ارسال ندارد → محاسبهٔ مجدد
+       (تابع getFinalPrice در js/pages/checkout.js سراسری است) */
+    if (typeof getFinalPrice === 'function' && $('.consignment-container .consignments').length) {
+        try { getFinalPrice(true); } catch (e) {}
+    }
+}
+
+/* حذف از سبد کشویی */
+$(document).on('click', '.cart-canvas .js-mini-cart-remove', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    var btn = this;
+    var action = $(btn).data('action');
+    if (!action) return;
+
+    block('.cart-canvas');
+
+    $.ajax({
+        type: 'POST',
+        url: action,
+        data: {
+            _method: 'DELETE',
+            _token: $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function (res) {
+            saniarApplyCartResponse(res);
+            showCustomToast('محصول از سبد خرید حذف شد', 'success');
+        },
+        error: function () {
+            showCustomToast('خطایی رخ داده است.', 'error');
+        },
+        complete: function () {
+            unblock('.cart-canvas');
+        }
+    });
+});
+
+/* تغییر تعداد در سبد کشویی (+/−) — زنده و ای‌جکسی */
+$(document).on('click', '.cart-canvas .js-mini-qty-btn', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    var $btn = $(this);
+    var $item = $btn.closest('.js-mini-cart-item');
+    var $input = $item.find('.js-mini-qty');
+    if (!$item.length || !$input.length) return;
+
+    var min = parseInt($input.data('min') || 1, 10);
+    var max = parseInt($input.data('max') || 100000000, 10);
+    var current = parseInt($input.val() || '1', 10);
+    var next = $btn.data('dir') === 'up' ? current + 1 : current - 1;
+
+    if (next < min) {
+        /* رسیدن به حداقل با دکمهٔ − = حذف محصول (رفتار متعارف) */
+        $('.cart-canvas .js-mini-cart-remove[data-action="' + $item.find('.js-mini-cart-remove').data('action') + '"]').trigger('click');
+        return;
+    }
+    if (next > max) {
+        showCustomToast('شما بیشترین تعداد ممکن برای این محصول را انتخاب کرده اید', 'error');
+        return;
+    }
+
+    /* ارسال همهٔ اقلام (مطابق انتظار PUT سبد) با مقدار تغییر یافته */
+    var data = {
+        _method: 'PUT',
+        _token: $('meta[name="csrf-token"]').attr('content')
+    };
+    $('.cart-canvas .js-mini-cart-item').each(function () {
+        var $row = $(this);
+        var pivot = $row.data('pivot');
+        var qty = $row.is($item) ? next : parseInt($row.find('.js-mini-qty').val() || '1', 10);
+        if (pivot) { data['product-' + pivot] = qty; }
+    });
+
+    block('.cart-canvas');
+
+    $.ajax({
+        type: 'POST',
+        url: '/cart',
+        data: data,
+        success: function (res) {
+            saniarApplyCartResponse(res);
+        },
+        error: function (request) {
+            var errors = request.responseJSON && request.responseJSON.errors;
+            if (errors && errors.length) {
+                errors.forEach(function (error) {
+                    showCustomToast(error, 'error');
+                });
+            } else {
+                showCustomToast('خطایی رخ داده است.', 'error');
+            }
+        },
+        complete: function () {
+            unblock('.cart-canvas');
+        }
+    });
+});
+
 $('#newsletter-form').on('submit', function(e) {
     e.preventDefault();
     block('#newsletter-form');

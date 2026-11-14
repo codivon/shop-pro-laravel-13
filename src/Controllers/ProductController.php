@@ -613,6 +613,8 @@ class ProductController extends Controller
             'selected_price',
             'attributeGroups',
             'get_stores',
+            /* فاز ۱۶۱ — رندر سرورِ کارت خرید سریع همراه پاسخ AJAX تعویض تنوع */
+            'include_quick_buy',
         ));
     }
 

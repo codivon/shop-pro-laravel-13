@@ -301,36 +301,19 @@
 
     {{-- فاز ۱۵۵ — جزیرهٔ دادهٔ تنوع‌ها برای به‌روزرسانی لحظه‌ای قیمت سمت کلاینت (theme-product.js).
          چون همین پارشال پس از هر تغییر تنوع جایگزین می‌شود، جزیرهٔ داده هم همیشه تازه است. --}}
-    @php
-        $variants_payload = [];
-        try {
-            /* فاز ۱۶۰ — منبع داده از getPrices() به prices() تغییر کرد.
-               getPrices() (saleablePrices) با فیلتر stock>0 و فروشنده‌های فعال،
-               روی محصولات ناموجود یا در حالت چندفروشندگیِ بدون فعال‌سازی،
-               خالی برمی‌گشت؛ جزیرهٔ JSON خالی می‌شد و به‌روزرسانی لحظه‌ایِ
-               خرید سریع از کار می‌افتاد. prices() همهٔ ردیف‌های قیمت محصول
-               را می‌دهد؛ صحت قیمت نهایی همچنان با پاسخ سرور تضمین می‌شود. */
-            foreach ($product->prices()->get() as $variant_price) {
-                /* فاز ۱۶۰ — خطای یک ردیف قیمت، کل جزیره را خالی نکند */
-                try {
-                    $variantAttributes = $variant_price->get_attributes();
-                    $variants_payload[] = [
-                        'id'         => (int) $variant_price->id,
-                        'attrs'      => $variantAttributes->pluck('id')->map(fn ($v) => (int) $v)->values()->all(),
-                        'attr_names' => $variantAttributes->map(fn ($a) => trim((string) $a->name))->filter()->values()->all(),
-                        'price'      => number_format($variant_price->regularPrice()),
-                        'sale'       => number_format($variant_price->salePrice()),
-                        'discount'   => $variant_price->hasDiscount() ? (int) $variant_price->discount() : 0,
-                        'stock'      => (int) $variant_price->stock,
-                    ];
-                } catch (\Throwable $variant_row_exception) {
-                    continue;
-                }
-            }
-        } catch (\Throwable $variants_exception) {
-            $variants_payload = [];
-        }
-    @endphp
-    <script type="application/json" id="js-product-variants-data" aria-hidden="true">{!! json_encode($variants_payload, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
+    {{-- فاز ۱۶۱ — ساخت جزیره با saniar_variants_payload() (کوئری خام مقاوم):
+         ساخت قبلی با روابط مدل روی سایت واقعی استثنا می‌داد و جزیره همیشه []
+         می‌شد؛ نتیجه: خرید سریع با تغییر تنوع به‌روز نمی‌شد. --}}
+    <script type="application/json" id="js-product-variants-data" aria-hidden="true">{!! json_encode(saniar_variants_payload($product), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
+
+    {{-- فاز ۱۶۱ — رندر سرورِ کارت خرید سریع هنگام AJAX تعویض تنوع (فقط از
+         مسیر ProductController@prices با include_quick_buy=true)؛ show.js این
+         باکس را با نمونهٔ زندهٔ صفحه جایگزین می‌کند تا خرید سریع همیشه دقیقاً
+         با تنوع/قیمت سرور یکی باشد. --}}
+    @if (!empty($include_quick_buy))
+        <div class="js-quick-buy-replacement d-none" aria-hidden="true">
+            @include('front::products.partials.quick-buy-box')
+        </div>
+    @endif
 
 </div>
