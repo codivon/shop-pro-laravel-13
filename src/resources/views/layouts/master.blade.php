@@ -497,7 +497,7 @@
 {{-- فاز ۱۵۶ — پلاگین go-to-top حذف شد؛ دکمهٔ مستطیلی «برگشت به بالا» در theme-header.js --}}
 <script src="{{theme_asset('plugin/rasta-contact/script.js')}}"></script>
 <script src="{{theme_asset('js/saniar-init.js')}}?v=164"></script>
-<script src="{{theme_asset('js/theme-header.js')}}?v=21"></script>
+<script src="{{theme_asset('js/theme-header.js')}}?v=22"></script>
 
 {{-- اسکریپت‌های عملکردی فروشگاه --}}
 <script src="{{ theme_asset("js/plugins/sweetalert2.all.min.js") }}"></script>

@@ -176,26 +176,34 @@
             input.addEventListener('focus', showIdlePanel);
             input.addEventListener('click', showIdlePanel);
 
-            /* تایپ → نتایج زنده */
+            /* تایپ → نتایج زنده
+               فاز ۱۶۹ — دیبانس ۳۰۰ میلی‌ثانیه‌ای:
+               تا وقتی کاربر در حال تایپ است هیچ درخواستی زده نمی‌شود؛
+               جستجو فقط ۳۰۰ms بعد از آخرین کاراکتر اجرا می‌شود و
+               پیام «در حال جستجو…» هم فقط پس از همین مکث نمایش داده می‌شود
+               (قبلاً با هر بار فشار دادن کلید فوراً نمایش داده می‌شد). */
+            var SEARCH_DEBOUNCE = 300;
+
             input.addEventListener('input', function () {
                 window.clearTimeout(timer);
                 var q = (input.value || '').trim();
 
                 if (q.length < 2) {
-                    timer = window.setTimeout(showIdlePanel, 120);
+                    timer = window.setTimeout(showIdlePanel, SEARCH_DEBOUNCE);
                     return;
                 }
 
-                panel.innerHTML = '<div class="sr2-empty"><i class="bi bi-arrow-repeat"></i> در حال جستجو…</div>';
-                panel.classList.add('open');
-
                 timer = window.setTimeout(function () {
                     if ((input.value || '').trim() !== q) { return; }
+
+                    panel.innerHTML = '<div class="sr2-empty"><i class="bi bi-arrow-repeat"></i> در حال جستجو…</div>';
+                    panel.classList.add('open');
+
                     fetchSuggest(q, function (data) {
                         if ((input.value || '').trim() !== q) { return; }
                         renderResults(panel, data, q);
                     });
-                }, 250);
+                }, SEARCH_DEBOUNCE);
             });
 
             /* کلیک روی چیپ‌ها → جستجوی همان عبارت */
