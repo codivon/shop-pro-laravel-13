@@ -635,24 +635,24 @@ html[data-theme="dark"] .theme-toggle-btn {
 
 /* ============================================================
    فاز ۱۵۶ — دکمهٔ «برگشت به بالا»
-   مستطیلی، چسبیده به لبهٔ چپ، وسط ارتفاع صفحه
+   فاز ۱۶۸ — قرصی‌شکل، وسط و پایین صفحه (با رعایت safe-area iOS)
    ============================================================ */
 #back-to-top {
     position: fixed;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%) translateX(-110%);
+    left: 50%;
+    bottom: 26px;
+    bottom: calc(26px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%) translateY(220%);
     z-index: 9500;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 12px 16px;
+    padding: 11px 20px;
     background: #fff;
     color: #444;
     border: 1px solid #ececf1;
-    border-right: 0;
-    border-radius: 0 10px 10px 0; /* فاز ۱۵۸ — گوشه‌های سمت محتوا گرد باشند */
-    box-shadow: 0 6px 18px rgba(0, 0, 0, .12);
+    border-radius: 999px;
+    box-shadow: 0 12px 30px -8px rgba(13, 36, 76, .35);
     cursor: pointer;
     font-size: 13px;
     font-weight: 700;
@@ -671,12 +671,13 @@ html[data-theme="dark"] .theme-toggle-btn {
 #back-to-top.is-visible {
     opacity: 1;
     visibility: visible;
-    transform: translateY(-50%) translateX(0);
+    transform: translateX(-50%) translateY(0);
 }
 
 #back-to-top:hover {
     background: var(--main-color-one, #18baa5);
     color: #fff;
+    transform: translateX(-50%) translateY(-5px);
 }
 
 #back-to-top:hover i {
@@ -2436,4 +2437,130 @@ html[data-theme="dark"] .mini-blog-item:hover {
 
 html[data-theme="dark"] .mini-blog-item .desc .title {
     color: var(--dk-text);
+}
+
+/* ==================================================================
+   فاز ۱۶۸ — دارک مود ویجت‌های بازطراحی‌شدهٔ صفحهٔ مقالات
+   (چیپ، مقالهٔ بزرگ hero، فهرست مقالات، فالبک‌های آیکونی،
+   متا و آواتار نویسنده)
+   ================================================================== */
+
+/* چیپ دسته‌بندی روی تصویر */
+html[data-theme="dark"] .snr-chip {
+    background-color: rgba(30, 34, 43, .92);
+    color: #7ea4ff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .45);
+}
+
+html[data-theme="dark"] a:hover .snr-chip,
+html[data-theme="dark"] .blog-item:hover .snr-chip {
+    background-color: var(--main-color-one);
+    color: #fff;
+}
+
+/* دکمهٔ پخش */
+html[data-theme="dark"] .snr-play {
+    background-color: rgba(30, 34, 43, .92);
+    color: #7ea4ff;
+}
+
+html[data-theme="dark"] a:hover .snr-play {
+    background-color: var(--main-color-one);
+    color: #fff;
+}
+
+/* فالبک مقالهٔ بدون تصویر */
+html[data-theme="dark"] .snr-no-image {
+    background:
+        radial-gradient(120% 120% at 100% 0%, rgba(126, 164, 255, .10) 0%, rgba(0, 0, 0, 0) 55%),
+        linear-gradient(135deg, #20242e 0%, #191d25 100%);
+    color: #7ea4ff;
+}
+
+/* کارت مقاله (کارت جدید فاز ۱۶۸) */
+html[data-theme="dark"] .snr-post-card {
+    background-color: var(--dk-surface);
+    box-shadow: var(--dk-shadow);
+}
+
+html[data-theme="dark"] .snr-post-card .title h4 {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .snr-post-card .title .meta-row {
+    color: var(--dk-text-muted);
+}
+
+/* مقالهٔ بزرگ (hero) */
+html[data-theme="dark"] .snr-post-hero {
+    background-color: var(--dk-surface);
+    box-shadow: var(--dk-shadow);
+}
+
+html[data-theme="dark"] .snr-post-hero .title a {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .snr-post-hero .excerpt,
+html[data-theme="dark"] .snr-post-hero .meta {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .snr-post-hero .meta {
+    border-top-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .snr-post-hero .meta .name {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .snr-post-hero .meta .more {
+    color: #7ea4ff;
+}
+
+html[data-theme="dark"] .snr-avatar {
+    border-color: var(--dk-surface-2);
+}
+
+html[data-theme="dark"] .snr-avatar-icon {
+    color: #7ea4ff;
+}
+
+/* فهرست مقالات کوچک */
+html[data-theme="dark"] .snr-post-item {
+    background-color: var(--dk-surface);
+    box-shadow: var(--dk-shadow);
+}
+
+html[data-theme="dark"] .snr-post-item .title a {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .snr-post-item .cat {
+    color: #7ea4ff;
+}
+
+html[data-theme="dark"] .snr-post-item .meta {
+    color: var(--dk-text-muted);
+}
+
+/* کارت دسته‌بندی + فالبک آیکونی */
+html[data-theme="dark"] .snr-cat-card {
+    background-color: var(--dk-surface) !important;
+    box-shadow: var(--dk-shadow);
+}
+
+html[data-theme="dark"] .snr-cat-card .text p {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .snr-cat-fallback {
+    background:
+        radial-gradient(120% 120% at 100% 0%, rgba(126, 164, 255, .10) 0%, rgba(0, 0, 0, 0) 60%),
+        linear-gradient(135deg, #20242e 0%, #191d25 100%);
+    color: #7ea4ff;
+}
+
+html[data-theme="dark"] .snr-cat-more {
+    color: #7ea4ff;
 }

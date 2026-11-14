@@ -1,6 +1,7 @@
 {{-- فاز ۱۶۶ — هدر وبلاگ سانیار (مطابق blog.html تمپلیت) --}}
 {{-- جستجوی مقالات + فهرست دسته‌بندی‌ها (سایدبار) + بنر + خبرهای داغ --}}
 {{-- استایلها در style.css تمپلیت (بخش .side-right-blog / .blog-news-item / .navbar-blog) --}}
+{{-- فاز ۱۶۸ — بنر بدون تصویر رندر نمی‌شود (به‌جای کادر «تصویری انتخابی نیست») --}}
 @php
     $variables            = get_widget($widget);
     $blogHeaderCategories = $variables['blog_header_categories'] ?? collect();
@@ -11,7 +12,7 @@
     $blogCatIcons = ['bi-newspaper', 'bi-bounding-box-circles', 'bi-controller', 'bi-journal-richtext', 'bi-film', 'bi-cup-hot', 'bi-tag', 'bi-book'];
 @endphp
 
-@if($widget->option('show_search', 'yes') === 'yes' || $widget->option('show_categories', 'yes') === 'yes' || $blogHeaderBanner || count($blogHeaderNews))
+@if($widget->option('show_search', 'yes') === 'yes' || $widget->option('show_categories', 'yes') === 'yes' || ($blogHeaderBanner && $blogHeaderBanner->image) || count($blogHeaderNews))
     <div class="container-fluid py-20">
         <div class="row gy-3">
             {{-- سایدبار: جستجو + دسته‌بندی‌ها --}}
@@ -62,11 +63,11 @@
             @endif
 
             {{-- بنر + خبرهای داغ --}}
-            @if($blogHeaderBanner || count($blogHeaderNews))
+            @if(($blogHeaderBanner && $blogHeaderBanner->image) || count($blogHeaderNews))
                 <div class="{{ ($widget->option('show_search', 'yes') === 'yes' || ($widget->option('show_categories', 'yes') === 'yes' && count($blogHeaderCategories))) ? 'col-lg-9' : 'col-12' }}">
                     <div class="side-left-blog">
                         <div class="row gy-3">
-                            @if($blogHeaderBanner)
+                            @if($blogHeaderBanner && $blogHeaderBanner->image)
                                 <div class="col-12">
                                     @if($blogHeaderBanner->link)
                                         <a href="{{ $blogHeaderBanner->link }}" aria-label="{{ $blogHeaderBanner->title ?: 'بنر' }}">

@@ -2,6 +2,9 @@
 {{-- اسلاید بزرگ جزئیات محصول + فهرست کارت‌های کوچک کنارش با تایمر --}}
 {{-- مارکاپ اسلایدرها در js/app.js (amazing-slider-slider / amazing-slider-link) --}}
 {{-- استایلها در style.css تمپلیت (بخش .amazing) + دارک مود در theme-dark.css --}}
+{{-- فاز ۱۶۸ — رفع ارور SQLSTATE[42S22] (Unknown column 'discount'):
+     ستون discount در جدول products وجود ندارد؛ درصد تخفیف از رابطهٔ
+     lowestPrice (متد Price::discount) خوانده می‌شود --}}
 @php
     $variables = get_widget($widget);
     $amazing_products = $variables['amazing_products'] ?? collect();
@@ -59,8 +62,9 @@
                                                                             {{ $product->title }}
                                                                         </a>
                                                                     </h3>
-                                                                    @if($product->discount)
-                                                                        <span class="discount danger-label mt-sm-0 mt-3">{{ $product->discount }}٪ تخفیف</span>
+                                                                    @php $amazingDiscount = front_product_discount_percent($product); @endphp
+                                                                    @if($amazingDiscount)
+                                                                        <span class="discount danger-label mt-sm-0 mt-3">{{ $amazingDiscount }}٪ تخفیف</span>
                                                                     @endif
                                                                 </div>
                                                             </div>

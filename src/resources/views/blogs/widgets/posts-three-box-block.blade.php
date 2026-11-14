@@ -1,7 +1,12 @@
-{{-- سه‌بلاک مطالب وبلاگ سانیار (blog-news-item) — یک پست بزرگ + پست‌های کوچک --}}
+{{-- کادر مقالات 3 باکس سانیار — فاز ۱۶۸: بازطراحی مطابق نمونهٔ «مقالات تماشائی» --}}
+{{-- مقالهٔ بزرگ (تصویر + چیپ دسته + خلاصه + متای نویسنده) + فهرست عمودی مقالات کوچک --}}
 @php
     $variables = get_widget($widget);
-    $posts     = $variables['posts'];
+    $posts     = $variables['posts']->values();
+    $threeBoxCat = $posts->count() ? $posts->first()->category : null;
+    $threeBoxExcerpt = $posts->count()
+        ? trim(strip_tags((string) ($posts->first()->summary ?: $posts->first()->short_description ?? '')))
+        : '';
 @endphp
 
 @if ($posts->count())
@@ -10,7 +15,7 @@
             <div class="header-content mb-4 bg-white shadow-box rounded-3 p-3 d-flex align-items-center justify-content-between flex-wrap">
                 <div class="title d-flex align-items-center">
                     <img src="{{ theme_asset('image/square.png') }}" alt="" class="img-fluid">
-                    <h5 class="font-16 ms-3">{{ $widget->option('title', 'منتخب') }} <span class="main-color-one-color d-inline-block">وبلاگ</span></h5>
+                    <h5 class="font-16 ms-3">{{ $widget->option('title', 'منتخب') }} <span class="main-color-one-color d-inline-block">مقالات</span></h5>
                 </div>
                 @if($widget->option('link_title') and $widget->option('link'))
                     <div class="link">
@@ -22,86 +27,89 @@
                 @endif
             </div>
 
-            <div class="row gy-3">
-                @forelse($posts as $index => $post)
-                    @if($index == 0)
-                        {{-- پست اول (بزرگ) --}}
-                        <div class="col-lg-6 col-12">
-                            <div class="blog-news-item h-100">
-                                <a href="{{ route('front.articles.show', ['slug' => $post->slug]) }}">
-                                    <img src="{{ $post->image ? asset($post->image) : asset('/no-image-product.svg') }}" alt="{{ $post->title }}" class="img-fluid">
-                                    <div class="desc">
-                                        <h3 class="title">
-                                            @if($post->post_type=="video")
-                                                <i class="bi bi-play-circle-fill main-color-one-color me-1"></i>
-                                            @elseif($post->post_type=="podcast")
-                                                <i class="bi bi-soundwave main-color-one-color me-1"></i>
-                                            @endif
-                                            {{ $post->title }}
-                                        </h3>
-                                        <div class="date">
-                                            <span class="text-date">{{ jdate($post->created_at)->format('d F Y') }}</span>
-                                            <i class="bi bi-arrow-left"></i>
-                                        </div>
-                                    </div>
+            <div class="row gy-4">
+                {{-- مقالهٔ اصلی (بزرگ) --}}
+                <div class="{{ $posts->count() > 1 ? 'col-lg-7' : 'col-12' }} col-12">
+                    @php $post = $posts->first(); @endphp
+                    <article class="snr-post-hero">
+                        <a href="{{ route('front.articles.show', ['slug' => $post->slug]) }}" class="image" aria-label="{{ $post->title }}">
+                            @if($post->image)
+                                <img src="{{ asset($post->image) }}" alt="{{ $post->title }}" class="img-fluid">
+                            @else
+                                <span class="snr-no-image" role="img" aria-label="تصویری برای این مقاله ثبت نشده است">
+                                    <i class="bi bi-images"></i>
+                                </span>
+                            @endif
+                            @if($post->category)
+                                <span class="snr-chip">
+                                    <i class="bi bi-tag"></i>
+                                    {{ $post->category->title }}
+                                </span>
+                            @endif
+                            @if($post->post_type === 'video')
+                                <span class="snr-play"><i class="bi bi-play-fill"></i></span>
+                            @elseif($post->post_type === 'podcast')
+                                <span class="snr-play"><i class="bi bi-soundwave"></i></span>
+                            @endif
+                        </a>
+                        <div class="body">
+                            <h3 class="title">
+                                <a href="{{ route('front.articles.show', ['slug' => $post->slug]) }}">{{ $post->title }}</a>
+                            </h3>
+                            @if($threeBoxExcerpt)
+                                <p class="excerpt">{{ \Illuminate\Support\Str::limit($threeBoxExcerpt, 190) }}</p>
+                            @endif
+                            <div class="meta">
+                                @if($post->admin)
+                                    <img class="snr-avatar" src="{{ $post->admin->imageUrl }}" alt="{{ $post->admin->full_name ?? 'نویسنده' }}" loading="lazy">
+                                    <span class="name">{{ $post->admin->full_name ?? 'نویسنده' }}</span>
+                                @else
+                                    <i class="bi bi-person-circle snr-avatar-icon"></i>
+                                    <span class="name">نویسنده</span>
+                                @endif
+                                <span class="dot"></span>
+                                <span><i class="bi bi-calendar3"></i>{{ jdate($post->created_at)->format('d F Y') }}</span>
+                                <span class="dot"></span>
+                                <span><i class="bi bi-eye"></i>{{ number_format((int) $post->view) }} بازدید</span>
+                                <a class="more ms-auto" href="{{ route('front.articles.show', ['slug' => $post->slug]) }}">
+                                    ادامه مطلب
+                                    <i class="bi bi-arrow-left"></i>
                                 </a>
-                                {{-- متا (خارج از لینک کارت) --}}
-                                <div class="d-flex align-items-center justify-content-between px-3 pb-3 flex-wrap gap-1">
-                                    @if($post->categories())
-                                        <a class="font-12 main-color-one-color text-decoration-none" href="{{ route('front.articles.index').'?cat='.$post->categories()->first()->slug }}">
-                                            {{ $post->categories()->first()->title }}
-                                        </a>
-                                    @endif
-                                    <div class="d-flex align-items-center">
-                                        <img class="rounded-circle me-2" src="{{ $post->admin->imageUrl }}" alt="{{ $post->admin->full_name ?? 'ناشناس' }}" width="28" height="28" loading="lazy">
-                                        <a class="text-muted font-12" href="{{ route('front.articles.index', ['profile' => $post->admin->username]) }}">{{ $post->admin->full_name ?? 'ناشناس' }}</a>
-                                    </div>
-                                    <span class="text-muted font-12"><i class="bi bi-eye me-1"></i>{{ number_format($post->view) }} بازدید</span>
-                                </div>
                             </div>
                         </div>
+                    </article>
+                </div>
 
-                        {{-- پست‌های بعدی (کوچک) --}}
-                        @if($posts->count() > 1)
-                            <div class="col-lg-6 col-12">
-                                <div class="row gy-3">
-                                    @foreach($posts->skip(1) as $smallPost)
-                                        <div class="col-lg-6 col-12">
-                                            <div class="blog-news-item h-100">
-                                                <a href="{{ route('front.articles.show', ['slug' => $smallPost->slug]) }}">
-                                                    <img src="{{ $smallPost->image ? asset($smallPost->image) : asset('/no-image-product.svg') }}" alt="{{ $smallPost->title }}" class="img-fluid">
-                                                    <div class="desc">
-                                                        <h3 class="title">
-                                                            @if($smallPost->post_type=="video")
-                                                                <i class="bi bi-play-circle-fill main-color-one-color me-1"></i>
-                                                            @elseif($smallPost->post_type=="podcast")
-                                                                <i class="bi bi-soundwave main-color-one-color me-1"></i>
-                                                            @endif
-                                                            {{ $smallPost->title }}
-                                                        </h3>
-                                                        <div class="date">
-                                                            <span class="text-date">{{ jdate($smallPost->created_at)->format('d F Y') }}</span>
-                                                            <i class="bi bi-arrow-left"></i>
-                                                        </div>
-                                                    </div>
-                                                </a>
-                                                @if($smallPost->categories())
-                                                    <a class="d-block px-3 pb-2 font-12 main-color-one-color text-decoration-none" href="{{ route('front.articles.index').'?cat='.$smallPost->categories()->first()->slug }}">
-                                                        {{ $smallPost->categories()->first()->title }}
-                                                    </a>
-                                                @endif
-                                            </div>
+                {{-- فهرست مقالات کوچک --}}
+                @if($posts->count() > 1)
+                    <div class="col-lg-5 col-12">
+                        <div class="snr-post-list">
+                            @foreach($posts->skip(1) as $smallPost)
+                                <article class="snr-post-item">
+                                    <a href="{{ route('front.articles.show', ['slug' => $smallPost->slug]) }}" class="image" aria-label="{{ $smallPost->title }}">
+                                        @if($smallPost->image)
+                                            <img src="{{ asset($smallPost->image) }}" alt="{{ $smallPost->title }}" loading="lazy" decoding="async">
+                                        @else
+                                            <span class="snr-no-image snr-no-image-sm" role="img" aria-label="بدون تصویر"><i class="bi bi-images"></i></span>
+                                        @endif
+                                    </a>
+                                    <div class="body">
+                                        @if($smallPost->category)
+                                            <a class="cat" href="{{ route('front.articles.index').'?cat='.$smallPost->category->slug }}">{{ $smallPost->category->title }}</a>
+                                        @endif
+                                        <h5 class="title">
+                                            <a href="{{ route('front.articles.show', ['slug' => $smallPost->slug]) }}">{{ $smallPost->title }}</a>
+                                        </h5>
+                                        <div class="meta">
+                                            <span><i class="bi bi-calendar3"></i>{{ jdate($smallPost->created_at)->format('d F Y') }}</span>
+                                            <span><i class="bi bi-eye"></i>{{ number_format((int) $smallPost->view) }} بازدید</span>
                                         </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endif
-                    @endif
-                @empty
-                    <div class="col-12 text-center">
-                        <p>مقاله‌ای برای نمایش وجود ندارد.</p>
+                                    </div>
+                                </article>
+                            @endforeach
+                        </div>
                     </div>
-                @endforelse
+                @endif
             </div>
         </div>
     </div>

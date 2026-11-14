@@ -87,6 +87,28 @@ function front_category_children($category)
 }
 }
 
+/**
+ * فاز ۱۶۸ — درصد تخفیف محصول از رابطهٔ lowestPrice (Price::discount).
+ * ستون discount در جدول products وجود ندارد؛ این تابع امن نوشته شده تا اگر
+ * رابطه خالی بود یا ساختارش تغییر کرد، به‌جای خطا null برگرداند (نشان مخفی می‌شود).
+ */
+if (!function_exists('front_product_discount_percent')) {
+function front_product_discount_percent($product)
+{
+    try {
+        $lowestPrice = $product->lowestPrice;
+
+        if (is_object($lowestPrice) && ! $lowestPrice instanceof \Illuminate\Support\Collection && method_exists($lowestPrice, 'discount')) {
+            return $lowestPrice->discount();
+        }
+    } catch (\Throwable $e) {
+        return null;
+    }
+
+    return null;
+}
+}
+
 if (!function_exists('get_widget')) {
 function get_widget($widget)
 {
@@ -226,7 +248,6 @@ function get_widget_uncached($widget)
                     'image',
                     'special',
                     'special_end_date',
-                    'discount',
                     'image_alt'
                 )
                 ->published()
@@ -396,7 +417,8 @@ function get_widget_uncached($widget)
         }
 
         case 'posts': {
-            $posts = Post::query();
+            /* فاز ۱۶۸ — with(category) برای جلوگیری از N+1 در کارت مقاله (blog-card) */
+            $posts = Post::query()->with('category:id,title,slug');
 
             $category_filter = $widget->options->where('key', 'categories')->first();
             if ($ids = front_widget_category_ids($category_filter)) {
@@ -550,8 +572,9 @@ function get_widget_uncached($widget)
         }
 
         case 'posts-three-box-block': {
+            /* فاز ۱۶۸ — with(admin): جلوگیری از N+1 متای نویسنده در کارت بزرگ */
             $posts = Post::query()
-                ->with('category:id,title,slug');
+                ->with(['category:id,title,slug', 'admin']);
 
             $category_filter = $widget->options->where('key', 'post_categories')->first();
             if ($category_filter && $category_filter->hasCategory()) {
@@ -594,8 +617,9 @@ function get_widget_uncached($widget)
         }
 
         case 'posts-big-box-block': {
+            /* فاز ۱۶۸ — with(admin): جلوگیری از N+1 متای نویسنده در کارت بزرگ */
             $posts = Post::query()
-                ->with('category:id,title,slug');
+                ->with(['category:id,title,slug', 'admin']);
 
             $category_filter = $widget->options->where('key', 'post_categories')->first();
             if ($category_filter && $category_filter->hasCategory()) {

@@ -1,4 +1,4 @@
-{{-- گرید مطالب وبلاگ سانیار (gird-post-blog) — saniar blog-item --}}
+{{-- گرید مطالب وبلاگ سانیار (gird-post-blog) — فاز ۱۶۸: کارت مدرن مشترک (blog-card) --}}
 @php
     $variables = get_widget($widget);
     $posts     = $variables['posts'];
@@ -24,36 +24,10 @@
         </div>
 
         <div class="container-fluid">
-            <div class="row gy-3">
+            <div class="row gy-4 justify-content-center">
                 @foreach($posts as $post)
-                    <div class="col-lg-3 col-sm-6 col-12">
-                        <div class="blog-item">
-                            <a href="{{ route('front.articles.show', ['slug' => $post->slug]) }}">
-                                <div class="image">
-                                    <img src="{{ $post->image ? asset($post->image) : asset('/no-image-product.svg') }}" alt="{{ $post->title }}" class="img-fluid">
-                                </div>
-                                <div class="title">
-                                    <div class="d-flex align-items-center justify-content-between">
-                                        <div class="title-item">
-                                            <i class="bi bi-tag me-1"></i>
-                                            <span class="font-12">{{ $post->category ? $post->category->title : 'دسته بندی نشده' }}</span>
-                                        </div>
-                                        <div class="title-item">
-                                            <i class="bi bi-alarm me-1"></i>
-                                            <span class="font-12">{{ jdate($post->created_at)->format('d F Y') }}</span>
-                                        </div>
-                                    </div>
-                                    <h4 class="font-16 text-overflow-1 h4">
-                                        @if($post->post_type=="video")
-                                            <i class="bi bi-play-circle-fill main-color-one-color me-1"></i>
-                                        @elseif($post->post_type=="podcast")
-                                            <i class="bi bi-soundwave main-color-one-color me-1"></i>
-                                        @endif
-                                        {{ $post->title }}
-                                    </h4>
-                                </div>
-                            </a>
-                        </div>
+                    <div class="col-lg-3 col-md-4 col-sm-6 col-12">
+                        @include('front::partials.blog-card', ['post' => $post])
                     </div>
                 @endforeach
             </div>

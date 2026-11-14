@@ -1,4 +1,4 @@
-{{-- اسلایدر مطالب وبلاگ سانیار (ویجت‌ساز وبلاگ) — saniar blog-item + swiper --}}
+{{-- اسلایدر مطالب وبلاگ سانیار (ویجت‌ساز وبلاگ) — فاز ۱۶۸: کارت مدرن مشترک (blog-card) --}}
 @php
     $variables = get_widget($widget);
     /* فاز ۱۶۷ — FIX: کلید خروجی helpers برای ویجت «posts» همان «posts» است
@@ -31,26 +31,7 @@
                     <div class="swiper-wrapper">
                         @foreach($posts as $post)
                             <div class="swiper-slide">
-                                <div class="blog-item">
-                                    <a href="{{ route('front.articles.show', ['slug' => $post->slug]) }}">
-                                        <div class="image">
-                                            <img src="{{ $post->image ? asset($post->image) : asset('/no-image-product.svg') }}" alt="{{ $post->title }}" class="img-fluid">
-                                        </div>
-                                        <div class="title">
-                                            <div class="d-flex align-items-center justify-content-between">
-                                                <div class="title-item">
-                                                    <i class="bi bi-tag me-1"></i>
-                                                    <span class="font-12">{{ $post->category ? $post->category->title : 'دسته بندی نشده' }}</span>
-                                                </div>
-                                                <div class="title-item">
-                                                    <i class="bi bi-alarm me-1"></i>
-                                                    <span class="font-12">{{ jdate($post->created_at)->format('%d %B %Y') }}</span>
-                                                </div>
-                                            </div>
-                                            <h4 class="font-16 text-overflow-1 h4">{{ $post->title }}</h4>
-                                        </div>
-                                    </a>
-                                </div>
+                                @include('front::partials.blog-card', ['post' => $post])
                             </div>
                         @endforeach
                     </div>

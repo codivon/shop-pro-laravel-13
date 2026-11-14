@@ -1,4 +1,4 @@
-{{-- دسته‌بندی مطالب وبلاگ سانیار — گرید category-item --}}
+{{-- دسته‌بندی مطالب وبلاگ سانیار — فاز ۱۶۸: کارت مدرن + فالبک آیکونی (بدون no-image محصول) --}}
 @php
     $variables  = get_widget($widget);
     $categories = $variables['categories'];
@@ -24,16 +24,23 @@
                 <div class="row gy-3 justify-content-center">
                     @foreach ($categories as $category)
                         <div class="col-lg-3 col-sm-6 col-12">
-                            <div class="category-item p-3 rounded-3 bg-white shadow-box">
-                                <a href="{{ route('front.articles.index').'?cat='.$category->slug }}">
+                            <div class="category-item snr-cat-card p-3 rounded-3 bg-white shadow-box">
+                                <a href="{{ route('front.articles.index').'?cat='.$category->slug }}" aria-label="{{ $category->title }}">
                                     <div class="d-flex align-items-center justify-content-md-flex-start justify-content-between">
                                         <div class="image">
-                                            <img src="{{ $category->image ? asset($category->image) : asset('/no-image-product.svg') }}" alt="{{ $category->title }}" class="img-fluid">
+                                            @if($category->image)
+                                                <img src="{{ asset($category->image) }}" alt="{{ $category->title }}" class="img-fluid" loading="lazy">
+                                            @else
+                                                <span class="snr-cat-fallback" role="img" aria-label="{{ $category->title }}">
+                                                    <i class="bi bi-journal-text"></i>
+                                                </span>
+                                            @endif
                                         </div>
                                         <div class="text ms-3">
-                                            <p class="text-center font-14 text-overflow-1">{{ $category->title }}</p>
-                                            <span class="btn text-muted-two btn-sm font-14 px-3 light-btn shadow-sm"><span>مشاهده</span>
-                                                <i class="bi bi-chevron-double-left font-16 main-color-one-color ms-2"></i></span>
+                                            <p class="font-14 fw-bold text-overflow-1 mb-2">{{ $category->title }}</p>
+                                            <span class="snr-cat-more">مشاهده مقالات
+                                                <i class="bi bi-chevron-double-left"></i>
+                                            </span>
                                         </div>
                                     </div>
                                 </a>

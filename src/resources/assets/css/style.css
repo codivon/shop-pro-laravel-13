@@ -2250,55 +2250,102 @@ a.image-data-src{
 
 /* start blog */
 
+/* فاز ۱۶۸ — کارت مقالهٔ مدرن (blog-card مشترک اسلایدر/گرید صفحهٔ مقالات) */
 .blog-item{
     background-color: #fff;
-    border-radius: 20px 20px 10px 10px;
+    border-radius: 18px;
     box-shadow: var(--shadow-box);
+    overflow: hidden;
+    height: 100%;
+    transition: transform .3s ease, box-shadow .3s ease;
+}
+
+.blog-item:hover{
+    transform: translateY(-5px);
+    box-shadow: 0 18px 36px -16px var(--main-color-one-shadow);
+}
+
+.blog-item > a{
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    color: inherit;
+    text-decoration: none;
+}
+
+.blog-item .image{
+    position: relative;
+    overflow: hidden;
+}
+
+.blog-item .image img{
+    display: block;
+    border-radius: 0;
+    filter: none;
+    transition: .5s all ease-in-out;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    height: auto;
+    object-fit: cover;
 }
 
 .blog-item:hover .image img{
+    transform: scale(1.06);
     filter: grayscale(0);
+}
+
+.blog-item .title{
+    padding: 14px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+
+.blog-item .title h4{
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 2;
+    font-family: var(--main-font), serif;
+    color: var(--color-site);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    transition: color .25s ease;
 }
 
 .blog-item:hover .title h4{
     color: var(--main-color-one);
 }
 
-.blog-item .title{
-    padding: 10px;
-}
-
-.blog-item .image img {
-    border-radius: 20px;
-    filter: grayscale(0%);
-    transition: 0.4s all ease-in-out;
-    height: 210px;
-    object-fit: cover;
-    width: 100%;
-}
-
-.blog-item .title-item{
-    border-radius: 10px;
-    padding: 2px 7px;
-}
-
-.blog-item .title-item span{
+.blog-item .title .meta-row{
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     font-size: 12px;
-    font-weight: bold;
+    color: var(--text-muted-two);
 }
 
-.blog-item .title-item i{
-    font-size: 16px;
+.blog-item .title .meta-row span{
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
 }
 
-
-.blog-item h4{
-    margin-top: 15px;
-    font-family: var(--main-font), serif;
+.blog-item .title .meta-row i{
+    font-size: 14px;
+    color: var(--main-color-one);
 }
 
+/* نوار رنگی پشت اسلایدر مطالب وبلاگ — متناسب با ارتفاع کارت مدرن (فاز ۱۶۸) */
 .blog-slider.site-slider-sm .parent::before {
-    height: 330px;
+    height: 260px;
 }
 
 
@@ -4136,7 +4183,9 @@ div#btncollapzion {
     position: relative;
 }
 
-.blog-news-item img{
+/* فاز ۱۶۸ — FIX: سلکتور قبلی «.blog-news-item img» به آواتار ۲۸ پیکسلی نویسنده هم
+   اعمال می‌شد و آن را به یک دایرهٔ غول‌پیکر تبدیل می‌کرد؛ حالا فقط تصویر اصلی کارت */
+.blog-news-item > a > img{
     width: 100%;
     border-radius: 15px;
     height: 285px;
@@ -6060,25 +6109,14 @@ div.countdown-bar div:nth-of-type(2) span {
 }
 
 /* ---------- ۳) گرید مطالب وبلاگ (posts-default-block) ---------- */
+/* فاز ۱۶۸ — کارت اکنون flex است (کارت مدرن مشترک)؛ این قواعد فقط ارتفاع و تصویر را تضمین می‌کنند */
 .gird-post-blog .blog-item {
     height: 100%;
 }
 
 .gird-post-blog .blog-item a {
-    display: block;
     color: inherit;
     text-decoration: none;
-}
-
-.gird-post-blog .blog-item .image {
-    border-radius: 20px 20px 0 0;
-    overflow: hidden;
-}
-
-.gird-post-blog .blog-item .image img {
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    object-fit: cover;
 }
 
 /* ---------- ۴) هشتگ‌های داغ (posts-tags) ---------- */
@@ -6155,11 +6193,11 @@ div.countdown-bar div:nth-of-type(2) span {
     display: block;
 }
 
-.blog-news-item img {
+.blog-news-item > a > img {
     transition: transform .5s ease;
 }
 
-.blog-news-item:hover img {
+.blog-news-item:hover > a > img {
     transform: scale(1.045);
 }
 
@@ -6219,4 +6257,439 @@ div.countdown-bar div:nth-of-type(2) span {
 .navbar-nav .nav-link:has(> .mini-blog-item) {
     padding: 0;
     background: transparent;
+}
+
+/* ==================================================================
+   فاز ۱۶۸ — بازطراحی ویجت‌های صفحهٔ مقالات (سبک مدرن مطابق نمونهٔ
+   «مقالات تماشائی / برگزیده‌ها»): چیپ روی تصویر، مقالهٔ بزرگ + فهرست،
+   فالبک آیکونی دسته‌بندی‌ها و مقالات بدون تصویر
+   ================================================================== */
+
+/* ---------- چیپ دسته‌بندی روی تصویر ---------- */
+.snr-chip{
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: calc(100% - 24px);
+    padding: 5px 12px;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, .92);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: var(--main-color-one);
+    font-size: 11.5px;
+    font-weight: 700;
+    line-height: 1.6;
+    box-shadow: 0 4px 14px rgba(13, 36, 76, .16);
+    transition: transform .25s ease, background-color .25s ease, color .25s ease;
+}
+
+.snr-chip i{
+    font-size: 13px;
+}
+
+a:hover .snr-chip,
+.blog-item:hover .snr-chip{
+    background-color: var(--main-color-one);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+/* دکمهٔ پخش ویدیو/پادکست روی مقالهٔ بزرگ */
+.snr-play{
+    position: absolute;
+    top: 50%;
+    right: 50%;
+    transform: translate(50%, -50%);
+    z-index: 2;
+    width: 62px;
+    height: 62px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, .92);
+    color: var(--main-color-one);
+    font-size: 30px;
+    box-shadow: 0 10px 26px rgba(13, 36, 76, .3);
+    transition: transform .3s ease, background-color .3s ease, color .3s ease;
+}
+
+.snr-play::before{
+    content: "";
+    position: absolute;
+    inset: -9px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, .55);
+    animation: snr-pulse 2s ease-out infinite;
+}
+
+@keyframes snr-pulse{
+    0%   { transform: scale(.85); opacity: 1; }
+    100% { transform: scale(1.25); opacity: 0; }
+}
+
+a:hover .snr-play{
+    background-color: var(--main-color-one);
+    color: #fff;
+    transform: translate(50%, -50%) scale(1.06);
+}
+
+/* ---------- فالبک مقالهٔ بدون تصویر (برندشده، به‌جای no-image محصول) ---------- */
+.snr-no-image{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background:
+        radial-gradient(120% 120% at 100% 0%, var(--main-color-one-shadow) 0%, rgba(255, 255, 255, 0) 55%),
+        linear-gradient(135deg, #f6f8fc 0%, #eef2f8 100%);
+    color: var(--main-color-one);
+    font-size: 44px;
+}
+
+.snr-no-image i{
+    opacity: .55;
+}
+
+.snr-no-image-sm{
+    aspect-ratio: auto;
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    font-size: 24px;
+}
+
+/* ---------- مقالهٔ بزرگ (hero) — three-box / big-box ---------- */
+.snr-post-hero{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: var(--shadow-box);
+    transition: transform .3s ease, box-shadow .3s ease;
+}
+
+.snr-post-hero:hover{
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -18px var(--main-color-one-shadow);
+}
+
+.snr-post-hero .image{
+    position: relative;
+    display: block;
+    overflow: hidden;
+}
+
+.snr-post-hero .image img{
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    height: auto;
+    object-fit: cover;
+    transition: transform .55s ease;
+}
+
+.snr-post-hero:hover .image img{
+    transform: scale(1.05);
+}
+
+.snr-post-hero .body{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    padding: 18px 20px 16px;
+}
+
+.snr-post-hero .title{
+    margin: 0;
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.snr-post-hero .title a{
+    color: var(--color-site);
+    text-decoration: none;
+    transition: color .25s ease;
+}
+
+.snr-post-hero:hover .title a,
+.snr-post-hero .title a:hover{
+    color: var(--main-color-one);
+}
+
+.snr-post-hero .excerpt{
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 2.1;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.snr-post-hero .meta{
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-muted);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+}
+
+.snr-post-hero .meta > span{
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.snr-post-hero .meta i{
+    font-size: 14px;
+    color: var(--main-color-one);
+}
+
+.snr-post-hero .meta .dot{
+    width: 4px;
+    height: 4px;
+    padding: 0;
+    border-radius: 50%;
+    background-color: var(--border-muted);
+    flex: 0 0 auto;
+}
+
+.snr-post-hero .meta .more{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--main-color-one);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.snr-post-hero .meta .more i{
+    color: inherit;
+    transition: transform .25s ease;
+}
+
+.snr-post-hero .meta .more:hover i{
+    transform: translateX(-4px);
+}
+
+/* آواتار نویسنده — اندازهٔ ثابت (رفع باگ دایرهٔ غول‌پیکر) */
+.snr-avatar{
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    object-fit: cover;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(13, 36, 76, .18);
+}
+
+.snr-avatar-icon{
+    width: 32px;
+    height: 32px;
+    font-size: 28px;
+    color: var(--main-color-one);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.snr-post-hero .meta .name{
+    font-weight: 700;
+    color: var(--color-site);
+    white-space: nowrap;
+}
+
+/* ---------- فهرست مقالات کوچک (کنار مقالهٔ بزرگ) ---------- */
+.snr-post-list{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 100%;
+}
+
+.snr-post-item{
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    flex: 1;
+    padding: 10px;
+    background-color: #fff;
+    border-radius: 14px;
+    box-shadow: var(--shadow-box);
+    transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.snr-post-item:hover{
+    transform: translateY(-3px);
+    box-shadow: 0 14px 28px -12px var(--main-color-one-shadow);
+}
+
+.snr-post-item .image{
+    position: relative;
+    flex: 0 0 auto;
+    width: 118px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.snr-post-item .image img{
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 88px;
+    object-fit: cover;
+    transition: transform .45s ease;
+}
+
+.snr-post-item:hover .image img{
+    transform: scale(1.07);
+}
+
+.snr-post-item .body{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.snr-post-item .cat{
+    align-self: flex-start;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--main-color-one);
+    text-decoration: none;
+}
+
+.snr-post-item .cat:hover{
+    text-decoration: underline;
+}
+
+.snr-post-item .title{
+    margin: 0;
+    font-size: 13.5px;
+    font-weight: 700;
+    line-height: 1.9;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.snr-post-item .title a{
+    color: var(--color-site);
+    text-decoration: none;
+    transition: color .25s ease;
+}
+
+.snr-post-item:hover .title a{
+    color: var(--main-color-one);
+}
+
+.snr-post-item .meta{
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 11.5px;
+    color: var(--text-muted-two);
+}
+
+.snr-post-item .meta span{
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.snr-post-item .meta i{
+    font-size: 13px;
+    color: var(--main-color-one);
+}
+
+/* نسخهٔ فشرده (big-box): تصویر کوچک‌تر */
+.snr-post-list-compact .snr-post-item .image{
+    width: 96px;
+}
+
+.snr-post-list-compact .snr-post-item .image img{
+    min-height: 74px;
+}
+
+/* ---------- کارت دسته‌بندی (post-categories / categories) ---------- */
+.snr-cat-card .image{
+    flex: 0 0 auto;
+}
+
+.snr-cat-fallback{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 110px;
+    height: 130px;
+    border-radius: 14px;
+    background:
+        radial-gradient(120% 120% at 100% 0%, var(--main-color-one-shadow) 0%, rgba(255, 255, 255, 0) 60%),
+        linear-gradient(135deg, #f6f8fc 0%, #eef2f8 100%);
+    color: var(--main-color-one);
+    font-size: 40px;
+}
+
+.snr-cat-fallback i{
+    opacity: .65;
+    transition: transform .3s ease, opacity .3s ease;
+}
+
+.snr-cat-card:hover .snr-cat-fallback i{
+    transform: scale(1.12);
+    opacity: 1;
+}
+
+.snr-cat-more{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--main-color-one);
+}
+
+.snr-cat-more i{
+    font-size: 12px;
+    transition: transform .25s ease;
+}
+
+.snr-cat-card:hover .snr-cat-more i{
+    transform: translateX(-4px);
+}
+
+/* ---------- گرید مطالب: کارت‌ها هم‌ارتفاع و وسط‌چین وقتی تعداد کم است ---------- */
+.gird-post-blog .row{
+    align-items: stretch;
 }
