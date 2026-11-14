@@ -133,6 +133,10 @@
     }
     .fw-header-title { font-size: 16px; font-weight: 700; margin: 0 0 4px; position: relative; z-index: 1; }
     .fw-header-sub   { font-size: 12px; opacity: .85; position: relative; z-index: 1; }
+
+    /* فاز ۱۵۸ — عنوان/sub ویجت شناور همیشه سفید (روی هدر گرادیانی خوانا باشد) */
+    .fw-header-title { color: #fff; }
+    .fw-header-sub   { color: #fff; }
     .fw-status-dot   { display: inline-block; width: 8px; height: 8px; background: #4ade80; border-radius: 50%; margin-left: 6px; animation: fw-blink 1.6s infinite; }
     @keyframes fw-blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 

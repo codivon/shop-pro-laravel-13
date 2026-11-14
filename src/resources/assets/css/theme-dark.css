@@ -149,6 +149,88 @@ html[data-theme="dark"] .main-menu-sub li a:hover {
     color: #5bd0c8;
 }
 
+/* ---------- فاز ۱۵۸ — مگا منو: خوانایی کامل در تم تیره ----------
+   قواعد light با !important و specificity بالاتر، رنگ متن را خراب می‌کردند */
+html[data-theme="dark"] .top-menu-menu ul.main-menu {
+    background-color: var(--dk-bg-soft) !important;
+}
+
+html[data-theme="dark"] .top-menu-menu ul.main-menu > li > a,
+html[data-theme="dark"] .top-menu-menu .main-menu-sub-active-li > a {
+    color: var(--dk-text) !important;
+}
+
+html[data-theme="dark"] .top-menu-menu ul.main-menu > li:hover > a,
+html[data-theme="dark"] .top-menu-menu .main-menu-sub-active-li:hover > a {
+    color: #5bd0c8 !important;
+}
+
+html[data-theme="dark"] .top-menu-menu ul.main-menu > li {
+    background-color: var(--dk-surface-2) !important;
+    border-bottom: 1px dashed var(--dk-border) !important;
+}
+
+html[data-theme="dark"] .top-menu-menu ul.main-menu > li:hover {
+    background-color: var(--dk-surface) !important;
+    box-shadow: none;
+}
+
+/* ستون فرعی مگا منو */
+html[data-theme="dark"] .top-menu-menu ul.main-menu > li > ul.main-menu-sub {
+    background-color: var(--dk-surface) !important;
+    box-shadow: var(--dk-shadow);
+}
+
+html[data-theme="dark"] .top-menu-menu ul.main-menu>li>ul.main-menu-sub li>a,
+html[data-theme="dark"] .top-menu-menu ul.main-menu>li>ul.main-menu-sub li>a.title {
+    color: var(--dk-text-soft) !important;
+}
+
+html[data-theme="dark"] .top-menu-menu ul.main-menu>li>ul.main-menu-sub li>a.title {
+    color: var(--dk-text) !important;
+}
+
+html[data-theme="dark"] .top-menu-menu ul.main-menu>li>ul.main-menu-sub li>a:hover {
+    color: #5bd0c8 !important;
+}
+
+/* نوار تزئینی پشت ردیف‌های مگا منو */
+html[data-theme="dark"] .top-menu-menu li:hover ul.main-menu::before,
+html[data-theme="dark"] ul.main-menu::before {
+    background: var(--dk-bg-soft) !important;
+}
+
+/* دراپ‌داون دسته‌بندی‌ها (مگای اول) — پنل و متن‌ها */
+html[data-theme="dark"] .top-menu-menu ul>li>ul.sub-menu.mega-container {
+    background-color: var(--dk-surface) !important;
+    box-shadow: var(--dk-shadow);
+}
+
+html[data-theme="dark"] .top-menu-menu ul>li>ul.sub-menu.mega-container > li > a,
+html[data-theme="dark"] .top-menu-menu ul>li>ul.sub-menu.mega-container li a {
+    color: var(--dk-text-soft) !important;
+}
+
+html[data-theme="dark"] .top-menu-menu ul>li>ul.sub-menu.mega-container li a.title {
+    color: var(--dk-text) !important;
+}
+
+html[data-theme="dark"] .top-menu-menu ul>li>ul.sub-menu.mega-container li a:hover,
+html[data-theme="dark"] .top-menu-menu ul>li>ul.sub-menu.mega-container li a.title:hover {
+    color: #5bd0c8 !important;
+}
+
+/* اسکرول‌بار پنل‌های منو در تم تیره */
+html[data-theme="dark"] .top-menu-menu ul.main-menu::-webkit-scrollbar-thumb,
+html[data-theme="dark"] .top-menu-menu ul>li>ul.sub-menu.mega-container::-webkit-scrollbar-thumb {
+    background: #3a4152;
+}
+
+html[data-theme="dark"] .top-menu-menu ul.main-menu,
+html[data-theme="dark"] .top-menu-menu ul>li>ul.sub-menu.mega-container {
+    scrollbar-color: #3a4152 transparent;
+}
+
 /* نوار ادمین بالای سایت همیشه تیره است — بدون تغییر */
 
 /* ---------- باکس‌های محتوایی ---------- */
@@ -486,7 +568,7 @@ html[data-theme="dark"] .theme-toggle-btn {
     color: #444;
     border: 1px solid #ececf1;
     border-right: 0;
-    border-radius: 10px 0 0 10px;
+    border-radius: 0 10px 10px 0; /* فاز ۱۵۸ — گوشه‌های سمت محتوا گرد باشند */
     box-shadow: 0 6px 18px rgba(0, 0, 0, .12);
     cursor: pointer;
     font-size: 13px;
@@ -1144,25 +1226,26 @@ html[data-theme="dark"] .sr-item:hover {
     background-color: var(--dk-surface-2);
 }
 
-/* آیتم‌های ستون اصلی مگا منو (کلاس همهٔ ردیف‌هاست) */
+/* آیتم‌های ستون اصلی مگا منو — فاز ۱۵۸: ردیف‌ها پس‌زمینهٔ خوانا دارند و
+   ردیف فعال (hover) با سطح روشن‌تر مشخص می‌شود */
 html[data-theme="dark"] .mega-menu .main-menu-sub-active-li,
 html[data-theme="dark"] .top-menu-menu .main-menu-sub-active-li {
-    background-color: transparent !important;
+    background-color: var(--dk-surface) !important;
 }
 
 html[data-theme="dark"] .mega-menu .main-menu-sub-active-li:hover,
 html[data-theme="dark"] .top-menu-menu .main-menu-sub-active-li:hover {
-    background-color: var(--dk-surface-2) !important;
-}
-
-/* نوار تزئینی پشت ستون مگا منو (ساخت‌شده با ::before در style.css) */
-html[data-theme="dark"] .top-menu-menu li:hover ul.main-menu::before,
-html[data-theme="dark"] ul.main-menu::before {
     background-color: var(--dk-surface) !important;
 }
 
+/* نوار تزئینی پشت ستون مگا منو — هم‌رنگ خود پنل می‌شود */
+html[data-theme="dark"] .top-menu-menu li:hover ul.main-menu::before,
+html[data-theme="dark"] ul.main-menu::before {
+    background-color: var(--dk-bg-soft) !important;
+}
+
 html[data-theme="dark"] .top-menu-menu ul.main-menu > li {
-    background-color: transparent !important;
+    background-color: var(--dk-surface-2) !important;
     border-bottom-color: var(--dk-border) !important;
 }
 
@@ -1212,4 +1295,405 @@ html[data-theme="dark"] #search-result .sr-product-image {
 html[data-theme="dark"] #search-result .sr-product-title,
 html[data-theme="dark"] #search-result .sr-product .title {
     color: var(--dk-text);
+}
+
+/* ============================================================
+   فاز ۱۵۸ — دارک مود اجزای بازطراحی‌شدهٔ صفحهٔ تک‌محصول
+   (گالری، خرید سریع، مشخصات فنی، نظرات، پرسش و پاسخ)
+   ============================================================ */
+
+/* ---------- گالری ---------- */
+html[data-theme="dark"] .product-page .pro_gallery .gallery-main-slider {
+    background: var(--dk-surface);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .product-page .pro_gallery .gallery-main-slider .product-main-image {
+    background: var(--dk-surface);
+}
+
+html[data-theme="dark"] .product-page .pro_gallery .gallery-main-slider .owl-nav button {
+    background: var(--dk-surface-2) !important;
+    color: var(--dk-text) !important;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, .4);
+}
+
+html[data-theme="dark"] .product-page .pro_gallery .gallery-main-slider .owl-nav button:hover {
+    background: var(--main-color-one, #5b8af5) !important;
+    color: #fff !important;
+}
+
+html[data-theme="dark"] .product-page .pro_gallery .gallery-main-slider .owl-dot span {
+    background: #3a4152;
+}
+
+html[data-theme="dark"] .product-page .pro_gallery .gallery-main-slider .owl-dot.active span {
+    background: var(--main-color-one, #5b8af5);
+}
+
+html[data-theme="dark"] .product-page .pro_gallery #gallery_01f .gallery-items .item a {
+    background: var(--dk-surface);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .product-page .pro_gallery #gallery_01f .gallery-items .item a.active {
+    border-color: var(--main-color-one, #5b8af5);
+}
+
+html[data-theme="dark"] .product-page .pro_gallery #gallery_01f .gallery-items .item img {
+    background: var(--dk-surface);
+}
+
+/* ---------- کارت خرید سریع ---------- */
+html[data-theme="dark"] .quick-buy-box {
+    background: var(--dk-surface);
+    border-color: var(--dk-border);
+    box-shadow: var(--dk-shadow);
+}
+
+html[data-theme="dark"] .quick-buy-box .quick-buy-head {
+    color: var(--dk-text);
+    border-bottom-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .quick-buy-box .quick-buy-product img {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .quick-buy-box .quick-buy-title {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .quick-buy-box .quick-buy-title:hover {
+    color: var(--main-color-one, #7599f7);
+}
+
+html[data-theme="dark"] .quick-buy-box .quick-buy-variant {
+    color: var(--main-color-one, #7599f7);
+    background: rgba(91, 138, 245, .12);
+}
+
+html[data-theme="dark"] .quick-buy-box .quick-buy-meta li {
+    border-bottom-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .quick-buy-box .qbm-label,
+html[data-theme="dark"] .quick-buy-box .qbm-label i {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .quick-buy-box .qbm-value {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .quick-buy-box .quick-buy-price {
+    background: var(--dk-bg-soft);
+}
+
+html[data-theme="dark"] .quick-buy-box .quick-buy-old,
+html[data-theme="dark"] .quick-buy-box .quick-buy-old del {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .quick-buy-box .quick-buy-new {
+    color: var(--main-color-one, #7599f7);
+}
+
+html[data-theme="dark"] .quick-buy-box .quick-buy-new small {
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .quick-buy-box .quick-buy-qty .form-control {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .quick-buy-box .quick-buy-qty .btn-counter {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border);
+    color: var(--dk-text);
+}
+
+/* ---------- مشخصات فنی مدرن ---------- */
+html[data-theme="dark"] .product-page .p-tabs .params-modern .params-headline {
+    border-bottom-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .params-modern-group-title {
+    color: var(--main-color-one, #7599f7);
+    background: rgba(91, 138, 245, .12);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .params-modern-row {
+    border-bottom-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .params-modern-row:hover {
+    background: var(--dk-bg-soft);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .params-modern-key {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .params-modern-value {
+    color: var(--dk-text);
+}
+
+/* ---------- کارت‌های دیدگاه ---------- */
+html[data-theme="dark"] .product-page .p-tabs .comments-list .review-header,
+html[data-theme="dark"] .product-page .p-tabs .comments-list .review-footer {
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .review-avatar {
+    background: rgba(91, 138, 245, .14);
+    color: var(--main-color-one, #7599f7);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .review-author,
+html[data-theme="dark"] .product-page .p-tabs .comments-list .review-title {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .review-meta,
+html[data-theme="dark"] .product-page .p-tabs .comments-list .like-question {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .review-stars .bi-star {
+    color: #3a4152;
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .user-suggest.suggest-neutral {
+    background: var(--dk-surface-2);
+    color: var(--dk-text-muted) !important;
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .btn-like {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .btn-like:hover {
+    border-color: var(--main-color-one, #7599f7);
+    color: var(--main-color-one, #7599f7);
+}
+
+/* ---------- پرسش و پاسخ ---------- */
+html[data-theme="dark"] .product-page .p-tabs .js-faq-container .qa-section-head {
+    background: var(--dk-surface);
+    border-color: var(--dk-border);
+    box-shadow: none;
+}
+
+html[data-theme="dark"] .product-page .p-tabs .js-faq-container .qa-section-head-icon {
+    background: rgba(91, 138, 245, .14);
+    color: var(--main-color-one, #7599f7);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .js-faq-container .qa-section-head-title {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .js-faq-container .qa-section-head-sub {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .js-faq-container .qa-form-avatar {
+    background: rgba(91, 138, 245, .14);
+    color: var(--main-color-one, #7599f7);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .js-faq-container .qa-form .ui-textarea textarea,
+html[data-theme="dark"] .product-page .p-tabs .js-faq-container .qa-form .ui-textarea-field {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .js-faq-container .comment-replay-to {
+    background: rgba(91, 138, 245, .1);
+    border-color: var(--main-color-one, #7599f7);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .js-faq-container .qa-login-hint {
+    background: rgba(245, 166, 35, .08);
+    border-color: rgba(245, 166, 35, .4);
+    color: #f5c169;
+}
+
+html[data-theme="dark"] .product-page .p-tabs .js-faq-container .qa-login-hint:hover {
+    background: rgba(245, 166, 35, .14);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .js-faq-container .qa-empty {
+    background: var(--dk-surface);
+    border-color: var(--dk-border);
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .js-faq-container .qa-empty i {
+    color: #3a4152;
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .qa-question-meta span,
+html[data-theme="dark"] .product-page .p-tabs .comments-list .question-answer-name {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .qa-answer {
+    background: var(--dk-bg-soft);
+    border-right-color: var(--main-color-one, #7599f7);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .form-question-answer p {
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .qa-reply-btn {
+    color: var(--main-color-one, #7599f7);
+    background: rgba(91, 138, 245, .12);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-list .qa-reply-btn:hover {
+    background: var(--main-color-one, #5b8af5);
+    color: #fff;
+}
+
+html[data-theme="dark"] .product-page .p-tabs .qa-filter {
+    background: var(--dk-surface);
+    border-color: var(--dk-border);
+    box-shadow: none;
+}
+
+html[data-theme="dark"] .product-page .p-tabs .filter-items .sort-row-text {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .filter-items .nav-link {
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .filter-items .nav-link.active {
+    color: var(--main-color-one, #7599f7);
+    border-bottom-color: var(--main-color-one, #7599f7);
+}
+
+/* فرم قدیمی پرسش (بدون qa-form) و باکس فیلتر دیدگاه‌ها — پوشش کامل */
+html[data-theme="dark"] .product-page .p-tabs .js-faq-container .form-faq {
+    background: var(--dk-surface);
+    border-color: var(--dk-border);
+    box-shadow: none;
+}
+
+html[data-theme="dark"] .product-page .p-tabs .comments-filter {
+    background: var(--dk-surface);
+    border-color: var(--dk-border);
+    box-shadow: none;
+}
+
+/* ---------- امتیاز داخل باکس فروشنده ---------- */
+html[data-theme="dark"] .product-seller-aside .aside-rating {
+    border-bottom-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .product-seller-aside .aside-rating .count-rating,
+html[data-theme="dark"] .product-seller-aside .aside-rating .count-rating i {
+    color: #f5c169;
+}
+
+html[data-theme="dark"] .product-seller-aside .aside-rating .count-comment:hover {
+    color: var(--main-color-one, #7599f7);
+}
+
+/* ---------- نقد و بررسی اجمالی — ماسک «ادامه مطلب» ---------- */
+html[data-theme="dark"] .product-page .p-tabs .is-masked .shadow-box {
+    background: linear-gradient(rgba(30, 34, 43, 0), var(--dk-surface));
+}
+
+/* ---------- فاز ۱۵۸ — مودال افزودن نظر در تم تیره ---------- */
+html[data-theme="dark"] .modal.review-modal .modal-content,
+html[data-theme="dark"] .modal.review-modal .modal-header,
+html[data-theme="dark"] .modal.review-modal .modal-body {
+    background: var(--dk-surface);
+}
+
+html[data-theme="dark"] .modal.review-modal .modal-header {
+    border-bottom-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .modal.review-modal .modal-header .modal-title,
+html[data-theme="dark"] .modal.review-modal .form-row-title,
+html[data-theme="dark"] .modal.review-modal .review-guideline h3 {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .modal.review-modal .modal-header .modal-title small,
+html[data-theme="dark"] .modal.review-modal .review-disclaimer,
+html[data-theme="dark"] .modal.review-modal .review-disclaimer a {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .modal.review-modal .input-ui,
+html[data-theme="dark"] .modal.review-modal textarea.input-ui {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .modal.review-modal .input-ui:focus {
+    background: var(--dk-surface-2);
+}
+
+html[data-theme="dark"] .modal.review-modal .review-suggest-item label {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border);
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .modal.review-modal .review-suggest-item.active label,
+html[data-theme="dark"] .modal.review-modal .review-suggest-item label.active {
+    border-color: var(--main-color-one, #7599f7);
+    color: var(--main-color-one, #7599f7);
+    background: rgba(91, 138, 245, .1);
+}
+
+html[data-theme="dark"] .modal.review-modal .review-guideline {
+    background: var(--dk-bg-soft);
+}
+
+html[data-theme="dark"] .modal.review-modal .review-guideline p {
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .review-star-rating .review-star {
+    color: #3a4152;
+}
+
+/* ---------- متفرقهٔ تک‌محصول در تم تیره ---------- */
+html[data-theme="dark"] .product-page .footer-product-id {
+    border-top-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .product-page .product-brand-logo {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .content-expert-summary p,
+html[data-theme="dark"] .product-page .p-tabs .comments-list .review-body,
+html[data-theme="dark"] .product-page .p-tabs .comments-list .form-question-answer p {
+    color: var(--dk-text-soft);
+}
+
+/* مینی‌باکس قدیمی (در صورت وجود) */
+html[data-theme="dark"] .product-mini-buy-box,
+html[data-theme="dark"] .mini-buy-box {
+    background: var(--dk-surface);
+    border-color: var(--dk-border);
 }

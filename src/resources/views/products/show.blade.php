@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{{ theme_asset('css/vendor/fancybox.min.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('css/owl.carousel.min.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('css/font-awesome.min.css') }}">
-    <link rel="stylesheet" href="{{ theme_asset('css/pages/products/show.css') }}?v=17">
+    <link rel="stylesheet" href="{{ theme_asset('css/pages/products/show.css') }}?v=18">
 @endpush
 
 @section('content')
@@ -117,21 +117,37 @@
                                             @endif
                                         </ul>
 
-                                        {{-- فاز ۱۵۵ — زوم تصویر حذف شد (ez-plus دیگر لود/فراخوانی نمی‌شود)؛
-                                             تصویر اصلی با کلاس product-main-image سایز می‌گیرد --}}
-                                        <img class="product-main-image mt-3"
-                                             src="{{$product->image ? asset($product->image) : asset('/no-image-product.svg') }}"
-                                             alt="{{ $product->title }}"/>
-                                        @if($product->gallery()->count())
-                                            {{-- فاز ۱۵۵ — بندانگشتی‌ها بدون ez-plus؛ تعویض تصویر با theme-product.js --}}
+                                        {{-- فاز ۱۵۸ — اسلایدر تصویر اصلی + بندانگشتی‌ها (تاج) همگام‌اند.
+                                             زوم ez-plus حذف شده؛ تعویض اسلاید با theme-product.js --}}
+                                        @php
+                                            /* فاز ۱۵۸ — اسلایدها: تصویر اصلی + گالری */
+                                            $gallerySlides = collect();
+                                            if ($product->image) {
+                                                $gallerySlides->push(['src' => asset($product->image)]);
+                                            }
+                                            foreach ($product->gallery()->orderBy('ordering')->get() as $galleryItem) {
+                                                $gallerySlides->push(['src' => $galleryItem->image ? asset($galleryItem->image) : asset('/no-image-product.svg')]);
+                                            }
+                                            if ($gallerySlides->isEmpty()) {
+                                                $gallerySlides->push(['src' => asset('/no-image-product.svg')]);
+                                            }
+                                        @endphp
+                                        <div class="gallery-main-slider owl-carousel owl-theme" id="gallery-main-slider">
+                                            @foreach ($gallerySlides as $gallerySlide)
+                                                <div class="item">
+                                                    <img class="product-main-image" src="{{ $gallerySlide['src'] }}" alt="{{ $product->title }}"/>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                        @if($gallerySlides->count() > 1)
                                             <div id="gallery_01f">
                                                 <ul class="gallery-items owl-carousel owl-theme" id="gallery-slider">
-                                                    @foreach ($product->gallery()->orderBy('ordering')->get() as $item)
+                                                    @foreach ($gallerySlides as $slideIndex => $gallerySlide)
                                                         <li class="item">
-                                                            <a href="javascript:void(0)" class="js-gallery-thumb active"
-                                                               data-image="{{$item->image ? asset($item->image) : asset('/no-image-product.svg')}}">
-                                                                <img src="{{$item->image ? asset($item->image) : asset('/no-image-product.svg')}}"
-                                                                     alt="{{ $product->title }}"/></a>
+                                                            <a href="javascript:void(0)" class="js-gallery-thumb {{ $slideIndex === 0 ? 'active' : '' }}"
+                                                               data-index="{{ $slideIndex }}"
+                                                               data-image="{{ $gallerySlide['src'] }}">
+                                                                <img src="{{ $gallerySlide['src'] }}" alt="{{ $product->title }}"/></a>
                                                         </li>
                                                     @endforeach
                                                 </ul>
@@ -218,7 +234,8 @@
                             </div>
                         @endif
 
-                        <div class="row mt-4">
+                        {{-- فاز ۱۵۸ — تب‌ها (۹ ستون) + کارت خرید سریع (۳ ستون، چسبان) --}}
+                        <div class="row mt-4 gy-4">
                             @if(count($related_products))
                                 <div class="col-12">
                                     <div class="product-slider related-products-slider">
@@ -244,7 +261,7 @@
                                 </div>
                             @endif
 
-                            <div class="p-tabs p-0 col-12">
+                            <div class="p-tabs p-0 col-lg-9 col-12">
                                 <div class="box-tabs-main">
                                     <ul class="box-tabs">
                                         @if ($product->isDownload())
@@ -297,7 +314,9 @@
                                         @if ($product->specificationGroups()->count())
                                             <div class="tab params"
                                                  style="@if (!$product->description)display:block; @else display:none;  @endif">
-                                                <article class="shadow-box rounded-3 p-4">
+                                                {{-- فاز ۱۵۸ — بازطراحی مشخصات فنی: ردیف‌های کلید/مقدار با جداکنندهٔ
+                                                     خط‌چین و گروه‌های کارتی (استایل در theme-product.css) --}}
+                                                <article class="params-modern shadow-box rounded-3">
                                                     <h2 class="params-headline font-18">
                                                         مشخصات فنی
                                                         <span>{{$product->title}}</span>
@@ -307,23 +326,16 @@
                                                         $product_specifications = $product->specifications;
                                                     @endphp
                                                     @foreach($product->specificationGroups->unique() as $group)
-                                                        <section>
-                                                            <h3 class="params-title font-16">{{ $group->name }}</h3>
-                                                            <ul class="params-list">
+                                                        <section class="params-modern-group">
+                                                            <h3 class="params-modern-group-title">
+                                                                <i class="bi bi-collection"></i>
+                                                                <span>{{ $group->name }}</span>
+                                                            </h3>
+                                                            <ul class="params-modern-rows">
                                                                 @foreach($product_specifications->where('pivot.specification_group_id', $group->id) as $specification)
-                                                                    <li class="row g-2">
-                                                                        <div class="col-lg-3 col-md-3 col-12">
-                                                                            <div class="params-list-key">
-                                                                                <span class="block fw-bold">{{ $specification->name }}</span>
-                                                                            </div>
-                                                                        </div>
-
-                                                                        <div class="col-lg-9 col-md-9 col-12">
-                                                                            <div class="params-list-value">
-                                                                                <span class="block">{!! nl2br(htmlentities($specification->pivot->value)) !!}</span>
-                                                                            </div>
-                                                                        </div>
-
+                                                                    <li class="params-modern-row">
+                                                                        <span class="params-modern-key">{{ $specification->name }}</span>
+                                                                        <span class="params-modern-value">{!! nl2br(htmlentities($specification->pivot->value)) !!}</span>
                                                                     </li>
                                                                 @endforeach
                                                             </ul>
@@ -492,6 +504,11 @@
                                         <span>DKP - {{$product->id}}</span>
                                     </div>
                                 </div>
+                            </div>
+
+                            {{-- فاز ۱۵۸ — کارت خرید سریع (فقط دسکتاپ) --}}
+                            <div class="col-lg-3 col-12 d-none d-lg-block">
+                                @include('front::products.partials.quick-buy-box')
                             </div>
                         </div>
                     </div>
@@ -788,8 +805,8 @@
      @if(option('dt_price_alert_status', '1') == '1')
         <script src="{{ theme_asset('js/pages/products/price-alert.js') }}"></script>
      @endif
-   <script src="{{ theme_asset('js/pages/products/show.js') }}?v=17"></script>
+   <script src="{{ theme_asset('js/pages/products/show.js') }}?v=18"></script>
    <script src="{{ theme_asset('js/pages/comments.js') }}"></script>
    {{-- فاز ۱۵۵ — منطق لحظه‌ای قیمت + تعویض تصویر گالری (بدون اسکریپت اینلاین) --}}
-   <script src="{{ theme_asset('js/theme-product.js') }}?v=1"></script>
+   <script src="{{ theme_asset('js/theme-product.js') }}?v=2"></script>
 @endpush

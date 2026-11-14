@@ -71,11 +71,11 @@
 
     {{-- فاز ۱۵۵ — اصلاحات ظاهری ریز (هدر/محصول/صفحات) --}}
     <link rel="stylesheet" href="{{ theme_asset('css/theme-header.css') }}">
-    <link rel="stylesheet" href="{{ theme_asset('css/theme-product.css') }}?v=17">
+    <link rel="stylesheet" href="{{ theme_asset('css/theme-product.css') }}?v=18">
     <link rel="stylesheet" href="{{ theme_asset('css/theme-pages.css') }}">
 
-    {{-- فاز ۱۵۶ — حالت شب (دارک مود) — بعد از همهٔ استایل‌ها تا بتواند بازنویسی کند --}}
-    <link rel="stylesheet" href="{{ theme_asset('css/theme-dark.css') }}?v=18">
+    {{-- فاز ۱۵۶/۱۵۸ — حالت شب (دارک مود) — بعد از همهٔ استایل‌ها تا بتواند بازنویسی کند --}}
+    <link rel="stylesheet" href="{{ theme_asset('css/theme-dark.css') }}?v=19">
 
     {{-- CSS عملکردی مشترک (توست‌ها + آیکون‌های منوهای داینامیک) --}}
     <link rel="stylesheet" href="{{ theme_asset('js/plugins/toastr/toastr.css') }}">
@@ -117,7 +117,9 @@
 
 <body>
 @if(auth('adminPanel')->check())
-    <nav class="navbar navbar-expand-sm bg-dark navbar-dark main-menu dt-sl bg-dark navbar-dark admin-loggedin-navbar">
+    {{-- فاز ۱۵۸ — کلاس‌های قدیمی main-menu/dt-sl حذف شدند: JS مگامنو روی این نوار
+         اعمال می‌شد و منوها بعد از هاور باز می‌ماندند + بک‌گراند سفید می‌گرفتند --}}
+    <nav class="navbar navbar-expand-sm bg-dark navbar-dark admin-loggedin-navbar">
         <div class="container-fluid">
 
             <ul class="list float-right hidden-md new-list-menu">
@@ -494,7 +496,7 @@
 {{-- فاز ۱۵۶ — پلاگین go-to-top حذف شد؛ دکمهٔ مستطیلی «برگشت به بالا» در theme-header.js --}}
 <script src="{{theme_asset('plugin/rasta-contact/script.js')}}"></script>
 <script src="{{theme_asset('js/saniar-init.js')}}"></script>
-<script src="{{theme_asset('js/theme-header.js')}}?v=18"></script>
+<script src="{{theme_asset('js/theme-header.js')}}?v=19"></script>
 
 {{-- اسکریپت‌های عملکردی فروشگاه --}}
 <script src="{{ theme_asset("js/plugins/sweetalert2.all.min.js") }}"></script>

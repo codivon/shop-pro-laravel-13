@@ -93,6 +93,70 @@
         /* مینی‌باکس (در صورت وجود در قالب‌های مشتق) */
         var miniPrice = document.querySelector('.product-mini-seller-price-real .js-price-value');
         if (miniPrice) miniPrice.textContent = match.sale;
+
+        /* ---------------------------------------------------------
+           فاز ۱۵۸ — کارت «خرید سریع» کنار تب‌ها: به‌روزرسانی لحظه‌ای
+           --------------------------------------------------------- */
+        var mini = document.querySelector('.js-mini-buy-box');
+        if (mini) {
+            /* قیمت فروش */
+            var miniSale = mini.querySelector('.js-mini-price');
+            if (miniSale && miniSale.textContent !== match.sale) {
+                miniSale.textContent = match.sale;
+                miniSale.classList.remove('dt-price-updated');
+                void miniSale.offsetWidth;
+                miniSale.classList.add('dt-price-updated');
+            }
+
+            /* قیمت قبل / درصد تخفیف */
+            var miniOldWrap = mini.querySelector('.js-mini-old-price');
+            if (miniOldWrap) {
+                if (match.discount > 0) {
+                    var miniOld = miniOldWrap.querySelector('del');
+                    if (miniOld) { miniOld.textContent = match.price; }
+                    miniOldWrap.classList.remove('d-none');
+                } else {
+                    miniOldWrap.classList.add('d-none');
+                }
+            }
+
+            var miniDiscount = mini.querySelector('.js-mini-discount');
+            if (miniDiscount) {
+                if (match.discount > 0) {
+                    miniDiscount.textContent = match.discount + '٪';
+                    miniDiscount.classList.remove('d-none');
+                } else {
+                    miniDiscount.classList.add('d-none');
+                }
+            }
+
+            /* برچسب تنوع انتخاب‌شده (از خود چیپ‌های انتخاب‌شده خوانده می‌شود) */
+            var miniLabel = mini.querySelector('.js-mini-variant-label');
+            if (miniLabel) {
+                var names = [];
+                document.querySelectorAll('.product-info-block input[type="radio"]:checked').forEach(function (input) {
+                    var chip = input.closest('.product-attribute');
+                    var text = chip ? (chip.getAttribute('title') || chip.textContent || '').trim() : '';
+                    var nameEl = chip ? chip.querySelector('.ui-variant-name, .ui-variant--check span') : null;
+                    if (nameEl) { text = nameEl.textContent.trim(); }
+                    if (text) { names.push(text); }
+                });
+                miniLabel.textContent = names.length ? names.join(' ، ') : 'تنوع پیش‌فرض';
+            }
+
+            /* دکمهٔ خرید + وضعیت موجودی */
+            var miniBtn = mini.querySelector('.btn-add-to-cart[data-price_id]');
+            if (miniBtn) { miniBtn.setAttribute('data-price_id', String(match.id)); }
+
+            var stockNote = mini.querySelector('.js-mini-stock');
+            if (stockNote) {
+                var inStock = match.stock > 0;
+                stockNote.textContent = inStock ? 'موجود در انبار' : 'ناموجود';
+                stockNote.classList.toggle('text-success', inStock);
+                stockNote.classList.toggle('text-danger', !inStock);
+                if (miniBtn) { miniBtn.disabled = !inStock; }
+            }
+        }
     }
 
     document.addEventListener('change', function (event) {
@@ -104,23 +168,80 @@
     }, true);
 
     /* ---------------------------------------------------------
-       ۲) گالری — تعویض تصویر با بندانگشتی‌ها (جایگزین ez-plus)
+       ۲) گالری — اسلایدر تصویر اصلی همگام با بندانگشتی‌ها (فاز ۱۵۸)
+       اسلاید با فلش‌ها/کشیدن/کلیک روی تاج عوض می‌شود؛ تاج فعال
+       همیشه همگام به‌روز می‌شود.
        --------------------------------------------------------- */
+    function initGallerySlider() {
+        var $main = $('#gallery-main-slider');
+        if (!$main.length || !$.fn.owlCarousel || $main.data('owl-initialized')) return;
+        $main.data('owl-initialized', true);
+
+        $main.owlCarousel({
+            items: 1,
+            rtl: true,
+            nav: true,
+            dots: true,
+            loop: false,
+            lazyLoad: false,
+            smartSpeed: 350,
+            navText: ['<i class="bi bi-chevron-right" aria-hidden="true"></i>', '<i class="bi bi-chevron-left" aria-hidden="true"></i>'],
+            responsive: {
+                0: { dotsEach: 4 },
+                768: { dotsEach: false }
+            }
+        });
+
+        /* تغییر اسلاید → همگام‌سازی تاج فعال */
+        $main.on('changed.owl.carousel', function (event) {
+            var index = event.item.index;
+            var $thumbs = $('#gallery_01f .js-gallery-thumb');
+            if (!$thumbs.length) return;
+
+            $thumbs.removeClass('active');
+            $thumbs.filter('[data-index="' + index + '"]').addClass('active');
+
+            /* اسکرول نوار تاج تا تاج فعال دیده شود */
+            var $thumbSlider = $('#gallery-slider');
+            if ($thumbSlider.length && $.fn.owlCarousel) {
+                $thumbSlider.trigger('to.owl.carousel', [index, 250, true]);
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        $(document).ready(initGallerySlider);
+    } else {
+        initGallerySlider();
+    }
+
+    /* کلیک روی تاج → پرش اسلایدر اصلی به همان تصویر */
     document.addEventListener('click', function (event) {
         var thumb = event.target.closest('.js-gallery-thumb');
         if (!thumb) return;
 
         event.preventDefault();
 
-        var mainImage = document.querySelector('.product-page .pro_gallery .product-main-image');
-        if (!mainImage || !thumb.dataset.image) return;
+        var $thumbs = $('#gallery_01f .js-gallery-thumb');
+        if (!$thumbs.length) {
+            /* حالت بدون اسلایدر (تک‌تصویر قدیمی) — تعویض مستقیم src */
+            var mainImage = document.querySelector('.product-page .pro_gallery .product-main-image');
+            if (mainImage && thumb.dataset.image) {
+                mainImage.setAttribute('src', thumb.dataset.image);
+                $thumbs.removeClass('active');
+                thumb.classList.add('active');
+            }
+            return;
+        }
 
-        mainImage.setAttribute('src', thumb.dataset.image);
-
-        document.querySelectorAll('#gallery_01f .js-gallery-thumb').forEach(function (item) {
-            item.classList.remove('active');
-        });
+        $thumbs.removeClass('active');
         thumb.classList.add('active');
+
+        var index = parseInt(thumb.dataset.index || '0', 10);
+        var $main = $('#gallery-main-slider');
+        if ($main.length && $.fn.owlCarousel) {
+            $main.trigger('to.owl.carousel', [index, 300, true]);
+        }
     });
 
     /* ---------------------------------------------------------

@@ -745,8 +745,9 @@ $(document).on('click', '.product-attribute:not(.unavailable)', function () {
     if (ajaxInProgress) return;
     ajaxInProgress = true;
 
-    // تغییر کلاس لودینگ
-    $('.product-seller-info').addClass('loading-skeleton');
+    /* فاز ۱۵۸ — لودینگ اسکلت حذف شد: قیمت به‌صورت لحظه‌ای با theme-product.js
+       از جزیرهٔ JSON به‌روز می‌شود و این درخواست فقط همگام‌سازی سمت سرور است؛
+       نمایش اسکلتون (به‌ویژه در تم تاریک) حس کندی و زشتی می‌داد */
 
     $.ajax({
         type: 'GET',
@@ -989,35 +990,7 @@ $(document).ready(function() {
     }
 });
 
-// اضافه کردن اسکلتون لودینگ به CSS
-if (!document.querySelector('#stores-loading-style')) {
-    var style = document.createElement('style');
-    style.id = 'stores-loading-style';
-    style.textContent = `
-        .loading-skeleton {
-            position: relative;
-            min-height: 200px;
-        }
-        .loading-skeleton::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-            border-radius: 8px;
-            z-index: 1;
-        }
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-    `;
-    document.head.appendChild(style);
-}
+// فاز ۱۵۸ — تزریق استایل اسکلتون حذف شد (لودینگ تغییر تنوع برداشته شد)
 
 /* ============================================================
    فاز ۱۵۴ — صفحهٔ تک‌محصول: تب‌ها + «موارد بیشتر» ویژگی‌ها

@@ -29,15 +29,20 @@
     @endif
 
     <div class="product-image">
-        <img loading="lazy" decoding="async" src="{{ $product->image ? asset($product->image) : asset('/no-image-product.svg') }}"
-             loading="lazy" alt="{{ $product->image_alt ?: $product->title }}" class="img-fluid">
+        {{-- فاز ۱۵۸ — تصویر و عنوان کارت به صفحهٔ محصول لینک شدند --}}
+        <a href="{{ route('front.products.show', ['product' => $product]) }}" class="product-image-link d-block" aria-label="{{ $product->title }}">
+            <img loading="lazy" decoding="async" src="{{ $product->image ? asset($product->image) : asset('/no-image-product.svg') }}"
+                 alt="{{ $product->image_alt ?: $product->title }}" class="img-fluid">
+        </a>
     </div>
 
     <div class="product-title">
-        <div class="title">
-            <p class="text-overflow-1">{{ $product->title }}</p>
-            <span class="text-muted text-overflow-1">{{ $product->category->title ?? '' }}</span>
-        </div>
+        <a href="{{ route('front.products.show', ['product' => $product]) }}" class="product-title-link d-block text-decoration-none">
+            <div class="title">
+                <p class="text-overflow-1">{{ $product->title }}</p>
+                <span class="text-muted text-overflow-1">{{ $product->category->title ?? '' }}</span>
+            </div>
+        </a>
     </div>
 
     <div class="product-action">

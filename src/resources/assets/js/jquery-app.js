@@ -6,25 +6,46 @@ $(function () {
         $(this).toggleClass('open');
     })
     
-    ///نمایش مگامنو آپدیدت جدید
-    $(".main-menu-head").hover(function(){
-        $(this).children().find(".main-menu-sub").first().addClass('main-menu-sub-active');
+    ///نمایش مگامنو آپدیدت جدید — فاز ۱۵۸:
+    ///۱) همهٔ سلکتورها به .top-menu-menu محدود شدند تا نوار مدیریت بالای سایت
+    ///   (.admin-loggedin-navbar که کلاس قدیمی main-menu را داشت) دیگر تحت
+    ///   تأثیر این کدها قرار نگیرد — علت منوهای بازماندهٔ نوار ادمین همین بود.
+    ///۲) mouseleave با event delegation متصل می‌شود؛ قبلاً هنگام لود صفحه هیچ
+    ///   عنصری کلاس main-menu-sub-active را نداشت، پس هندلر هرگز متصل نمی‌شد
+    ///   و منوها بعد از خروج موس باز می‌ماندند.
+    $(document).on('mouseenter', '.main-menu-head', function () {
+        $(this).find('.main-menu-sub').first().addClass('main-menu-sub-active');
         $(this).children().addClass('active');
     })
-    $(".main-menu-head").mouseleave(function(){
-        $(this).children().find(".main-menu-sub").first().removeClass('main-menu-sub-active');
+    $(document).on('mouseleave', '.main-menu-head', function () {
+        $(this).find('.main-menu-sub').first().removeClass('main-menu-sub-active');
         $(this).children().removeClass('active');
     })
-    $(".main-menu li").mouseover(function () {
-        
-        $(".main-menu li").removeClass("main-menu-sub-active-li");
-        $(this).addClass("main-menu-sub-active-li");
-        $(".main-menu-sub").removeClass('main-menu-sub-active');
-        $(this).children('ul').removeClass('main-menu-sub-active');
-        $(this).children('ul').addClass('main-menu-sub-active');
+    /* هاور روی ردیف‌های مگا منو — به‌جای بایند مستقیم روی li (که با هاور روی
+       آیتم‌های ستون فرعی می‌شکست)، روی خود پنل delegate می‌شود و همیشه به
+       «ردیف» سطح اول (‎> li) تحویل می‌شود؛ ورود موس به ستون فرعی هم ردیف
+       و ستون خودش را باز نگه می‌دارد. */
+    $(document).on('mouseover', '.top-menu-menu ul.main-menu', function (event) {
+        var row = event.target.closest('.top-menu-menu ul.main-menu > li');
+        if (!row || !this.contains(row)) { return; }
+
+        var $row = $(row);
+        if ($row.hasClass('main-menu-sub-active-li') &&
+            $row.children('ul').hasClass('main-menu-sub-active')) { return; }
+
+        $row.parent().children('li').removeClass('main-menu-sub-active-li');
+        $row.addClass('main-menu-sub-active-li');
+        $('.top-menu-menu .main-menu-sub').removeClass('main-menu-sub-active');
+        $row.children('ul').addClass('main-menu-sub-active');
     });
-    $(".main-menu-sub-active").mouseleave(function(){
-        $(".main-menu-sub-active").removeClass("main-menu-sub-active");
+    /* خروج موس از ستون فرعی → بستن همان ستون */
+    $(document).on('mouseleave', '.top-menu-menu .main-menu-sub-active', function () {
+        $(this).removeClass('main-menu-sub-active');
+    })
+    /* خروج موس از کل پنل مگا منو → پاک‌سازی کامل ردیف فعال و ستون‌های باز */
+    $(document).on('mouseleave', '.top-menu-menu ul.main-menu', function () {
+        $(this).find('> li').removeClass('main-menu-sub-active-li');
+        $(this).find('.main-menu-sub').removeClass('main-menu-sub-active');
     })
 
     ///شمارنده محصول برای اضافه کردن به سبد خرید

@@ -909,3 +909,874 @@
         margin-top: 12px;
     }
 }
+
+/* ============================================================
+   فاز ۱۵۸ — بازطراحی‌های صفحهٔ تک‌محصول
+   (اسلایدر گالری، کارت خرید سریع، مشخصات فنی، نظرات، پرسش و پاسخ)
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   A) اسلایدر گالری — تصویر اصلی + تاج همگام
+   ------------------------------------------------------------ */
+.product-page .pro_gallery .gallery-main-slider {
+    margin: 12px 0 4px;
+    border-radius: 16px;
+    background: #fff;
+    border: 1px solid #eef0f3;
+}
+
+.product-page .pro_gallery .gallery-main-slider .item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.product-page .pro_gallery .gallery-main-slider .product-main-image {
+    width: 100%;
+    height: 320px;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 0;
+}
+
+/* فلش‌های اسلایدر — دکمه‌های گرد سفید مثل قالب مرجع */
+.product-page .pro_gallery .gallery-main-slider .owl-nav {
+    margin: 0;
+}
+
+.product-page .pro_gallery .gallery-main-slider .owl-nav button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px;
+    height: 38px;
+    margin: 0;
+    border-radius: 50% !important;
+    background: #fff !important;
+    color: var(--color-site, #333) !important;
+    box-shadow: 0 3px 12px rgba(28, 28, 37, .14);
+    font-size: 15px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .18s ease;
+}
+
+.product-page .pro_gallery .gallery-main-slider .owl-nav button:hover {
+    background: var(--main-color-one, #275fe0) !important;
+    color: #fff !important;
+}
+
+.product-page .pro_gallery .gallery-main-slider .owl-nav .owl-prev {
+    right: 12px;
+    left: auto;
+}
+
+.product-page .pro_gallery .gallery-main-slider .owl-nav .owl-next {
+    left: 12px;
+    right: auto;
+}
+
+/* نقاط اسلایدر */
+.product-page .pro_gallery .gallery-main-slider .owl-dots {
+    margin: 6px 0 8px;
+}
+
+.product-page .pro_gallery .gallery-main-slider .owl-dot span {
+    width: 7px;
+    height: 7px;
+    background: #d7dbe2;
+}
+
+.product-page .pro_gallery .gallery-main-slider .owl-dot.active span {
+    width: 20px;
+    border-radius: 6px;
+    background: var(--main-color-one, #275fe0);
+}
+
+/* تاج‌ها (بندانگشتی‌ها) */
+.product-page .pro_gallery #gallery_01f .gallery-items .item a {
+    display: block;
+    border: 2px solid #eef0f3;
+    border-radius: 12px;
+    padding: 4px;
+    background: #fff;
+    transition: border-color .18s ease;
+}
+
+.product-page .pro_gallery #gallery_01f .gallery-items .item a.active {
+    border-color: var(--main-color-one, #275fe0);
+}
+
+.product-page .pro_gallery #gallery_01f .gallery-items .item img {
+    width: 100%;
+    height: 74px;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 8px;
+}
+
+/* ------------------------------------------------------------
+   B) کارت خرید سریع کنار تب‌ها — چسبان و لحظه‌ای
+   ------------------------------------------------------------ */
+.quick-buy-box {
+    position: sticky;
+    top: 74px;
+    background: #fff;
+    border: 1px solid #eef0f3;
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    padding: 16px;
+    direction: rtl;
+}
+
+.quick-buy-box .quick-buy-head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--color-site, #333);
+    padding-bottom: 12px;
+    border-bottom: 1px dashed #e9ecef;
+    margin-bottom: 12px;
+}
+
+.quick-buy-box .quick-buy-head i {
+    color: #f5a623;
+    font-size: 18px;
+}
+
+.quick-buy-box .quick-buy-product {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.quick-buy-box .quick-buy-product img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    border: 1px solid #eef0f3;
+    border-radius: 10px;
+    background: #fff;
+    padding: 4px;
+    flex-shrink: 0;
+}
+
+.quick-buy-box .quick-buy-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 13.5px;
+    font-weight: 700;
+    line-height: 1.9;
+    color: var(--color-site, #333);
+    text-decoration: none;
+    margin: 0 0 4px;
+}
+
+.quick-buy-box .quick-buy-title:hover {
+    color: var(--main-color-one, #275fe0);
+}
+
+.quick-buy-box .quick-buy-variant {
+    display: block;
+    font-size: 12px;
+    color: var(--main-color-one, #275fe0);
+    background: var(--main-color-one-shadow, #f2f6ff);
+    border-radius: 18px;
+    padding: 2px 10px;
+    line-height: 2;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.quick-buy-box .quick-buy-meta {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.quick-buy-box .quick-buy-meta li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12.5px;
+    padding: 7px 0;
+    border-bottom: 1px dashed #eef0f3;
+}
+
+.quick-buy-box .quick-buy-meta li:last-child {
+    border-bottom: 0;
+}
+
+.quick-buy-box .qbm-label {
+    color: #8b8b93;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.quick-buy-box .qbm-label i {
+    font-size: 14px;
+    color: #a0a0a8;
+}
+
+.quick-buy-box .qbm-value {
+    color: var(--color-site, #333);
+}
+
+.quick-buy-box .quick-buy-price {
+    background: #f8f9fc;
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin: 12px 0;
+}
+
+.quick-buy-box .quick-buy-old {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #9299a3;
+    margin-bottom: 2px;
+}
+
+.quick-buy-box .quick-buy-old del {
+    color: #9299a3;
+}
+
+.quick-buy-box .quick-buy-discount {
+    background: #ef394e;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 18px;
+    padding: 1px 9px;
+}
+
+.quick-buy-box .quick-buy-new {
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--main-color-one, #275fe0);
+}
+
+.quick-buy-box .quick-buy-new small {
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 4px;
+    color: var(--color-site, #333);
+}
+
+.quick-buy-box .quick-buy-action {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.quick-buy-box .quick-buy-qty {
+    width: 86px;
+    flex-shrink: 0;
+}
+
+.quick-buy-box .quick-buy-qty .form-control {
+    height: 100%;
+    min-height: 42px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: 700;
+}
+
+.quick-buy-box .quick-buy-qty .btn-counter {
+    background: #f1f2f6;
+    border: 0;
+    border-radius: 6px;
+    color: var(--color-site, #333);
+}
+
+.quick-buy-box .btn-add-to-cart {
+    flex: 1;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-weight: 700;
+    font-size: 13.5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.quick-buy-box .btn-add-to-cart:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+/* فلش قیمت در کارت خرید سریع */
+.quick-buy-box .js-mini-price.dt-price-updated {
+    animation: dtPriceFlash .55s ease-out;
+    border-radius: 6px;
+    padding: 0 4px;
+}
+
+/* ------------------------------------------------------------
+   C) مشخصات فنی — بازطراحی مدرن
+   ------------------------------------------------------------ */
+.product-page .p-tabs .params-modern {
+    padding: 20px 22px;
+}
+
+.product-page .p-tabs .params-modern .params-headline {
+    padding-bottom: 14px;
+    border-bottom: 1px solid #eef0f3;
+    margin-bottom: 6px;
+}
+
+.product-page .p-tabs .params-modern-group {
+    margin-top: 18px;
+}
+
+.product-page .p-tabs .params-modern-group-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--main-color-one, #275fe0);
+    background: var(--main-color-one-shadow, #f2f6ff);
+    border-radius: 24px;
+    padding: 6px 18px;
+    margin: 0 0 10px;
+}
+
+.product-page .p-tabs .params-modern-group-title i {
+    font-size: 16px;
+}
+
+.product-page .p-tabs .params-modern-rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.product-page .p-tabs .params-modern-row {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 11px 14px;
+    border-bottom: 1px dashed #eceff3;
+    border-radius: 10px;
+    transition: background .15s ease;
+}
+
+.product-page .p-tabs .params-modern-row:hover {
+    background: #f8f9fc;
+}
+
+.product-page .p-tabs .params-modern-row:last-child {
+    border-bottom: 0;
+}
+
+.product-page .p-tabs .params-modern-key {
+    flex: 0 0 220px;
+    font-size: 13.5px;
+    color: #6f7683;
+    font-weight: 600;
+}
+
+.product-page .p-tabs .params-modern-value {
+    flex: 1;
+    font-size: 13.5px;
+    color: var(--color-site, #333);
+    line-height: 1.9;
+    word-break: break-word;
+}
+
+@media (max-width: 767.98px) {
+    .product-page .p-tabs .params-modern {
+        padding: 16px;
+    }
+
+    .product-page .p-tabs .params-modern-row {
+        flex-direction: column;
+        gap: 2px;
+        padding: 10px 8px;
+    }
+
+    .product-page .p-tabs .params-modern-key {
+        flex: 0 0 auto;
+    }
+}
+
+/* ------------------------------------------------------------
+   D) کارت‌های دیدگاه — بازطراحی مدرن
+   ------------------------------------------------------------ */
+.product-page .p-tabs .comments-list .review-article {
+    padding: 18px 20px;
+}
+
+.product-page .p-tabs .comments-list .review-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed #e9ecef;
+    margin-bottom: 12px;
+}
+
+.product-page .p-tabs .comments-list .review-avatar {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--main-color-one-shadow, #f2f6ff);
+    color: var(--main-color-one, #275fe0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+
+.product-page .p-tabs .comments-list .review-header-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.product-page .p-tabs .comments-list .review-header-line1 {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+}
+
+.product-page .p-tabs .comments-list .review-author {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--color-site, #333);
+}
+
+.product-page .p-tabs .comments-list .review-header-line2 {
+    margin-top: 3px;
+}
+
+.product-page .p-tabs .comments-list .review-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-muted-two, #929292);
+    font-size: 12px;
+}
+
+.product-page .p-tabs .comments-list .review-rating-box {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+}
+
+.product-page .p-tabs .comments-list .review-rating-box .rating-badge {
+    background: rgba(24, 157, 14, .1);
+    color: #0b8502;
+    font-weight: 800;
+    font-size: 13px;
+    border-radius: 8px;
+    padding: 3px 10px;
+}
+
+.product-page .p-tabs .comments-list .review-stars {
+    display: inline-flex;
+    gap: 1px;
+    font-size: 12px;
+    color: #ffb400;
+}
+
+.product-page .p-tabs .comments-list .review-stars .bi-star {
+    color: #dfe3e8;
+}
+
+.product-page .p-tabs .comments-list .review-title {
+    display: block;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--color-site, #333);
+    margin-bottom: 6px;
+}
+
+.product-page .p-tabs .comments-list .review-body {
+    color: var(--text-muted, #565757);
+    line-height: 2;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+
+/* پیشنهاد خریدار */
+.product-page .p-tabs .comments-list .user-suggest.suggest-yes {
+    background: rgba(24, 157, 14, .1);
+    color: #0b8502;
+}
+
+.product-page .p-tabs .comments-list .user-suggest.suggest-neutral {
+    background: #f1f2f5;
+    color: var(--text-muted-two, #929292) !important;
+}
+
+.product-page .p-tabs .comments-list .user-suggest.suggest-no {
+    background: rgba(239, 57, 78, .09);
+    color: #c8102e;
+}
+
+/* نقاط قوت/ضعف به‌صورت چیپ */
+.product-page .p-tabs .comments-list .review-points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.product-page .p-tabs .comments-list .review-point {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    border-radius: 20px;
+    padding: 4px 12px;
+}
+
+.product-page .p-tabs .comments-list .review-point i {
+    font-size: 11px;
+}
+
+.product-page .p-tabs .comments-list .point-positive {
+    background: rgba(24, 157, 14, .1);
+    color: #0b8502;
+}
+
+.product-page .p-tabs .comments-list .point-negative {
+    background: rgba(239, 57, 78, .09);
+    color: #c8102e;
+}
+
+/* فوتر کارت — دکمه‌های مفید بود با شمارنده */
+.product-page .p-tabs .comments-list .review-footer {
+    padding-top: 12px;
+    border-top: 1px dashed #e9ecef;
+}
+
+.product-page .p-tabs .comments-list .like-question {
+    color: var(--text-muted-two, #929292);
+    font-size: 12.5px;
+    margin-left: 6px;
+}
+
+.product-page .p-tabs .comments-list .btn-like {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #f4f5f9;
+    border: 1px solid #e9ecef;
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 12.5px;
+    color: var(--color-site, #333);
+    transition: all .15s ease;
+}
+
+.product-page .p-tabs .comments-list .btn-like i {
+    font-size: 13px;
+}
+
+.product-page .p-tabs .comments-list .btn-like:hover {
+    border-color: var(--main-color-one, #275fe0);
+    color: var(--main-color-one, #275fe0);
+}
+
+/* شمارندهٔ مفید بود — از attr(data-counter) می‌خواند تا با AJAX همگام بماند */
+.product-page .p-tabs .comments-list .btn-like::after {
+    content: "(" attr(data-counter) ")";
+    font-size: 11px;
+    opacity: .75;
+}
+
+/* ------------------------------------------------------------
+   E) پرسش و پاسخ — بازطراحی مدرن
+   ------------------------------------------------------------ */
+.product-page .p-tabs .js-faq-container .qa-section-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+    border: 1px solid #eef0f3;
+    border-radius: 16px;
+    box-shadow: var(--shadow-sm);
+    padding: 14px 18px;
+    margin-bottom: 14px;
+}
+
+.product-page .p-tabs .js-faq-container .qa-section-head-icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    background: var(--main-color-one-shadow, #f2f6ff);
+    color: var(--main-color-one, #275fe0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+
+.product-page .p-tabs .js-faq-container .qa-section-head-title {
+    display: block;
+    font-size: 15.5px;
+    font-weight: 800;
+    color: var(--color-site, #333);
+}
+
+.product-page .p-tabs .js-faq-container .qa-section-head-sub {
+    display: block;
+    font-size: 12.5px;
+    color: var(--text-muted-two, #929292);
+    margin-top: 2px;
+}
+
+/* فرم پرسش */
+.product-page .p-tabs .js-faq-container .qa-form .form-faq-col {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.product-page .p-tabs .js-faq-container .qa-form-avatar {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--main-color-one-shadow, #f2f6ff);
+    color: var(--main-color-one, #275fe0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    margin-top: 4px;
+}
+
+.product-page .p-tabs .js-faq-container .qa-form .ui-textarea {
+    flex: 1;
+}
+
+/* لغو پاسخ */
+.product-page .p-tabs .js-faq-container .comment-replay-to {
+    background: var(--main-color-one-shadow, #f2f6ff);
+    border: 1px dashed var(--main-color-one, #275fe0);
+    border-radius: 10px;
+    padding: 8px 14px;
+    margin-bottom: 10px;
+    font-size: 13px;
+}
+
+.product-page .p-tabs .js-faq-container .comment-replay-to a {
+    color: #c8102e;
+    text-decoration: none;
+    margin-right: 10px;
+    font-size: 12.5px;
+}
+
+/* راهنمای ورود برای مهمان */
+.product-page .p-tabs .js-faq-container .qa-login-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff8e8;
+    border: 1px dashed #f0c36c;
+    color: #8a6117;
+    border-radius: 14px;
+    padding: 13px 18px;
+    font-size: 13.5px;
+    text-decoration: none;
+    margin-top: 14px;
+    transition: all .18s ease;
+}
+
+.product-page .p-tabs .js-faq-container .qa-login-hint:hover {
+    background: #fff2d4;
+}
+
+.product-page .p-tabs .js-faq-container .qa-login-hint .bi-arrow-left {
+    margin-right: auto;
+}
+
+/* حالت خالی */
+.product-page .p-tabs .js-faq-container .qa-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+    background: #fff;
+    border: 1px dashed #e2e5ea;
+    border-radius: 16px;
+    padding: 34px 20px;
+    color: var(--text-muted-two, #929292);
+    font-size: 14px;
+    margin-top: 14px;
+}
+
+.product-page .p-tabs .js-faq-container .qa-empty i {
+    font-size: 34px;
+    color: #cdd2da;
+}
+
+/* کارت پرسش */
+.product-page .p-tabs .comments-list .qa-article {
+    padding: 16px 18px;
+}
+
+.product-page .p-tabs .comments-list .qa-question-row {
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.product-page .p-tabs .comments-list .qa-question-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.product-page .p-tabs .comments-list .question-body {
+    padding-top: 0;
+    font-size: 14.5px;
+}
+
+.product-page .p-tabs .comments-list .qa-question-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    margin-top: 7px;
+}
+
+.product-page .p-tabs .comments-list .qa-question-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--text-muted-two, #929292);
+}
+
+/* کارت پاسخ */
+.product-page .p-tabs .comments-list .qa-answer {
+    margin: 14px 0 0 0;
+    padding: 13px 16px;
+    background: #f8f9fc;
+    border-radius: 12px;
+    border-right: 3px solid var(--main-color-one, #275fe0);
+}
+
+.product-page .p-tabs .comments-list .qa-answer-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.product-page .p-tabs .comments-list .question-answer-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--text-muted-two, #929292);
+}
+
+/* دکمهٔ پاسخ به پرسش */
+.product-page .p-tabs .comments-list .qa-reply-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    font-size: 12.5px;
+    color: var(--main-color-one, #275fe0);
+    background: var(--main-color-one-shadow, #f2f6ff);
+    border-radius: 20px;
+    padding: 5px 14px;
+    text-decoration: none;
+    transition: all .15s ease;
+}
+
+.product-page .p-tabs .comments-list .qa-reply-btn:hover {
+    background: var(--main-color-one, #275fe0);
+    color: #fff;
+}
+
+/* فیلتر مرتب‌سازی — کارت سفید */
+.product-page .p-tabs .qa-filter {
+    background: #fff;
+    border: 1px solid #eef0f3;
+    border-radius: 14px;
+    padding: 10px 16px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-sm);
+}
+
+/* ------------------------------------------------------------
+   F) لینک‌شدن کارت محصول + امتیاز داخل باکس فروشنده
+   ------------------------------------------------------------ */
+.product-box .product-image-link,
+.product-box .product-title-link {
+    transition: opacity .18s ease;
+}
+
+.product-box .product-image-link:hover,
+.product-box .product-title-link:hover {
+    opacity: .88;
+}
+
+.product-box .product-title-link:hover .title p {
+    color: var(--main-color-one, #275fe0);
+}
+
+/* امتیاز/دیدگاه داخل باکس فروشنده */
+.product-seller-aside .aside-rating {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    border-bottom: 1px dashed #e7e7ec;
+}
+
+.product-seller-aside .aside-rating .count-comment {
+    font-size: 12.5px;
+    transition: color .15s ease;
+}
+
+.product-seller-aside .aside-rating .count-comment:hover {
+    color: var(--main-color-one, #275fe0);
+}
+
+.product-seller-aside .aside-rating .count-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #f5a623;
+}
+
+.product-seller-aside .aside-rating .count-rating i {
+    font-size: 13px;
+    color: #f5a623;
+}
+
+@media (max-width: 991.98px) {
+    .product-seller-aside .aside-rating {
+        align-items: flex-start;
+    }
+}

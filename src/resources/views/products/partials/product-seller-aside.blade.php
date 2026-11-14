@@ -3,7 +3,9 @@
     موضع: ستون چپ صفحهٔ تک‌محصول (زیر «گارانتی اصالت»)، چیدمان عمودی
     هوک‌های JS (show.js): .sku-label (کپی شناسه) / #seller-count-row + .count_stores
     ===================================================================== --}}
-@if(option('multi_vendor_system_status','false')=="true" && $product->addableToCart() && $selected_price)
+{{-- فاز ۱۵۸ — شرط فقط «قابل خرید بودن» است؛ امتیاز/شناسه حالا داخل همین باکس‌اند
+     و باید در همهٔ فروشگاه‌ها (با یا بدون چندفروشندگی) نمایش داده شوند --}}
+@if($product->addableToCart() && $selected_price)
     @php
         $stores_attribute_prices = [];
         if (is_array($get_stores) && !empty($get_stores['attribute_prices'])) {
@@ -28,6 +30,28 @@
     @endphp
 
     <div class="product-seller-aside mt-3 w-100">
+        {{-- فاز ۱۵۸ — امتیاز/دیدگاه/پرسش‌ها داخل باکس فروشنده (درخواست کاربر) --}}
+        <div class="product-meta-rating aside-rating">
+            @if ($product->rating)
+                <div class="d-flex align-items-center justify-content-lg-end">
+                    <div class="count-comment text-muted cursor-pointer" data-activate-tab="comments">
+                        {{ $product->reviews_count }} دیدگاه
+                    </div>
+                    <div class="count-rating ms-2">
+                        <span>({{ $product->reviews_count }}) {{ $product->rating }}</span>
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                </div>
+                @if ($product->comments()->accepted()->count())
+                    <div class="d-flex align-items-center justify-content-lg-end mt-1">
+                        <div class="count-comment text-muted cursor-pointer" data-activate-tab="questions">
+                            {{ $product->comments()->accepted()->count() }} پرسش و پاسخ
+                        </div>
+                    </div>
+                @endif
+            @endif
+        </div>
+
         <ul class="product-seller-aside-list">
 
             {{-- فروشنده --}}

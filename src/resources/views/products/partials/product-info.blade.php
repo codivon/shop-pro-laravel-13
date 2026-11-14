@@ -83,26 +83,7 @@
                 @endif
             </div>
             <div class="col-lg-4">
-                <div class="product-meta-rating">
-                    @if ($product->rating)
-                        <div class="d-flex align-items-center justify-content-lg-end">
-                            <div class="count-comment text-muted cursor-pointer" data-activate-tab="comments">
-                                {{ $product->reviews_count }} دیدگاه
-                            </div>
-                            <div class="count-rating ms-2">
-                                <span>({{ $product->reviews_count }}) {{ $product->rating }}</span>
-                                <i class="bi bi-star-fill"></i>
-                            </div>
-                        </div>
-                        @if ($product->comments()->accepted()->count())
-                            <div class="d-flex align-items-center justify-content-lg-end mt-1">
-                                <div class="count-comment text-muted cursor-pointer" data-activate-tab="questions">
-                                    {{ $product->comments()->accepted()->count() }} پرسش و پاسخ
-                                </div>
-                            </div>
-                        @endif
-                    @endif
-                </div>
+                {{-- فاز ۱۵۸ — product-meta-rating به داخل باکس product-seller-aside منتقل شد --}}
                 @if ($product->suggestionCount())
                     <div class="d-flex align-items-center justify-content-lg-end mt-2">
                         <i class="bi bi-hand-thumbs-up-fill text-success"></i>
@@ -112,12 +93,11 @@
                         </p>
                     </div>
                 @endif
-                <div class="product-meta-garanty justify-content-lg-end justify-content-start mt-2">
-                    <i class="bi bi-shield-fill-check main-color-one-color"></i>
-                    <span class="text-muted font-13"> گارانتی اصالت و سلامت فیزیکی کالا </span>
-                </div>
 
-                {{-- فاز ۱۵۶ — فروشنده/عملکرد/شناسه/ارسال: ستون چپ، چیدمان عمودی زیر گارانتی --}}
+                {{-- فاز ۱۵۸ — تگ ثابت «گارانتی اصالت و سلامت فیزیکی کالا» حذف شد:
+                     داینامیک نبود و گارانتی واقعی به‌عنوان تنوع انتخابی بالاتر نمایش داده می‌شود --}}
+
+                {{-- فاز ۱۵۶ — فروشنده/عملکرد/شناسه/ارسال: ستون چپ، چیدمان عمودی --}}
                 @include('front::products.partials.product-seller-aside')
             </div>
         </div>

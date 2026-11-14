@@ -781,6 +781,30 @@ header{
     -o-transition: 0.2s all ease-in-out;
 }
 
+/* فاز ۱۵۸ — دراپ‌داون دسته‌بندی‌ها (مگای اول سانیار):
+   به‌جای چندستونه‌شدن افقی، تک‌ستون با ارتفاع محدود و اسکرول داخلی */
+.top-menu-menu ul>li>ul.sub-menu.mega-container {
+    left: auto;
+    right: 0;
+    width: max-content;
+    min-width: 260px;
+    max-width: 360px;
+    height: auto;
+    max-height: 420px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex-wrap: nowrap;
+    align-content: flex-start;
+    padding: 10px 14px;
+    border-radius: 0 0 14px 14px;
+    box-shadow: var(--shadow-lg);
+}
+
+.top-menu-menu ul>li>ul.sub-menu.mega-container > li {
+    width: 100%;
+    margin-left: 0;
+}
+
 
 .back-menu {
     background-position: bottom left !important;
@@ -840,28 +864,61 @@ header{
 
 /* ///////////main menu /////////// */
 
+/* فاز ۱۵۸ — پنل مگا منو: تک‌ستون با ارتفاع محدود و اسکرول داخلی
+   (قبلاً ردیف‌ها افقی می‌پیچیدند و پنل با تعداد دسته‌ها بی‌نهایت بزرگ می‌شد) */
 .top-menu-menu ul.main-menu {
     background: #fff;
     display: none;
     box-shadow: var(--shadow-md);
     height: auto;
     min-width: 200px;
+    width: 450px;
+    max-width: calc(100vw - 40px);
     min-height: 400px;
+    max-height: 430px;
     position: absolute;
     top: 50px;
-    left: 20px;
-    right: 20px;
+    left: auto;
+    right: 0;
     opacity: 0;
     visibility: hidden;
     padding: 0;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    overflow-y: auto;
+    overflow-x: hidden;
     transition: 0.4s all ease-in-out;
-    border-radius: 0;
+    border-radius: 0 0 14px 14px;
 }
 
 .top-menu-menu ul.main-menu.active {
     display: flex;
-    left: 0;
+    left: auto;
     right: 0;
+}
+
+/* اسکرول‌بار داخلی پنل مگا منو */
+.top-menu-menu ul.main-menu::-webkit-scrollbar,
+.top-menu-menu ul>li>ul.sub-menu.mega-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.top-menu-menu ul.main-menu::-webkit-scrollbar-track,
+.top-menu-menu ul>li>ul.sub-menu.mega-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.top-menu-menu ul.main-menu::-webkit-scrollbar-thumb,
+.top-menu-menu ul>li>ul.sub-menu.mega-container::-webkit-scrollbar-thumb {
+    background: #d5d8de;
+    border-radius: 6px;
+}
+
+.top-menu-menu ul.main-menu,
+.top-menu-menu ul>li>ul.sub-menu.mega-container {
+    scrollbar-width: thin;
+    scrollbar-color: #d5d8de transparent;
 }
 
 .main-menu-head {
@@ -934,13 +991,15 @@ header{
     padding: 5px 0;
 }
 
+/* فاز ۱۵۸ — ردیف‌ها مرجع موقعیت ستون فرعی می‌شوند تا با اسکرول پنل جابجا شوند */
 .top-menu-menu ul.main-menu>li {
     background-color: #eee;
     border-radius: 0;
+    position: relative;
 }
 
+/* فاز ۱۵۸ — بک‌گراند سفید حذف شد (کاربر): در تم تاریک ردیف را خراب می‌کرد */
 .main-menu-sub-active-li {
-    background: #fff;
     border-bottom-left-radius: 50px;
     border-top-left-radius: 50px;
 }
@@ -3141,20 +3200,20 @@ div#btncollapzion {
 }
 
 @keyframes pulse {
-	0% {
-		transform: scale(0.95) translateX(-50%);
-		box-shadow: 0 0 0 0 rgba(4, 72, 208, 0.775);
+        0% {
+                transform: scale(0.95) translateX(-50%);
+                box-shadow: 0 0 0 0 rgba(4, 72, 208, 0.775);
 }
 
-	70% {
-		transform: scale(1) translateX(-50%);
-		box-shadow: 0 0 0 10px rgba(0, 0, 0, 0);
-	}
+        70% {
+                transform: scale(1) translateX(-50%);
+                box-shadow: 0 0 0 10px rgba(0, 0, 0, 0);
+        }
 
-	100% {
-		transform: scale(0.95) translateX(-50%);
-		box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
-	}
+        100% {
+                transform: scale(0.95) translateX(-50%);
+                box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+        }
 }
 
 .video .play i{
