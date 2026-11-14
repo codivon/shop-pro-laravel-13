@@ -307,6 +307,11 @@ class WidgetIndex extends Component
             /* ========== پورت store قدیمی ========== */
             $maxOrdering = (int) $this->widgets->max('ordering');
 
+            /* فاز ۱۵۶ — ذخیرهٔ صریح page: قبلاً payload بدون page بود و ستون به
+             * پیش‌فرض DB یعنی 'home' می‌افتاد ⇒ ویجتِ ساخته‌شده از
+             * admin/posts-widgets (که مارک‌آپ مشترک را از همین کلاس به‌ارث می‌برد)
+             * در «ابزارک‌های صفحه اصلی» ظاهر می‌شد. پورت رفتار قدیمی:
+             * PostWidgetController::store صریحاً 'page' => 'posts' می‌گذاشت. */
             $widget = Widget::create([
                 'title'     => $this->modalTitle,
                 'key'       => $this->modalKey,
@@ -314,6 +319,7 @@ class WidgetIndex extends Component
                 'theme'     => current_theme_name(),
                 'lang'      => app()->getLocale(),
                 'ordering'  => (int) $this->modalOrdering > 0 ? (int) $this->modalOrdering : $maxOrdering + 1,
+                'page'      => $this->page,
             ]);
 
             $options = $this->getRequestOptions($template, $widget);

@@ -3650,3 +3650,34 @@ DigiPay v1.3.0 (اسنپ‌پی + ری‌برندینگ) پوش شد؛ CreditPay
 - `app/Livewire/Admin/Notifications/PanelNotifications.php` — اکشن جدید `openNotification`
 - `resources/views/admin-panel/livewire/admin/notifications/panel.blade.php` — دکمهٔ «مشاهده» به اکشن سروری وصل شد
 - مستندات: ADMIN_PANEL_PROGRESS.md (رکورد فاز ۱۵۵)
+
+## فاز ۱۵۶ — ویجتِ ساخته‌شده از «ابزارک‌های مقالات» در «ابزارک‌های صفحه اصلی» می‌افتاد
+
+> **گزارش کاربر:** در صفحهٔ ابزارک‌های مقالات (admin/posts-widgets) وقتی ویجت ایجاد می‌کنم، می‌رود جزو ویجت‌های صفحه اصلی.
+
+### تشخیص ریشه
+- جریان ایجاد در لیستِ ابزارک‌ها (فاز ۱۱) مودالی است: «ایجاد» → `openAddFlow` → انتخاب نوع (`pickType`) → `saveModal` — همه در کلاس پایهٔ `WidgetIndex`؛ `PostWidgetIndex` فقط `$page='posts'` و routePrefix را رونویسی می‌کند و مارک‌آپ `posts-widgets.blade.php` همان `widgets.blade.php` مشترک را include می‌کند.
+- **باگ:** شاخهٔ ایجادِ `WidgetIndex::saveModal()` در `Widget::create([...])` ستون `page` را نمی‌گذاشت (فقط برای home بی‌ضرر بود چون پیش‌فرضِ ستون `widgets.page` در مایگریشن `home` است) ⇒ ویجتِ ساخته‌شده از صفحهٔ مقالات با `page='home'` ثبت می‌شد و دقیقاً در لیست «ابزارک‌های صفحه اصلی» ظاهر می‌شد (و در لیست مقالات هم دیده نمی‌شد چون آن لیست با `where('page','posts')` می‌خواند — حتی toggle/حذف/ترتیب آن صفحه هم با همین گارد اسکوپ می‌شوند).
+- پورت ناقص از قدیمی: `PostWidgetController::store` در پنل قدیمی صریحاً `'page' => 'posts'` می‌گذاشت؛ `PostWidgetForm` پنل جدید هم همین را دارد (`creationPayload`) ولی مسیر مودالِ لیست از آن رد نمی‌شود.
+- **همین اشکال در `WidgetBuilder::createWidget()`** هم بود (`PostWidgetBuilder` با `$page='posts'` ارث می‌برد) ⇒ ویجت‌ساز مقالات هم ویجت را در صفحهٔ اصلی می‌ساخت.
+
+### رفع
+| نقطه | تغییر |
+|---|---|
+| `WidgetIndex::saveModal()` — شاخهٔ ایجاد | `'page' => $this->page` به payload `Widget::create` اضافه شد ⇒ home صریحاً `home` (برابر پیش‌فرض قبلی — رفتار تغییر نکرده) و posts صریحاً `posts`. شاخهٔ ویرایش عمداً بدون page (تغییر صفحه هنگام ویرایش معنی ندارد). |
+| `WidgetBuilder::createWidget()` | همان `'page' => $this->page` — ویجت‌ساز مقالات هم اصلاح شد. |
+
+### ترمیم دادهٔ قربانی‌ها (پس از دیپلوی، اختیاری)
+- ویجت‌هایی که از مسیرهای معیوب ساخته شده‌اند در تولید با `page='home'` مانده‌اند؛ لاگ ایجادِ هر دو مسیر معیوب description «مدیر ابزارک مقالات «...» را ایجاد کرد» دارد (و ویژگی `page: posts`). با tinker می‌شود فقط قربانی‌ها را جابه‌جا کرد:
+```bash
+php artisan tinker --execute 'App\Models\Widget::whereIn("id", Spatie\Activitylog\Models\Activity::query()->where("description", "like", "%ابزارک مقالات%را ایجاد کرد%")->where("subject_type", App\Models\Widget::class)->pluck("subject_id")->unique())->where("page", "home")->update(["page" => "posts"]);'
+```
+(ایمن: ویجت‌های واقعاً home این description را ندارند؛ ویجت‌های post-fix هم که page=posts دارند دست‌نخورده می‌مانند. فرم مستقل ایجاد — PostWidgetForm — از قبل درست ذخیره می‌کرد و لاگ ایجاد نداشت، پس مشمول ترمیم نمی‌شود.)
+
+### راستی‌آزمایی و محدودیت سندباکس
+- سندباکس PHP ندارد؛ بازبینی ایستا: مسیر دقیق کلیک کاربر (دکمهٔ «ایجاد» ویو مشترک = `openAddFlow` مودال)، وراثت `PostWidgetIndex/PostWidgetBuilder`، پیش‌فرض `home` در مایگریشن ۲۰۲۱_۱۰_۰۲_۱۰۱۲۵۲ و پورت `PostWidgetController::store` (خط ۶۴). بعد از دیپلوی: ایجاد ویجت از admin/posts-widgets باید در همان لیست بنشیند و صفحهٔ اصلی دست‌نخورده بماند؛ ویجت‌ساز مقالات هم همین.
+
+### فایل‌های فاز ۱۵۶
+- `app/Livewire/Admin/Widgets/WidgetIndex.php` — `'page' => $this->page` در ایجادِ مودال
+- `app/Livewire/Admin/Widgets/WidgetBuilder.php` — همان اصلاح در ویجت‌ساز
+- مستندات: ADMIN_PANEL_PROGRESS.md (رکورد فاز ۱۵۶)

@@ -255,6 +255,9 @@ class WidgetBuilder extends Component
 
         $maxOrdering = (int) $this->widgets->max('ordering');
 
+        // فاز ۱۵۶ — ذخیرهٔ صریح page (همان ریشهٔ WidgetIndex::saveModal):
+        // بدون page ستون به پیش‌فرض DB یعنی 'home' می‌افتاد ⇒ ویجت‌ساز مقالات
+        // ویجت را در صفحهٔ اصلی می‌ساخت؛ پورت قدیمی 'page' => 'posts' می‌گذاشت
         $widget = Widget::create([
             'title'     => $this->modalTitle,
             'key'       => $this->draftKey,
@@ -262,6 +265,7 @@ class WidgetBuilder extends Component
             'theme'     => current_theme_name(),
             'lang'      => app()->getLocale(),
             'ordering'  => (int) $this->modalOrdering > 0 ? (int) $this->modalOrdering : $maxOrdering + 1,
+            'page'      => $this->page,
         ]);
 
         $options = $this->getRequestOptions($template, $widget);
