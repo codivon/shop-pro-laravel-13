@@ -13,6 +13,42 @@
 
     var syncTimer = null;
 
+    /* ------------------ شمارشگر تعداد (TouchSpin) ------------------
+       فاز ۱۷۳ — به اسکوپ بیرونی منتقل شد تا بعد از «هر» رندر مجدد ناحیهٔ سبد
+       (حتی وقتی پاسخ سرور خطای موجودی است) دوباره روی اینپوت‌های تازه اجرا شود.
+       قبلاً فقط $(document).ajaxSuccess این کار را می‌کرد که در درخواست‌های
+       خطادار اجرا نمی‌شود و به همین دلیل بعد از خطای موجودی، استایل کادر تعداد
+       به‌کلی می‌ریخت (اینپوت خام بدون دکمهٔ +/−). */
+
+    function initTouchspin() {
+        $('#cart-update-form input.cart_quantity').each(function () {
+            var $input = $(this);
+            if ($input.attr('data-touchspin-initialized')) return;
+
+            $input.TouchSpin({
+                min: parseFloat($input.attr('min')) || 1,
+                max: parseFloat($input.attr('max')) || 100000000,
+                step: parseFloat($input.attr('step')) || 1,
+                initval: $input.val(),
+                decimals: 0,
+                boostat: 5,
+                maxboostedstep: 10,
+                buttondown_class: 'btn-counter waves-effect waves-light',
+                buttonup_class: 'btn-counter waves-effect waves-light'
+            });
+
+            $input.attr('data-touchspin-initialized', '1');
+        });
+    }
+
+    function initTooltips() {
+        if (window.bootstrap && window.bootstrap.Tooltip) {
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+                window.bootstrap.Tooltip.getOrCreateInstance(el);
+            });
+        }
+    }
+
     /* ------------------ اعمال پاسخ سرور ------------------ */
 
     function applyCartPayload(res) {
@@ -47,12 +83,10 @@
             try { getFinalPrice(true); } catch (e) {}
         }
 
-        /* تولتیپ‌های تازه‌رندرشده */
-        if (window.bootstrap && window.bootstrap.Tooltip) {
-            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
-                window.bootstrap.Tooltip.getOrCreateInstance(el);
-            });
-        }
+        /* فاز ۱۷۳ — بعد از رندر مجدد (موفق یا خطای موجودی) شمارشگرها و تولتیپ‌های
+           تازه‌رندرشده دوباره فعال شوند */
+        initTouchspin();
+        initTooltips();
     }
 
     /* ------------------ ذخیرهٔ تغییرات تعداد ------------------ */
@@ -108,39 +142,15 @@
     $(function () {
 
         /* شمارشگر تعداد (TouchSpin — مطابق قالب سانیار) */
-        function initTouchspin() {
-            $('#cart-update-form input.cart_quantity').each(function () {
-                var $input = $(this);
-                if ($input.attr('data-touchspin-initialized')) return;
-
-                $input.TouchSpin({
-                    min: parseFloat($input.attr('min')) || 1,
-                    max: parseFloat($input.attr('max')) || 100000000,
-                    step: parseFloat($input.attr('step')) || 1,
-                    initval: $input.val(),
-                    decimals: 0,
-                    boostat: 5,
-                    maxboostedstep: 10,
-                    buttondown_class: 'btn-counter waves-effect waves-light',
-                    buttonup_class: 'btn-counter waves-effect waves-light'
-                });
-
-                $input.attr('data-touchspin-initialized', '1');
-            });
-        }
         initTouchspin();
 
-        /* بعد از رندر مجدد ناحیهٔ سبد، شمارشگرها دوباره فعال شوند */
+        /* بعد از رندر مجدد ناحیهٔ سبد، شمارشگرها دوباره فعال شوند (حالت موفق) */
         $(document).ajaxSuccess(function () {
             initTouchspin();
         });
 
         /* تولتیپ‌های سانیار (Bootstrap 5) */
-        if (window.bootstrap && window.bootstrap.Tooltip) {
-            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
-                window.bootstrap.Tooltip.getOrCreateInstance(el);
-            });
-        }
+        initTooltips();
 
         /* تغییر تعداد → ذخیرهٔ خودکار (بدون دکمهٔ بروزرسانی) */
         $(document).on('change', '#cart-update-form input.cart_quantity', function () {

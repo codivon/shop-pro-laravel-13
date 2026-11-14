@@ -14,6 +14,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
+    {{-- فاز ۱۷۳ — پشتیبانی تم تیرهٔ چک‌اوت: theme-init باید پیش از رندر اجرا شود
+         تا اگر تم شب فعال بود صفحه از همان قاب اول تیره رندر شود (بدون فلش سفید) --}}
+    <script src="{{ theme_asset('js/theme-init.js') }}"></script>
+
     {{-- Favicon --}}
     <link rel="icon" type="image/png" sizes="32x32" href="{{ option('info_icon', theme_asset('image/logo.png')) }}">
     <link rel="apple-touch-icon" sizes="144x144" href="{{ option('info_icon', theme_asset('image/logo.png')) }}">
@@ -33,8 +37,11 @@
     <link rel="stylesheet" href="{{ theme_asset('css/materialdesignicons.css') }}">
 
     {{-- استایل‌های مشترک تم (متغیرهای رنگ، content-box، bank-item، pay-table و ...) --}}
-    <link rel="stylesheet" href="{{ theme_asset('css/style.css') }}?v=171">
+    <link rel="stylesheet" href="{{ theme_asset('css/style.css') }}?v=173">
     <link rel="stylesheet" href="{{ theme_asset('css/responsive.css') }}?v=171">
+
+    {{-- فاز ۱۷۳ — تم تیرهٔ چک‌اوت (قوانین اختصاصی چک‌اوت انتهای همین فایل است) --}}
+    <link rel="stylesheet" href="{{ theme_asset('css/theme-dark.css') }}?v=27">
 
     {{-- توست‌ها --}}
     <link rel="stylesheet" href="{{ theme_asset('js/plugins/toastr/toastr.css') }}">

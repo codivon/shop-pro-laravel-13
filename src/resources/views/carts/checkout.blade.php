@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="{{ asset('vendor/mapir/css/mapp.min.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/mapir/css/fa/style.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('css/map-selected-styles.css') }}" />
-    <link rel="stylesheet" href="{{ theme_asset('css/checkout.css') }}?v=171" />
+    <link rel="stylesheet" href="{{ theme_asset('css/checkout.css') }}?v=173" />
 @endpush
 
 @section('content')
@@ -106,10 +106,11 @@
                                     <i class="bi bi-arrow-right me-1"></i>
                                     بازگشت به سبد خرید
                                 </a>
+                                {{-- فاز ۱۷۳ — عنوان دکمهٔ نهایی به «ثبت سفارش» تغییر کرد --}}
                                 <button id="checkout-link"
                                     class="save-shipping-data checkout_link selenium-next-step-shipping cursor-pointer btn main-color-one-bg border-0 rounded-3"
                                     data-action="{{ route('front.cart') }}" data-redirect="{{ route('front.checkout') }}">
-                                    تایید و ادامه ثبت سفارش
+                                    ثبت سفارش
                                     <i class="bi bi-arrow-left ms-1"></i>
                                 </button>
                             </div>
@@ -296,8 +297,8 @@
     <script src="{{ theme_asset('js/plugins/jquery-validation/localization/messages_fa.min.js') }}?v=2"></script>
     <script src="{{ theme_asset('js/jquery.nice-select.min.js') }}"></script>
     <script src="{{ theme_asset('js/pages/addresses/map-select-scripts.js') }}?v=161"></script>
-    <script src="{{ theme_asset('js/pages/carts/checkout.js') }}?v=171"></script>
-    <script src="{{ theme_asset('js/pages/checkout.js') }}?v=171"></script>
+    <script src="{{ theme_asset('js/pages/carts/checkout.js') }}?v=173"></script>
+    <script src="{{ theme_asset('js/pages/checkout.js') }}?v=173"></script>
     <script src="{{ theme_asset('js/pages/addresses/index.js') }}?v=161"></script>
     <script src="{{ theme_asset('js/pages/addresses/add-edit-address.js?v=2') }}"></script>
 @endpush

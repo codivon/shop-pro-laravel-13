@@ -1,13 +1,21 @@
 <div id="checkout-carrier-container" class="consignment-container">
     @foreach($sellerGroups as $groupId => $group)
+        @php
+            /* فاز ۱۷۳ — لوگوی فروشنده: اگر فروشنده تصویر نداشت یا لینکش خراب بود،
+               تصویر پیش‌فالت تم (logo-seller) نمایش داده می‌شود؛ جایگزینی لینک‌های
+               خراب با data-snr-fallback و شنوندهٔ error در js/pages/checkout.js انجام می‌شود. */
+            $sellerLogo = trim((string) @$group['logo']);
+            $sellerLogoUrl = $sellerLogo !== '' ? $sellerLogo : theme_asset('image/logo-seller.png');
+        @endphp
 
         <div class="card shadow-1 consignments" data-group-id="{{ $groupId }}">
             <div class="card-body">
                 <div class="consignment text-right">
                     <div class="main-title d-flex align-items-center mb-3">
-                        <img src="{{ @$group['logo'] }}"
+                        <img src="{{ $sellerLogoUrl }}"
                             alt="{{ $group['name'] }}"
                             loading="lazy"
+                            data-snr-fallback="{{ theme_asset('image/logo-seller.png') }}"
                             style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">
                         <div class="d-flex flex-column justify-content-center ms-3">
                             <span class="fw-light fs-9 text-gray">مرسوله شماره {{ $group['number'] }}</span>

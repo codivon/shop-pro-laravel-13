@@ -2593,3 +2593,246 @@ html[data-theme="dark"] .snr-cat-fallback {
 html[data-theme="dark"] .snr-cat-more {
     color: #7ea4ff;
 }
+
+/* ============================================================
+   فاز ۱۷۳ — چک‌اوت روی لایهٔ ساده (layouts/checkout.blade.php)
+   theme-dark حالا در این لایه هم لود می‌شود؛ قوانین اختصاصی اجزای
+   چک‌اوت (هدر ساده، درگاه‌ها، کیف پول، کد تخفیف، هشدارها)
+   ============================================================ */
+
+html[data-theme="dark"] body.checkout-simple-page {
+    background-color: var(--dk-bg);
+    color: var(--dk-text);
+}
+
+/* هدر سادهٔ چک‌اوت */
+html[data-theme="dark"] .snr-checkout-header {
+    background: var(--dk-surface);
+    border-bottom: 1px solid var(--dk-border);
+    box-shadow: 0 2px 12px rgb(0 0 0 / 35%);
+}
+
+html[data-theme="dark"] .snr-checkout-back {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .snr-checkout-back:hover {
+    background: var(--dk-surface-2);
+    color: #5bd0c8;
+}
+
+html[data-theme="dark"] .checkout-simple-page .text-dark {
+    color: var(--dk-text) !important;
+}
+
+/* کارت‌های درگاه پرداخت */
+html[data-theme="dark"] .snr-gateway-card {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .snr-gateway-card:hover {
+    border-color: #3d4456;
+    box-shadow: 0 8px 18px rgb(0 0 0 / 40%);
+}
+
+html[data-theme="dark"] .snr-gateway-card.active {
+    background: rgb(91 138 245 / 8%);
+    border-color: var(--main-color-one);
+}
+
+html[data-theme="dark"] .snr-gateway-logo {
+    background: var(--dk-surface);
+}
+
+html[data-theme="dark"] .snr-gateway-logo i {
+    color: #6b7383;
+}
+
+html[data-theme="dark"] .snr-gateway-name {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .snr-gateway-sub {
+    color: var(--dk-text-muted);
+}
+
+/* کارت کیف پول */
+html[data-theme="dark"] .snr-wallet-card {
+    border-color: var(--dk-border);
+    background:
+        radial-gradient(120% 160% at 100% 0%, rgba(91, 138, 245, 0.08) 0%, rgba(91, 138, 245, 0) 55%),
+        var(--dk-surface-2);
+}
+
+html[data-theme="dark"] .snr-wallet-card:hover {
+    border-color: #3d4456;
+    box-shadow: 0 8px 18px rgb(0 0 0 / 40%);
+}
+
+html[data-theme="dark"] .snr-wallet-card.active {
+    border-color: var(--main-color-one);
+    box-shadow: 0 6px 16px rgb(0 0 0 / 35%);
+}
+
+html[data-theme="dark"] .snr-wallet-title {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .snr-wallet-balance {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .snr-wallet-balance strong {
+    color: #4ade80;
+}
+
+html[data-theme="dark"] .snr-wallet-icon {
+    color: #7ea4ff;
+    background: linear-gradient(135deg, rgba(91, 138, 245, 0.16) 0%, rgba(91, 138, 245, 0.06) 100%);
+}
+
+html[data-theme="dark"] .snr-wallet-card.active .snr-wallet-icon {
+    background: var(--main-color-one);
+    color: #fff;
+}
+
+html[data-theme="dark"] .snr-wallet-state .has-balance {
+    color: #4ade80;
+    background: rgb(74 222 128 / 10%);
+}
+
+html[data-theme="dark"] .snr-wallet-state .increase-balance {
+    color: #ff8787;
+    background: rgb(255 135 135 / 10%);
+}
+
+html[data-theme="dark"] .snr-wallet-card::after {
+    background: var(--dk-surface);
+    border-color: #3d4456;
+}
+
+/* جداکننده‌ها و تیتر بخش‌ها */
+html[data-theme="dark"] .snr-section-head,
+html[data-theme="dark"] .snr-gateways-head,
+html[data-theme="dark"] .snr-credit-pay-area,
+html[data-theme="dark"] .snr-discount-divider {
+    border-top-color: var(--dk-border);
+}
+
+/* کد تخفیف */
+html[data-theme="dark"] .snr-switch-slider {
+    background: #3d4456;
+}
+
+html[data-theme="dark"] .snr-discount-form-row .form-control {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .snr-discount-form-row .form-control:focus {
+    background: var(--dk-surface-2);
+    border-color: #5bd0c8;
+}
+
+html[data-theme="dark"] .snr-discount-applied {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border);
+}
+
+/* هشدارهای چک‌اوت */
+html[data-theme="dark"] .checkout-simple-page .alert-info {
+    background: rgb(91 138 245 / 12%);
+    border-color: rgb(91 138 245 / 35%);
+    color: #9db7fb;
+}
+
+html[data-theme="dark"] .checkout-simple-page .alert-danger {
+    background: rgb(248 113 113 / 10%);
+    border-color: rgb(248 113 113 / 35%);
+    color: #ffa8a8;
+}
+
+html[data-theme="dark"] .checkout-simple-page .alert-warning {
+    background: rgb(250 176 5 / 10%);
+    border-color: rgb(250 176 5 / 35%);
+    color: #ffd43b;
+}
+
+/* باکس آدرس و مرسوله‌ها */
+html[data-theme="dark"] .address-container .user-add-address-container .user-add-address--box {
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .address-container .user-add-address-container .user-add-address--box i {
+    color: #4a5164;
+}
+
+html[data-theme="dark"] .address-container .user-add-address-container .user-add-address--box span {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .address-container .user-address-item .custom-radio-box-label {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .consignment .send-time .alert-light,
+html[data-theme="dark"] .consignment .send-time .alert-light.text-dark {
+    background: var(--dk-surface-2) !important;
+    color: var(--dk-text) !important;
+}
+
+html[data-theme="dark"] .consignment .send-time .alert-light * {
+    color: var(--dk-text) !important;
+}
+
+/* ============================================================
+   فاز ۱۷۳ — توضیحات دسته‌بندی (category-products) در تم تیره
+   ============================================================ */
+
+html[data-theme="dark"] .category-description.category-background::before {
+    background:
+        linear-gradient(180deg, rgba(18, 20, 26, 0.96) 0%, rgba(24, 27, 34, 0.92) 60%, rgba(18, 20, 26, 0.96) 100%) !important;
+}
+
+html[data-theme="dark"] .category-description.category-background,
+html[data-theme="dark"] .category-description.category-background p,
+html[data-theme="dark"] .category-description.category-background span,
+html[data-theme="dark"] .category-description.category-background div,
+html[data-theme="dark"] .category-description.category-background li,
+html[data-theme="dark"] .category-description.category-background td,
+html[data-theme="dark"] .category-description.category-background th {
+    color: var(--dk-text) !important;
+}
+
+html[data-theme="dark"] .category-description.category-background h1,
+html[data-theme="dark"] .category-description.category-background h2,
+html[data-theme="dark"] .category-description.category-background h3,
+html[data-theme="dark"] .category-description.category-background h4,
+html[data-theme="dark"] .category-description.category-background h5,
+html[data-theme="dark"] .category-description.category-background h6 {
+    color: var(--dk-text) !important;
+}
+
+html[data-theme="dark"] .category-description.category-background h2::after,
+html[data-theme="dark"] .category-description.category-background h3::after {
+    background: linear-gradient(to left, #5b8af5, rgba(91, 138, 245, 0)) !important;
+}
+
+html[data-theme="dark"] .category-description.category-background a {
+    color: #7ea4ff !important;
+}
+
+html[data-theme="dark"] .category-description.category-background .btn {
+    background: var(--main-color-one) !important;
+    color: #fff !important;
+}
+
+html[data-theme="dark"] .category-description.category-background table th {
+    background: var(--dk-surface-2) !important;
+}
+
+html[data-theme="dark"] .category-description.category-background table td {
+    border-color: var(--dk-border) !important;
+}

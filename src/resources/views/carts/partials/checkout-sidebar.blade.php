@@ -64,12 +64,14 @@
                 </div>
 
                 <div class="action mt-3 d-flex align-items-center justify-content-center">
+                    {{-- فاز ۱۷۳ — عنوان دکمه: در صفحهٔ سبد «ادامه فرایند خرید» و
+                         در صفحهٔ پرداخت (چون همین سایدبار مشترک است) «ثبت سفارش» --}}
                     <a href="javascript:void(0)" id="checkout-link"
                         class="btn border-0 main-color-one-bg rounded-3 d-block w-100 checkout_link selenium-next-step-shipping"
                         data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-html="true"
                         title="کالاهای موجود در سبد شما ثبت و رزرو نشده‌اند، برای ثبت سفارش مراحل بعدی را تکمیل کنید."
                         data-action="{{ route('front.cart') }}" data-redirect="{{ route('front.checkout') }}">
-                        تسویه حساب
+                        {{ request()->routeIs('front.checkout') ? 'ثبت سفارش' : 'ادامه فرایند خرید' }}
                     </a>
                 </div>
             </div>

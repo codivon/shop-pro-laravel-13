@@ -2,6 +2,69 @@
 let isUpdatingPrice = false;
 let isFirstLoad = true; // مشخص می‌کند اولین بار است یا نه
 
+// ==================== اورلی ثبت سفارش (فاز ۱۷۳) ====================
+/* وقتی کاربر دکمهٔ «ثبت سفارش» را می‌زند و فرم معتبر است، یک اورلی تمام‌صفحه
+   می‌گذاریم تا تا لحظهٔ رفتن به درگاه/صفحهٔ بعد نتواند هیچ چیز را تغییر دهد
+   یا دوبار کلیک کند. blockUI (پلاگین) کل صفحه را می‌گیرد و تا هدایت بعدی
+   برمی‌گردد. */
+
+function showOrderSubmittingOverlay() {
+    if (window.__snrOrderSubmitting) return;
+    window.__snrOrderSubmitting = true;
+
+    /* اسکرول صفحه قفل شود */
+    $('body').addClass('snr-order-submitting');
+
+    if ($.blockUI) {
+        $.blockUI({
+            message: '<div class="snr-order-overlay-box">' +
+                '<div class="spinner-border" role="status" aria-hidden="true"></div>' +
+                '<p class="mb-1 mt-3 fw-bold">در حال ثبت سفارش شما...</p>' +
+                '<span class="font-12">لطفاً صفحه را نبندید و تا تکمیل ثبت صبر کنید.</span>' +
+                '</div>',
+            baseZ: 20000,
+            overlayCSS: {
+                backgroundColor: '#0b0d12',
+                opacity: 0.55,
+                cursor: 'wait'
+            },
+            css: {
+                border: '0',
+                padding: '0',
+                backgroundColor: 'none',
+                color: '#fff',
+                cursor: 'wait',
+                'z-index': '20001'
+            },
+            focusInput: false
+        });
+    }
+}
+
+// ==================== فالبک تصویر فروشنده‌ها (فاز ۱۷۳) ====================
+/* لوگوی فروشنده‌ها در مرسوله‌ها data-snr-fallback دارد؛ اگر لینک لوگو خراب بود
+   (404 یا خالی) با شنوندهٔ capture-phase رویداد error، تصویر پیش‌فرض تم
+   جایگزین می‌شود. event error حباب نمی‌خورد، برای همین capture می‌گذاریم. */
+document.addEventListener('error', function (e) {
+    var el = e.target;
+    if (el && el.tagName === 'IMG' && el.dataset && el.dataset.snrFallback
+        && el.src !== el.dataset.snrFallback) {
+        el.src = el.dataset.snrFallback;
+        el.removeAttribute('data-snr-fallback');
+    }
+}, true);
+
+/* چون اسکریپت‌ها انتهای صفحه هستند ممکن است خطای ۴۰۴ بعضی تصاویر قبل از
+   ثبت شنونده رخ داده باشد؛ در اولین اجرا هم تصاویر خراب موجود را بررسی کن */
+(function () {
+    document.querySelectorAll('img[data-snr-fallback]').forEach(function (el) {
+        if (el.complete && el.naturalWidth === 0 && el.src !== el.dataset.snrFallback) {
+            el.src = el.dataset.snrFallback;
+            el.removeAttribute('data-snr-fallback');
+        }
+    });
+})();
+
 // ==================== تابع به‌روزرسانی کلاس رادیوها ====================
 function updateRadioActiveClass() {
 
@@ -267,9 +330,11 @@ jQuery('#checkout-form').validate({
     submitHandler: function(form) {
         // ========== بررسی وجود محصولات فیزیکی ==========
         const hasPhysical = $('.consignment-container .consignments').length > 0;
-        console.log(hasPhysical)
+
         // اگر فقط محصول دانلودی است، بدون بررسی ارسال کنید
         if (!hasPhysical) {
+            /* فاز ۱۷۳ — اورلی تمام‌صفحه تا لحظهٔ هدایت بعدی */
+            showOrderSubmittingOverlay();
             form.submit();
             return;
         }
@@ -289,6 +354,9 @@ jQuery('#checkout-form').validate({
         });
 
         if (allGroupsHaveCarrier) {
+            /* فاز ۱۷۳ — اورلی تمام‌صفحه تا لحظهٔ هدایت بعدی؛ کاربر تا ثبت نهایی
+               نمی‌تواند فرم یا آدرس یا درگاه را تغییر دهد */
+            showOrderSubmittingOverlay();
             form.submit();
         }
     }
@@ -296,6 +364,12 @@ jQuery('#checkout-form').validate({
 
 // بررسی آدرس در submit
 jQuery('#checkout-form').on('submit', function(e) {
+    /* فاز ۱۷۳ — اگر اورلی ثبت سفارش فعال است یعنی فرم از مسیر اعتبارسنجی
+       در حال ارسال است؛ جلوی هندلرهای بعدی را هم نگیر */
+    if (window.__snrOrderSubmitting) {
+        return true;
+    }
+
     // ========== بررسی وجود محصولات فیزیکی ==========
     const hasPhysical = $('.consignment-container .consignments').length > 0;
 

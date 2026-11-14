@@ -6,38 +6,6 @@
             <h5 class="mb-0">انتخاب شیوه پرداخت</h5>
         </div>
 
-        {{-- پرداخت اقساطی / اعتباری (پکیج CreditPay) — فاز ۱۷۱: در یک ناحیهٔ جدا
-             با فاصلهٔ مشخص از درگاه‌های آنلاین قرار می‌گیرد --}}
-        @if(module_is_ready('CreditPay', ['installment_excluded_products']))
-            <div class="snr-credit-pay-area">
-                @include('credit-pay::front.installment_checkout_hook', ['cart' => $cart])
-            </div>
-        @endif
-
-        @if(module_is_ready('CreditPay', ['credit_product_markups']))
-            <div class="snr-credit-pay-area">
-                @include('credit-pay::front.checkout_hook', ['cart' => $cart])
-            </div>
-        @endif
-
-        {{-- کیف پول --}}
-        @if ($wallet->balance)
-            <div class="wallet-select mb-3">
-                <input type="radio" class="btn-check" name="gateway" id="wallet" value="wallet" autocomplete="off">
-                <label for="wallet" class="bank-item w-100 mb-0 cursor-pointer">
-                    <i class="bi bi-wallet2 main-color-one-color font-18"></i>
-                    <h6 class="font-14 mx-2 mb-0">پرداخت با کیف پول</h6>
-                    <span class="has-balance font-12 mb-0 text-success" style="display: none;">موجودی کیف پول برای این پرداخت کافی است</span>
-                    <a href="{{ route('front.wallet.index') }}"
-                        class="increase-balance font-12 mb-0 text-danger" style="display: none;">موجودی کیف پول کافی نیست؛ افزایش موجودی</a>
-                    <p class="mb-0 text-muted font-12" id="wallet-balance"
-                        data-value="{{ $wallet->balance }}">
-                        موجودی: {{ number_format($wallet->balance) }} تومان
-                    </p>
-                </label>
-            </div>
-        @endif
-
         {{-- فاز ۱۷۱ — درگاه‌های پرداخت آنلاین به‌صورت کارت‌های تصویری کنار هم
              (با تصویر درگاه اگر موجود بود، در غیر این صورت آیکون پیش‌فرض) --}}
         <div class="snr-gateways-head d-flex align-items-center justify-content-between flex-wrap gap-1">
@@ -88,6 +56,75 @@
             @endif
         </div>
 
+        {{-- فاز ۱۷۳ — کیف پول: از بخش اقساطی/اعتباری جدا شد و کارت مدرن اختصاصی دارد.
+             نکتهٔ JS: کلاس wallet-select و شناسهٔ wallet-balance و کلاس‌های
+             has-balance / increase-balance توسط js/pages/checkout.js استفاده می‌شوند. --}}
+        @if ($wallet->balance)
+            <div class="snr-wallet-section">
+                <div class="snr-section-head d-flex align-items-center justify-content-between flex-wrap gap-1">
+                    <h6 class="mb-0 font-14 fw-bold">
+                        <i class="bi bi-wallet2 main-color-one-color me-1"></i>
+                        کیف پول
+                    </h6>
+                    <a href="{{ route('front.wallet.index') }}" class="font-12 text-muted text-decoration-none">
+                        مدیریت و افزایش موجودی
+                    </a>
+                </div>
+
+                <div class="wallet-select">
+                    <input type="radio" class="btn-check" name="gateway" id="wallet" value="wallet" autocomplete="off">
+                    <label for="wallet" class="snr-wallet-card bank-item w-100 mb-0 cursor-pointer">
+                        <span class="snr-wallet-icon" aria-hidden="true">
+                            <i class="bi bi-wallet2"></i>
+                        </span>
+                        <span class="snr-wallet-info">
+                            <span class="snr-wallet-title">پرداخت با کیف پول</span>
+                            <span class="snr-wallet-balance">
+                                موجودی:
+                                <strong id="wallet-balance" data-value="{{ $wallet->balance }}">
+                                    {{ number_format($wallet->balance) }}
+                                </strong>
+                                تومان
+                            </span>
+                        </span>
+                        <span class="snr-wallet-state">
+                            <span class="has-balance">موجودی کافی است</span>
+                            <a href="{{ route('front.wallet.index') }}" class="increase-balance">
+                                موجودی کافی نیست؛ افزایش موجودی
+                            </a>
+                        </span>
+                    </label>
+                </div>
+            </div>
+        @endif
+
+        {{-- فاز ۱۷۳ — پرداخت اقساطی/اعتباری (پکیج CreditPay): با تیتر و جداکنندهٔ
+             اختصاصی در انتهای شیوه‌های پرداخت قرار گرفت (دیگر وسط کیف پول و درگاه‌ها نیست) --}}
+        @if(module_is_ready('CreditPay', ['installment_excluded_products'])
+            || module_is_ready('CreditPay', ['credit_product_markups']))
+            <div class="snr-credit-pay-area">
+                <div class="snr-credit-pay-head">
+                    <h6 class="mb-0 font-14 fw-bold">
+                        <i class="bi bi-calendar2-week main-color-one-color me-1"></i>
+                        پرداخت اقساطی و اعتباری
+                    </h6>
+                    <span class="font-12 text-muted">خرید در قالب اقساط یا طرح‌های اعتباری</span>
+                </div>
+
+                @if(module_is_ready('CreditPay', ['installment_excluded_products']))
+                    <div class="snr-credit-pay-module">
+                        @include('credit-pay::front.installment_checkout_hook', ['cart' => $cart])
+                    </div>
+                @endif
+
+                @if(module_is_ready('CreditPay', ['credit_product_markups']))
+                    <div class="snr-credit-pay-module">
+                        @include('credit-pay::front.checkout_hook', ['cart' => $cart])
+                    </div>
+                @endif
+            </div>
+        @endif
+
         {{-- فاز ۱۷۱ — کد تخفیف: زیر درگاه‌های پرداخت و جدا با hr (نمونهٔ تصویر سوم کاربر)
              نکته: داخل فرم چک‌اوت هستیم؛ فرم تو در تو مجاز نیست، پس ثبت/حذف کد
              با ایجکسی و از طریق دکمه انجام می‌شود (js/pages/checkout.js) --}}
@@ -125,6 +162,8 @@
                         </button>
                     </div>
                 @else
+                    {{-- فاز ۱۷۳ — دکمهٔ ثبت روبه‌روی اینپوت است و اینپوت کوچک‌تر شده
+                         (flex-wrap: nowrap در checkout.css) --}}
                     <div class="d-flex align-items-center flex-wrap gap-2 mt-3 snr-discount-form-row">
                         <input type="text" id="discount-inline-code" class="form-control rounded-3"
                             placeholder="کد تخفیف جدید را وارد کنید" autocomplete="off">

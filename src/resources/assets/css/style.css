@@ -6906,3 +6906,231 @@ a:hover .snr-play{
 .gird-post-blog .row{
     align-items: stretch;
 }
+
+/* ============================================================
+   فاز ۱۷۳ — بازطراحی بخش «توضیحات دسته‌بندی» (صفحهٔ category-products)
+   قبلاً متن HTML ادمین با رنگ روشن روی تصویر پس‌زمینهٔ روشن رندر می‌شد و
+   هیچ چیز خوانا نبود. حالا:
+   - کارت با گوشهٔ گرد و لایهٔ نیمه‌شفاف روی تصویر پس‌زمینه (خوانایی کامل)
+   - متن‌ها همیشه تیره و خوانا (حتی اگر ادمین رنگ سفید ذخیره کرده باشد)
+   - تیترها با نوار رنگی، لیست‌ها با بولت رنگی، جدول/تصویر/لینک استایل‌دار
+   - نسخهٔ تم تیره در theme-dark.css (انتهای فایل)
+   ============================================================ */
+
+.category-description.category-background {
+    position: relative;
+    z-index: 0;
+    isolation: isolate;
+    overflow: hidden;
+    border-radius: 18px;
+    background-size: cover !important;
+    background-position: center !important;
+    line-height: 2;
+    font-size: 14px;
+}
+
+/* لایهٔ خوانایی روی تصویر پس‌زمینه */
+.category-description.category-background::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(180deg,
+        rgba(255, 255, 255, 0.97) 0%,
+        rgba(255, 255, 255, 0.93) 55%,
+        rgba(255, 255, 255, 0.97) 100%);
+}
+
+/* متن همیشه تیره و خوانا — با !important رنگ‌های اینلاین ادمین بی‌اثر می‌شوند */
+.category-description.category-background,
+.category-description.category-background p,
+.category-description.category-background span,
+.category-description.category-background div,
+.category-description.category-background li,
+.category-description.category-background td,
+.category-description.category-background th,
+.category-description.category-background strong,
+.category-description.category-background b {
+    color: #2a2e35 !important;
+}
+
+/* تیترها */
+.category-description.category-background h1,
+.category-description.category-background h2,
+.category-description.category-background h3,
+.category-description.category-background h4,
+.category-description.category-background h5,
+.category-description.category-background h6 {
+    color: #23262b !important;
+    font-weight: 800;
+    line-height: 1.8;
+}
+
+.category-description.category-background h2,
+.category-description.category-background h3 {
+    position: relative;
+    margin: 28px 0 16px;
+    padding-bottom: 12px;
+    font-size: 20px;
+}
+
+.category-description.category-background h2::after,
+.category-description.category-background h3::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 64px;
+    height: 4px;
+    border-radius: 4px;
+    background: linear-gradient(to left, var(--main-color-one, #0fabc9), rgba(15, 171, 201, 0));
+}
+
+.category-description.category-background h4,
+.category-description.category-background h5 {
+    margin: 20px 0 10px;
+    font-size: 16px;
+}
+
+.category-description.category-background > h1:first-child,
+.category-description.category-background > h2:first-child,
+.category-description.category-background > h3:first-child {
+    margin-top: 0;
+}
+
+/* پاراگراف‌ها */
+.category-description.category-background p {
+    margin-bottom: 12px;
+    line-height: 2.1;
+    text-align: justify;
+}
+
+/* لینک‌ها */
+.category-description.category-background a:not(.btn) {
+    color: var(--main-color-one, #0fabc9) !important;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.category-description.category-background a:not(.btn):hover {
+    text-decoration: underline;
+}
+
+/* لیست‌ها */
+.category-description.category-background ul,
+.category-description.category-background ol {
+    padding-right: 6px;
+    margin: 0 0 14px;
+}
+
+.category-description.category-background ul li,
+.category-description.category-background ol li {
+    position: relative;
+    padding-right: 24px;
+    margin-bottom: 8px;
+    line-height: 2;
+    list-style: none;
+}
+
+.category-description.category-background ul li::before {
+    content: '';
+    position: absolute;
+    right: 4px;
+    top: 13px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--main-color-one, #0fabc9);
+}
+
+.category-description.category-background ol {
+    counter-reset: snr-cat-desc;
+}
+
+.category-description.category-background ol li {
+    counter-increment: snr-cat-desc;
+}
+
+.category-description.category-background ol li::before {
+    content: counter(snr-cat-desc);
+    position: absolute;
+    right: 0;
+    top: 11px;
+    width: 19px;
+    height: 19px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 50%;
+    background: rgb(15 171 201 / 12%);
+    color: var(--main-color-one, #0fabc9) !important;
+}
+
+/* تصویرها و ویدیوها */
+.category-description.category-background img,
+.category-description.category-background video,
+.category-description.category-background iframe {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    margin: 10px 0;
+}
+
+/* جدول‌ها */
+.category-description.category-background table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    overflow: hidden;
+    border-radius: 12px;
+    background: rgb(255 255 255 / 65%);
+}
+
+.category-description.category-background th,
+.category-description.category-background td {
+    border: 1px solid #e8ebef !important;
+    padding: 10px 14px;
+    text-align: right;
+}
+
+.category-description.category-background th {
+    background: #f4f6f8 !important;
+    font-weight: 700;
+}
+
+/* نقل‌قول */
+.category-description.category-background blockquote {
+    margin: 16px 0;
+    padding: 14px 18px;
+    border-right: 4px solid var(--main-color-one, #0fabc9);
+    border-radius: 12px;
+    background: rgb(15 171 201 / 6%);
+}
+
+/* خط جداکننده */
+.category-description.category-background hr {
+    height: 1px;
+    margin: 24px 0;
+    border: 0;
+    opacity: 1;
+    background: linear-gradient(to left, transparent, #d8dee6, transparent);
+}
+
+/* دکمه‌های داخل محتوا */
+.category-description.category-background .btn {
+    color: #fff !important;
+}
+
+@media (max-width: 767px) {
+    .category-description.category-background {
+        font-size: 13.5px;
+        border-radius: 14px;
+    }
+
+    .category-description.category-background h2,
+    .category-description.category-background h3 {
+        font-size: 17px;
+    }
+}

@@ -793,11 +793,10 @@
     padding-bottom: 40px;
 }
 
-/* هدر سادهٔ دیجی‌کالایی: دکمهٔ بازگشت + لوگو دقیقاً وسط */
+/* هدر سادهٔ دیجی‌کالایی: دکمهٔ بازگشت + لوگو دقیقاً وسط
+   فاز ۱۷۳ — به درخواست کاربر هدر دیگر sticky نیست و با اسکرول بالا می‌رود */
 .snr-checkout-header {
-    position: sticky;
-    top: 0;
-    z-index: 900;
+    position: relative;
     background: #fff;
     box-shadow: 0 2px 12px rgb(0 0 0 / 5%);
 }
@@ -871,13 +870,35 @@
     }
 }
 
-/* ---------- فاصلهٔ پرداخت اقساطی/اعتباری از درگاه‌های آنلاین ---------- */
+/* ---------- ناحیهٔ پرداخت اقساطی/اعتباری (فاز ۱۷۳ — جدا از کیف پول و درگاه‌ها) ---------- */
 
 .snr-credit-pay-area {
-    margin-bottom: 6px;
+    border-top: 1px dashed #e3e6ea;
+    padding-top: 16px;
+    margin-top: 18px;
+}
+
+.snr-credit-pay-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.snr-credit-pay-module + .snr-credit-pay-module {
+    margin-top: 12px;
 }
 
 /* ---------- کارت‌های درگاه پرداخت (فاز ۱۷۱) ---------- */
+
+.snr-section-head {
+    border-top: 1px dashed #e3e6ea;
+    padding-top: 16px;
+    margin-top: 18px;
+    margin-bottom: 12px;
+}
 
 .snr-gateways-head {
     border-top: 1px dashed #e3e6ea;
@@ -953,6 +974,189 @@
     left: 2px;
 }
 
+/* ---------- کارت اختصاصی کیف پول (فاز ۱۷۳) ----------
+   از بخش اقساطی/اعتباری و درگاه‌ها جدا شده و کارت مدرن اختصاصی دارد */
+
+.snr-wallet-section {
+    margin-top: 4px;
+}
+
+.snr-wallet-section .snr-section-head {
+    margin-bottom: 10px;
+}
+
+.wallet-select {
+    position: relative;
+}
+
+.snr-wallet-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    border: 2px solid #eef0f3;
+    border-radius: 16px;
+    background:
+        radial-gradient(120% 160% at 100% 0%, rgba(15, 171, 201, 0.06) 0%, rgba(15, 171, 201, 0) 55%),
+        #fff;
+    transition: 0.2s all ease-in-out;
+    -webkit-transition: 0.2s all ease-in-out;
+}
+
+.snr-wallet-card:hover {
+    border-color: #d7dce3;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgb(15 23 42 / 6%);
+}
+
+.snr-wallet-card.active {
+    border-color: var(--main-color-one, #0fabc9);
+    box-shadow: 0 6px 16px rgb(15 171 201 / 12%);
+}
+
+.snr-wallet-card.active::before {
+    bottom: -8px;
+    left: 2px;
+}
+
+.snr-wallet-icon {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    font-size: 24px;
+    color: var(--main-color-one, #0fabc9);
+    background: linear-gradient(135deg, rgba(15, 171, 201, 0.14) 0%, rgba(15, 171, 201, 0.05) 100%);
+    transition: 0.25s all ease-in-out;
+    -webkit-transition: 0.25s all ease-in-out;
+}
+
+.snr-wallet-card.active .snr-wallet-icon {
+    background: var(--main-color-one, #0fabc9);
+    color: #fff;
+}
+
+.snr-wallet-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.snr-wallet-title {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #23262b;
+}
+
+.snr-wallet-balance {
+    font-size: 12.5px;
+    color: #8a93a0;
+}
+
+.snr-wallet-balance strong {
+    color: #0b8502;
+    font-weight: 700;
+}
+
+.snr-wallet-state {
+    margin-right: auto;
+    text-align: left;
+}
+
+.snr-wallet-state .has-balance {
+    display: none;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #0b8502;
+    background: rgba(11, 133, 2, 0.08);
+    border-radius: 20px;
+    padding: 6px 12px;
+    white-space: nowrap;
+}
+
+.snr-wallet-state .has-balance::before {
+    content: '\F26E';
+    font-family: 'bootstrap-icons';
+    font-size: 13px;
+}
+
+.snr-wallet-state .increase-balance {
+    display: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: #e03131;
+    background: rgba(224, 49, 49, 0.08);
+    border-radius: 20px;
+    padding: 6px 12px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.snr-wallet-state .increase-balance:hover {
+    background: rgba(224, 49, 49, 0.14);
+    color: #c92a2a;
+}
+
+/* check_wallet() با jQuery .show() نمایش می‌دهد (display:block)؛
+   حالت قرصِ شکیل با این قاعده بازمی‌گردد */
+.snr-wallet-state .has-balance[style*="display: block"],
+.snr-wallet-state .has-balance[style*="display:block"] {
+    display: inline-flex !important;
+}
+
+.snr-wallet-state .increase-balance[style*="display: block"],
+.snr-wallet-state .increase-balance[style*="display:block"] {
+    display: inline-block !important;
+}
+
+/* دات انتخاب رادیویی سمت چپ کارت (آخرین آیتم فلکس ::after) */
+.snr-wallet-card::after {
+    content: '';
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #d3d8de;
+    background: #fff;
+    transition: 0.2s all ease-in-out;
+    -webkit-transition: 0.2s all ease-in-out;
+}
+
+.snr-wallet-card.active::after {
+    border-color: var(--main-color-one, #0fabc9);
+    border-width: 6px;
+}
+
+@media (max-width: 575px) {
+    .snr-wallet-card {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 14px;
+    }
+
+    .snr-wallet-state {
+        margin-right: 0;
+        width: 100%;
+        text-align: right;
+    }
+
+    .snr-wallet-state .has-balance,
+    .snr-wallet-state .increase-balance {
+        display: none !important;
+        /* موبایل: پیام‌ها فقط با عرض کامل جا نمی‌شوند؛ مخفی */
+    }
+
+    .snr-wallet-card::after {
+        margin-top: 0;
+    }
+}
+
 /* ---------- کد تخفیف (پنل زیر درگاه‌ها، جدا با hr) ---------- */
 
 .snr-discount-divider {
@@ -964,8 +1168,18 @@
     padding-top: 2px;
 }
 
+/* فاز ۱۷۳ — ورودی کوچک‌تر و دکمهٔ ثبت روبه‌روی آن (حتی موبایل) */
+.snr-discount-form-row {
+    flex-wrap: nowrap !important;
+}
+
 .snr-discount-form-row .form-control {
-    height: 44px;
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    max-width: 320px;
+    height: 42px;
+    font-size: 13.5px;
     background: #f7f8fa;
     border: 1px solid #e8ebef;
 }
@@ -977,7 +1191,8 @@
 }
 
 .snr-discount-form-row .btn {
-    height: 44px;
+    height: 42px;
+    flex-shrink: 0;
 }
 
 .snr-discount-applied {
@@ -985,6 +1200,42 @@
     border: 1px dashed #dfe3e8;
     border-radius: 12px;
     padding: 10px 14px;
+}
+
+/* ---------- اورلی تمام‌صفحهٔ ثبت سفارش (فاز ۱۷۳) ----------
+   با blockUI کل صفحه قفل می‌شود؛ کارت شیشه‌ای وسط صفحه نمایش داده می‌شود.
+   زمینهٔ اورلی همیشه تیره است، پس در هر دو تم خوانا است. */
+body.snr-order-submitting {
+    overflow: hidden;
+}
+
+.snr-order-overlay-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 30px 40px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    box-shadow: 0 18px 50px rgb(0 0 0 / 35%);
+}
+
+.snr-order-overlay-box .spinner-border {
+    width: 44px;
+    height: 44px;
+    color: #fff;
+}
+
+.snr-order-overlay-box p {
+    font-size: 15px;
+    color: #fff;
+}
+
+.snr-order-overlay-box span {
+    color: rgb(255 255 255 / 75%);
 }
 
 /* سوییچ روشن/خاموش (بدون وابستگی به فرم‌کلاس‌های بوت‌استرپ) */
