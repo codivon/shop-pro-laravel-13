@@ -10,19 +10,21 @@
     <div class="container-fluid">
         <div class="row gy-3 align-items-start">
             <div class="col-lg-8 col-12">
-                <div id="blogMainCarousel" class="carousel slide full-width-carousel rounded-3 overflow-hidden shadow-box" data-ride="carousel" data-interval="5000" data-touch="true">
+                <div id="blogMainCarousel" class="carousel slide full-width-carousel rounded-3 overflow-hidden shadow-box" data-bs-ride="carousel" data-bs-touch="true">
                     @if(count($main_sliders) > 1)
                         <ol class="carousel-indicators custom-indicators">
                             @foreach($main_sliders as $key => $slider)
-                                <li data-target="#blogMainCarousel" data-slide-to="{{ $key }}" class="@if($loop->first) active @endif"></li>
+                                <li data-bs-target="#blogMainCarousel" data-bs-slide-to="{{ $key }}" class="@if($loop->first) active @endif"></li>
                             @endforeach
                         </ol>
                     @endif
 
                     <div class="carousel-inner full-width-carousel-inner">
                         @foreach($main_sliders as $slider)
-                            <div class="carousel-item full-width-carousel-item @if($loop->first) active @endif">
+                            <div class="carousel-item full-width-carousel-item @if($loop->first) active @endif" data-bs-interval="5000">
+                                {{-- فاز ۱۶۷ — اسلاید اول eager (LCP)، بقیه lazy --}}
                                 <img class="d-block w-100 full-width-image"
+                                     @if(!$loop->first) loading="lazy" decoding="async" @endif
                                      src="{{ asset($slider->image) }}"
                                      alt="{{ $slider->title ?: $slider->image }}">
 

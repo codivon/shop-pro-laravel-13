@@ -33,12 +33,12 @@
                                 @foreach ($stories as $story)
                                     @if($story->expiry_date > now())
                                         <div class="owl-item {{$loop->index<=10 ? 'active' : ''}}">
-                                            <div data-toggle="modal" data-target="#story-modal" id='{{$story->id}}'
+                                            {{-- فاز ۱۶۷ — ترگر بوت‌استرپ ۵ (data-bs-*) + تصویر مستقیم بجای data-src (چون lazyload اُول فعال نیست) --}}
+                                            <div data-bs-toggle="modal" data-bs-target="#story-modal" id='{{$story->id}}'
                                                  class="item storyItem @if(in_array($story->id, $storySeen)) unActive @endif">
                                                 <a class="image-data-src">
-                                                    <img class="img-fluid"
-                                                         data-src="{{ $story->cover_image ? asset($story->cover_image) : asset('/no-image-product.svg') }}"
-                                                         src="{{ theme_asset('images/600-600.png') }}"
+                                                    <img class="img-fluid" loading="lazy" decoding="async"
+                                                         src="{{ $story->cover_image ? asset($story->cover_image) : theme_asset('images/600-600.png') }}"
                                                          alt="{{ $story->title }}">
                                                 </a>
 
@@ -70,8 +70,8 @@
 
                 <div class="modal-body chart-area">
                     <div class="main-slider-container">
-                        <div id="carouselExampleIndicatorsStory" class="carousel " data-ride="carousel"
-                             data-interval="false">
+                        <div id="carouselExampleIndicatorsStory" class="carousel slide" data-bs-ride="false"
+                             data-bs-interval="false">
                             <div class="stories-progress-bars" id="storyProgressBars"></div>
                             <div class="carousel-inner">
                                 @foreach($stories as $index => $story)
@@ -84,14 +84,10 @@
                                                  $storyDuration = 0;
                                             }
                                         @endphp
+                                        {{-- فاز ۱۶۷ — پیمایش کاملاً با main-story.js کنترل می‌شود (بدون حرکت خودکار بوت‌استرپ) --}}
                                         <div class="carousel-item @if ($loop->first)active @endif" id='story-{{$story->id}}'
                                              data-story-id="{{$story->id}}" data-duration="{{$storyDuration}}"
                                              data-type="{{$story->type}}">
-
-                                                <?php
-                                                $pathInfo = pathinfo($story->image);
-                                                ?>
-
 
                                             <div class="story-header">
                                                 <div class="story-progress-bars" data-story-id="{{$story->id}}"></div>
@@ -113,7 +109,7 @@
                                                             class="story-time">{{$story->updated_at ? $story->updated_at->diffForHumans() : 'چند لحظه پیش'}}</div>
                                                     </div>
                                                 </div>
-                                                <button class="close-story" data-dismiss="modal">
+                                                <button class="close-story" data-bs-dismiss="modal" type="button" aria-label="بستن">
                                                     <i class="fa fa-times"></i>
                                                 </button>
                                             </div>
@@ -121,12 +117,12 @@
 
                                             <div class="story-content {{$story->product_id ? 'story-content-with-video':''}}">
                                                 @if($story->type=="video")
-                                                    <video id='video-{{$story->id}}' autoplay controls class='w-100 story-video-player'>
+                                                    <video id='video-{{$story->id}}' autoplay controls playsinline class='w-100 story-video-player'>
                                                         <source src="{{$story->video}}" type="video/mp4">
                                                     </video>
                                                     <div class="story-video-sound" data-story-id="{{$story->id}}"><i class="fa-solid fa-volume-up"></i></div>
                                                 @else
-                                                    <img class="d-block w-100" onloadeddata='seenStory({{$story->id}})'
+                                                    <img class="d-block w-100"
                                                          src="{{asset($story->image)}}"
                                                          alt="{{$story->title ?: $story->image}}">
                                                 @endif
@@ -135,8 +131,8 @@
 
 
                                             <div class="story-footer">
-                                                <ul class="story-likes-comments"
-                                                    style="{{$story->product_id ? 'bottom: 90%' :'bottom:0'}}">
+                                                {{-- فاز ۱۶۷ — جابجایی عمودی با کلاس (بدون استایل اینلاین) --}}
+                                                <ul class="story-likes-comments {{ $story->product_id ? 'with-product' : '' }}">
                                                     @if($story->active_likes)
                                                         <li class="story-likes {{$story->isLikedByUser() ? 'liked' : ''}}" data-action="{{route('front.setStoryLike')}}"><i
                                                                 class="fa fa-heart"></i><span>{{$story->likes_count}}</span>
@@ -153,8 +149,8 @@
                                                 </ul>
 
                                                 @if($story->widget_title and $story->widget_link)
-                                                    <a href="{{$story->widget_link}}" target="_blank" id="liveWidget"
-                                                       class="story-widget-area" style="">
+                                                    <a href="{{$story->widget_link}}" target="_blank" rel="noopener" id="liveWidget"
+                                                       class="story-widget-area {{ $story->product_id ? 'above-product' : '' }}">
                                                         <span id="liveWidgetTitle">{{$story->widget_title}}</span>
                                                         <i class="fa-solid fa-link"></i>
                                                     </a>
@@ -227,13 +223,14 @@
                                 @endforeach
                             </div>
                             @if(count($stories)>1)
+                                {{-- فاز ۱۶۷ — کنترل‌های بوت‌استرپ ۵ --}}
                                 <a class="carousel-control-prev" role="button"
-                                   data-slide="prev">
+                                   data-bs-target="#carouselExampleIndicatorsStory" data-bs-slide="prev">
                                     <span class="fa fa-angle-left" aria-hidden="true"></span>
                                     <span class="sr-only">Previous</span>
                                 </a>
                                 <a class="carousel-control-next" role="button"
-                                   data-slide="next">
+                                   data-bs-target="#carouselExampleIndicatorsStory" data-bs-slide="next">
                                     <span class="fa fa-angle-right" aria-hidden="true"></span>
                                     <span class="sr-only">Next</span>
                                 </a>

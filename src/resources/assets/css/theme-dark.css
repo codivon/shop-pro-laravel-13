@@ -2363,3 +2363,77 @@ html[data-theme="dark"] .sr2-row.sr2-all {
 html[data-theme="dark"] .sr2-empty {
     color: var(--dk-text-muted);
 }
+
+/* ============================================================
+   فاز ۱۶۷ — دارک‌سازی ویجت‌های صفحهٔ مقالات که کلاس‌هایشان
+   قبلاً در CSS نبود (اسلایدرها، گرید مطالب، هشتگ‌ها، محصولات
+   شماره‌دار) و استوری‌ها
+   ============================================================ */
+
+html[data-theme="dark"] .full-width-carousel {
+    background-color: var(--dk-surface);
+    box-shadow: var(--dk-shadow);
+}
+
+html[data-theme="dark"] .custom-caption::before {
+    background: linear-gradient(270deg, rgba(0, 0, 0, .68), rgba(0, 0, 0, 0));
+}
+
+html[data-theme="dark"] .custom-control {
+    background-color: rgba(30, 34, 43, .92);
+}
+
+html[data-theme="dark"] .custom-control:hover {
+    background-color: var(--dk-surface-2);
+}
+
+html[data-theme="dark"] .hashtags li a {
+    background-color: var(--dk-surface);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .hashtags li a:hover {
+    color: var(--main-color-one);
+}
+
+/* ---------- استوری‌ها ---------- */
+html[data-theme="dark"] .storyItem.unActive {
+    background: var(--dk-surface-2);
+}
+
+html[data-theme="dark"] .storyItem.unActive img {
+    opacity: .5;
+}
+
+html[data-theme="dark"] .product-carousel-story .owl-item > span {
+    color: var(--dk-text-soft);
+}
+
+/* هدر ویجت‌ها روی پس‌زمینهٔ تیره */
+html[data-theme="dark"] .header-content .link a {
+    color: var(--dk-text);
+}
+
+/* فاز ۱۶۷ — پالایش دارک کارت‌های خبری */
+html[data-theme="dark"] .blog-news-item .desc {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+html[data-theme="dark"] .blog-news-item:hover .desc {
+    background-color: rgba(36, 41, 54, .96);
+}
+
+html[data-theme="dark"] .mini-blog-item {
+    background-color: var(--dk-surface);
+    box-shadow: none;
+    border: 1px solid var(--dk-border);
+}
+
+html[data-theme="dark"] .mini-blog-item:hover {
+    box-shadow: var(--dk-shadow);
+}
+
+html[data-theme="dark"] .mini-blog-item .desc .title {
+    color: var(--dk-text);
+}

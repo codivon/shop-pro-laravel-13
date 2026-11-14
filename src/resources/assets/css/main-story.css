@@ -1,0 +1,500 @@
+/* ============================================================
+   SaniarTheme — main-story.css (فاز ۱۶۷)
+   ویجت استوری‌ها: نوار دایره‌ای مدرن + پلیر مودال
+   (این فایل از فاز قبل در ویو main-story لینک شده بود ولی
+   وجود نداشت و ویجت کاملاً بدون استایل رندر می‌شد)
+   ============================================================ */
+
+/* ---------- ۱) نوار دایره‌ای استوری‌ها ---------- */
+.widget-product:has(.product-carousel-story) {
+    border: 0;
+    background: transparent;
+}
+
+.widget-product .card-header {
+    border: 0;
+    background: transparent;
+}
+
+.product-carousel-story {
+    padding: 10px 4px 6px;
+}
+
+.product-carousel-story .owl-stage-outer {
+    overflow: visible;
+}
+
+.product-carousel-story .owl-stage {
+    gap: 16px;
+    padding: 4px 2px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--main-color-one-shadow) transparent;
+    padding-bottom: 6px;
+}
+
+.product-carousel-story .owl-stage::-webkit-scrollbar {
+    height: 5px;
+}
+
+.product-carousel-story .owl-stage::-webkit-scrollbar-thumb {
+    background: var(--main-color-one-shadow);
+    border-radius: 999px;
+}
+
+.product-carousel-story .owl-item {
+    flex: 0 0 auto;
+    width: 84px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.product-carousel-story .owl-item > span {
+    display: block;
+    margin-top: 6px;
+    padding: 0 4px;
+    font-size: 12px;
+    color: var(--color-site);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* دایرهٔ استوری با حلقهٔ گرادیانی */
+.storyItem {
+    position: relative;
+    width: 66px;
+    height: 66px;
+    margin: 0 auto;
+    padding: 3px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, var(--main-color-one), var(--main-color-two));
+    transition: transform .25s ease;
+}
+
+.storyItem:hover {
+    transform: scale(1.06);
+}
+
+.storyItem img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+}
+
+/* استوری دیده‌شده */
+.storyItem.unActive {
+    background: #d7dbe2;
+}
+
+.storyItem.unActive img {
+    opacity: .65;
+}
+
+/* ---------- ۲) مودال پلیر استوری ---------- */
+#story-modal .modal-dialog {
+    max-width: 430px;
+}
+
+#story-modal .modal-content {
+    border: 0;
+    border-radius: 22px;
+    overflow: hidden;
+    background-color: #101018;
+    box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .6);
+}
+
+#story-modal .modal-body {
+    padding: 0;
+    background-color: transparent;
+}
+
+.main-slider-container {
+    position: relative;
+}
+
+#carouselExampleIndicatorsStory .carousel-item {
+    position: relative;
+    aspect-ratio: 9 / 16;
+    max-height: 82vh;
+    background-color: #000;
+    overflow: hidden;
+}
+
+#carouselExampleIndicatorsStory .story-content {
+    position: absolute;
+    inset: 0;
+}
+
+#carouselExampleIndicatorsStory .story-content img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+#carouselExampleIndicatorsStory video.story-video-player {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* هدر اسلاید (آواتار + نام + زمان + بستن) */
+.story-header {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 36px 14px 30px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, .72) 0%, rgba(0, 0, 0, .28) 60%, transparent 100%);
+    color: #fff;
+}
+
+/* نوارهای پیشرفت (محتوایشان با main-story.js ساخته می‌شود) */
+.story-header .story-progress-bars {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    left: 14px;
+    height: 3px;
+    display: flex;
+    gap: 4px;
+}
+
+.story-progress-bars .story-progress-item {
+    position: relative;
+    flex: 1 1 0;
+    height: 3px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .35);
+    overflow: hidden;
+}
+
+.story-progress-bars .story-progress-item > i {
+    position: absolute;
+    inset: 0;
+    display: block;
+    background: #fff;
+    transform-origin: right center;
+    transform: scaleX(0);
+}
+
+.story-progress-bars .story-progress-item.done > i {
+    transform: scaleX(1);
+}
+
+.story-progress-bars .story-progress-item.active > i {
+    animation: story-progress-fill linear forwards;
+}
+
+@keyframes story-progress-fill {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+}
+
+.story-header .story-counter {
+    flex: 0 0 auto;
+    font-size: 11px;
+    background: rgba(255, 255, 255, .22);
+    border-radius: 999px;
+    padding: 3px 10px;
+    backdrop-filter: blur(4px);
+}
+
+.story-header .user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.story-header .user-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex: 0 0 auto;
+    border: 2px solid rgba(255, 255, 255, .85);
+    background: rgba(255, 255, 255, .15);
+}
+
+.story-header .user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.story-header .user-avatar i {
+    color: #fff;
+    font-size: 16px;
+}
+
+.story-header .user-details {
+    min-width: 0;
+}
+
+.story-header .user-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.story-header .story-time {
+    font-size: 11px;
+    color: rgba(255, 255, 255, .75);
+}
+
+.story-header .close-story {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .18);
+    color: #fff;
+    font-size: 16px;
+    backdrop-filter: blur(4px);
+    transition: background-color .25s ease, transform .25s ease;
+}
+
+.story-header .close-story:hover {
+    background: rgba(255, 255, 255, .32);
+    transform: rotate(90deg);
+}
+
+/* فوتر: لایک / کامنت */
+.story-footer .story-likes-comments {
+    position: absolute;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    list-style: none;
+    margin: 0;
+    padding: 0 0 16px;
+}
+
+/* وقتی کارت محصول متصل شده، فوتر بالاتر می‌نشیند */
+.story-footer .story-likes-comments.with-product {
+    bottom: 116px;
+}
+
+.story-likes-comments li {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 64px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(16, 16, 24, .55);
+    color: #fff;
+    font-size: 13px;
+    backdrop-filter: blur(6px);
+    cursor: pointer;
+    user-select: none;
+    transition: background-color .25s ease, color .25s ease, transform .2s ease;
+}
+
+.story-likes-comments li:hover {
+    transform: translateY(-2px);
+}
+
+.story-likes-comments li.story-likes.liked {
+    color: #ff5470;
+}
+
+.story-likes-comments li.story-likes.liked i {
+    animation: story-like-pop .35s ease;
+}
+
+@keyframes story-like-pop {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.35); }
+    100% { transform: scale(1); }
+}
+
+/* لینک ویجت (CTA) */
+.story-widget-area {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    z-index: 11;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: #fff;
+    color: #101018;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, .35);
+    transition: transform .25s ease, color .25s ease;
+}
+
+.story-widget-area:hover {
+    transform: translateY(-2px);
+    color: var(--main-color-one);
+}
+
+/* وقتی کارت محصول هم هست، CTA بالاتر می‌نشیند */
+.story-widget-area.above-product {
+    bottom: 116px;
+}
+
+/* کارت محصول متصل به استوری */
+.story-product {
+    position: absolute;
+    right: 14px;
+    left: 14px;
+    bottom: 14px;
+    z-index: 9;
+    border: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, .96);
+}
+
+.story-product a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.story-product .image {
+    flex: 0 0 64px;
+    width: 64px;
+    height: 64px;
+}
+
+.story-product .image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.story-product .meta {
+    line-height: 1.9;
+}
+
+.story-product .title {
+    max-width: 220px;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.story-product .discount-percent {
+    background: #ef394e;
+    color: #fff;
+    font-size: 11px;
+    border-radius: 8px;
+    padding: 1px 7px;
+}
+
+.story-product .product-colors {
+    display: flex;
+    gap: 4px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.story-product .product-colors li {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, .15);
+}
+
+.story-product .product-price-now {
+    font-size: 13px;
+    color: var(--main-color-one);
+}
+
+/* دکمه‌های قبلی/بعدی داخل مودال */
+#story-modal .carousel-control-prev,
+#story-modal .carousel-control-next {
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .16);
+    opacity: 1;
+    backdrop-filter: blur(4px);
+    transition: background-color .25s ease;
+}
+
+#story-modal .carousel-control-prev:hover,
+#story-modal .carousel-control-next:hover {
+    background: rgba(255, 255, 255, .3);
+}
+
+#story-modal .carousel-control-prev {
+    right: auto;
+    left: 10px;
+}
+
+#story-modal .carousel-control-next {
+    left: auto;
+    right: 10px;
+}
+
+#story-modal .carousel-control-prev i,
+#story-modal .carousel-control-next i {
+    font-size: 18px;
+    color: #fff;
+}
+
+/* دکمهٔ صدا */
+.story-video-sound {
+    position: absolute;
+    top: 84px;
+    left: 14px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .18);
+    color: #fff;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: background-color .25s ease;
+}
+
+.story-video-sound:hover {
+    background: rgba(255, 255, 255, .32);
+}
+
+.story-video-sound.muted i {
+    opacity: .55;
+}

@@ -213,3 +213,98 @@
     }
 }
 
+
+/* ==================================================================
+   فاز ۱۶۷ — ریسپانسیو ویجت‌های صفحهٔ مقالات + استوری‌ها
+   ================================================================== */
+
+/* اسلایدر تمام‌عرض */
+@media (max-width: 991.98px) {
+    .custom-caption {
+        right: 6%;
+        bottom: 14%;
+        max-width: 88%;
+    }
+
+    .custom-caption h2 {
+        font-size: 17px;
+    }
+
+    .custom-caption p {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .full-width-slider-wrapper {
+        padding: 12px 0;
+    }
+
+    .full-width-carousel {
+        border-radius: 12px;
+    }
+
+    .full-width-carousel-item {
+        aspect-ratio: 4 / 3;
+        min-height: 170px;
+    }
+
+    .custom-indicators li,
+    .custom-indicators [data-bs-target] {
+        width: 7px;
+        height: 7px;
+    }
+
+    .custom-indicators li.active {
+        width: 24px;
+    }
+}
+
+/* هشتگ‌های داغ */
+@media (max-width: 767.98px) {
+    .hashtags {
+        gap: 8px;
+    }
+
+    .hashtags li a {
+        padding: 7px 12px;
+        font-size: 13px;
+    }
+}
+
+/* محصولات شماره‌دار */
+@media (max-width: 767.98px) {
+    .products-row .item .number {
+        width: 34px;
+        height: 34px;
+        border-radius: 11px;
+    }
+
+    .products-row .item .number h4 {
+        font-size: 16px;
+    }
+}
+
+/* استوری‌ها */
+@media (max-width: 767.98px) {
+    .product-carousel-story .owl-stage {
+        gap: 12px;
+    }
+
+    .product-carousel-story .owl-item {
+        width: 72px;
+    }
+
+    .product-carousel-story .storyItem {
+        width: 56px;
+        height: 56px;
+    }
+
+    #story-modal .modal-dialog {
+        margin: 8px auto;
+    }
+
+    #story-modal .carousel-item {
+        max-height: 78vh;
+    }
+}

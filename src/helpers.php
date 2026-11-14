@@ -357,10 +357,17 @@ function get_widget_uncached($widget)
                 $ids = $category_filter->categories()->pluck('categories.id');
             }
 
-            $variables['categories'] = Category::published()
-                ->orderBy('ordering')
-                ->whereIn('id', $ids)
-                ->get();
+            /* فاز ۱۶۷ — اگر ادمین هیچ دسته‌ای انتخاب نکرده باشد ویجت کاملاً خالی
+               رندر می‌شد؛ حالا همهٔ دسته‌های ریشهٔ محصول نمایش داده می‌شوند. */
+            $categoryQuery = Category::published()->orderBy('ordering');
+
+            if ($ids->isNotEmpty()) {
+                $categoryQuery->whereIn('id', $ids);
+            } else {
+                $categoryQuery->where('type', 'productcat')->whereNull('category_id');
+            }
+
+            $variables['categories'] = $categoryQuery->get();
 
             break;
         }
@@ -372,10 +379,18 @@ function get_widget_uncached($widget)
             if ($category_filter && $category_filter->hasCategory()) {
                 $ids = $category_filter->categories()->pluck('categories.id');
             }
-            $variables['categories'] = Category::published()
-                ->orderBy('ordering')
-                ->whereIn('id', $ids)
-                ->get();
+
+            /* فاز ۱۶۷ — فالبک: بدون انتخاب دسته، همهٔ دسته‌های ریشهٔ مقالات (postcat)
+               نمایش داده می‌شوند تا ویجت در صفحهٔ مقالات خالی نباشد. */
+            $postCategoryQuery = Category::published()->orderBy('ordering');
+
+            if ($ids->isNotEmpty()) {
+                $postCategoryQuery->whereIn('id', $ids);
+            } else {
+                $postCategoryQuery->where('type', 'postcat')->whereNull('category_id');
+            }
+
+            $variables['categories'] = $postCategoryQuery->get();
 
             break;
         }

@@ -5,19 +5,20 @@
 @endphp
 
 <div class="full-width-slider-wrapper">
-    <div id="mainCarousel" class="carousel slide full-width-carousel" data-ride="carousel" data-interval="5000" data-touch="true">
+    <div id="mainCarousel" class="carousel slide full-width-carousel" data-bs-ride="carousel" data-bs-touch="true">
         @if(count($main_sliders) > 1)
             <ol class="carousel-indicators custom-indicators">
                 @foreach($main_sliders as $key => $slider)
-                    <li data-target="#mainCarousel" data-slide-to="{{ $key }}" class="@if($loop->first) active @endif"></li>
+                    <li data-bs-target="#mainCarousel" data-bs-slide-to="{{ $key }}" class="@if($loop->first) active @endif"></li>
                 @endforeach
             </ol>
         @endif
 
         <div class="carousel-inner full-width-carousel-inner">
             @foreach($main_sliders as $slider)
-                <div class="carousel-item full-width-carousel-item @if($loop->first) active @endif">
-                    <img loading="lazy" decoding="async" class="d-block w-100 full-width-image"
+                <div class="carousel-item full-width-carousel-item @if($loop->first) active @endif" data-bs-interval="5000">
+                    {{-- فاز ۱۶۷ — اسلاید اول eager (LCP)، بقیه lazy --}}
+                    <img @if(!$loop->first) loading="lazy" decoding="async" @endif class="d-block w-100 full-width-image"
                          src="{{ asset($slider->image) }}"
                          alt="{{ $slider->title ?: 'Slider Image' }}">
 
@@ -36,11 +37,11 @@
         </div>
 
      {{--   @if(count($main_sliders) > 1)
-            <a class="carousel-control-prev custom-control" href="#mainCarousel" role="button" data-slide="prev">
+            <a class="carousel-control-prev custom-control" data-bs-target="#mainCarousel" role="button" data-bs-slide="prev">
                 <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                 <span class="sr-only">Previous</span>
             </a>
-            <a class="carousel-control-next custom-control" href="#mainCarousel" role="button" data-slide="next">
+            <a class="carousel-control-next custom-control" data-bs-target="#mainCarousel" role="button" data-bs-slide="next">
                 <span class="carousel-control-next-icon" aria-hidden="true"></span>
                 <span class="sr-only">Next</span>
             </a>

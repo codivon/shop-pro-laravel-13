@@ -1,7 +1,9 @@
 {{-- اسلایدر مطالب وبلاگ سانیار (ویجت‌ساز وبلاگ) — saniar blog-item + swiper --}}
 @php
     $variables = get_widget($widget);
-    $posts     = $variables['blogs'];
+    /* فاز ۱۶۷ — FIX: کلید خروجی helpers برای ویجت «posts» همان «posts» است
+       (نه «blogs») — مقدار قبلی همیشه null بود و count(null) خطا می‌داد. */
+    $posts     = $variables['posts'];
 @endphp
 
 @if(count($posts))
