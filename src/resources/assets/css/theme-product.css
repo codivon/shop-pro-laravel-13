@@ -1321,7 +1321,7 @@
     padding: 18px 20px;
 }
 
-.product-page .p-tabs .comments-list .review-header {
+.product-page .p-tabs .comments-list .article .review-header {
     display: flex;
     align-items: flex-start;
     gap: 12px;
@@ -1464,7 +1464,7 @@
 }
 
 /* فوتر کارت — دکمه‌های مفید بود با شمارنده */
-.product-page .p-tabs .comments-list .review-footer {
+.product-page .p-tabs .comments-list .article .review-footer {
     padding-top: 12px;
     border-top: 1px dashed #e9ecef;
 }

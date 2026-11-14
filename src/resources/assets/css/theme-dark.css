@@ -1443,8 +1443,8 @@ html[data-theme="dark"] .product-page .p-tabs .params-modern-value {
 }
 
 /* ---------- کارت‌های دیدگاه ---------- */
-html[data-theme="dark"] .product-page .p-tabs .comments-list .review-header,
-html[data-theme="dark"] .product-page .p-tabs .comments-list .review-footer {
+html[data-theme="dark"] .product-page .p-tabs .comments-list .article .review-header,
+html[data-theme="dark"] .product-page .p-tabs .comments-list .article .review-footer {
     border-color: var(--dk-border);
 }
 
