@@ -172,18 +172,33 @@ return [
                 'attributes' => 'required'
             ],
             [
+                /* فاز ۱۶۵ — جدول products ستون ordering ندارد؛ به‌جای صعودی/نزولی،
+                   مرتب‌سازی واقعی محصولات با sort_type (جدیدترین/پرفروش‌ترین/...) */
                 'title'      => 'ترتیب نمایش',
-                'key'        => 'ordering',
+                'key'        => 'sort_type',
                 'input-type' => 'select',
                 'class'      => 'col-md-4',
+                'default'    => 'latest',
                 'options'    => [
                     [
-                        'value' => 'asc',
-                        'title' => 'صعودی'
+                        'value' => 'latest',
+                        'title' => 'جدیدترین'
                     ],
                     [
-                        'value' => 'desc',
-                        'title' => 'نزولی'
+                        'value' => 'sell',
+                        'title' => 'پرفروش‌ترین'
+                    ],
+                    [
+                        'value' => 'view',
+                        'title' => 'پربازدیدترین'
+                    ],
+                    [
+                        'value' => 'cheapest',
+                        'title' => 'ارزان‌ترین'
+                    ],
+                    [
+                        'value' => 'expensivest',
+                        'title' => 'گران‌ترین'
                     ]
                 ],
             ],

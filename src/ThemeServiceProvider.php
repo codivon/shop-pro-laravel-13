@@ -59,6 +59,14 @@ class ThemeServiceProvider extends ServiceProvider
            is not defined») خطای ۵۰۰ می‌داد و جستجوی لحظه‌ای از کار می‌افتاد. */
         $this->registerRateLimiters();
 
+        /* فاز ۱۶۵ — کست تاریخ پایان ویژه به Carbon (سطح تم، بدون تغییر هسته).
+           جدول products ستون timestamp با نام special_end_date دارد ولی مدل Product
+           هیچ casts/$dates تعریف نمی‌کند و در Laravel 13 ستون‌های timestamp خودکار
+           کست نمی‌شوند؛ در نتیجه product-card / amazing-slider / product-block-2
+           با «Call to a member function format()/gt() on string» کرش می‌کردند
+           (فقط وقتی محصول تاریخ پایان ویژه داشته باشد — دقیقاً حالت شگفت‌انگیز). */
+        Product::mergeCasts(['special_end_date' => 'datetime']);
+
         $this->loadTranslationsFrom(__DIR__ . '/resources/lang', 'front');
 
         // load views

@@ -226,6 +226,7 @@ function get_widget_uncached($widget)
                     'image',
                     'special',
                     'special_end_date',
+                    'discount',
                     'image_alt'
                 )
                 ->published()
@@ -238,8 +239,33 @@ function get_widget_uncached($widget)
                 $amazingQuery->whereIn('category_id', $ids);
             }
 
+            /* فاز ۱۶۵ — رفع ارور SQLSTATE[42S22] (Unknown column 'ordering' in 'order clause'):
+               جدول products ستون ordering ندارد؛ مرتب‌سازی بر اساس گزینهٔ sort_type
+               خود ابزارک (جدیدترین/پرفروش‌ترین/پربازدیدترین/ارزان‌ترین/گران‌ترین) */
+            switch ($widget->option('sort_type', 'latest')) {
+                case 'sell': {
+                    $amazingQuery->orderBy('sell', 'desc');
+                    break;
+                }
+                case 'view': {
+                    $amazingQuery->orderBy('view', 'desc');
+                    break;
+                }
+                case 'cheapest': {
+                    $amazingQuery->orderByPrice('asc');
+                    break;
+                }
+                case 'expensivest': {
+                    $amazingQuery->orderByPrice('desc');
+                    break;
+                }
+                default: {
+                    $amazingQuery->latest();
+                    break;
+                }
+            }
+
             $variables['amazing_products'] = $amazingQuery
-                ->orderBy('ordering', $widget->option('ordering', 'asc'))
                 ->take((int) $widget->option('number', 6))
                 ->get();
 
