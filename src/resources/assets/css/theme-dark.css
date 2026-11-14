@@ -227,14 +227,24 @@ html[data-theme="dark"] .top-menu-menu .main-menu-sub-active-li:hover > a {
     color: #5bd0c8 !important;
 }
 
+/* فاز ۱۷۲ — ردیف‌های مگا منو در تم تیره (طراحی جدید: هایلایت گرد + بوردر توپر) */
 html[data-theme="dark"] .top-menu-menu ul.main-menu > li {
     background-color: var(--dk-surface-2) !important;
-    border-bottom: 1px dashed var(--dk-border) !important;
+    border-bottom: 1px solid var(--dk-border) !important;
+    border-radius: 12px;
+    margin: 0 6px;
 }
 
-html[data-theme="dark"] .top-menu-menu ul.main-menu > li:hover {
+html[data-theme="dark"] .top-menu-menu ul.main-menu > li:hover,
+html[data-theme="dark"] .top-menu-menu ul.main-menu > li.main-menu-sub-active-li {
     background-color: var(--dk-surface) !important;
     box-shadow: none;
+}
+
+/* آیکون ردیف فعال/هاور شده */
+html[data-theme="dark"] .top-menu-menu ul.main-menu > li:hover > a i,
+html[data-theme="dark"] .top-menu-menu ul.main-menu > li.main-menu-sub-active-li > a i {
+    color: #5bd0c8 !important;
 }
 
 /* ستون فرعی مگا منو */

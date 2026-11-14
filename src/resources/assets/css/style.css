@@ -1064,30 +1064,98 @@ header{
     color: #333 !important;
 }
 
-/* فاز ۱۷۰ — ستون فرعیِ واحد مگامنو (پنل ثابت):
-   ulهای فرعیِ درون ردیف‌ها دیگر خودشان نمایش داده نمی‌شوند؛ فقط منبع محتوای
-   پنل ثابت هستند. پنل ثابت (snr-mega-flyout) با fixed در همان مختصات باز
-   می‌شود، بدون هیچ transition — فقط محتوایش عوض می‌شود. */
+/* فاز ۱۷۲ — بازطراحی مگا منو دسته‌بندی مطابق نمونهٔ کاربر:
+   ستون راست: ردیف‌های اصلی با آیکون بعد از عنوان + هایلایت کِرِمِ گرد
+   ستون چپ: پنل ثابت واحد (snr-mega-flyout) با چیدمان ۳ ستونه؛
+   گروه‌ها با تیتر پررنگ و نوار رنگی سمت راست؛ فرزندان هر گروه زیر تیتر خودش
+   تصویر پس‌زمینهٔ دسته (data-cat-image) پایین-چپ پنل ثابت می‌ماند */
+
+/* ulهای فرعیِ درون ردیف‌ها فقط «منبع محتوا» هستند و خودشان نمایش داده نمی‌شوند
+   (از فاز ۱۷۰ حفظ شد) */
 .top-menu-menu ul.main-menu>li>ul.main-menu-sub {
     display: none !important;
 }
 
+/* --- ردیف‌های ستون راست --- */
+.top-menu-menu ul.main-menu > li {
+    background-color: #fff;
+    border-bottom: 1px solid #f3f3f5;
+    border-radius: 12px;
+    margin: 0 6px;
+    padding: 0;
+    width: 188px; /* + ۱۲px مارجین = ۲۰۰px ؛ مبنای محاسبهٔ JS برای مختصات پنل فرعی */
+    direction: rtl;
+}
+
+.top-menu-menu ul.main-menu > li > a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 14px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #45474f;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.top-menu-menu ul.main-menu > li > a i {
+    font-size: 18px;
+    color: #8d939e;
+    margin: 0;
+    float: none;
+    flex-shrink: 0;
+}
+
+.top-menu-menu ul.main-menu > li:hover,
+.top-menu-menu ul.main-menu > li.main-menu-sub-active-li {
+    background: #f7eeda; /* هایلایت کِرِم مطابق نمونه */
+    box-shadow: none;
+}
+
+.top-menu-menu ul.main-menu > li:hover > a,
+.top-menu-menu ul.main-menu > li.main-menu-sub-active-li > a {
+    color: #1f2028;
+}
+
+.top-menu-menu ul.main-menu > li:hover > a i,
+.top-menu-menu ul.main-menu > li.main-menu-sub-active-li > a i {
+    color: var(--main-color-one);
+}
+
+/* شعاع گردِ هایلایت — جایگزین فرم قبلی ۵۰px */
+.main-menu-sub-active-li {
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+/* نوار پس‌زمینهٔ ستون ردیف‌ها (پشت هاور) همرنگ طراحی جدید */
+.top-menu-menu li:hover ul.main-menu:before {
+    background: #fdfdfb;
+}
+
+/* --- پنل ثابت فرعی (۳ ستونه) --- */
 .top-menu-menu ul.main-menu>ul.snr-mega-flyout {
     position: fixed;
     top: 0;
     right: 200px;
-    display: block;
+    left: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
     min-height: 400px;
     max-height: 480px;
-    min-width: 280px;
     overflow-y: auto;
     overflow-x: hidden;
     direction: rtl;
     background-color: #fff;
     background-repeat: no-repeat;
     background-position: bottom left;
-    background-size: 300px;
-    padding: 10px;
+    background-size: 260px auto;
+    padding: 18px 18px 96px; /* فاصلهٔ پایین برای جای تصویر دسته */
     margin: 0;
     list-style: none;
     border-radius: 0 0 10px 10px;
@@ -1101,52 +1169,75 @@ header{
     visibility: hidden !important;
 }
 
-.top-menu-menu ul.main-menu>ul.snr-mega-flyout li {
+/* خنثی‌سازی قواعد عمودی li (عرض/پدینگ ۱۵px) برای همهٔ liهای پنل فرعی */
+.top-menu-menu ul.main-menu > ul.snr-mega-flyout li {
     width: auto;
-    max-width: 260px;
+    max-width: none;
     margin: 0;
     padding: 0;
     border-radius: 0;
     background: none;
 }
 
-.top-menu-menu ul.main-menu>ul.snr-mega-flyout li a {
+/* آیتم‌های ردیف اول پنل — یک‌سوم عرض (چیدمان ۳ ستونه مثل نمونه) */
+.top-menu-menu ul.main-menu > ul.snr-mega-flyout > li {
+    width: 33.333%;
+    padding: 2px 4px 12px 14px;
+    break-inside: avoid;
+}
+
+.top-menu-menu ul.main-menu > ul.snr-mega-flyout li a {
     display: block;
-    padding: 7px 12px;
+    padding: 5px 10px;
     font-size: 13px;
-    color: var(--text-muted-two);
+    line-height: 1.9;
+    color: #63676e;
     border-radius: 8px;
-    transition: 0.2s all ease-in-out;
-    -webkit-transition: 0.2s all ease-in-out;
+    transition: 0.15s all ease-in-out;
+    -webkit-transition: 0.15s all ease-in-out;
 }
 
-.top-menu-menu ul.main-menu>ul.snr-mega-flyout li a:hover {
+.top-menu-menu ul.main-menu > ul.snr-mega-flyout li a:hover {
     color: var(--main-color-one);
-    background: var(--main-color-two-shadow);
+    background: #f7f7f9;
 }
 
-.top-menu-menu ul.main-menu>ul.snr-mega-flyout li a.title {
+/* تیتر گروه‌ها — پررنگ با نوار رنگی سمت راست (مطابق نمونه) */
+.top-menu-menu ul.main-menu > ul.snr-mega-flyout li a.title {
     position: relative;
-    color: #333;
-    font-size: 15px;
-    font-weight: bold;
-    padding-right: 22px;
-    margin-top: 8px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    color: #212329;
+    font-size: 14px;
+    font-weight: 700;
+    padding-right: 18px;
+    margin-bottom: 2px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
 }
 
-.top-menu-menu ul.main-menu>ul.snr-mega-flyout li a.title::before {
+.top-menu-menu ul.main-menu > ul.snr-mega-flyout li a.title::before {
     content: '';
     position: absolute;
-    right: 8px;
+    right: 4px;
     top: 50%;
     transform: translateY(-50%);
     width: 4px;
     height: 16px;
     border-radius: 4px;
     background: var(--main-color-one);
+}
+
+/* لیست فرزندان هر گروه — زیر تیتر خودش، بلوکی و بدون شکستن */
+.top-menu-menu ul.main-menu > ul.snr-mega-flyout ul.snr-mega-group-list {
+    display: block;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.top-menu-menu ul.main-menu > ul.snr-mega-flyout li.snr-mega-group {
+    break-inside: avoid;
+    page-break-inside: avoid;
 }
 
 /* /////////// end main menu /////////// */

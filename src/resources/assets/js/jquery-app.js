@@ -42,9 +42,11 @@ $(function () {
         if (!rect.width) { return; }
 
         /* ستون ردیف‌ها ۲۰۰px از لبهٔ راست پنل است؛ پنل فرعی دقیقاً از همان‌جا
-           به سمت چپ باز می‌شود و هم‌قدِ خود پنل می‌ماند (یک صفحهٔ ثابت) */
+           تا لبهٔ چپ خود پنل باز می‌شود و هم‌قدِ آن می‌ماند (یک صفحهٔ ثابت).
+           فاز ۱۷۲ — چیدمان ۳ ستونه برای جا شدن ستون‌ها به عرض کامل نیاز دارد */
         flyout.style.top = Math.round(rect.top) + 'px';
         flyout.style.right = Math.round(window.innerWidth - rect.right + 200) + 'px';
+        flyout.style.left = Math.round(rect.left) + 'px';
         flyout.style.height = Math.round(rect.height) + 'px';
     }
 

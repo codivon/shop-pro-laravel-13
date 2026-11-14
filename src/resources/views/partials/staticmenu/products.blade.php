@@ -10,7 +10,8 @@
             @foreach ($productcats as $category)
                 {{-- فاز ۱۷۰ — تصویر پس‌زمینهٔ دسته برای نمایش پایین-چپ پنل فرعی مگامنو --}}
                 <li class="main-menu-sub-active-li" @if(!empty($category->background_image) || !empty($category->image)) data-cat-image="{{ asset($category->background_image ?: $category->image) }}" @endif>
-                    <a href="{{ $category->link }}"><i class="{{ icon_class($category->icon) }}" @if(icon_style($category->icon)) style="{{ icon_style($category->icon) }}" @endif></i>{{ $category->title }}</a>
+                    {{-- فاز ۱۷۲ — آیکون بعد از عنوان (مطابق نمونهٔ منوی کاربر) --}}
+                    <a href="{{ $category->link }}">{{ $category->title }}<i class="{{ icon_class($category->icon) }}" @if(icon_style($category->icon)) style="{{ icon_style($category->icon) }}" @endif></i></a>
                     @if ($category->getCategoriesCount())
                         <ul class="main-menu-sub back-menu">
                             <li><a class="title my-flex-baseline" href="{{ $category->link }}">همه دسته بندی های {{ $category->title }}</a></li>
