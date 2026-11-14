@@ -812,6 +812,39 @@ html[data-theme="dark"] .blog-item .date {
     color: var(--dk-text-soft) !important;
 }
 
+/* ---------- فاز ۱۶۶ — ویجت‌های صفحهٔ مقالات (هدر وبلاگ + ویدیوها) ---------- */
+html[data-theme="dark"] .blog-news-item .desc {
+    background-color: rgba(28, 32, 38, .9);
+}
+
+html[data-theme="dark"] .blog-news-item .desc .title,
+html[data-theme="dark"] .blog-news-item .desc .date .text-date {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .navbar-blog li:hover,
+html[data-theme="dark"] .navbar-video li:hover {
+    background-color: var(--dk-bg-soft);
+}
+
+html[data-theme="dark"] .navbar-blog li:hover a,
+html[data-theme="dark"] .navbar-video li:hover .video-blog-item .title {
+    color: var(--main-color-one) !important;
+}
+
+html[data-theme="dark"] .video-blog-item .title,
+html[data-theme="dark"] .video-blog-item .desc p {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .tv-blog-item .desc {
+    background: linear-gradient(rgba(255, 255, 255, 0) 0%, rgba(0, 0, 0, .92) 100%);
+}
+
+html[data-theme="dark"] .navbar-video .navbar-nav::-webkit-scrollbar-thumb {
+    background: var(--dk-border);
+}
+
 /* ---------- ۵) نوار برندها (فروشگاه سانیار) ---------- */
 html[data-theme="dark"] .service {
     background-color: var(--dk-bg-soft);

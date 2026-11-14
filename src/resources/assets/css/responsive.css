@@ -2,7 +2,7 @@
 
 @media only screen and (max-width:992px) {
 
-	header {
+        header {
         position: sticky;
         top: 0;
         z-index: 1044;
@@ -86,6 +86,19 @@
 @media only screen and (max-width:768px) {
     .site-slider .swiper-button-prev {
         right: 45.5% !important;
+    }
+
+    /* فاز ۱۶۶ — ویجت‌های صفحهٔ مقالات در موبایل */
+    .navbar-video .navbar-nav {
+        max-height: 320px;
+    }
+
+    .blog-news-item img {
+        height: 220px;
+    }
+
+    .tv-blog-item img {
+        height: 240px;
     }
 
     .category-sort .form-checks .form-check{

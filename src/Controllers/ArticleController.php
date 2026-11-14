@@ -31,6 +31,17 @@ class ArticleController extends Controller
             }
         }
 
+        /* فاز ۱۶۶ — جستجوی متنی مقالات (فرم جستجوی ویجت «هدر وبلاگ» به این
+           صفحه با پارامتر search ارسال می‌شود) */
+        if ($request->filled('search')) {
+            $searchTerm = trim($request->get('search'));
+            $posts->where(function ($query) use ($searchTerm) {
+                $query->where('title', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('summary', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('content', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
         // فیلتر بر اساس تگ
         if ($request->filled('tag')) {
             $tag = Tag::where('slug', $request->tag)->first();

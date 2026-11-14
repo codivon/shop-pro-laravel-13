@@ -667,6 +667,199 @@ function get_widget_uncached($widget)
             break;
         }
 
+        /* ==================================================================
+           فاز ۱۶۶ — ویجت‌های صفحهٔ مقالات (مطابق blog.html تمپلیت سانیار)
+           ================================================================== */
+
+        /* ۱) هدر وبلاگ: دسته‌بندی‌ها + بنر + خبرهای داغ */
+        case 'blog-header': {
+            /* دسته‌بندی‌های مقالات (سایدبار راست) */
+            $variables['blog_header_categories'] = Category::published()
+                ->where('type', 'postcat')
+                ->whereNull('category_id')
+                ->orderBy('ordering')
+                ->get(['id', 'title', 'slug', 'image']);
+
+            /* بنر بالای خبرها (گروه بنر تکی + صفحهٔ مقالات — بدون تغییر هسته) */
+            $variables['blog_header_banner'] = null;
+            if ($widget->option('show_banner', 'yes') === 'yes') {
+                $variables['blog_header_banner'] = Banner::whereJsonContains('groups', $widget->option('banner_group', 'index_middle_banners'))
+                    ->whereJsonContains('pages', $widget->page)
+                    ->where('published', true)
+                    ->orderBy('ordering')
+                    ->first();
+            }
+
+            /* خبرهای داغ (۳ کارت blog-news-item) */
+            $headerNewsQuery = Post::query()
+                ->with('category:id,title,slug')
+                ->select('id', 'title', 'slug', 'image', 'post_type', 'category_id', 'view', 'created_at');
+
+            $headerNewsFilter = $widget->options->where('key', 'post_categories')->first();
+            if ($headerNewsFilter && $headerNewsFilter->hasCategory()) {
+                if ($ids = front_widget_category_ids($headerNewsFilter, $widget->option('sub_category_post', 'yes') == 'yes')) {
+                    $headerNewsQuery->whereIn('category_id', $ids);
+                }
+            }
+
+            if ($widget->option('news_editor_pick', 'no') === 'yes') {
+                $headerNewsQuery->where('is_editor_pick', true);
+            }
+
+            switch ($widget->option('sort_type', 'latest')) {
+                case 'view': {
+                    $headerNewsQuery->orderBy('view', 'desc');
+                    break;
+                }
+                case 'random': {
+                    $headerNewsQuery->inRandomOrder();
+                    break;
+                }
+                default: {
+                    $headerNewsQuery->latest();
+                    break;
+                }
+            }
+
+            $variables['blog_header_news'] = $headerNewsQuery
+                ->published()
+                ->take((int) $widget->option('news_number', 3) ?: 3)
+                ->get();
+
+            break;
+        }
+
+        /* ۲) اسلایدر مطالب وبلاگ (پربازدیدترین/جدیدترین/...) */
+        case 'blog-mostviewed-slider': {
+            $blogSliderQuery = Post::query()
+                ->with('category:id,title,slug')
+                ->select('id', 'title', 'slug', 'image', 'post_type', 'category_id', 'view', 'created_at');
+
+            $blogSliderFilter = $widget->options->where('key', 'post_categories')->first();
+            if ($blogSliderFilter && $blogSliderFilter->hasCategory()) {
+                if ($ids = front_widget_category_ids($blogSliderFilter, $widget->option('sub_category_post', 'yes') == 'yes')) {
+                    $blogSliderQuery->whereIn('category_id', $ids);
+                }
+            }
+
+            switch ($widget->option('sort_type', 'view')) {
+                case 'latest': {
+                    $blogSliderQuery->latest();
+                    break;
+                }
+                case 'oldest': {
+                    $blogSliderQuery->oldest();
+                    break;
+                }
+                case 'random': {
+                    $blogSliderQuery->inRandomOrder();
+                    break;
+                }
+                default: {
+                    $blogSliderQuery->orderBy('view', 'desc');
+                    break;
+                }
+            }
+
+            $variables['blog_slider_posts'] = $blogSliderQuery
+                ->published()
+                ->take((int) $widget->option('number', 10) ?: 10)
+                ->get();
+
+            break;
+        }
+
+        /* ۳) ویدیوهای وبلاگ: گرید tv-blog-item + پلی‌لیست سایدبار */
+        case 'blog-videos': {
+            $gridNumber    = (int) $widget->option('grid_number', 6) ?: 6;
+            $sidebarNumber = (int) $widget->option('sidebar_number', 7) ?: 7;
+
+            $videosQuery = Post::query()
+                ->with('category:id,title,slug')
+                ->select('id', 'title', 'slug', 'image', 'post_type', 'category_id', 'view', 'created_at')
+                ->where('post_type', 'video');
+
+            $videosFilter = $widget->options->where('key', 'post_categories')->first();
+            if ($videosFilter && $videosFilter->hasCategory()) {
+                if ($ids = front_widget_category_ids($videosFilter, $widget->option('sub_category_post', 'yes') == 'yes')) {
+                    $videosQuery->whereIn('category_id', $ids);
+                }
+            }
+
+            if ($widget->option('sort_type', 'latest') === 'view') {
+                $videosQuery->orderBy('view', 'desc');
+            } else {
+                $videosQuery->latest();
+            }
+
+            $blogVideos = $videosQuery->published()
+                ->take(max($gridNumber, $sidebarNumber))
+                ->get();
+
+            /* فالبک: اگر هیچ ویدیویی نبود، آخرین مقالات (بدون آیکون پخش) */
+            if ($blogVideos->isEmpty() && $widget->option('fallback_to_latest', 'yes') === 'yes') {
+                $fallbackQuery = Post::query()
+                    ->with('category:id,title,slug')
+                    ->select('id', 'title', 'slug', 'image', 'post_type', 'category_id', 'view', 'created_at');
+
+                if ($videosFilter && $videosFilter->hasCategory()) {
+                    if ($ids = front_widget_category_ids($videosFilter, $widget->option('sub_category_post', 'yes') == 'yes')) {
+                        $fallbackQuery->whereIn('category_id', $ids);
+                    }
+                }
+
+                $blogVideos = $fallbackQuery->published()
+                    ->latest()
+                    ->take(max($gridNumber, $sidebarNumber))
+                    ->get();
+            }
+
+            $variables['video_grid_posts']    = $blogVideos->take($gridNumber)->values();
+            $variables['video_sidebar_posts'] = $blogVideos->take($sidebarNumber)->values();
+
+            break;
+        }
+
+        /* ۴) گرید آخرین مطالب وبلاگ */
+        case 'blog-latest-grid': {
+            $blogGridQuery = Post::query()
+                ->with('category:id,title,slug')
+                ->select('id', 'title', 'slug', 'image', 'post_type', 'category_id', 'view', 'created_at');
+
+            $blogGridFilter = $widget->options->where('key', 'post_categories')->first();
+            if ($blogGridFilter && $blogGridFilter->hasCategory()) {
+                if ($ids = front_widget_category_ids($blogGridFilter, $widget->option('sub_category_post', 'yes') == 'yes')) {
+                    $blogGridQuery->whereIn('category_id', $ids);
+                }
+            }
+
+            switch ($widget->option('sort_type', 'latest')) {
+                case 'view': {
+                    $blogGridQuery->orderBy('view', 'desc');
+                    break;
+                }
+                case 'oldest': {
+                    $blogGridQuery->oldest();
+                    break;
+                }
+                case 'random': {
+                    $blogGridQuery->inRandomOrder();
+                    break;
+                }
+                default: {
+                    $blogGridQuery->latest();
+                    break;
+                }
+            }
+
+            $variables['blog_grid_posts'] = $blogGridQuery
+                ->published()
+                ->take((int) $widget->option('number', 8) ?: 8)
+                ->get();
+
+            break;
+        }
+
         case 'faqs':
             $variables['faqs'] = \App\Models\Faq::where('published', true)
                 ->take($widget->option('number', 10))
@@ -1030,22 +1223,69 @@ function widget_seeder()
 
     // ویجت‌های صفحه مقالات
     $postWidgets = [
+        /* فاز ۱۶۶ — ویجت‌های جدید صفحهٔ مقالات (مطابق blog.html تمپلیت) — بالای لیست */
         [
-            'widget' => ['title' => 'دسته بندی ها', 'key' => 'post-categories', 'theme' => $theme, 'ordering' => 1, 'page' => 'posts'],
+            'widget' => ['title' => 'هدر وبلاگ', 'key' => 'blog-header', 'theme' => $theme, 'ordering' => 1, 'page' => 'posts'],
+            'options' => [
+                ['key' => 'show_search', 'value' => 'yes'],
+                ['key' => 'show_categories', 'value' => 'yes'],
+                ['key' => 'show_banner', 'value' => 'yes'],
+                ['key' => 'news_number', 'value' => '3'],
+                ['key' => 'sort_type', 'value' => 'latest'],
+                ['key' => 'news_editor_pick', 'value' => 'no'],
+                ['key' => 'sub_category_post', 'value' => 'yes'],
+            ]
+        ],
+        [
+            'widget' => ['title' => 'پربازدید ترین مطالب', 'key' => 'blog-mostviewed-slider', 'theme' => $theme, 'ordering' => 2, 'page' => 'posts'],
+            'options' => [
+                ['key' => 'title', 'value' => 'پربازدید ترین مطالب'],
+                ['key' => 'sort_type', 'value' => 'view'],
+                ['key' => 'number', 'value' => '10'],
+                ['key' => 'link', 'value' => '/blog/articles?sort=most_viewed'],
+                ['key' => 'link_title', 'value' => 'مشاهده همه'],
+                ['key' => 'sub_category_post', 'value' => 'yes'],
+            ]
+        ],
+        [
+            'widget' => ['title' => 'آخرین ویدیوهای', 'key' => 'blog-videos', 'theme' => $theme, 'ordering' => 3, 'page' => 'posts'],
+            'options' => [
+                ['key' => 'title', 'value' => 'آخرین ویدیوهای'],
+                ['key' => 'grid_number', 'value' => '6'],
+                ['key' => 'sidebar_number', 'value' => '7'],
+                ['key' => 'sort_type', 'value' => 'latest'],
+                ['key' => 'fallback_to_latest', 'value' => 'yes'],
+                ['key' => 'link_title', 'value' => 'مشاهده همه'],
+                ['key' => 'sub_category_post', 'value' => 'yes'],
+            ]
+        ],
+        [
+            'widget' => ['title' => 'آخرین مطالب', 'key' => 'blog-latest-grid', 'theme' => $theme, 'ordering' => 4, 'page' => 'posts'],
+            'options' => [
+                ['key' => 'title', 'value' => 'آخرین مطالب'],
+                ['key' => 'sort_type', 'value' => 'latest'],
+                ['key' => 'number', 'value' => '8'],
+                ['key' => 'link', 'value' => '/blog/articles'],
+                ['key' => 'link_title', 'value' => 'مشاهده همه'],
+                ['key' => 'sub_category_post', 'value' => 'yes'],
+            ]
+        ],
+        [
+            'widget' => ['title' => 'دسته بندی ها', 'key' => 'post-categories', 'theme' => $theme, 'ordering' => 5, 'page' => 'posts'],
             'options' => [
                 ['key' => 'post_categories', 'value' => 'on', 'type' => 'post_categories', 'categories' => Category::where(['show_in_index' => 1, 'type' => 'postcat'])->pluck('id')]
             ]
         ],
         [
-            'widget' => ['title' => 'برگزیده ها', 'key' => 'posts-three-box-block', 'theme' => $theme, 'ordering' => 2, 'page' => 'posts'],
+            'widget' => ['title' => 'برگزیده ها', 'key' => 'posts-three-box-block', 'theme' => $theme, 'ordering' => 6, 'page' => 'posts'],
             'options' => [['key' => 'title', 'value' => 'برگزیده ها'], ['key' => 'sort_type', 'value' => 'latest'], ['key' => 'sub_category_post', 'value' => 'yes']]
         ],
         [
-            'widget' => ['title' => 'مقالات تصادفی', 'key' => 'posts-big-box-block', 'theme' => $theme, 'ordering' => 3, 'page' => 'posts'],
+            'widget' => ['title' => 'مقالات تصادفی', 'key' => 'posts-big-box-block', 'theme' => $theme, 'ordering' => 7, 'page' => 'posts'],
             'options' => [['key' => 'title', 'value' => 'مقالات تصادفی'], ['key' => 'sort_type', 'value' => 'random'], ['key' => 'sub_category_post', 'value' => 'yes']]
         ],
         [
-            'widget' => ['title' => 'مقالات', 'key' => 'posts-default-block', 'theme' => $theme, 'ordering' => 4, 'page' => 'posts'],
+            'widget' => ['title' => 'مقالات', 'key' => 'posts-default-block', 'theme' => $theme, 'ordering' => 8, 'page' => 'posts'],
             'options' => [
                 ['key' => 'title', 'value' => 'پربازدید ترین ها'],
                 ['key' => 'sort_type', 'value' => 'latest'],
@@ -1055,11 +1295,11 @@ function widget_seeder()
             ]
         ],
         [
-            'widget' => ['title' => 'بنر چهارتایی', 'key' => 'middle-banners-4', 'theme' => $theme, 'ordering' => 5, 'page' => 'posts'],
+            'widget' => ['title' => 'بنر چهارتایی', 'key' => 'middle-banners-4', 'theme' => $theme, 'ordering' => 9, 'page' => 'posts'],
             'options' => [['key' => 'place', 'value' => 'index_banners_place1'], ['key' => 'number', 'value' => '4']]
         ],
         [
-            'widget' => ['title' => 'هشتگ های داغ', 'key' => 'posts-tags', 'theme' => $theme, 'ordering' => 6, 'page' => 'posts'],
+            'widget' => ['title' => 'هشتگ های داغ', 'key' => 'posts-tags', 'theme' => $theme, 'ordering' => 10, 'page' => 'posts'],
             'options' => [['key' => 'title', 'value' => 'هشتگ های داغ'], ['key' => 'sort_type', 'value' => 'most_used'], ['key' => 'ordering', 'value' => 'asc']]
         ],
     ];

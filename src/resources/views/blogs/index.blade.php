@@ -7,6 +7,23 @@
 @section('content')
     @foreach ($widgets as $widget)
         @switch($widget->key)
+            {{-- فاز ۱۶۶ — ویجت‌های صفحهٔ مقالات (مطابق blog.html تمپلیت سانیار) --}}
+            @case('blog-header')
+                @include('front::blogs.widgets.blog-header')
+                @break
+
+            @case('blog-mostviewed-slider')
+                @include('front::blogs.widgets.blog-mostviewed-slider')
+                @break
+
+            @case('blog-videos')
+                @include('front::blogs.widgets.blog-videos')
+                @break
+
+            @case('blog-latest-grid')
+                @include('front::blogs.widgets.blog-latest-grid')
+                @break
+
             @case('fullscreen-slider')
                 @include('front::blogs.widgets.fullscreen-slider')
                 @break

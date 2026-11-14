@@ -4355,6 +4355,95 @@ img{
     margin-bottom: 10px;
 }
 
+/* فاز ۱۶۶ — ویجت‌های صفحهٔ مقالات (مطابق blog.html تمپلیت) */
+
+/* سایدبار وبلاگ (جستجو + دسته‌بندی‌ها + پلی‌لیست ویدیو) */
+.side-right-blog .search-form {
+    margin-bottom: 15px;
+}
+
+.side-right-blog .navbar-blog .navbar,
+.side-right-blog .navbar-video .navbar {
+    padding: 0;
+}
+
+.side-right-blog .navbar-blog .navbar-nav,
+.side-right-blog .navbar-video .navbar-nav {
+    width: 100%;
+}
+
+/* پلی‌لیست ویدیوها: فهرست بلند با اسکرول مستقل */
+.navbar-video .navbar-nav {
+    max-height: 640px;
+    overflow-y: auto;
+    padding-left: 4px;
+}
+
+.navbar-video .navbar-nav::-webkit-scrollbar {
+    width: 5px;
+}
+
+.navbar-video .navbar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.navbar-video .navbar-nav::-webkit-scrollbar-thumb {
+    background: var(--main-color-one-shadow, #d5dbe1);
+    border-radius: 10px;
+}
+
+.navbar-video li {
+    border-radius: 8px;
+    padding: 4px 6px;
+    transition: 0.3s all ease-in-out;
+}
+
+.navbar-video li:hover {
+    background-color: var(--main-color-one-shadow);
+}
+
+.navbar-video li:hover .video-blog-item .title {
+    color: var(--main-color-one);
+}
+
+/* آیکون پخش/پادکست روی گرید ویدیوها */
+.tv-blog-item.tv-item-podcast::before {
+    content: '\f57c';
+}
+
+.tv-blog-item.tv-item-text::before,
+.video-blog-item.video-item-text .image::before {
+    display: none;
+}
+
+/* کارت‌های ویدیویی: با تصویر رنگی به‌جای خاکستری تمپلیت، هنگام هاور رنگی کامل */
+.tv-blog-item img {
+    transition: 0.4s all ease-in-out;
+}
+
+.tv-blog-item:hover img {
+    filter: grayscale(0);
+}
+
+.tv-blog-item a {
+    display: block;
+    border-radius: 10px;
+}
+
+.tv-blog-item .desc .title a,
+.tv-blog-item .desc .title {
+    color: #fff;
+}
+
+/* بنر هدر وبلاگ */
+.side-left-blog > .row > .col-12 > img,
+.side-left-blog > .row > .col-12 > a > img {
+    width: 100%;
+    object-fit: cover;
+}
+
+/* فاز ۱۶۶ پایان ویجت‌های مقالات */
+
 .comment-item-desc {
     padding: 20px;
     border: 1px solid #ddd;
