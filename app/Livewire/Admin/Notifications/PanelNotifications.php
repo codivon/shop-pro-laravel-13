@@ -101,6 +101,38 @@ class PanelNotifications extends Component
         $this->dispatch('toast', message: "همه اعلان‌ها ({$count} مورد) خوانده‌شده علامت‌گذاری شدند.", type: 'success');
     }
 
+    /* ---------------- باز کردن اعلان (فاز ۱۵۵ — هم‌الگوی markAndGo زنگوله هدر) ---------------- */
+
+    /**
+     * کلیک «مشاهده»: علامت‌گذاری خوانده‌شده در همان درخواستِ سرور + ناوبری SPA به مقصد.
+     * قبلاً «مشاهده» یک لینک wire:navigate خالی بود که فقط مسیر را باز می‌کرد و
+     * read_at هرگز ثبت نمی‌شد ⇒ اعلان پس از بازکردن صفحهٔ مقصد (مثل نظر محصول ←
+     * صفحهٔ نظرات) همچنان «خوانده‌نشده» می‌ماند و در تب «خوانده‌شده» نمی‌نشست.
+     */
+    public function openNotification(string $id): void
+    {
+        auth('adminPanel')->user()?->can('notifications.panel') ?: abort(403);
+
+        $admin = auth('adminPanel')->user();
+        $notification = $admin->notifications()->find($id);
+        $link = $notification ? AdminNotificationTypes::npLink($notification) : null;
+
+        if ($notification && is_null($notification->read_at)) {
+            $notification->markAsRead();
+        }
+
+        if ($link) {
+            $this->redirect($link, navigate: true);
+
+            return;
+        }
+
+        // بدون لینک معتبر (عملاً رخ نمی‌دهد؛ npLink همیشه fallback دارد) —
+        // رفرش لیست/آمار تا وضعیت خوانده‌شدن بلافاصله دیده شود
+        unset($this->notifications);
+        unset($this->stats);
+    }
+
     /* ---------------- ابزار ویو (پورت بلید قدیمی) ---------------- */
 
     public function dayLabel($notification, string $todayLabel, string $yesterdayLabel): string

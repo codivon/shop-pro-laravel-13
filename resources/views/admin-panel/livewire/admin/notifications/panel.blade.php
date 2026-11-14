@@ -112,13 +112,19 @@
                                 </button>
                             @endunless
 
+                            {{-- فاز ۱۵۵ — «مشاهده» = علامت‌گذاری خوانده‌شده در سرور + ناوبری
+                                 (هم‌الگوی markAndGo زنگوله هدر)؛ لینک خالی wire:navigate
+                                 اعلان را در تب «خوانده‌شده» ثبت نمی‌کرد --}}
                             @php($notification_link = \App\Support\AdminNotificationTypes::npLink($notification))
                             @if ($notification_link)
-                                <a href="{{ $notification_link }}" wire:navigate
-                                   class="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-brand-600 transition-colors hover:bg-brand-50 dark:hover:bg-brand-500/10">
+                                <button type="button"
+                                        wire:click="openNotification({{ \Illuminate\Support\Js::from($notification->id)->toHtml() }})"
+                                        wire:loading.attr="disabled" wire:target="openNotification"
+                                        class="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-brand-600 transition-colors hover:bg-brand-50 dark:hover:bg-brand-500/10"
+                                        title="مشاهده و علامت‌گذاری به‌عنوان خوانده‌شده">
                                     <x-admin-panel::icon name="eye" class="size-3.5" />
                                     مشاهده
-                                </a>
+                                </button>
                             @endif
                         </div>
                     </div>

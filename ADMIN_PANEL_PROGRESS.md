@@ -3621,3 +3621,32 @@ DigiPay v1.3.0 (اسنپ‌پی + ری‌برندینگ) پوش شد؛ CreditPay
 - `app/Livewire/Admin/Themes/ThemeIndex.php` — cacheConfig=false + بازتاب فوری config (activate و store)
 - `app/Services/PackageInstallerService.php` — cacheConfig=false در activateTheme
 - مستندات: ADMIN_PANEL_PROGRESS.md (رکورد فاز ۱۵۴)
+
+## فاز ۱۵۵ — کلیک «مشاهده» در صفحهٔ اعلان‌های پنل، اعلان را «خوانده‌شده» علامت نمی‌زد
+
+> **گزارش کاربر:** وقتی یک نوتیف مشاهده می‌شود باید جزو «خوانده‌شده‌ها» قرار بگیرد — مثلاً وقتی اعلانِ نظر محصول را کلیک می‌کنم و به صفحهٔ نظرات می‌روم، آن اعلان باید در تب «خوانده‌شده» بنشیند.
+
+### تشخیص ریشه
+- دو سطح کلیک اعلان در پنل جدید وجود دارد و رفتارشان یکسان نبود:
+  1. **زنگولهٔ هدر** (`HeaderNotifications`) — از ابتدای فاز ۱۶ درست بود: `markAndGo(id, url)` در **همان درخواستِ سرور** `markAsRead()` می‌زند و بعد `$this->redirect($url, navigate: true)`.
+  2. **صفحهٔ اعلان‌های پنل** (`PanelNotifications` + `panel.blade.php`) — دکمهٔ «مشاهده» یک `<a wire:navigate>` **خالی** بود: فقط مسیر مقصد را با SPA باز می‌کرد و هیچ اکشن سروری صدا نمی‌زد ⇒ `read_at` هرگز ثبت نمی‌شد ⇒ اعلان پس از بازکردن مقصد (نظر محصول ← `np.reviews.index`) همچنان «خوانده‌نشده» می‌ماند و در تب «خوانده‌شده» و فیلتر `whereNotNull('read_at')` ظاهر نمی‌شد.
+- یعنی فقط زنگوله هدر اعلان‌ها را می‌بست؛ مسیر اصلی صفحهٔ اعلان‌ها (همان‌جایی که فاز ۱۵۴ اعلان‌های دیدگاه/پرسش را نمایان کرد) قابلیت «بستن» نداشت.
+
+### رفع
+| نقطه | تغییر |
+|---|---|
+| `PanelNotifications::openNotification(id)` (جدید) | هم‌الگوی `markAndGo` هدر: گیت `notifications.panel` → پیدا کردن اعلان در `$admin->notifications()` → لینک مقصد از `AdminNotificationTypes::npLink` → اگر نخوانده باشد `markAsRead()` → `$this->redirect($link, navigate: true)`. علامت‌گذاری و ناوبری در **یک درخواست** (اتمیک — بدون ریسک لغو درخواست وسط ناوبری). شاخهٔ دفاعی بدون لینک (عملاً رخ نمی‌دهد؛ `npLink` همیشه fallback دارد): `unset($this->notifications/$this->stats)` تا وضعیت خوانده‌شدن بلافاصله رندر شود (پشتیبانی unset روی legacy computed در vendor راستی‌آزمایی شد). |
+| `panel.blade.php` — دکمهٔ «مشاهده» | `<a wire:navigate>` خام حذف شد؛ دکمهٔ Livewire با `wire:click="openNotification(id)"` + `wire:loading.attr="disabled" wire:target="openNotification"` + `title="مشاهده و علامت‌گذاری به‌عنوان خوانده‌شده"`. رفتار برای اعلانِ از قبل خوانده‌شده بدون تغییر: فقط ناوبری (`markAsRead` با گارد `is_null(read_at)` idempotent است). دکمهٔ سبک ✓ تکی (`markRead`) هم مثل قبل برای علامت‌گذاری بدون بازکردن می‌ماند. |
+
+### نکات طراحی
+- toast عمداً صدا نمی‌شود (هم‌سو با `markAndGo`) — کاربر همان لحظه به صفحهٔ مقصد هدایت می‌شود و پیام اضافه فقط بعد از بازگشت دیده می‌شد.
+- شمارندهٔ زنگولهٔ هدر بعد از ناوبری به‌روز است: روی صفحهٔ مقصد کامپوننت هدر دوباره mount می‌شود و `unread` تازه شمرده می‌شود (+ poll ۶۰ثانیه‌ای موجود).
+- تب «خوانده‌نشده» بعد از این فاز رفتار درستی پیدا می‌کند: کلیک «مشاهده» اعلان را از آن تب خارج می‌کند (در بازگشت به صفحه).
+
+### راستی‌آزمایی و محدودیت سندباکس
+- سندباکس PHP ندارد؛ بازبینی ایستا: امضای `openNotification(string $id)` هم‌ساخت `markRead` موجود (Js::from برای UUID)، گیت مشابه بقیهٔ اکشن‌ها، `redirect(navigate: true)` هم‌الگوی هدر، idempotent بودن برای خوانده‌شده‌ها. بعد از دیپلوی: کلیک «مشاهده» روی اعلان نخوانده باید به مقصد برود و در بازگشت، اعلان در تب «خوانده‌شده» و بدون نقطهٔ آبی باشد؛ شمارندهٔ زنگوله هم باید کم شود.
+
+### فایل‌های فاز ۱۵۵
+- `app/Livewire/Admin/Notifications/PanelNotifications.php` — اکشن جدید `openNotification`
+- `resources/views/admin-panel/livewire/admin/notifications/panel.blade.php` — دکمهٔ «مشاهده» به اکشن سروری وصل شد
+- مستندات: ADMIN_PANEL_PROGRESS.md (رکورد فاز ۱۵۵)
