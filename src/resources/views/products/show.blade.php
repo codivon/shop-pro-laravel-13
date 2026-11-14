@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{{ theme_asset('css/vendor/fancybox.min.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('css/owl.carousel.min.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('css/font-awesome.min.css') }}">
-    <link rel="stylesheet" href="{{ theme_asset('css/pages/products/show.css') }}?v=16">
+    <link rel="stylesheet" href="{{ theme_asset('css/pages/products/show.css') }}?v=17">
 @endpush
 
 @section('content')
@@ -788,7 +788,7 @@
      @if(option('dt_price_alert_status', '1') == '1')
         <script src="{{ theme_asset('js/pages/products/price-alert.js') }}"></script>
      @endif
-   <script src="{{ theme_asset('js/pages/products/show.js') }}?v=16"></script>
+   <script src="{{ theme_asset('js/pages/products/show.js') }}?v=17"></script>
    <script src="{{ theme_asset('js/pages/comments.js') }}"></script>
    {{-- فاز ۱۵۵ — منطق لحظه‌ای قیمت + تعویض تصویر گالری (بدون اسکریپت اینلاین) --}}
    <script src="{{ theme_asset('js/theme-product.js') }}?v=1"></script>

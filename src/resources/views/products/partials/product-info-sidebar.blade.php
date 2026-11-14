@@ -1,92 +1,10 @@
 {{-- باکس اقدام خرید — مارکاپ سانیار product-meta-action --}}
-{{-- هوک‌های JS (show.js): .product-seller-info / .product-seller-row > button[data-price_id] / #price-real .product-seller-price-prev / .count_stores / #seller-count-row --}}
+{{-- فاز ۱۵۶ — ردیف فروشنده/عملکرد/شناسه به ستون چپ منتقل شد (پارشال product-seller-aside) --}}
+{{-- هوک‌های JS (show.js): .product-seller-info / .product-seller-row > button[data-price_id] / #price-real .product-seller-price-prev --}}
 @if ($product->addableToCart() && $selected_price)
-
-    @php
-        // جمع‌آوری همه seller_id های یکتا (بدون تکرار)
-        $stores_attribute_prices=[];
-        // فاز ۱۴۸ — گارد دفاعی: دادهٔ نامعتبر (غیرآرایه‌ای) هرگز نباید سایدبار را بترکاند
-        if (is_array($get_stores) && !empty($get_stores['attribute_prices'])){
-            $stores_attribute_prices=$get_stores['attribute_prices'];
-        }
-        $uniqueSellers = [];
-        foreach($stores_attribute_prices as $attribute_prices){
-            $sellerKey = $attribute_prices->seller_id ?? 'site';
-            $uniqueSellers[$sellerKey] = true;
-        }
-        // تعداد فروشنده‌های یکتا
-        $totalUniqueSellers = count($uniqueSellers);
-
-        // فروشنده فعلی
-        $currentSeller = $selected_price->seller_id ?? 'site';
-
-        // تعداد فروشنده‌های دیگر (غیر از فروشنده فعلی)
-        $otherSellersCount = 0;
-        foreach($uniqueSellers as $seller => $value){
-            if($seller != $currentSeller){
-                $otherSellersCount++;
-            }
-        }
-    @endphp
 
     <div class="product-seller-info mt-4">
         <div class="js-seller-info-changable product-actions">
-
-            @if(option('multi_vendor_system_status','false')=="true")
-                {{-- فاز ۱۵۵ — ردیف فروشنده/عملکرد/شناسه/ارسال داخل ستون اطلاعات، بالای باکس قیمت --}}
-                <div class="product-seller-row product-seller-row--info d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="product-seller-first-line font-14">فروشنده:</div>
-
-                        @if($selected_price->seller)
-                            <a class="table-name lts-05 font-14 fw-bold d-flex align-items-center gap-1"
-                               href="{{ route('front.showSellerStore', $selected_price->seller) }}">
-                                @if($selected_price->seller->seller_info->logo)
-                                    <img src="{{ asset($selected_price->seller->seller_info->logo) }}" class="rounded-circle object-fit-cover" width="26" height="26" alt="seller">
-                                @else
-                                    <i class="bi bi-shop fs-5 text-secondary"></i>
-                                @endif
-                                {{ $selected_price->seller->seller_info->business_name }}
-                                <i class="bi bi-patch-check-fill main-color-one-color"></i>
-                            </a>
-                        @else
-                            <a class="table-name lts-05 font-14 fw-bold d-flex align-items-center gap-1" href="{{ route('front.index') }}">
-                                <i class="bi bi-shop fs-5 text-secondary"></i>
-                                {{ option('info_site_title', 'او پی شاپ') }}
-                                <i class="bi bi-patch-check-fill main-color-one-color"></i>
-                            </a>
-                        @endif
-
-                        <span class="performance-label font-13 d-flex align-items-center gap-1">
-                            <i class="bi bi-graph-up-arrow"></i> عملکرد: عالی
-                        </span>
-                    </div>
-
-                    <div class="d-flex align-items-center gap-3">
-                        <span class="sku-label clickable text-muted font-13 d-flex align-items-center gap-1" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="کپی شناسه محصول">
-                            <i class="bi bi-qr-code"></i> شناسه: <span dir="ltr">{{ $selected_price->product->product_id ?: $product->id }}</span>
-                        </span>
-
-                        <span class="text-muted font-13 d-flex align-items-center gap-1">
-                            <i class="bi bi-truck main-color-one-color"></i>
-                            {{ $selected_price->seller ? 'ارسال توسط فروشنده' : 'ارسال فروشگاه اصلی' }}
-                        </span>
-
-                        @if ($totalUniqueSellers > 1)
-                            <a href="#stores-tag" id="seller-count-row" class="js-seller-count-row font-14 main-color-one-color text-decoration-none">
-                                <span class="js-seller-count u-text-bold count_stores"></span>
-                                <span class="u-text-bold seller-count-text">{{ $otherSellersCount }} فروشنده دیگر</span>
-                            </a>
-                        @endif
-
-                        @if ($product->labels->count())
-                            @foreach ($product->labels as $label)
-                                <span class="badge rounded-pill main-color-one-bg">{{ $label->title }}</span>
-                            @endforeach
-                        @endif
-                    </div>
-                </div>
-            @endif
 
             @php
                 /*

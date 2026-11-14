@@ -9,7 +9,7 @@
         <div class="container-fluid">
             <div class="header-content mb-4 bg-white shadow-box rounded-3 p-3 d-flex align-items-center justify-content-between flex-wrap">
                 <div class="title d-flex align-items-center">
-                    <img src="{{ theme_asset('image/square.png') }}" alt="" class="img-fluid">
+                    <img loading="lazy" decoding="async" src="{{ theme_asset('image/square.png') }}" alt="" class="img-fluid">
                     <h5 class="font-16 ms-3">دسته بندی<span class="main-color-one-color d-inline-block ms-1">محصولات</span></h5>
                 </div>
                 <div class="link">
@@ -27,7 +27,7 @@
                                 <a href="{{ $category->link }}">
                                     <div class="d-flex align-items-center justify-content-md-flex-start justify-content-between">
                                         <div class="image">
-                                            <img src="{{ $category->image ? asset($category->image) : asset('/no-image-product.svg') }}" alt="{{ $category->title }}" class="img-fluid">
+                                            <img loading="lazy" decoding="async" src="{{ $category->image ? asset($category->image) : asset('/no-image-product.svg') }}" alt="{{ $category->title }}" class="img-fluid">
                                         </div>
                                         <div class="text ms-3">
                                             <p class="text-center font-14 text-overflow-1">{{ $category->title }}</p>

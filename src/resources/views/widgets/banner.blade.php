@@ -11,7 +11,7 @@
                 @foreach($banners as $banner)
                     <div class="col-12">
                         <a href="{{ $widget->option('link', '#') }}" title="{{ $banner->title }}">
-                            <img src="{{ asset($widget->option('image')) }}" class="img-fluid rounded-3 shadow-box w-100" alt="{{ $banner->title ?: 'بنر' }}">
+                            <img loading="lazy" decoding="async" src="{{ asset($widget->option('image')) }}" class="img-fluid rounded-3 shadow-box w-100" alt="{{ $banner->title ?: 'بنر' }}">
                         </a>
                     </div>
                 @endforeach

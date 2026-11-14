@@ -9,6 +9,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
+    {{-- فاز ۱۵۶ — حالت روز/شب: مقداردهی قبل از رندر برای جلوگیری از فلش --}}
+    <script src="{{ theme_asset('js/theme-init.js') }}"></script>
+
     {{-- Favicon --}}
     <link rel="icon" type="image/png" sizes="32x32" href="{{ option('info_icon', theme_asset('image/logo.png')) }}">
     <link rel="apple-touch-icon" sizes="144x144" href="{{ option('info_icon', theme_asset('image/logo.png')) }}">
@@ -64,12 +67,14 @@
 
     {{-- فاز ۱۵۵ — اصلاحات ظاهری ریز (هدر/محصول/صفحات) --}}
     <link rel="stylesheet" href="{{ theme_asset('css/theme-header.css') }}">
-    <link rel="stylesheet" href="{{ theme_asset('css/theme-product.css') }}">
+    <link rel="stylesheet" href="{{ theme_asset('css/theme-product.css') }}?v=17">
     <link rel="stylesheet" href="{{ theme_asset('css/theme-pages.css') }}">
+
+    {{-- فاز ۱۵۶ — حالت شب (دارک مود) — بعد از همهٔ استایل‌ها تا بتواند بازنویسی کند --}}
+    <link rel="stylesheet" href="{{ theme_asset('css/theme-dark.css') }}">
 
     {{-- CSS عملکردی مشترک (توست‌ها + آیکون‌های منوهای داینامیک) --}}
     <link rel="stylesheet" href="{{ theme_asset('js/plugins/toastr/toastr.css') }}">
-    <link rel="stylesheet" href="{{ theme_asset('plugin/go-to-top/style.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('plugin/rasta-contact/style.css') }}">
 
     {!! option('info_header_codes', '') !!}
@@ -306,6 +311,14 @@
             {{-- اکشن موبایل (سبد + حساب) --}}
             <div class="d-lg-none d-block col-6 order-lg-5 order-2">
                 <div class="d-flex align-items-center justify-content-end">
+                    {{-- فاز ۱۵۶ — کلید روز/شب (موبایل) --}}
+                    <button type="button" id="theme-toggle"
+                            class="theme-toggle-btn me-2 shadow-sm"
+                            aria-pressed="false" aria-label="تغییر حالت روز و شب"
+                            title="تغییر حالت روز و شب">
+                        <i class="bi bi-sun icon-sun"></i>
+                        <i class="bi bi-moon-stars icon-moon"></i>
+                    </button>
                     <a class="btn btn-light no-highlight btn-lg btn-action-cart shadow-sm"
                        data-bs-toggle="offcanvas" href="#offcanvasCart" role="button"
                        aria-controls="offcanvasCart">
@@ -380,11 +393,14 @@
                         </div>
                     @endif
 
-                    <div class="header-whishlist shadow-sm">
-                        <a href="{{ route('front.favorites.index') }}">
-                            <i class="bi bi-bookmark-check font-20 text-muted"></i>
-                        </a>
-                    </div>
+                    {{-- فاز ۱۵۶ — کلید روز/شب: جایگزین آیکون علاقه‌مندی هدر --}}
+                    <button type="button" id="theme-toggle"
+                            class="theme-toggle-btn shadow-sm"
+                            aria-pressed="false" aria-label="تغییر حالت روز و شب"
+                            title="تغییر حالت روز و شب">
+                        <i class="bi bi-sun icon-sun"></i>
+                        <i class="bi bi-moon-stars icon-moon"></i>
+                    </button>
 
                     <div class="header-cart ms-1">
                         <a class="btn header-cart-toggle rounded-pill btn-white border-0 shadow-sm"
@@ -449,16 +465,11 @@
 {{-- سبد خرید کشویی (offcanvas) --}}
 @include('front::partials.cart')
 
-{{-- دکمه شناور بالا / تماس --}}
-<div class="float-btn">
-    <div class="container-fluid">
-        <div class="progress-wrap d-lg-block d-none">
-            <svg class="progress-circle svg-content" width="100%" height="100%" viewBox="-1 -1 102 102">
-                <path d="M50,1 a49,49 0 0,1 0,98 a49,49 0 0,1 0,-98" />
-            </svg>
-        </div>
-    </div>
-</div>
+{{-- فاز ۱۵۶ — دکمهٔ «برگشت به بالا» — مستطیلی، لبهٔ چپ، وسط ارتفاع صفحه --}}
+<button type="button" id="back-to-top" aria-label="برگشت به بالا">
+    <i class="bi bi-arrow-up-short"></i>
+    <span>برگشت به بالا</span>
+</button>
 
 <script>
     var BASE_URL = "{{ route('front.index') }}";
@@ -478,10 +489,10 @@
 <script src="{{theme_asset('js/jquery-app.js')}}"></script>
 
 {{-- سانیار — پلاگین‌های جانبی تمپلیت --}}
-<script src="{{theme_asset('plugin/go-to-top/script.js')}}"></script>
+{{-- فاز ۱۵۶ — پلاگین go-to-top حذف شد؛ دکمهٔ مستطیلی «برگشت به بالا» در theme-header.js --}}
 <script src="{{theme_asset('plugin/rasta-contact/script.js')}}"></script>
 <script src="{{theme_asset('js/saniar-init.js')}}"></script>
-<script src="{{theme_asset('js/theme-header.js')}}"></script>
+<script src="{{theme_asset('js/theme-header.js')}}?v=17"></script>
 
 {{-- اسکریپت‌های عملکردی فروشگاه --}}
 <script src="{{ theme_asset("js/plugins/sweetalert2.all.min.js") }}"></script>
@@ -493,7 +504,7 @@
 <script src="{{theme_asset('js/owl.carousel.min.js')}}"></script>
 <script src="{{ asset('back/assets/js/customToast.js') }}?v=8"></script>
 <script src="{{ theme_asset("js/scripts.js") }}?v=11"></script>
-<script src="{{theme_asset('js/main.js')}}"></script>
+<script src="{{theme_asset('js/main.js')}}?v=17"></script>
 @stack('scripts')
 
 {!! option('info_scripts') !!}

@@ -1,0 +1,529 @@
+/* ============================================================
+   SaniarTheme — theme-dark.css (فاز ۱۵۶)
+   حالت شب (دارک مود) — اسکوپ کامل روی html[data-theme="dark"]
+   سطوح اصلی: بدنه، هدر، مگا منو، باکس‌ها، فوتر، مودال، آفکانوس،
+   فرم‌ها، پنل کاربری، صفحهٔ محصول، جدول‌ها و دراپ‌داون‌ها.
+   ============================================================ */
+
+/* ---------- متغیرهای پایه ---------- */
+html[data-theme="dark"] {
+    --dk-bg: #12141a;
+    --dk-bg-soft: #181b22;
+    --dk-surface: #1e222b;
+    --dk-surface-2: #242936;
+    --dk-border: #2e3442;
+    --dk-text: #e6e8ee;
+    --dk-text-soft: #a7adbb;
+    --dk-text-muted: #818898;
+    --dk-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+}
+
+/* ---------- بدنه و متن‌ها ---------- */
+html[data-theme="dark"] body,
+html[data-theme="dark"] .product-page,
+html[data-theme="dark"] main,
+html[data-theme="dark"] .ui-boxs {
+    background-color: var(--dk-bg);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .text-muted,
+html[data-theme="dark"] .font-13.text-muted,
+html[data-theme="dark"] .text-dark {
+    color: var(--dk-text-soft) !important;
+}
+
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] h4,
+html[data-theme="dark"] h5,
+html[data-theme="dark"] h6,
+html[data-theme="dark"] .fw-bold {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] a {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] a.text-decoration-none:hover,
+html[data-theme="dark"] a:hover .font-14 {
+    color: #cfd3dc;
+}
+
+html[data-theme="dark"] .main-color-one-color {
+    color: #5bd0c8 !important;
+}
+
+/* ---------- هدر ---------- */
+html[data-theme="dark"] header {
+    background-color: var(--dk-bg-soft);
+    border-bottom: 1px solid var(--dk-border);
+}
+
+html[data-theme="dark"] header .logo img,
+html[data-theme="dark"] .logo img {
+    filter: brightness(0) invert(1);
+    opacity: .92;
+}
+
+html[data-theme="dark"] .header-whishlist,
+html[data-theme="dark"] .header-cart,
+html[data-theme="dark"] .header-btn-group {
+    background-color: transparent;
+}
+
+html[data-theme="dark"] .btn-white,
+html[data-theme="dark"] .header-register,
+html[data-theme="dark"] .header-login,
+html[data-theme="dark"] .header-cart-toggle {
+    background-color: var(--dk-surface) !important;
+    color: var(--dk-text) !important;
+    border-color: var(--dk-border) !important;
+}
+
+html[data-theme="dark"] .btn-white i,
+html[data-theme="dark"] .header-cart-toggle i {
+    color: var(--dk-text-soft) !important;
+}
+
+html[data-theme="dark"] .search-header .search-input,
+html[data-theme="dark"] .search-filed .search-input {
+    background-color: var(--dk-surface);
+    border-color: var(--dk-border);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .search-header .search-input::placeholder,
+html[data-theme="dark"] .search-filed .search-input::placeholder {
+    color: var(--dk-text-muted);
+}
+
+/* پنل نتایج جستجوی زنده */
+html[data-theme="dark"] .search-result,
+html[data-theme="dark"] .search-result-panel {
+    background-color: var(--dk-surface);
+    border-color: var(--dk-border);
+    color: var(--dk-text);
+    box-shadow: var(--dk-shadow);
+}
+
+/* ---------- مگا منو ---------- */
+html[data-theme="dark"] .mega-menu,
+html[data-theme="dark"] .mega-menu .top-menu-parent,
+html[data-theme="dark"] .top-menu-menu {
+    background-color: var(--dk-bg-soft);
+}
+
+html[data-theme="dark"] .mega-menu .sub-menu,
+html[data-theme="dark"] .top-menu-menu ul.main-menu > li > ul.main-menu-sub,
+html[data-theme="dark"] .top-menu-menu>ul>li .sub-menu {
+    background-color: var(--dk-surface) !important;
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .top-menu-menu ul>li>a,
+html[data-theme="dark"] .mega-menu a,
+html[data-theme="dark"] .mega-menu .title {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .top-menu-menu ul>li>a:hover,
+html[data-theme="dark"] .mega-menu a:hover {
+    color: #5bd0c8;
+}
+
+html[data-theme="dark"] .mega-menu .sub-menu li a,
+html[data-theme="dark"] .main-menu-sub li a {
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .mega-menu .sub-menu li a:hover,
+html[data-theme="dark"] .main-menu-sub li a:hover {
+    color: #5bd0c8;
+}
+
+/* نوار ادمین بالای سایت همیشه تیره است — بدون تغییر */
+
+/* ---------- باکس‌های محتوایی ---------- */
+html[data-theme="dark"] .content-box,
+html[data-theme="dark"] .ui-box,
+html[data-theme="dark"] .ui-box-item,
+html[data-theme="dark"] .ui-box-item.ui-box-white,
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .shadow-box {
+    background-color: var(--dk-surface) !important;
+    color: var(--dk-text);
+    border-color: var(--dk-border) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .3);
+}
+
+html[data-theme="dark"] .bg-light,
+html[data-theme="dark"] .bg-white {
+    background-color: var(--dk-surface-2) !important;
+    color: var(--dk-text) !important;
+}
+
+html[data-theme="dark"] .box-title,
+html[data-theme="dark"] .ui-box-item-title h4,
+html[data-theme="dark"] .title {
+    color: var(--dk-text);
+}
+
+/* ---------- کارت محصول ---------- */
+html[data-theme="dark"] .product-card,
+html[data-theme="dark"] .product-block,
+html[data-theme="dark"] .product-block-2,
+html[data-theme="dark"] .slider-item,
+html[data-theme="dark"] .owl-carousel .item {
+    background-color: transparent;
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .product-card .product-title,
+html[data-theme="dark"] .product-block .title h3,
+html[data-theme="dark"] .product-block-2 .title h3,
+html[data-theme="dark"] .product-card h5,
+html[data-theme="dark"] .product-block h5 {
+    color: var(--dk-text);
+}
+
+/* ---------- صفحهٔ محصول ---------- */
+html[data-theme="dark"] .bread-crumb .breadcrumb-item + .breadcrumb-item::before {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .product-seller-aside {
+    background: var(--dk-bg-soft);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .product-seller-aside .aside-value,
+html[data-theme="dark"] .product-seller-aside .product-seller-aside-item {
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .product-seller-aside .product-seller-aside-item + .product-seller-aside-item {
+    border-top-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .product-brand-logo {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .product-meta-action,
+html[data-theme="dark"] .product-seller-info .product-actions {
+    background-color: var(--dk-surface);
+}
+
+html[data-theme="dark"] .p-tabs .nav-link,
+html[data-theme="dark"] .p-tabs .tab-content {
+    color: var(--dk-text);
+    background-color: transparent;
+}
+
+html[data-theme="dark"] .p-tabs .nav-tabs {
+    border-bottom-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .product-attribute,
+html[data-theme="dark"] .ui-variant--check,
+html[data-theme="dark"] .product-meta-color-items label {
+    border-color: var(--dk-border) !important;
+    background-color: var(--dk-surface-2) !important;
+    color: var(--dk-text) !important;
+}
+
+html[data-theme="dark"] .product-attribute.selected,
+html[data-theme="dark"] .product-meta-color-items label.selected {
+    border-color: #5bd0c8 !important;
+}
+
+html[data-theme="dark"] .comments-list .article,
+html[data-theme="dark"] .comment-item,
+html[data-theme="dark"] .question-item {
+    background-color: var(--dk-bg-soft);
+    border-color: var(--dk-border) !important;
+}
+
+/* ---------- فرم‌ها ---------- */
+html[data-theme="dark"] .form-control,
+html[data-theme="dark"] .form-select,
+html[data-theme="dark"] input[type="text"],
+html[data-theme="dark"] input[type="email"],
+html[data-theme="dark"] input[type="tel"],
+html[data-theme="dark"] input[type="password"],
+html[data-theme="dark"] input[type="number"],
+html[data-theme="dark"] textarea {
+    background-color: var(--dk-surface-2);
+    border-color: var(--dk-border);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .form-control::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+    color: var(--dk-text-muted);
+}
+
+html[data-theme="dark"] .form-control:focus,
+html[data-theme="dark"] .form-select:focus {
+    background-color: var(--dk-surface-2);
+    color: var(--dk-text);
+    border-color: #5bd0c8;
+}
+
+/* ---------- دراپ‌داون / آفکانوس / مودال ---------- */
+html[data-theme="dark"] .dropdown-menu,
+html[data-theme="dark"] .dropdown-user-menu .sub-menu {
+    background-color: var(--dk-surface);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .dropdown-menu .dropdown-item,
+html[data-theme="dark"] .dropdown-user-menu .sub-menu a {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .dropdown-menu .dropdown-item:hover,
+html[data-theme="dark"] .dropdown-menu .dropdown-item:focus,
+html[data-theme="dark"] .dropdown-user-menu .sub-menu a:hover {
+    background-color: var(--dk-surface-2);
+    color: #5bd0c8;
+}
+
+html[data-theme="dark"] .offcanvas,
+html[data-theme="dark"] .cart-canvas,
+html[data-theme="dark"] .modal-content {
+    background-color: var(--dk-surface);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .modal-header,
+html[data-theme="dark"] .modal-footer,
+html[data-theme="dark"] .offcanvas-header {
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+html[data-theme="dark"] .btn-light {
+    background-color: var(--dk-surface-2);
+    border-color: var(--dk-border);
+    color: var(--dk-text);
+}
+
+/* ---------- جدول‌ها ---------- */
+html[data-theme="dark"] .table,
+html[data-theme="dark"] .main-table {
+    color: var(--dk-text);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .table :is(th, td) {
+    color: var(--dk-text);
+    border-color: var(--dk-border);
+    background-color: transparent;
+}
+
+html[data-theme="dark"] .table thead th {
+    color: var(--dk-text-soft);
+}
+
+/* ---------- پنل کاربری ---------- */
+html[data-theme="dark"] .user-panel,
+html[data-theme="dark"] .profile-page,
+html[data-theme="dark"] .orders,
+html[data-theme="dark"] .order-item {
+    background-color: var(--dk-surface);
+    color: var(--dk-text);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .badge.bg-success {
+    background-color: #1d7a4d !important;
+}
+
+html[data-theme="dark"] .badge.bg-warning {
+    background-color: #92700c !important;
+}
+
+html[data-theme="dark"] .badge.bg-danger {
+    background-color: #93312e !important;
+}
+
+/* ---------- فوتر ---------- */
+html[data-theme="dark"] footer,
+html[data-theme="dark"] .footer,
+html[data-theme="dark"] .site-footer {
+    background-color: #0d0f13;
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] footer h5,
+html[data-theme="dark"] footer h4,
+html[data-theme="dark"] footer .title,
+html[data-theme="dark"] .footer .title {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] footer a,
+html[data-theme="dark"] .footer a {
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] footer a:hover,
+html[data-theme="dark"] .footer a:hover {
+    color: #5bd0c8;
+}
+
+/* ---------- ویجت‌های عمومی ---------- */
+html[data-theme="dark"] .nice-select,
+html[data-theme="dark"] .nice-select .list {
+    background-color: var(--dk-surface-2);
+    color: var(--dk-text);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .ui-dynamic-label {
+    background-color: var(--dk-surface-2);
+}
+
+html[data-theme="dark"] .pagination .page-link {
+    background-color: var(--dk-surface-2);
+    color: var(--dk-text);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .pagination .page-item.active .page-link {
+    background-color: #2a7f79;
+    border-color: #2a7f79;
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-track {
+    background: var(--dk-bg);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: #333a48;
+    border-radius: 6px;
+}
+
+/* ---------- خود کلید تغییر حالت (در هدر، جای علاقه‌مندی) ---------- */
+/* آیکون کلید کاملاً با CSS از data-theme ریشه کنترل می‌شود (بدون فلش) */
+.theme-toggle-btn {
+    width: 46px;
+    height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid #ececf1;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
+    cursor: pointer;
+    transition: transform .25s ease, background-color .25s ease;
+}
+
+.theme-toggle-btn:hover {
+    transform: rotate(18deg) scale(1.04);
+}
+
+.theme-toggle-btn i {
+    font-size: 20px;
+    color: #f5a623;
+    transition: color .25s ease;
+}
+
+.theme-toggle-btn .icon-moon {
+    display: none;
+    color: #8ea2ff;
+}
+
+/* در حالت شب: ماه دیده می‌شود */
+html[data-theme="dark"] .theme-toggle-btn .icon-sun {
+    display: none;
+}
+
+html[data-theme="dark"] .theme-toggle-btn .icon-moon {
+    display: inline-block;
+}
+
+/* حالت شب — خود کلید */
+html[data-theme="dark"] .theme-toggle-btn {
+    background: var(--dk-surface-2);
+    border-color: var(--dk-border);
+}
+
+/* ============================================================
+   فاز ۱۵۶ — دکمهٔ «برگشت به بالا»
+   مستطیلی، چسبیده به لبهٔ چپ، وسط ارتفاع صفحه
+   ============================================================ */
+#back-to-top {
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%) translateX(-110%);
+    z-index: 9500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #fff;
+    color: #444;
+    border: 1px solid #ececf1;
+    border-right: 0;
+    border-radius: 10px 0 0 10px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .12);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    opacity: 0;
+    visibility: hidden;
+    transition: all .3s ease-in-out;
+}
+
+#back-to-top i {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--main-color-one, #18baa5);
+    transition: transform .25s ease;
+}
+
+#back-to-top.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-50%) translateX(0);
+}
+
+#back-to-top:hover {
+    background: var(--main-color-one, #18baa5);
+    color: #fff;
+}
+
+#back-to-top:hover i {
+    color: #fff;
+    transform: translateY(-3px);
+}
+
+/* حالت شب */
+html[data-theme="dark"] #back-to-top {
+    background: var(--dk-surface);
+    color: var(--dk-text);
+    border-color: var(--dk-border);
+}
+
+/* موبایل — دکمهٔ پایین‌بر در منوی موبایل هست؛ اینجا پنهان */
+@media (max-width: 991.98px) {
+    #back-to-top {
+        display: none;
+    }
+}

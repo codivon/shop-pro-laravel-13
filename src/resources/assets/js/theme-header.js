@@ -108,4 +108,113 @@
     } else {
         initHeaderSearch();
     }
+
+    /* =========================================================
+       فاز ۱۵۶ — ۱) همگام‌سازی سبد خرید پس از افزودن ای‌جکسی
+       صدا زده‌شده از show.js / main.js بعد از replaceWith سایدبار:
+         - شمارندهٔ هدر (.header-cart-counter) بلافاصله به‌روز شود
+         - بک‌دراپ‌های یتیم (سبب «از دست رفتن استایلِ» سایدبار) پاک شوند
+         - اگر سایدبار باز بود، باز بماند
+       ========================================================= */
+    window.SaniarThemeCartSync = function (cartHtml, wasOpen) {
+        var count = 0;
+
+        if (typeof cartHtml === 'string') {
+            var match = cartHtml.match(/data-cart-count="(\d+)"/);
+            if (match) { count = parseInt(match[1], 10) || 0; }
+        } else if (cartHtml && cartHtml.getAttribute) {
+            count = parseInt(cartHtml.getAttribute('data-cart-count') || '0', 10) || 0;
+        }
+
+        /* جایگزین: شمارش آیتم‌ها در DOM تازه (بدون ردیف فاکتور) */
+        var fresh = document.querySelector('.cart-canvas .cart-canvases');
+        if (!count && fresh) {
+            count = fresh.querySelectorAll(':scope > .item').length;
+            if (fresh.querySelector(':scope > .item .factor')) { count -= 1; }
+        }
+        if (count < 0) { count = 0; }
+
+        document.querySelectorAll('.header-cart-counter').forEach(function (el) {
+            el.textContent = String(count);
+            el.classList.toggle('d-none', count === 0);
+        });
+
+        /* پاک‌سازی بک‌دراپ‌های یتیم — عامل اصلی به‌هم‌ریختن ظاهر سایدبار */
+        document.querySelectorAll('.offcanvas-backdrop').forEach(function (node) {
+            node.remove();
+        });
+
+        /* اگر سایدبار قبل از جایگزینی باز بود، دوباره بازش کن */
+        if (wasOpen) {
+            var canvas = document.getElementById('offcanvasCart');
+            if (canvas && window.bootstrap && window.bootstrap.Offcanvas) {
+                window.bootstrap.Offcanvas.getOrCreateInstance(canvas).show();
+            }
+        }
+    };
+
+    /* =========================================================
+       فاز ۱۵۶ — ۲) دکمهٔ «برگشت به بالا» — مستطیلی، وسط صفحه
+       جایگزین پلاگین go-to-top (دایرهٔ گوشهٔ پایین)
+       ========================================================= */
+    function initBackToTop() {
+        var btn = document.getElementById('back-to-top');
+        if (!btn) { return; }
+
+        var toggle = function () {
+            if (window.pageYOffset > 350) {
+                btn.classList.add('is-visible');
+            } else {
+                btn.classList.remove('is-visible');
+            }
+        };
+
+        window.addEventListener('scroll', toggle, { passive: true });
+        toggle();
+
+        btn.addEventListener('click', function () {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    /* =========================================================
+       فاز ۱۵۶ — ۳) کلید روز / شب (دارک مود)
+       حالت در localStorage ذخیره می‌شود؛ مقداردهی اولیهٔ
+       html[data-theme] در theme-init.js (سربین) انجام می‌شود
+       تا صفحه هنگام لود چشمک نزند.
+       ========================================================= */
+    function initThemeToggle() {
+        var toggle = document.getElementById('theme-toggle');
+        if (!toggle || toggle.dataset.bound === '1') { return; }
+        toggle.dataset.bound = '1';
+
+        toggle.addEventListener('click', function () {
+            var root = document.documentElement;
+            var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+
+            root.setAttribute('data-theme', next);
+            try { localStorage.setItem('saniar-theme', next); } catch (e) { /* حافظه در دسترس نیست */ }
+
+            /* همگام‌سازی همهٔ کلیدهای موجود در صفحه */
+            document.querySelectorAll('#theme-toggle').forEach(function (btn) {
+                btn.classList.toggle('is-dark', next === 'dark');
+                btn.setAttribute('aria-pressed', next === 'dark' ? 'true' : 'false');
+                btn.setAttribute('title', next === 'dark' ? 'حالت روز' : 'حالت شب');
+            });
+
+            try {
+                document.dispatchEvent(new CustomEvent('saniar-theme-changed', { detail: { theme: next } }));
+            } catch (e) { /* مرورگر قدیمی */ }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+            initBackToTop();
+            initThemeToggle();
+        });
+    } else {
+        initBackToTop();
+        initThemeToggle();
+    }
 })();

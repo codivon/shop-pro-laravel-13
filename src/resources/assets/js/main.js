@@ -639,7 +639,10 @@ $(document).on('click', '.add-to-cart-single', function () {
             if (data.status == 'success') {
                 showCustomToast('با موفقیت به سبد اضافه شد','success');
 
+                /* فاز ۱۵۶ — جایگزینی سایدبار سبد + همگام‌سازی شمارندهٔ هدر و وضعیت باز بودن */
+                var wasOpen = $('.cart-canvas').hasClass('show');
                 $('.cart-canvas').replaceWith(data.cart);
+                window.SaniarThemeCartSync && window.SaniarThemeCartSync(data.cart, wasOpen);
             } else {
                 Swal.fire({
                     type: 'error',

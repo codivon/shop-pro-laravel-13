@@ -14,7 +14,7 @@
                     @foreach($sevices_sliders as $sevices_slider)
                         <div class="col">
                             <a href="{{ $sevices_slider->link }}" class="footer-badge">
-                                <img src="{{ asset($sevices_slider->image) }}" alt="{{ $sevices_slider->title }}">
+                                <img loading="lazy" decoding="async" src="{{ asset($sevices_slider->image) }}" alt="{{ $sevices_slider->title }}">
                                 <span class="item-feature">{{ $sevices_slider->title }}</span>
                             </a>
                         </div>
@@ -109,7 +109,7 @@
             <div class="row gy-3">
                 <div class="col-lg-9">
                     <div class="footer-menu-text">
-                        <img src="{{ option('info_logo', theme_asset('image/logo.png')) }}" class="img-fluid" alt="{{ option('info_site_title', 'او پی شاپ') }}">
+                        <img loading="lazy" decoding="async" src="{{ option('info_logo', theme_asset('image/logo.png')) }}" class="img-fluid" alt="{{ option('info_site_title', 'او پی شاپ') }}">
                         <p class="text-justify mb-2">
                             {{ option('info_about_us', option('info_short_description', '')) }}
                         </p>

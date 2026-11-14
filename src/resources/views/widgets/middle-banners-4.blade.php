@@ -11,7 +11,7 @@
                 @foreach($banners as $banner)
                     <div class="col-12 col-md-6">
                         <a href="{{ $banner->link ?: '#' }}">
-                            <img src="{{ asset($banner->image) }}" class="img-fluid rounded-3 shadow-box" alt="{{ $banner->title ?: 'بنر' }}">
+                            <img loading="lazy" decoding="async" src="{{ asset($banner->image) }}" class="img-fluid rounded-3 shadow-box" alt="{{ $banner->title ?: 'بنر' }}">
                         </a>
                     </div>
                 @endforeach

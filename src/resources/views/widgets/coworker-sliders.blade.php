@@ -21,7 +21,7 @@
                         @foreach($coworker_sliders as $coworker_slider)
                             <div class="col-md-2 col-4 item">
                                 <a href="{{ $coworker_slider->link ?: '#' }}">
-                                    <img src="{{ asset($coworker_slider->image) }}" alt="{{ $coworker_slider->title }}" class="img-fluid">
+                                    <img loading="lazy" decoding="async" src="{{ asset($coworker_slider->image) }}" alt="{{ $coworker_slider->title }}" class="img-fluid">
                                 </a>
                             </div>
                         @endforeach

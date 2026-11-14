@@ -807,3 +807,105 @@
         margin: 0 auto;
     }
 }
+
+/* ============================================================
+   فاز ۱۵۶ — ۱۲) باکس فروشنده/عملکرد/شناسه — ستون چپ، چیدمان عمودی
+   (انتقال از ردیف افقی بالای باکس قیمت طبق درخواست کاربر)
+   ============================================================ */
+.product-seller-aside {
+    background: #fafafb;
+    border: 1px solid #ececf1;
+    border-radius: 14px;
+    padding: 12px 16px;
+}
+
+.product-seller-aside .product-seller-aside-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.product-seller-aside .product-seller-aside-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.product-seller-aside .aside-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #8b8b93;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.product-seller-aside .aside-label i {
+    font-size: 15px;
+    color: #a0a0a8;
+}
+
+.product-seller-aside .aside-value {
+    color: #3f3f46;
+    font-size: 13px;
+}
+
+.product-seller-aside .aside-value img {
+    flex: 0 0 auto;
+}
+
+.product-seller-aside .sku-label {
+    cursor: copy;
+    direction: ltr;
+}
+
+.product-seller-aside .performance-label {
+    color: #16a34a;
+}
+
+/* جداکنندهٔ ظریف بین ردیف‌ها */
+.product-seller-aside .product-seller-aside-item + .product-seller-aside-item {
+    border-top: 1px dashed #e7e7ec;
+    padding-top: 10px;
+}
+
+.product-seller-aside .product-seller-aside-labels .badge {
+    font-size: 11px;
+    padding: 5px 10px;
+}
+
+/* ------------------------------------------------------------
+   فاز ۱۵۶ — ۱۳) تصویر برند در سربرگ محصول
+   ------------------------------------------------------------ */
+.product-brand-link {
+    text-decoration: none;
+}
+
+.product-brand-link:hover .product-brand-name {
+    filter: brightness(.92);
+}
+
+.product-brand-logo {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    background: #fff;
+    border: 1px solid #ececf1;
+    border-radius: 10px;
+    padding: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+}
+
+/* موبایل — باکس فروشنده در جریان عادی ستون */
+@media (max-width: 991.98px) {
+    .product-seller-aside {
+        margin-top: 12px;
+    }
+}

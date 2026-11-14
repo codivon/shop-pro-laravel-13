@@ -17,7 +17,7 @@
         <div class="carousel-inner full-width-carousel-inner">
             @foreach($main_sliders as $slider)
                 <div class="carousel-item full-width-carousel-item @if($loop->first) active @endif">
-                    <img class="d-block w-100 full-width-image"
+                    <img loading="lazy" decoding="async" class="d-block w-100 full-width-image"
                          src="{{ asset($slider->image) }}"
                          alt="{{ $slider->title ?: 'Slider Image' }}">
 

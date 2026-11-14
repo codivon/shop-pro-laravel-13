@@ -9,7 +9,7 @@
         <div class="container-fluid">
             <div class="header-content mb-4 bg-white shadow-box rounded-3 p-3 d-flex align-items-center justify-content-between flex-wrap">
                 <div class="title d-flex align-items-center">
-                    <img src="{{ theme_asset('image/square.png') }}" alt="" class="img-fluid">
+                    <img loading="lazy" decoding="async" src="{{ theme_asset('image/square.png') }}" alt="" class="img-fluid">
                     <h5 class="font-16 ms-3"><span class="main-color-one-color d-inline-block ms-1">{{ $widget->title }}</span></h5>
                 </div>
                 <div class="link">
@@ -27,7 +27,7 @@
                                 <div class="row gy-2 align-items-center">
                                     <div class="col-4">
                                         <div class="image">
-                                            <img src="{{ $product->image ? asset($product->image) : asset('/no-image-product.svg') }}" alt="{{ $product->image_alt ?: $product->title }}" class="img-fluid">
+                                            <img loading="lazy" decoding="async" src="{{ $product->image ? asset($product->image) : asset('/no-image-product.svg') }}" alt="{{ $product->image_alt ?: $product->title }}" class="img-fluid">
                                         </div>
                                     </div>
                                     <div class="col-8">

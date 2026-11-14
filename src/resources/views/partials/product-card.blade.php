@@ -29,7 +29,7 @@
     @endif
 
     <div class="product-image">
-        <img src="{{ $product->image ? asset($product->image) : asset('/no-image-product.svg') }}"
+        <img loading="lazy" decoding="async" src="{{ $product->image ? asset($product->image) : asset('/no-image-product.svg') }}"
              loading="lazy" alt="{{ $product->image_alt ?: $product->title }}" class="img-fluid">
     </div>
 

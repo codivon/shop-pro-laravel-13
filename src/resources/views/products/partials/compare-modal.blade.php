@@ -30,7 +30,11 @@
                             <div class="col-md-3 col-6">
                                 <div class="compare-product shadow-box rounded-3 p-2 text-center">
                                     <a href="{{ $current_url . '/' . $product->id }}">
-                                        <img class="w-100 mb-2" data-src="{{ $product->image }}" alt="{{ $product->title }}">
+                                        {{-- فاز ۱۵۶ — تصویر با src مستقیم؛ data-src توسط lazyloadxt
+                                             در مودال‌های مخفی هیچ‌وقت تعویض نمی‌شد و تصویر خالی می‌ماند --}}
+                                        <img class="w-100 mb-2" loading="lazy" decoding="async"
+                                             src="{{ $product->image ? asset($product->image) : asset('/no-image-product.svg') }}"
+                                             alt="{{ $product->title }}">
                                         <p class="product-title font-14 text-overflow-1 mb-0">{{ $product->title }}</p>
                                     </a>
                                 </div>

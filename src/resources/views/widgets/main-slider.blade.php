@@ -46,7 +46,10 @@
                                     @foreach($main_sliders as $slider)
                                         <div class="swiper-slide">
                                             <a href="{{ $slider->link ?: '#' }}">
-                                                <img src="{{ asset($slider->image) }}" loading="lazy" class="img-fluid"
+                                                {{-- فاز ۱۵۶ — اسلاید اول eager (LCP)، بقیه lazy --}}
+                                                <img src="{{ asset($slider->image) }}"
+                                                     @if(!$loop->first) loading="lazy" decoding="async" @endif
+                                                     class="img-fluid"
                                                      alt="{{ $slider->title ?: 'اسلایدر' }}">
                                             </a>
                                         </div>

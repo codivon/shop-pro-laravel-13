@@ -3,8 +3,9 @@
     $render_cart = $cart ?? get_cart();
     $cart_count = $render_cart ? $render_cart->products()->count() : 0;
 @endphp
+{{-- data-cart-count: فاز ۱۵۶ — به‌روزرسانی لحظه‌ای شمارندهٔ هدر پس از افزودن ای‌جکسی --}}
 <div class="offcanvas cart-canvas offcanvas-end" tabindex="-1" id="offcanvasCart"
-     aria-labelledby="offcanvasCartLabel">
+     aria-labelledby="offcanvasCartLabel" data-cart-count="{{ $cart_count }}">
     <div class="offcanvas-header">
         <h5 class="offcanvas-title" id="offcanvasCartLabel">سبد خرید</h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>

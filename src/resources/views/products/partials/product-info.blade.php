@@ -32,9 +32,14 @@
             </div>
             <div class="col-lg-4">
                 @if ($product->brand)
+                    {{-- فاز ۱۵۶ — نمایش تصویر برند در کنار نام (در صورت وجود) --}}
                     <a href="{{ route('front.brands.show', ['brand' => $product->brand]) }}"
-                       class="text-lg-end d-block font-14 main-color-one-color fw-bold">
-                        برند: {{ $product->brand->name }}
+                       class="product-brand-link text-lg-end d-inline-flex align-items-center justify-content-lg-end gap-2 w-100 font-14 main-color-one-color fw-bold">
+                        @if ($product->brand->image)
+                            <img src="{{ asset($product->brand->image) }}" alt="{{ $product->brand->name }}"
+                                 class="product-brand-logo" loading="lazy" decoding="async">
+                        @endif
+                        <span class="product-brand-name">برند: {{ $product->brand->name }}</span>
                     </a>
                 @endif
             </div>
@@ -111,6 +116,9 @@
                     <i class="bi bi-shield-fill-check main-color-one-color"></i>
                     <span class="text-muted font-13"> گارانتی اصالت و سلامت فیزیکی کالا </span>
                 </div>
+
+                {{-- فاز ۱۵۶ — فروشنده/عملکرد/شناسه/ارسال: ستون چپ، چیدمان عمودی زیر گارانتی --}}
+                @include('front::products.partials.product-seller-aside')
             </div>
         </div>
     </div>
