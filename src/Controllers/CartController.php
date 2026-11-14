@@ -142,9 +142,15 @@ class CartController extends Controller
         }
 
         if (!empty($errors)) {
-            /* فاز ۱۶۱ — پاسخ ای‌جکسی هم شکل قبلی (errors) را حفظ می‌کند */
+            /* فاز ۱۶۱ — پاسخ ای‌جکسی هم شکل قبلی (errors) را حفظ می‌کند.
+               فاز ۱۶۲ — علاوه بر errors، وضعیت واقعی سبد (area/cart/cart_count)
+               هم برمی‌گردد تا JS بعد از نمایش خطا، شمارشگر را به مقدار مجاز برگرداند
+               و دیگر «عدد غلط روی صفحه بماند». */
             if ($request->ajax() || $request->wantsJson()) {
-                return response(['status' => 'error', 'errors' => $errors], 406);
+                return response(array_merge(
+                    ['status' => 'error', 'errors' => $errors],
+                    $this->ajaxPayload()
+                ), 406);
             }
             return response(['errors' => $errors], 406);
         }

@@ -73,13 +73,19 @@
                 showCustomToast('سبد خرید بروزرسانی شد', 'success');
             },
             error: function (request) {
-                var errors = request.responseJSON && request.responseJSON.errors;
+                var res = request.responseJSON;
+                var errors = res && res.errors;
                 if (errors && errors.length) {
                     errors.forEach(function (error) {
                         showCustomToast(error, 'error');
                     });
                 } else {
                     showCustomToast('خطایی رخ داده است.', 'error');
+                }
+                /* فاز ۱۶۲ — سرور در پاسخ خطا وضعیت واقعی سبد را هم می‌فرستد؛
+                   شمارشگر/جمع کل به مقدار مجاز برمی‌گردد (عدد غلط نمی‌ماند) */
+                if (res && res.area) {
+                    applyCartPayload(res);
                 }
             },
             complete: function () {

@@ -148,7 +148,12 @@
                 <h5 class="font-16 mb-2">
                     {{ $attributeGroup->name }}:
                     @php
-                        $selectedColor = $selected_price->get_attributes()->where('attribute_group_id', $attributeGroup->id)->first();
+                        /* فاز ۱۶۲ — گارد null: اگر ترکیب تنوع هیچ قیمت فروش‌پذیری نداشت
+                           (مسیر AJAX prices با ویژگیِ فقط-ناموجود)، $selected_price می‌شود
+                           null و این خط فاج می‌داد؛ اکنون هم‌الگوی خط ۲۰۵ گارد شده است. */
+                        $selectedColor = $selected_price
+                            ? $selected_price->get_attributes()->where('attribute_group_id', $attributeGroup->id)->first()
+                            : null;
                     @endphp
                     <span class="main-color-one-color">{{ $selectedColor ? $selectedColor->name : '' }}</span>
                 </h5>
@@ -160,8 +165,10 @@
                                 ? $product->hasAttributeStock($attribute)
                                 : $product->hasAttributeStock($attribute, $currentSelectedAttrIds);
 
-                            // بررسی انتخاب شده بودن
-                            $isSelected = (bool) $selected_price->get_attributes()->find($attribute->id);
+                            // بررسی انتخاب شده بودن (فاز ۱۶۲ — گارد null $selected_price)
+                            $isSelected = $selected_price
+                                ? (bool) $selected_price->get_attributes()->find($attribute->id)
+                                : false;
 
                             if ($isSelected) {
                                 $hasSelectedInGroup = true;
@@ -224,8 +231,10 @@
                                 ? $product->hasAttributeStock($attribute)
                                 : $product->hasAttributeStock($attribute, $currentSelectedAttrIds);
 
-                            // بررسی انتخاب شده بودن
-                            $isSelected = (bool) $selected_price->get_attributes()->find($attribute->id);
+                            // بررسی انتخاب شده بودن (فاز ۱۶۲ — گارد null $selected_price)
+                            $isSelected = $selected_price
+                                ? (bool) $selected_price->get_attributes()->find($attribute->id)
+                                : false;
 
                             if ($isSelected) {
                                 $hasSelectedInGroup = true;

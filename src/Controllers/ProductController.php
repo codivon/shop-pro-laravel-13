@@ -600,13 +600,30 @@ class ProductController extends Controller
 
         $selected_price = $query->first();
 
-        $request = new Request();
-        $request->merge([
-            'product_id' => $product->id,
-            'color_id' => $selected_price->attributes()->first()->id
-        ]);
+        /* فاز ۱۶۲ — رفع خطای ۵۰۰ تعویض تنوع (گزارش کاربر):
+           ۱) خطای اصلی: فاز ۱۶۱ «include_quick_buy» را به compact اضافه کرد ولی
+              متغیرش را تعریف نکرده بود → PHP 8 «compact(): Undefined variable»
+              را ErrorException می‌کند → همهٔ درخواست‌های prices با ۵۰۰ می‌مردند.
+           ۲) گارد null مثل show(): اگر ترکیب تنوع انتخابی هیچ قیمت فروش‌پذیری
+              نداشت (مثلاً ویژگیِ فقط روی قیمت ناموجود)، $selected_price می‌شود
+              null و «$selected_price->attributes()» فاج می‌داد — الگوی همان
+              گارد show() با سایلنسر و شرطِ get_stores پیاده شد. */
+        $include_quick_buy = true;
 
-        $get_stores=$this->get_stores_helper($request);
+        $request = new Request();
+        $get_stores = [];
+
+        // فاز ۱۶۲ — دقیقاً الگوی show(): کل بلوک فقط وقتی قیمت انتخابی وجود دارد
+        if ($selected_price) {
+            $request->merge([
+                'product_id' => $product->id,
+                'color_id' => $selected_price->attributes()->first()->id
+            ]);
+
+            if ($request->color_id) {
+                $get_stores = $this->get_stores_helper($request);
+            }
+        }
 
         return view('front::products.partials.product-info', compact(
             'product',
