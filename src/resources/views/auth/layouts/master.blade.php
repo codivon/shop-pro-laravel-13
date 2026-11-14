@@ -21,6 +21,9 @@
         {{ option('info_site_title', 'او پی شاپ') }}
     </title>
 
+    {{-- فاز ۱۵۷ — حالت روز/شب: مقداردهی قبل از رندر برای جلوگیری از فلش --}}
+    <script src="{{ theme_asset('js/theme-init.js') }}"></script>
+
     {{-- قالب سانیار — همان فایل‌های css صفحات قالب (register.html) --}}
     <link rel="stylesheet" href="{{ theme_asset('css/bootstrap.rtl.min.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('font/bootstrap-icon/bootstrap-icons.css') }}">
@@ -32,6 +35,9 @@
     <link rel="stylesheet" href="{{ theme_asset('css/responsive.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('js/plugins/toastr/toastr.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('css/auth.css') }}">
+
+    {{-- فاز ۱۵۷ — دارک مود در صفحات ورود/ثبت‌نام --}}
+    <link rel="stylesheet" href="{{ theme_asset('css/theme-dark.css') }}">
 
     @yield('style')
     @stack('styles')

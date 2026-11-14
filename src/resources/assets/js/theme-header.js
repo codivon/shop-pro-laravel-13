@@ -209,13 +209,71 @@
         });
     }
 
+    /* =========================================================
+       فاز ۱۵۷ — نوار مدیریت بالای سایت (دسترسی سریع ادمین):
+       ۱) رفع باگ «منو باز می‌ماند» در تاچ: در صفحه‌های لمسی،
+          :hover پس از ضربه باقی می‌ماند. با تاچ روی عنوان، پنل با
+          کلاس .touch-open باز/بسته می‌شود و با لمس بیرون بسته می‌شود.
+       ۲) blur هنگام خروج موس — برای حالت کلیک/فوکوس.
+       ========================================================= */
+    function initAdminNavbarFocusFix() {
+        var navbar = document.querySelector('.admin-loggedin-navbar');
+        if (!navbar || navbar.dataset.focusFixBound === '1') { return; }
+        navbar.dataset.focusFixBound = '1';
+
+        var isTouch = window.matchMedia && window.matchMedia('(hover: none)').matches;
+
+        var closeAll = function () {
+            navbar.querySelectorAll('.list-item-has-children').forEach(function (li) {
+                li.classList.remove('touch-open');
+                var link = li.querySelector(':scope > .nav-link');
+                if (link && typeof link.blur === 'function') { link.blur(); }
+            });
+        };
+
+        navbar.querySelectorAll('.list-item-has-children').forEach(function (li) {
+            var link = li.querySelector(':scope > .nav-link');
+
+            /* خروج موس از آیتم منودار → فوکوس آزاد شود (دسکتاپ) */
+            li.addEventListener('mouseleave', function () {
+                if (link && typeof link.blur === 'function') { link.blur(); }
+            });
+
+            /* تاچ: ضربهٔ اول باز می‌کند، ضربهٔ دوم می‌بندد */
+            if (link && isTouch) {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var wasOpen = li.classList.contains('touch-open');
+                    closeAll();
+                    if (!wasOpen) { li.classList.add('touch-open'); }
+                });
+            }
+        });
+
+        /* کلیک / لمس بیرون نوار → همهٔ پنل‌ها بسته شوند */
+        document.addEventListener('click', function (e) {
+            if (!navbar.contains(e.target)) { closeAll(); }
+        });
+        document.addEventListener('touchstart', function (e) {
+            if (!navbar.contains(e.target)) { closeAll(); }
+        }, { passive: true });
+
+        /* کلید Escape هم پنل‌ها را می‌بندد */
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { closeAll(); }
+        });
+    }
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () {
             initBackToTop();
             initThemeToggle();
+            initAdminNavbarFocusFix();
         });
     } else {
         initBackToTop();
         initThemeToggle();
+        initAdminNavbarFocusFix();
     }
 })();

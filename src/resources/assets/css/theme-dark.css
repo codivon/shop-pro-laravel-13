@@ -532,3 +532,684 @@ html[data-theme="dark"] #back-to-top {
         display: none;
     }
 }
+
+/* ============================================================
+   فاز ۱۵۷ — پوشش کامل دارک مود صفحه‌به‌صفحه
+   (خانه، دسته‌بندی، محصول، سبد، پنل کاربری، لاگین، فوتر،
+   مودال‌ها، آفکانوس‌ها، ویجت شناور و نوار ادمین)
+   ============================================================ */
+
+/* ---------- ۱) نوار رنگی پشت اسلایدرهای محصول (سایت‌اسلایدر) ---------- */
+html[data-theme="dark"] .site-slider .parent::before,
+html[data-theme="dark"] .site-slider.theme-2 .parent::before,
+html[data-theme="dark"] .blog-slider.site-slider-sm .parent::before {
+    background: var(--dk-bg-soft);
+    background-image: linear-gradient(180deg, #1d2230 0%, #14171f 100%);
+}
+
+/* ---------- ۲) کارت محصول (product-box) ---------- */
+html[data-theme="dark"] .product-box {
+    background-color: var(--dk-surface) !important;
+    border: 1px solid var(--dk-border);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+}
+
+html[data-theme="dark"] .product-box:hover {
+    border-color: #3a415a;
+}
+
+html[data-theme="dark"] .product-box .product-title .title p,
+html[data-theme="dark"] .product-box .product-title .title a,
+html[data-theme="dark"] .product-box .title h3,
+html[data-theme="dark"] .product-box .title h5,
+html[data-theme="dark"] .product-box .title p {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .product-box .product-title .title span,
+html[data-theme="dark"] .product-box .title span {
+    color: var(--dk-text-muted) !important;
+}
+
+/* نوار اکشن پایین کارت (قیمت + دکمه خرید) */
+html[data-theme="dark"] .product-box .product-action,
+html[data-theme="dark"] .product-action {
+    background-color: var(--dk-surface-2) !important;
+    border-radius: 8px;
+}
+
+html[data-theme="dark"] .product-action .price,
+html[data-theme="dark"] .product-action .price span {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .product-action .cart-btn,
+html[data-theme="dark"] .product-action .add-to-cart {
+    color: #fff;
+}
+
+/* دکمه شیشه‌ای «مشاهده» */
+html[data-theme="dark"] .light-btn {
+    background-color: var(--dk-surface-2) !important;
+    border-color: var(--dk-border) !important;
+    color: var(--dk-text-soft) !important;
+}
+
+html[data-theme="dark"] .light-btn:hover {
+    background-color: var(--dk-surface) !important;
+    color: var(--dk-text) !important;
+}
+
+/* تایمر تخفیف روی کارت */
+html[data-theme="dark"] .product-box .product-timer .timer-label span {
+    background-color: #ef394e;
+    color: #fff;
+}
+
+/* ---------- ۳) اسلایدرها — دکمه‌های ناوبری ---------- */
+html[data-theme="dark"] .swiper-button-next,
+html[data-theme="dark"] .swiper-button-prev,
+html[data-theme="dark"] .swiper-pagination-bullet {
+    background-color: var(--dk-surface-2);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .swiper-button-next::after,
+html[data-theme="dark"] .swiper-button-prev::after {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .swiper-pagination-bullet {
+    background-color: #4a5164;
+}
+
+html[data-theme="dark"] .swiper-pagination-bullet-active {
+    background-color: var(--main-color-one);
+}
+
+/* ---------- ۴) کارت مقاله (blog-item) ---------- */
+html[data-theme="dark"] .blog-item {
+    background-color: var(--dk-surface) !important;
+    border: 1px solid var(--dk-border);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+}
+
+html[data-theme="dark"] .blog-item .title h4,
+html[data-theme="dark"] .blog-item .title h4 a,
+html[data-theme="dark"] .blog-item .title a {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .blog-item .desc,
+html[data-theme="dark"] .blog-item .text-muted,
+html[data-theme="dark"] .blog-item time,
+html[data-theme="dark"] .blog-item .date {
+    color: var(--dk-text-soft) !important;
+}
+
+/* ---------- ۵) نوار برندها (فروشگاه سانیار) ---------- */
+html[data-theme="dark"] .service {
+    background-color: var(--dk-bg-soft);
+    border-top: 1px solid var(--dk-border);
+    border-bottom: 1px solid var(--dk-border);
+    box-shadow: none;
+}
+
+html[data-theme="dark"] .service .service-title {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .service .service-logo .item {
+    background-color: var(--dk-surface) !important;
+    border: 1px solid var(--dk-border);
+    border-radius: 8px;
+}
+
+/* ---------- ۶) کارت‌های خدمات فوتر (feature-item) ---------- */
+html[data-theme="dark"] .feature-item {
+    background-color: var(--dk-surface) !important;
+    border: 1px solid var(--dk-border);
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"] .feature-item .desc h6,
+html[data-theme="dark"] .feature-item .desc p,
+html[data-theme="dark"] .feature-item .desc span {
+    color: var(--dk-text);
+}
+
+/* ---------- ۷) سبد خرید کناری (آفکانوس سبد) ---------- */
+html[data-theme="dark"] .cart-canvas .offcanvas-body,
+html[data-theme="dark"] .offcanvas .offcanvas-body,
+html[data-theme="dark"] .offcanvas-body {
+    background-color: var(--dk-bg-soft) !important;
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .cart-canvases .item {
+    background-color: var(--dk-surface) !important;
+    border: 1px solid var(--dk-border);
+    box-shadow: none;
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .cart-canvases .item .factor .title {
+    border-bottom-color: var(--dk-border);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .cart-canvases .item .price .price-discount {
+    color: var(--dk-text-muted) !important;
+}
+
+html[data-theme="dark"] .cart-canvases .item .action .remove {
+    background-color: var(--dk-surface-2) !important;
+}
+
+html[data-theme="dark"] .cart-canvases .item .action .remove a i,
+html[data-theme="dark"] .cart-canvases .item .action .remove i {
+    color: var(--dk-text-soft) !important;
+}
+
+/* آفکانوس منوی موبایل — آیتم‌های منو */
+html[data-theme="dark"] #responsiveMenu .offcanvas-body {
+    background-color: var(--dk-bg-soft) !important;
+}
+
+html[data-theme="dark"] #responsiveMenu .nav-item,
+html[data-theme="dark"] #responsiveMenu .bg-ul-f7,
+html[data-theme="dark"] #responsiveMenu .rm-item-menu .nav-link,
+html[data-theme="dark"] .rm-item-menu .nav-item {
+    background-color: var(--dk-surface) !important;
+    color: var(--dk-text) !important;
+    border-color: var(--dk-border) !important;
+}
+
+html[data-theme="dark"] #responsiveMenu .rm-item-menu .nav-link,
+html[data-theme="dark"] .rm-item-menu .nav-link {
+    color: var(--dk-text) !important;
+}
+
+html[data-theme="dark"] #responsiveMenu .navbar-toggler,
+html[data-theme="dark"] #responsiveMenu button {
+    color: var(--dk-text);
+}
+
+/* ---------- ۸) صفحهٔ محصول ---------- */
+
+/* جعبهٔ قیمت و خرید */
+html[data-theme="dark"] .product-seller-row,
+html[data-theme="dark"] .product-seller-row.product-meta-action,
+html[data-theme="dark"] .product-meta-action {
+    background-color: var(--dk-surface) !important;
+    border-color: var(--dk-border) !important;
+}
+
+/* تب‌های صفحهٔ محصول (مشخصات/نظرات/پرسش و پاسخ) */
+html[data-theme="dark"] .p-tabs .box-tabs-main,
+html[data-theme="dark"] .box-tabs-main {
+    background-color: var(--dk-surface) !important;
+    box-shadow: none;
+    border: 1px solid var(--dk-border);
+}
+
+html[data-theme="dark"] .product-page .p-tabs .box-tabs,
+html[data-theme="dark"] .p-tabs .box-tabs,
+html[data-theme="dark"] .box-tabs {
+    border-bottom-color: var(--dk-border);
+    background-color: transparent;
+}
+
+html[data-theme="dark"] .box-tabs ul li a,
+html[data-theme="dark"] .box-tabs .box-tabs-tab > a {
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .box-tabs .nav-tabs .nav-link,
+html[data-theme="dark"] .box-tabs .nav-tabs .nav-link.active {
+    background-color: transparent;
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .box-tabs .nav-tabs .nav-link.active {
+    border-top-color: var(--main-color-one);
+}
+
+/* لیبل سبز آماده ارسال */
+html[data-theme="dark"] .success-label {
+    background-color: rgba(93, 214, 134, .12);
+    color: #5dd686;
+}
+
+/* مودال ثبت نظر */
+html[data-theme="dark"] .review-modal .modal-header,
+html[data-theme="dark"] .review-modal .modal-body,
+html[data-theme="dark"] .review-modal .modal-content {
+    background-color: var(--dk-surface);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .input-ui,
+html[data-theme="dark"] .input-ui.ui-input-field {
+    background-color: var(--dk-surface-2) !important;
+    border-color: var(--dk-border) !important;
+    color: var(--dk-text) !important;
+}
+
+html[data-theme="dark"] .review-guideline {
+    background-color: var(--dk-bg-soft) !important;
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .review-guideline * {
+    color: var(--dk-text-soft);
+}
+
+/* ---------- ۹) پنل کاربری ---------- */
+html[data-theme="dark"] .ui-box-item-title {
+    background-color: var(--dk-bg-soft) !important;
+    color: var(--dk-text) !important;
+    border-color: var(--dk-border) !important;
+}
+
+html[data-theme="dark"] .ui-box-item-title h4,
+html[data-theme="dark"] .ui-box-item-title * {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .ui-box-item-desc,
+html[data-theme="dark"] .ui-box-item-desc.p-0 {
+    background-color: var(--dk-bg-soft) !important;
+    color: var(--dk-text-soft) !important;
+}
+
+html[data-theme="dark"] .product-row {
+    background-color: var(--dk-surface) !important;
+    border-color: var(--dk-border) !important;
+    color: var(--dk-text);
+}
+
+/* منوی کنار پنل */
+html[data-theme="dark"] .panel-side .content-box,
+html[data-theme="dark"] .panel-box {
+    background-color: var(--dk-surface) !important;
+    color: var(--dk-text);
+    border-color: var(--dk-border) !important;
+}
+
+html[data-theme="dark"] .panel-side a,
+html[data-theme="dark"] .panel-side .font-14 {
+    color: var(--dk-text-soft);
+}
+
+/* ---------- ۱۰) صفحهٔ ورود / ثبت‌نام ---------- */
+html[data-theme="dark"] .bg-auth {
+    background-image: linear-gradient(rgba(13, 15, 19, .88), rgba(13, 15, 19, .94)), url('../image/auth-bg.jpg');
+}
+
+html[data-theme="dark"] .auth-form.bg-white,
+html[data-theme="dark"] .auth-form {
+    background-color: var(--dk-surface) !important;
+    color: var(--dk-text);
+    border: 1px solid var(--dk-border);
+}
+
+html[data-theme="dark"] .auth-form .form-label,
+html[data-theme="dark"] .auth-form label {
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .activation-code input,
+html[data-theme="dark"] .activation-code > input {
+    background-color: var(--dk-surface-2) !important;
+    color: var(--dk-text) !important;
+    border-bottom-color: var(--dk-border) !important;
+}
+
+/* ---------- ۱۱) ویجت شناور تماس (راست) ---------- */
+html[data-theme="dark"] .fw-panel {
+    background-color: var(--dk-surface) !important;
+    color: var(--dk-text);
+    border: 1px solid var(--dk-border);
+    box-shadow: var(--dk-shadow);
+}
+
+html[data-theme="dark"] .fw-tabs {
+    background-color: var(--dk-bg-soft) !important;
+}
+
+html[data-theme="dark"] .fw-tab-btn {
+    background-color: transparent;
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .fw-tab-btn.fw-tab-active {
+    background-color: var(--dk-surface-2) !important;
+    color: var(--dk-text) !important;
+}
+
+html[data-theme="dark"] .fw-channel {
+    background-color: var(--dk-bg-soft) !important;
+    color: var(--dk-text) !important;
+    border: 1px solid var(--dk-border);
+}
+
+html[data-theme="dark"] .fw-channel:hover {
+    background-color: var(--dk-surface-2) !important;
+}
+
+html[data-theme="dark"] .fw-panel .fw-title,
+html[data-theme="dark"] .fw-panel h4,
+html[data-theme="dark"] .fw-panel h5 {
+    color: var(--dk-text);
+}
+
+/* ---------- ۱۲) نشان‌های اعتماد فوتر ---------- */
+html[data-theme="dark"] .footer-badge {
+    background-color: var(--dk-surface) !important;
+    border: 1px solid var(--dk-border);
+    border-radius: 8px;
+}
+
+/* ---------- ۱۳) صفحه‌بندی ---------- */
+html[data-theme="dark"] .page-link {
+    background-color: var(--dk-surface-2);
+    color: var(--dk-text);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .page-item.active .page-link {
+    background-color: var(--main-color-one);
+    border-color: var(--main-color-one);
+    color: #fff;
+}
+
+/* ---------- ۱۴) نوار مدیریت بالای سایت (دارک) ---------- */
+html[data-theme="dark"] .admin-loggedin-navbar .list-item-has-children > .sub-menu {
+    background: var(--dk-surface);
+    border-color: var(--dk-border);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, .55);
+}
+
+html[data-theme="dark"] .admin-loggedin-navbar .sub-menu .nav-link {
+    color: var(--dk-text) !important;
+}
+
+html[data-theme="dark"] .admin-loggedin-navbar .sub-menu .nav-link i {
+    color: var(--main-color-one);
+}
+
+html[data-theme="dark"] .admin-loggedin-navbar .sub-menu .nav-link:hover {
+    color: var(--main-color-one-hover, #7599f7) !important;
+    background: var(--dk-surface-2);
+}
+
+/* ---------- ۱۵) لوگوی هدر در حالت شب (رنگ اصلی حفظ شود) ---------- */
+html[data-theme="dark"] header .logo img,
+html[data-theme="dark"] .logo img {
+    filter: none;
+    opacity: 1;
+}
+
+/* ---------- ۱۶) جزئیات عمومی ---------- */
+html[data-theme="dark"] .bg-body-tertiary,
+html[data-theme="dark"] .bg-body-secondary {
+    background-color: var(--dk-surface-2) !important;
+}
+
+html[data-theme="dark"] .text-bg-light,
+html[data-theme="dark"] .alert-light {
+    background-color: var(--dk-surface-2) !important;
+    color: var(--dk-text) !important;
+}
+
+html[data-theme="dark"] hr {
+    border-color: var(--dk-border);
+    opacity: 1;
+}
+
+html[data-theme="dark"] .nav-tabs {
+    border-bottom-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .nav-tabs .nav-link:hover {
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .nav-tabs .nav-link.active {
+    background-color: var(--dk-surface);
+    border-color: var(--dk-border) var(--dk-border) var(--dk-surface);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .list-group-item {
+    background-color: var(--dk-surface);
+    border-color: var(--dk-border);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .accordion-item {
+    background-color: var(--dk-surface);
+    border-color: var(--dk-border);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .accordion-button {
+    background-color: var(--dk-surface-2);
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .accordion-button:not(.collapsed) {
+    background-color: var(--dk-surface);
+    color: var(--main-color-one);
+}
+
+html[data-theme="dark"] .breadcrumb-item a {
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .breadcrumb-item.active {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] img.img-fluid.bg-white,
+html[data-theme="dark"] .service-logo .item img {
+    filter: none;
+}
+
+/* تصاویر محصولات روی کارت تیره — پس‌زمینهٔ خودشان حفظ شود */
+html[data-theme="dark"] .product-box .product-image img {
+    border-radius: 8px;
+}
+
+/* جلوهٔ هاور کارت محصول */
+html[data-theme="dark"] .product-box:hover {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .5);
+}
+
+/* ---------- ۱۷) تسویه حساب (checkout) ---------- */
+html[data-theme="dark"] .time-and-send-container {
+    background-color: var(--dk-surface) !important;
+    border-color: var(--dk-border) !important;
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .time-and-send-container .radio-send-method .custom-radio {
+    background-color: var(--dk-surface-2);
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .time-and-send-container .custom-radio .custom-radio-label .label,
+html[data-theme="dark"] .time-and-send-container .custom-radio .custom-radio-label .detail .title,
+html[data-theme="dark"] .time-and-send-container .custom-radio .custom-radio-label .detail .subtitle {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .alert-light {
+    background-color: var(--dk-surface-2) !important;
+    border-color: var(--dk-border) !important;
+}
+
+html[data-theme="dark"] .alert-light,
+html[data-theme="dark"] .alert-light * {
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .footer-badge .item-feature {
+    color: var(--dk-text) !important;
+}
+
+html[data-theme="dark"] .factor-item {
+    color: var(--dk-text);
+}
+
+/* فاکتور و ردیف‌های سفارش */
+html[data-theme="dark"] .factor,
+html[data-theme="dark"] .factor .title {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .factor-item.bg-light {
+    background-color: var(--dk-surface-2) !important;
+    color: var(--dk-text) !important;
+}
+
+/* ---------- ۱۸) صفحه‌بندی سفارشی (my-paginate) ---------- */
+html[data-theme="dark"] .my-paginate li:nth-child(1) a,
+html[data-theme="dark"] .my-paginate li:nth-last-child(1) a,
+html[data-theme="dark"] .my-paginate li.disabled a,
+html[data-theme="dark"] .my-paginate li a,
+html[data-theme="dark"] .my-paginate li.active a {
+    background-color: var(--dk-surface-2) !important;
+    color: var(--dk-text) !important;
+}
+
+html[data-theme="dark"] .my-paginate li.active a {
+    background-color: var(--main-color-one) !important;
+    color: #fff !important;
+}
+
+html[data-theme="dark"] .my-paginate li.disabled a,
+html[data-theme="dark"] .my-paginate li.disabled a i {
+    color: var(--dk-text-muted) !important;
+}
+
+html[data-theme="dark"] .my-paginate li a i {
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] .page-link,
+html[data-theme="dark"] .page-item.active .page-link {
+    background-color: var(--dk-surface-2) !important;
+    color: var(--dk-text) !important;
+    border-color: var(--dk-border) !important;
+}
+
+html[data-theme="dark"] .page-item.active .page-link {
+    background-color: var(--main-color-one) !important;
+    color: #fff !important;
+}
+
+/* ---------- ۱۹) مگا منو — ستون اصلی دسته‌بندی‌ها ---------- */
+html[data-theme="dark"] .mega-menu .main-menu,
+html[data-theme="dark"] .mega-menu .mega-container,
+html[data-theme="dark"] .mega-menu .navbar-nav > li > ul {
+    background-color: var(--dk-bg-soft) !important;
+    border-color: var(--dk-border);
+}
+
+html[data-theme="dark"] .mega-menu .main-menu > li > a,
+html[data-theme="dark"] .mega-menu .main-menu li .title {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .mega-menu .main-menu > li:hover > a {
+    color: #5bd0c8;
+}
+
+html[data-theme="dark"] .mega-menu .main-menu-sub .back-menu,
+html[data-theme="dark"] .mega-menu .main-menu-sub {
+    background-color: var(--dk-surface) !important;
+}
+
+/* پنل نتایج جستجوی هدر — ردیف‌ها */
+html[data-theme="dark"] .search-result-item,
+html[data-theme="dark"] .sr-item {
+    background-color: transparent;
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] .search-result-item:hover,
+html[data-theme="dark"] .sr-item:hover {
+    background-color: var(--dk-surface-2);
+}
+
+/* آیتم‌های ستون اصلی مگا منو (کلاس همهٔ ردیف‌هاست) */
+html[data-theme="dark"] .mega-menu .main-menu-sub-active-li,
+html[data-theme="dark"] .top-menu-menu .main-menu-sub-active-li {
+    background-color: transparent !important;
+}
+
+html[data-theme="dark"] .mega-menu .main-menu-sub-active-li:hover,
+html[data-theme="dark"] .top-menu-menu .main-menu-sub-active-li:hover {
+    background-color: var(--dk-surface-2) !important;
+}
+
+/* نوار تزئینی پشت ستون مگا منو (ساخت‌شده با ::before در style.css) */
+html[data-theme="dark"] .top-menu-menu li:hover ul.main-menu::before,
+html[data-theme="dark"] ul.main-menu::before {
+    background-color: var(--dk-surface) !important;
+}
+
+html[data-theme="dark"] .top-menu-menu ul.main-menu > li {
+    background-color: transparent !important;
+    border-bottom-color: var(--dk-border) !important;
+}
+
+html[data-theme="dark"] .top-menu-menu ul.main-menu li a i,
+html[data-theme="dark"] .top-menu-menu ul>li>ul>li>a.title i {
+    color: var(--dk-text-soft) !important;
+}
+
+html[data-theme="dark"] .top-menu-menu ul.main-menu>li>ul.main-menu-sub li:hover {
+    background-color: var(--dk-surface-2) !important;
+}
+
+/* پنل نتایج جستجوی زنده — شکستن specificity سلکتور ID */
+html[data-theme="dark"] .search-header #search-result,
+html[data-theme="dark"] #search-result {
+    background-color: var(--dk-surface) !important;
+    color: var(--dk-text) !important;
+    border-color: var(--dk-border) !important;
+}
+
+html[data-theme="dark"] #search-result .sr-title,
+html[data-theme="dark"] #search-result .sr-empty {
+    color: var(--dk-text-soft);
+}
+
+html[data-theme="dark"] #search-result .product-title,
+html[data-theme="dark"] #search-result a,
+html[data-theme="dark"] #search-result h5,
+html[data-theme="dark"] #search-result h6,
+html[data-theme="dark"] #search-result p {
+    color: var(--dk-text);
+}
+
+html[data-theme="dark"] #search-result .price,
+html[data-theme="dark"] #search-result .text-muted {
+    color: var(--dk-text-soft) !important;
+}
+
+html[data-theme="dark"] #search-result .sr-product {
+    background-color: var(--dk-surface-2) !important;
+}
+
+html[data-theme="dark"] #search-result .sr-product-image {
+    background-color: var(--dk-bg-soft) !important;
+}
+
+html[data-theme="dark"] #search-result .sr-product-title,
+html[data-theme="dark"] #search-result .sr-product .title {
+    color: var(--dk-text);
+}

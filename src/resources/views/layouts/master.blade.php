@@ -65,13 +65,17 @@
     <link rel="stylesheet" href="{{ theme_asset('css/style.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('css/responsive.css') }}">
 
+    {{-- فاز ۱۵۷ — اسلایدر owl در ویجت‌های پنل کاربری استفاده می‌شود؛
+         بدون این CSS آفست افقی تمام‌صفحه ایجاد می‌شد --}}
+    <link rel="stylesheet" href="{{ theme_asset('css/owl.carousel.min.css') }}">
+
     {{-- فاز ۱۵۵ — اصلاحات ظاهری ریز (هدر/محصول/صفحات) --}}
     <link rel="stylesheet" href="{{ theme_asset('css/theme-header.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('css/theme-product.css') }}?v=17">
     <link rel="stylesheet" href="{{ theme_asset('css/theme-pages.css') }}">
 
     {{-- فاز ۱۵۶ — حالت شب (دارک مود) — بعد از همهٔ استایل‌ها تا بتواند بازنویسی کند --}}
-    <link rel="stylesheet" href="{{ theme_asset('css/theme-dark.css') }}">
+    <link rel="stylesheet" href="{{ theme_asset('css/theme-dark.css') }}?v=18">
 
     {{-- CSS عملکردی مشترک (توست‌ها + آیکون‌های منوهای داینامیک) --}}
     <link rel="stylesheet" href="{{ theme_asset('js/plugins/toastr/toastr.css') }}">
@@ -490,7 +494,7 @@
 {{-- فاز ۱۵۶ — پلاگین go-to-top حذف شد؛ دکمهٔ مستطیلی «برگشت به بالا» در theme-header.js --}}
 <script src="{{theme_asset('plugin/rasta-contact/script.js')}}"></script>
 <script src="{{theme_asset('js/saniar-init.js')}}"></script>
-<script src="{{theme_asset('js/theme-header.js')}}?v=17"></script>
+<script src="{{theme_asset('js/theme-header.js')}}?v=18"></script>
 
 {{-- اسکریپت‌های عملکردی فروشگاه --}}
 <script src="{{ theme_asset("js/plugins/sweetalert2.all.min.js") }}"></script>

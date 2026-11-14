@@ -127,7 +127,8 @@
 }
 
 .admin-loggedin-navbar .list-item-has-children:hover > .sub-menu,
-.admin-loggedin-navbar .list-item-has-children:focus-within > .sub-menu {
+.admin-loggedin-navbar .list-item-has-children:focus-within > .sub-menu,
+.admin-loggedin-navbar .list-item-has-children.touch-open > .sub-menu {
     opacity: 1;
     visibility: visible;
     transform: none;
