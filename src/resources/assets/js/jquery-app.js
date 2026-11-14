@@ -13,65 +13,106 @@ $(function () {
     ///۲) mouseleave با event delegation متصل می‌شود؛ قبلاً هنگام لود صفحه هیچ
     ///   عنصری کلاس main-menu-sub-active را نداشت، پس هندلر هرگز متصل نمی‌شد
     ///   و منوها بعد از خروج موس باز می‌ماندند.
+    /* فاز ۱۷۰ — ستون فرعی مگامنو = «یک پنل ثابت واحد» (درخواست کاربر):
+       قبلاً به‌ازای هر ردیف، ul فرعیِ خودِ ردیف با position:fixed جابه‌جا و با
+       transition «all» نمایش داده می‌شد؛ با هر حرکت موس بین دسته‌ها، پنل از بالا
+       دوباره انیمیت می‌شد (پرش صفحه). حالا یک پنل fixed با مختصات ثابت ساخته
+       می‌شود و فقط محتوایش (کپی ستون فرعی ردیف فعال) عوض می‌شود؛ اگر ردیف
+       تصویر پس‌زمینه داشته باشد (data-cat-image) همان تصویر پایین-چپ پنل
+       نمایش داده می‌شود. هیچ transition موقعیتی وجود ندارد. */
+
+    function ensureMegaFlyout(panel) {
+        if (!panel) { return null; }
+        if (panel.__snrFlyout) { return panel.__snrFlyout; }
+
+        var flyout = document.createElement('ul');
+        flyout.className = 'main-menu-sub snr-mega-flyout';
+        flyout.setAttribute('aria-label', 'زیرمنوی دسته‌بندی‌ها');
+        panel.appendChild(flyout);
+        panel.__snrFlyout = flyout;
+
+        return flyout;
+    }
+
+    function placeMegaFlyout(panel) {
+        var flyout = panel.__snrFlyout;
+        if (!flyout) { return; }
+
+        var rect = panel.getBoundingClientRect();
+        if (!rect.width) { return; }
+
+        /* ستون ردیف‌ها ۲۰۰px از لبهٔ راست پنل است؛ پنل فرعی دقیقاً از همان‌جا
+           به سمت چپ باز می‌شود و هم‌قدِ خود پنل می‌ماند (یک صفحهٔ ثابت) */
+        flyout.style.top = Math.round(rect.top) + 'px';
+        flyout.style.right = Math.round(window.innerWidth - rect.right + 200) + 'px';
+        flyout.style.height = Math.round(rect.height) + 'px';
+    }
+
+    function showMegaFlyoutRow(panel, row) {
+        var flyout = ensureMegaFlyout(panel);
+        if (!flyout) { return; }
+
+        var sub = row.querySelector(':scope > ul.main-menu-sub');
+        flyout.innerHTML = sub ? sub.innerHTML : '';
+
+        var img = row.getAttribute('data-cat-image');
+        flyout.style.backgroundImage = img ? 'url("' + img + '")' : '';
+
+        placeMegaFlyout(panel);
+        flyout.classList.add('main-menu-sub-active');
+    }
+
+    /* جابه‌جایی پنل‌های باز هنگام اسکرول/ریسایز (بدون انیمیشن) */
+    var repositionOpenFlyouts = function () {
+        document.querySelectorAll('.top-menu-menu ul.main-menu.active').forEach(function (panel) {
+            if (panel.__snrFlyout) { placeMegaFlyout(panel); }
+        });
+    };
+    window.addEventListener('scroll', repositionOpenFlyouts, { passive: true });
+    window.addEventListener('resize', repositionOpenFlyouts);
+
     /* باز/بسته شدن کل پنل مگا منو با ورود و خروج موس از دکمهٔ «دسته‌بندی کالاها» */
     $(document).on('mouseenter', '.top-menu-menu .main-menu-head', function () {
         $(this).children().addClass('active');
+
+        var panel = $(this).children('ul.main-menu').get(0);
+        var firstRow = panel ? panel.querySelector(':scope > li') : null;
+        if (firstRow) { showMegaFlyoutRow(panel, firstRow); }
     })
     $(document).on('mouseleave', '.top-menu-menu .main-menu-head', function () {
         $(this).children().removeClass('active');
+
+        var panel = $(this).children('ul.main-menu').get(0);
+        if (panel && panel.__snrFlyout) {
+            $(panel.__snrFlyout).removeClass('main-menu-sub-active');
+            $(panel).find('> li').removeClass('main-menu-sub-active-li');
+        }
     })
-    /* هاور روی ردیف‌های مگا منو — به‌جای بایند مستقیم روی li (که با هاور روی
-       آیتم‌های ستون فرعی می‌شکست)، روی خود پنل delegate می‌شود و همیشه به
-       «ردیف» سطح اول (‎> li) تحویل می‌شود؛ ورود موس به ستون فرعی هم ردیف
-       و ستون خودش را باز نگه می‌دارد.
 
-       فاز ۱۵۹ — ستون فرعی با position:fixed هم‌ترازِ لبهٔ پنل جای‌گذاری می‌شود
-       تا با اسکرولِ مستقلِ ستون دسته‌ها (سمت راست) جابجا نشود؛ اسکرول ستون
-       فرعی (سمت چپ) هم کاملاً جدا می‌ماند. استایل‌های inline عمداً پاک
-       نمی‌شوند تا در لحظهٔ محو‌شدن، منو نپرد. */
-    function placeMegaFlyout(sub) {
-        var panel = sub.closest('ul.main-menu');
-        if (!panel) { return; }
-        var rect = panel.getBoundingClientRect();
-        if (!rect.width) { return; }
-        /* ستون ردیف‌ها ۲۰۰px از لبهٔ راست پنل است؛ ستون فرعی باید دقیقاً
-           از همان‌جا به سمت چپ باز شود (هم‌ترازِ چیدمان اصلی سانیار) */
-        sub.style.position = 'fixed';
-        sub.style.top = Math.round(rect.top) + 'px';
-        sub.style.right = Math.round(window.innerWidth - rect.right + 200) + 'px';
-    }
-
+    /* هاور روی ردیف‌های مگا منو → فقط محتوای پنل ثابت فرعی عوض می‌شود.
+       با delegation روی خود پنل، ورود موس به پنل فرعی هم ردیف فعال و پنل را
+       باز نگه می‌دارد (target داخل flyout به هیچ ردیفی resolve نمی‌شود). */
     $(document).on('mouseover', '.top-menu-menu ul.main-menu', function (event) {
         var row = event.target.closest('.top-menu-menu ul.main-menu > li');
         if (!row || !this.contains(row)) { return; }
 
         var $row = $(row);
         if ($row.hasClass('main-menu-sub-active-li') &&
-            $row.children('ul').hasClass('main-menu-sub-active')) { return; }
+            this.__snrFlyout &&
+            this.__snrFlyout.classList.contains('main-menu-sub-active')) { return; }
 
         $row.parent().children('li').removeClass('main-menu-sub-active-li');
         $row.addClass('main-menu-sub-active-li');
-        $('.top-menu-menu .main-menu-sub').removeClass('main-menu-sub-active');
-        var sub = $row.children('ul').addClass('main-menu-sub-active').get(0);
-        if (sub) { placeMegaFlyout(sub); }
+
+        showMegaFlyoutRow(this, row);
     });
 
-    /* باز شدن اولین ستون فرعی هنگام هاور روی دکمهٔ «دسته‌بندی کالاها» */
-    $(document).on('mouseenter', '.top-menu-menu .main-menu-head', function () {
-        var sub = $(this).children('ul.main-menu').children('li').children('ul.main-menu-sub').first().get(0);
-        if (sub) {
-            placeMegaFlyout(sub);
-            $(sub).addClass('main-menu-sub-active');
-        }
-    })
-    /* خروج موس از ستون فرعی → بستن همان ستون */
-    $(document).on('mouseleave', '.top-menu-menu .main-menu-sub-active', function () {
-        $(this).removeClass('main-menu-sub-active');
-    })
-    /* خروج موس از کل پنل مگا منو → پاک‌سازی کامل ردیف فعال و ستون‌های باز */
+    /* خروج موس از کل پنل مگا منو → پاک‌سازی کامل ردیف فعال و پنل فرعی */
     $(document).on('mouseleave', '.top-menu-menu ul.main-menu', function () {
         $(this).find('> li').removeClass('main-menu-sub-active-li');
-        $(this).find('.main-menu-sub').removeClass('main-menu-sub-active');
+        if (this.__snrFlyout) {
+            $(this.__snrFlyout).removeClass('main-menu-sub-active');
+        }
     })
 
     ///شمارنده محصول برای اضافه کردن به سبد خرید

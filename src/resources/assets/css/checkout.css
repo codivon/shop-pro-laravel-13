@@ -733,3 +733,52 @@
     border-radius: 7px;
 }
 
+/* ============ فاز ۱۷۰ ============ */
+
+/* رادیوی خام شیوهٔ ارسال (custom-control-input form-control carrier-select-btn)
+   مخفی می‌شود — لیبل styled خودش نمایش داده می‌شود؛ ورودی فقط از نظر
+   دسترس‌پذیری با الگوی visually-hidden حفظ می‌شود */
+.consignment-container .radio-send-method input.carrier-select-btn {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    min-height: 0 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/* محصولات مرسوله کنار هم — هر ردیف ۲ کالا (با سایدبار کوچک‌تر col-lg-3) */
+.consignment-container .consignments .consignment .consignment-items {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.consignment-container .consignments .consignment .consignment-items .item,
+.consignment-container .consignments .consignment .consignment-items .item-full {
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+}
+
+.consignment-container .consignments .consignment .consignment-items .item-full .body {
+    max-width: none;
+    flex: 1 1 auto;
+}
+
+.consignment-container .consignments .consignment .consignment-items .item-full .body h4 {
+    max-width: none;
+}
+
+@media (max-width: 767px) {
+    .consignment-container .consignments .consignment .consignment-items {
+        grid-template-columns: 1fr;
+    }
+}
+
+

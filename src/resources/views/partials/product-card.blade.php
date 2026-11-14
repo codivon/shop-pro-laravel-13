@@ -5,28 +5,29 @@
     $hoverBtns = $hoverBtns ?? false;
 @endphp
 <div class="product-box">
-    @if($product->getLowestDiscount() || ($withTimer && $product->isSpecial() && $product->special_end_date))
-        <div class="product-timer">
-            @if($product->getLowestDiscount())
-                <div class="timer-label">
-                    <span>{{ $product->discount }}٪ تخفیف</span>
-                </div>
-            @endif
-
-            @if($withTimer && $product->isSpecial() && $product->special_end_date)
-                <div class="timer">
-                    <div class='countdown' data-date="{{ $product->special_end_date->format('Y-m-d') }}" data-time="{{ $product->special_end_date->format('H:i') }}"></div>
-                </div>
-            @endif
-
-            @if($hoverBtns)
-                <div class="product-header-btn">
-                    <a href="{{ route('front.favorites.index') }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="افزودن به علاقه مندی ها"><i class="bi bi-heart"></i></a>
-                    <a href="{{ route('front.products.show', ['product' => $product]) }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="مشاهده"><i class="bi bi-eye"></i></a>
-                </div>
-            @endif
+{{-- فاز ۱۷۰ — کانتینر .product-timer همیشه رندر می‌شود (حتی خالی) تا
+     ارتفاع ردیف نشان تخفیف/دکمه‌ها در همهٔ کارت‌ها یکسان بماند و کارتِ
+     تخفیف‌دار از بقیه بزرگ‌تر نشود (استایل min-height در style.css) --}}
+<div class="product-timer">
+    @if($product->getLowestDiscount())
+        <div class="timer-label">
+            <span>{{ $product->discount }}٪ تخفیف</span>
         </div>
     @endif
+
+    @if($withTimer && $product->isSpecial() && $product->special_end_date)
+        <div class="timer">
+            <div class='countdown' data-date="{{ $product->special_end_date->format('Y-m-d') }}" data-time="{{ $product->special_end_date->format('H:i') }}"></div>
+        </div>
+    @endif
+
+    @if($hoverBtns)
+        <div class="product-header-btn">
+            <a href="{{ route('front.favorites.index') }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="افزودن به علاقه مندی ها"><i class="bi bi-heart"></i></a>
+            <a href="{{ route('front.products.show', ['product' => $product]) }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="مشاهده"><i class="bi bi-eye"></i></a>
+        </div>
+    @endif
+</div>
 
     <div class="product-image">
         {{-- فاز ۱۵۸ — تصویر و عنوان کارت به صفحهٔ محصول لینک شدند --}}

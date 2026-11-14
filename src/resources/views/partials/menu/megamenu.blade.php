@@ -9,7 +9,8 @@
         @foreach($menu->childrenmenus as $childMenu)
             @switch($childMenu->type)
                 @case('category')
-                    <li class="main-menu-sub-active-li">
+                    {{-- فاز ۱۷۰ — data-cat-image: تصویر پس‌زمینهٔ دسته برای نمایش پایین-چپ پنل فرعی --}}
+                    <li class="main-menu-sub-active-li" @if(!empty($childMenu->category->background_image) || !empty($childMenu->category->image)) data-cat-image="{{ asset($childMenu->category->background_image ?: $childMenu->category->image) }}" @endif>
                         <a href="{{ $childMenu->category->link }}">{!! menu_icon($childMenu->category->icon) !!}{{ $childMenu->title ?: $childMenu->category->title }}</a>
                         <ul class="main-menu-sub back-menu">
                             @if(!$childMenu->category->getCategoriesCount() || !$childMenu->children)

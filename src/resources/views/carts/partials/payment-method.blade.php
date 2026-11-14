@@ -1,5 +1,12 @@
 <div class="content-box rounded-3">
     <div class="container-fluid p-3 p-lg-4">
+        {{-- فاز ۱۷۰ — عنوان «انتخاب شیوه پرداخت» همیشه بالای کارت‌ها باشد؛
+             کارت‌های پرداخت اقساطی/اعتباری (پکیج CreditPay) زیر عنوان می‌آیند --}}
+        <div class="checkout-form-title d-flex align-items-center mb-3">
+            <i class="bi bi-credit-card-2-front-fill me-2 main-color-one-color font-20"></i>
+            <h5 class="mb-0">انتخاب شیوه پرداخت</h5>
+        </div>
+
         {{-- Hook برای پرداخت اقساطی — فاز ۸۸: پکیج ادغامی CreditPay (پرداخت قسطی و اعتباری) جایگزین پکیج قدیمی اقساطی شد --}}
         @if(module_is_ready('CreditPay', ['installment_excluded_products']))
             @include('credit-pay::front.installment_checkout_hook', ['cart' => $cart])
@@ -8,11 +15,6 @@
         @if(module_is_ready('CreditPay', ['credit_product_markups']))
             @include('credit-pay::front.checkout_hook', ['cart' => $cart])
         @endif
-
-        <div class="checkout-form-title d-flex align-items-center mb-3">
-            <i class="bi bi-credit-card-2-front-fill me-2 main-color-one-color font-20"></i>
-            <h5 class="mb-0">انتخاب شیوه پرداخت</h5>
-        </div>
 
         <div class="row gy-2">
             @if ($wallet->balance)

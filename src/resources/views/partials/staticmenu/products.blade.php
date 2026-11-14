@@ -8,7 +8,8 @@
     @if(count($productcats))
         <ul class="main-menu mega-container">
             @foreach ($productcats as $category)
-                <li class="main-menu-sub-active-li">
+                {{-- فاز ۱۷۰ — تصویر پس‌زمینهٔ دسته برای نمایش پایین-چپ پنل فرعی مگامنو --}}
+                <li class="main-menu-sub-active-li" @if(!empty($category->background_image) || !empty($category->image)) data-cat-image="{{ asset($category->background_image ?: $category->image) }}" @endif>
                     <a href="{{ $category->link }}"><i class="{{ icon_class($category->icon) }}" @if(icon_style($category->icon)) style="{{ icon_style($category->icon) }}" @endif></i>{{ $category->title }}</a>
                     @if ($category->getCategoriesCount())
                         <ul class="main-menu-sub back-menu">

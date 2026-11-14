@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="{{ asset('vendor/mapir/css/mapp.min.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/mapir/css/fa/style.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('css/map-selected-styles.css') }}" />
-    <link rel="stylesheet" href="{{ theme_asset('css/checkout.css') }}" />
+    <link rel="stylesheet" href="{{ theme_asset('css/checkout.css') }}?v=170" />
 @endpush
 
 @section('content')
@@ -90,7 +90,8 @@
                     @endif
 
                     <div class="row gy-3">
-                        <div class="col-lg-8 block-div">
+                        {{-- فاز ۱۷۰ — سایدبار «سفارش شما» کوچک‌تر شد (col-lg-3) تا محصولات مرسوله کنار هم ۲تایی جا شوند --}}
+                        <div class="col-lg-9 block-div">
                             <form id="checkout-form" data-price-action="{{ route('front.checkout.prices') }}"
                                 action="{{ route('front.orders.store') }}" class="setting_form" method="POST">
                                 @csrf
@@ -161,7 +162,7 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="col-lg-4">
+                        <div class="col-lg-3">
                             <div class="checkout-side position-sticky top-0">
                                 @include('front::carts.partials.checkout-sidebar')
                             </div>

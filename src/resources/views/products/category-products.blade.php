@@ -98,7 +98,8 @@
                                         <div class="category-items">
                                             <div class="row g-3">
                                                 @foreach($products as $product)
-                                                    <div class="col-lg-4 col-md-6 col-sm-6 col-12 category-product-div">
+                                                    {{-- فاز ۱۷۰ — وقتی سایدبار فیلتر نیست، محصولات ۴تایی در ردیف --}}
+                                                    <div class="col-12 col-sm-6 col-md-6 {{ $has_filter ? 'col-lg-4' : 'col-lg-3' }} category-product-div">
                                                         @include('front::products.partials.product-card', ['product' => $product, 'withTimer' => false, 'hoverBtns' => true])
                                                     </div>
                                                 @endforeach

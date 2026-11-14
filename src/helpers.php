@@ -109,6 +109,42 @@ function front_product_discount_percent($product)
 }
 }
 
+/**
+ * فاز ۱۷۰ — مهر تازگیِ محصول/قیمت برای باطل‌کردن کش ویجت‌ها:
+ * وقتی ادمین محصولی را شگفت‌انگیز می‌کند یا قیمت/تخفیف می‌گذارد، updated_at خودِ
+ * ویجت عوض نمی‌شود و خروجی کش‌شده (تا ۵ دقیقه) کهنه می‌ماند؛ کاربر مجبور بود
+ * ویجت را غیرفعال/فعال کند. این مهر (ماکسیمم updated_at محصولات + جدول قیمت‌ها)
+ * در کلید کش همهٔ ویجت‌ها شرکت می‌کند تا هر تغییر محصول/قیمت، کلید را عوض کند و
+ * خروجی ویجت حداکثر ۶۰ ثانیه بعد رفرش شود — بدون دست‌زدن به ویجت.
+ * خودِ مهر ۶۰ ثانیه کش می‌شود تا به‌ازای هر ویجت کوئری سنگین اجرا نشود.
+ */
+if (!function_exists('front_products_freshness')) {
+function front_products_freshness(): string
+{
+    try {
+        return Cache::remember('front.products.freshness', 60, function () {
+            $stamp = (string) Product::query()->max('updated_at');
+
+            try {
+                /* نام جدول قیمت‌ها از خود رابطهٔ lowestPrice خوانده می‌شود
+                   (بدون هاردکد)؛ اگر جدول در دسترس نبود، مهر محصول کافی است */
+                $priceTable = (new Product())->lowestPrice()->getRelated()->getTable();
+                $priceStamp = DB::table($priceTable)->max('updated_at');
+                if ($priceStamp) {
+                    $stamp .= '|' . $priceStamp;
+                }
+            } catch (\Throwable $e) {
+                /* بی‌اهمیت — مهر محصولات کافی است */
+            }
+
+            return $stamp;
+        });
+    } catch (\Throwable $e) {
+        return '0';
+    }
+}
+}
+
 if (!function_exists('get_widget')) {
 function get_widget($widget)
 {
@@ -128,7 +164,11 @@ function get_widget($widget)
 
     // FIX کارایی مقیاس: خروجی ویجت‌های صفحه اصلی تا ۵ دقیقه کش می‌شود.
     // کلید شامل updated_at ویجت است تا ویرایش ویجت در پنل، بلافاصله کش را باطل کند.
-    $cacheKey = 'front.widget.' . $widget->id . '.' . ($widget->updated_at ? $widget->updated_at->timestamp : 0);
+    // فاز ۱۷۰ — + مهر تازگی محصول/قیمت: تغییر شگفت‌انگیز/تخفیف بدون غیرفعال‌کردن
+    // ویجت هم بلافاصله (حداکثر ۶۰ ثانیه) در صفحهٔ اصلی اعمال شود.
+    $cacheKey = 'front.widget.' . $widget->id . '.'
+        . ($widget->updated_at ? $widget->updated_at->timestamp : 0)
+        . '.' . md5(front_products_freshness());
 
     return Cache::remember($cacheKey, 300, function () use ($widget) {
         return get_widget_uncached($widget);

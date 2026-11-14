@@ -243,6 +243,25 @@ html[data-theme="dark"] .top-menu-menu ul.main-menu > li > ul.main-menu-sub {
     box-shadow: var(--dk-shadow);
 }
 
+/* فاز ۱۷۰ — پنل فرعیِ ثابت مگا منو (snr-mega-flyout) در تم تیره */
+html[data-theme="dark"] .top-menu-menu ul.main-menu > ul.snr-mega-flyout {
+    background-color: var(--dk-surface) !important;
+    box-shadow: var(--dk-shadow);
+}
+
+html[data-theme="dark"] .top-menu-menu ul.main-menu > ul.snr-mega-flyout li a {
+    color: var(--dk-text-soft) !important;
+}
+
+html[data-theme="dark"] .top-menu-menu ul.main-menu > ul.snr-mega-flyout li a:hover {
+    color: #5bd0c8 !important;
+    background: var(--dk-surface-2) !important;
+}
+
+html[data-theme="dark"] .top-menu-menu ul.main-menu > ul.snr-mega-flyout li a.title {
+    color: var(--dk-text) !important;
+}
+
 html[data-theme="dark"] .top-menu-menu ul.main-menu>li>ul.main-menu-sub li>a,
 html[data-theme="dark"] .top-menu-menu ul.main-menu>li>ul.main-menu-sub li>a.title {
     color: var(--dk-text-soft) !important;

@@ -1064,6 +1064,91 @@ header{
     color: #333 !important;
 }
 
+/* فاز ۱۷۰ — ستون فرعیِ واحد مگامنو (پنل ثابت):
+   ulهای فرعیِ درون ردیف‌ها دیگر خودشان نمایش داده نمی‌شوند؛ فقط منبع محتوای
+   پنل ثابت هستند. پنل ثابت (snr-mega-flyout) با fixed در همان مختصات باز
+   می‌شود، بدون هیچ transition — فقط محتوایش عوض می‌شود. */
+.top-menu-menu ul.main-menu>li>ul.main-menu-sub {
+    display: none !important;
+}
+
+.top-menu-menu ul.main-menu>ul.snr-mega-flyout {
+    position: fixed;
+    top: 0;
+    right: 200px;
+    display: block;
+    min-height: 400px;
+    max-height: 480px;
+    min-width: 280px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    direction: rtl;
+    background-color: #fff;
+    background-repeat: no-repeat;
+    background-position: bottom left;
+    background-size: 300px;
+    padding: 10px;
+    margin: 0;
+    list-style: none;
+    border-radius: 0 0 10px 10px;
+    box-shadow: var(--shadow-md);
+    z-index: 20;
+}
+
+/* پنل فرعی فقط وقتی باز است که خود مگا پنل هم باز باشد */
+.top-menu-menu ul.main-menu:not(.active)>ul.snr-mega-flyout {
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+.top-menu-menu ul.main-menu>ul.snr-mega-flyout li {
+    width: auto;
+    max-width: 260px;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+}
+
+.top-menu-menu ul.main-menu>ul.snr-mega-flyout li a {
+    display: block;
+    padding: 7px 12px;
+    font-size: 13px;
+    color: var(--text-muted-two);
+    border-radius: 8px;
+    transition: 0.2s all ease-in-out;
+    -webkit-transition: 0.2s all ease-in-out;
+}
+
+.top-menu-menu ul.main-menu>ul.snr-mega-flyout li a:hover {
+    color: var(--main-color-one);
+    background: var(--main-color-two-shadow);
+}
+
+.top-menu-menu ul.main-menu>ul.snr-mega-flyout li a.title {
+    position: relative;
+    color: #333;
+    font-size: 15px;
+    font-weight: bold;
+    padding-right: 22px;
+    margin-top: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.top-menu-menu ul.main-menu>ul.snr-mega-flyout li a.title::before {
+    content: '';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 16px;
+    border-radius: 4px;
+    background: var(--main-color-one);
+}
+
 /* /////////// end main menu /////////// */
 
 .top-menu-menu ul.level-one {
@@ -1526,6 +1611,42 @@ figure.avatar img {
     box-shadow: var(--shadow-box);
     border-radius: 10px;
     padding: 10px;
+    /* فاز ۱۷۰ — همهٔ کارت‌ها در یک ردیف هم‌اندازه باشند:
+       ستون فلکس + ارتفاع ۱۰۰٪ و ناحیهٔ تصویر کشسان */
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* فاز ۱۷۰ — ردیف نشان تخفیف/دکمه‌های هاور همیشه جای خود را نگه دارد
+   (حتی وقتی کارت تخفیف ندارد) تا کارت تخفیف‌دار بلندتر از بقیه نشود */
+.product-box .product-timer{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    min-height: 30px;
+    margin-bottom: 5px;
+}
+
+/* فاز ۱۷۰ — ناحیهٔ تصویر فضای اضافی ردیف را می‌گیرد و پایین کارت
+   (عنوان + قیمت + دکمه) در همهٔ کارت‌ها هم‌تراز می‌شود */
+.product-box .product-image{
+    flex: 1 1 auto;
+}
+
+/* فاز ۱۷۰ — باکس قیمت/دکمه همیشه ته کارت بچسبد */
+.product-box .product-action{
+    margin-top: auto;
+}
+
+/* فاز ۱۷۰ — جای خط «قیمت قبلی» (خط‌خورده) در همهٔ کارت‌ها رزرو شود
+   تا کارت تخفیف‌دار به‌خاطر یک خط اضافه، بزرگ‌تر نشود */
+.product-box .product-action .price{
+    min-height: 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .product-box.free-mode{
@@ -1767,18 +1888,19 @@ a.image-data-src{
 
 /* sugget moment */
 
+/* فاز ۱۷۰ — طبق درخواست کاربر: نوار پیشرفت بالای اسلایدر بچسبد (top:0) و ۳ پیکسل شود */
 .swiper-progress-bar {
     position: absolute;
-    top: 17.5%;
+    top: 0;
     width: 100%;
     display: block;
     z-index: 1;
-    height: 2px;
+    height: 3px;
 }
 
 .swiper-progress-bar .slide_progress-bar {
     position: absolute;
-    height: 2px;
+    height: 3px;
     background: rgba(199, 199, 199, 0.3);
     width: auto;
     clear: both;

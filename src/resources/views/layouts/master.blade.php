@@ -64,8 +64,8 @@
     <link rel="stylesheet" href="{{ theme_asset('plugin/swiper/swiper-bundle.min.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('plugin/timer/timer.css') }}">
     <link rel="stylesheet" href="{{ theme_asset('plugin/bootstrap-touchspin/jquery.bootstrap-touchspin.min.css') }}">
-    <link rel="stylesheet" href="{{ theme_asset('css/style.css') }}?v=168">
-    <link rel="stylesheet" href="{{ theme_asset('css/responsive.css') }}?v=168">
+    <link rel="stylesheet" href="{{ theme_asset('css/style.css') }}?v=170">
+    <link rel="stylesheet" href="{{ theme_asset('css/responsive.css') }}?v=170">
 
     {{-- فاز ۱۵۷ — اسلایدر owl در ویجت‌های پنل کاربری استفاده می‌شود؛
          بدون این CSS آفست افقی تمام‌صفحه ایجاد می‌شد --}}
@@ -77,7 +77,7 @@
     <link rel="stylesheet" href="{{ theme_asset('css/theme-pages.css') }}">
 
     {{-- فاز ۱۵۶/۱۵۸ — حالت شب (دارک مود) — بعد از همهٔ استایل‌ها تا بتواند بازنویسی کند --}}
-    <link rel="stylesheet" href="{{ theme_asset('css/theme-dark.css') }}?v=24">
+    <link rel="stylesheet" href="{{ theme_asset('css/theme-dark.css') }}?v=25">
 
     {{-- CSS عملکردی مشترک (توست‌ها + آیکون‌های منوهای داینامیک) --}}
     <link rel="stylesheet" href="{{ theme_asset('js/plugins/toastr/toastr.css') }}">
@@ -491,7 +491,7 @@
 <script src="{{theme_asset('plugin/timer/timer.js')}}"></script>
 <script src="{{theme_asset('plugin/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js')}}"></script>
 <script src="{{theme_asset('js/app.js')}}?v=164"></script>
-<script src="{{theme_asset('js/jquery-app.js')}}?v=2"></script>
+<script src="{{theme_asset('js/jquery-app.js')}}?v=3"></script>
 
 {{-- سانیار — پلاگین‌های جانبی تمپلیت --}}
 {{-- فاز ۱۵۶ — پلاگین go-to-top حذف شد؛ دکمهٔ مستطیلی «برگشت به بالا» در theme-header.js --}}
